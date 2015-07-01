@@ -1,0 +1,5 @@
+﻿{
+    "epTokenConfig" : {
+    	"restUri": "https://localhost/ICE3/TokenResource.svc/"
+    }
+}
