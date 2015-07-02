@@ -1,6 +1,6 @@
 {
     "name": "emf",
-    "version": "0.1513.4",
+    "version": "0.1513.5",
     "main": [
         "emf.js",
         "emf.min.js"
