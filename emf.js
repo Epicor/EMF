@@ -23,9 +23,29 @@
  *
  */
 angular.module('ep.action.set', [
-    'ep.utils',
+    'ep.feature.detection',
     'ep.templates'
 ]);
+
+'use strict';
+/**
+ * @ngdoc overview
+ * @name ep.feature.detection
+ * @description
+ * This service detects features available on the client
+ */
+angular.module('ep.feature.detection', [
+    'ep.templates'
+]);
+
+'use strict';
+/**
+ * @ngdoc overview
+ * @name ep.local.storage
+ * @description
+ * Provides local storage property bag
+ */
+angular.module('ep.local.storage', []);
 
 'use strict';
 /**
@@ -328,8 +348,8 @@ angular.module('ep.action.set').controller('epActionSetCtrl', [
      */
 angular.module('ep.action.set').directive('epActionSet', [
     '$compile',
-    'utilsFactory',
-    function($compile, utilsFactory) {
+    'epFeatureDetectionService',
+    function($compile, epFeatureDetectionService) {
         return {
             restrict: 'E',
             scope: {
@@ -344,7 +364,7 @@ angular.module('ep.action.set').directive('epActionSet', [
                 //This topic is #1 subject for improvements
                 elem.parent().addClass('ep-relative').addClass('ep-action-owner');
                 positionClass = 'ep-actionset-right-down';
-                if (utilsFactory.browser.isMobile() === false && attrs.position) {
+                if (epFeatureDetectionService.browserIsMobile() === false && attrs.position) {
                     switch (attrs.position) {
                         case 'absolute-right-bottom':
                             positionClass = 'ep-actionset-right-bottom';
@@ -706,6 +726,282 @@ angular.module('ep.action.set').factory('dynamicActionSetFactory', [
                     propHtml.join(' ') + '></ep-action-item>';
             };
         }
+    }]);
+
+'use strict';
+/**
+ * @ngdoc service
+ * @name ep.feature.detection.service:epFeatureDetectionService
+ * @description
+ * service for the ep.feature.detection module
+ * This service detects features available on the client
+ *
+ * @example
+ *
+ */
+angular.module('ep.feature.detection').factory('epFeatureDetectionService', [
+    function() {
+        /**
+        * @ngdoc method
+        * @name browserIsMobile
+        * @methodOf ep.feature.detection.service:epFeatureDetectionService
+        * @public
+        * @description
+        * Detects if function is being executed on common mobile device
+        *
+         */
+        function browserIsMobile() {
+            return (function(a) {
+                if (typeof browserIsMobile.result !== 'undefined') {
+                    return browserIsMobile.result;
+                }
+                var res = false;
+                // http://detectmobilebrowsers.com way to check browser
+                if (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i.test(a) || /1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(a.substr(0, 4))) {
+                    res = true;
+                }
+                browserIsMobile.result = res;
+                return res;
+            })(navigator.userAgent || navigator.vendor || window.opera);
+        }
+
+        /**
+        * @ngdoc method
+        * @name supportsDragAndDrop
+        * @methodOf ep.feature.detection.service:epFeatureDetectionService
+        * @public
+        * @description
+        * Detects if current document node contains 'draggable'
+        *
+        * @returns {boolean} true when current document node contains 'draggable'
+        */
+        function supportsDragAndDrop() {
+            return 'draggable' in document.createElement('span');
+        }
+
+        return {
+            browserIsMobile: browserIsMobile,
+            supportsDragAndDrop: supportsDragAndDrop
+        };
+    }]);
+
+'use strict';
+
+/**
+ * @ngdoc object
+ * @name ep.local.storage.object:epLocalStorageConfig
+ * @description
+ * Provider for epLocalStorageConfig.
+ * Gets configuration options from sysconfig.json or default
+ */
+angular.module('ep.local.storage').provider('epLocalStorageConfig',
+    function() {
+        var jsonReadStatus;
+        var config = {
+            /**
+            * @ngdoc property
+            * @name settings
+            * @propertyOf ep.local.storage.object:epLocalStorageConfig
+            * @public
+            * @description
+            * Represents the default local storage settings
+            */
+            settings: {},
+            /**
+            * @ngdoc property
+            * @name settingsID
+            * @propertyOf ep.local.storage.object:epLocalStorageConfig
+            * @public
+            * @description
+            * Represents the default key for localStorage
+            */
+            settingsID: 'emfSettings'
+        };
+
+        //This $get, is kinda confusing - it does not return the provider, but it returns the "service".
+        //In our case, the "service" is the environment configuration object
+        //The $get is called automatically when AngularJS encounters a DI.
+        //
+        // also knowing despite the (use $http instead of $.ajax) rules on the EMF coders styleguide
+        // There is a problem: $http is an asynchronous call, so its not guaranteed that the
+        // data will be returned with the values read from the sysconfig.json.
+        // To get around we have to make $http a sync call, which is not possible.
+        this.$get = function() {
+            var q = $.ajax({
+                type: 'GET',
+                url: 'sysconfig.json',
+                cache: false,
+                async: false,
+                contentType: 'application/json'
+            });
+
+            jsonReadStatus = q.status;
+            if (q.status === 200) {
+                var sysconfig = angular.fromJson(q.responseText);
+                if (sysconfig.hasOwnProperty('epLocalStorage')) {
+                    angular.extend(config, sysconfig.epLocalStorage);
+                }
+            }
+
+            return config;
+        };
+    });
+
+'use strict';
+/**
+ * @ngdoc service
+ * @name ep.local.storage.service:epLocalStorageService
+ * @description
+ * Local storage service
+ *
+ * @example
+ *
+ *    >      epLocalStorageService.init();
+ *    >      epLocalStorageService.update('emf.key', 'newValue');
+ *    >      alert('value = ' + epLocalStorageService.get('emf.key');
+ */
+angular.module('ep.local.storage').service('epLocalStorageService', [
+    'epLocalStorageConfig',
+    function(epLocalStorageConfig) {
+        //  This routine parses a path string in the form of 'object.property'
+        //  and adds, updates or deletes the value at that settings location.
+        //  If value is undefined, it's assumed that the property will be removed
+        //  from the settings object
+        function setValueAtPath(obj, key, value) {
+            var head = _.first(key);
+            var tail = _.rest(key);
+
+            // recurse until we're on the last part of the path and set it's value;
+            if (tail.length) {
+                // default the sub-object as an empty object if it isn't
+                // created yet.
+                obj[head] = obj[head] || {};
+                // continue to recurse using the subobject and the rest of the path
+                setValueAtPath(obj[head], tail, value);
+            } else {
+                // No more path parts left in the key, so set or delete the value.
+                if (value === undefined) {
+                    delete obj[head];
+                } else {
+                    obj[head] = value;
+                }
+            }
+        }
+
+        //  This is the function that corresponds with the above function and returns
+        //  instead of setting them.
+        function getValueAtPath(obj, key) {
+            var head = _.first(key);
+            var tail = _.rest(key);
+
+            // recurse until we're on the last part of the path and get it's value;
+            if (tail.length) {
+                // default the sub-object as an empty object if it isn't
+                // created yet.
+                obj[head] = obj[head] || {};
+                // continue to recurse using the subobject and the rest of the path
+                return getValueAtPath(obj[head], tail);
+            } else {
+                // No more path parts left in the key, so get the value.
+                return obj[head];
+            }
+        }
+
+        function commit() {
+            // Applies any changes that have been made to the settings
+            /*jshint validthis: true */
+            localStorage.setItem(epLocalStorageConfig.settingsID, JSON.stringify(this.settings));
+        }
+
+        /**
+        * @ngdoc method
+        * @name clear
+        * @methodOf ep.local.storage.service:epLocalStorageService
+        * @public
+        * @description
+        * This clears either a single key or all of the local storage.
+        * If no key is passed in, all of the settings will be cleard,
+        * otherwise only the item at the path location is removed.
+        *
+        * @param {string} key represents the key that will be removed from the localCache
+        */
+        function clear(key) {
+            if (key) {
+                var path = key.split('.');
+                // restore the individual setting to the coresponding value in
+                // the default settings
+                var defaultSetting = getValueAtPath(epLocalStorageConfig.settings, path);
+                /*jshint validthis: true */
+                setValueAtPath(this.settings, path, defaultSetting);
+            } else {
+                localStorage.removeItem(epLocalStorageConfig.settingsID);
+                this.settings = epLocalStorageConfig.settings;
+            }
+            /*jshint validthis: true */
+            this.commit();
+        }
+
+        /**
+        * @ngdoc method
+        * @name get
+        * @methodOf ep.local.storage.service:epLocalStorageService
+        * @public
+        * @description
+        * This routine parses a path string in the form of 'object.property'
+        * and retrieves the value at that settings location.
+        *
+        * @param {string} key represents the key that will be used to retrieve from the localCache
+        */
+        function get(key) {
+            /*jshint validthis: true */
+            return getValueAtPath(this.settings, key.split('.'));
+        }
+        /**
+        * @ngdoc method
+        * @name init
+        * @methodOf ep.local.storage.service:epLocalStorageService
+        * @public
+        * @description
+        * This initializes local storage.
+        * It will take seed data from sysconfig.json / epLocalStorageConfig.settings
+        */
+        function init() {
+            // Read the settings from the local storage.
+            var settingsSrc = localStorage.getItem(epLocalStorageConfig.settingsID);
+            if (settingsSrc) {
+                /*jshint validthis: true */
+                this.settings = JSON.parse(settingsSrc);
+            }
+        }
+        /**
+        * @ngdoc method
+        * @name update
+        * @methodOf ep.local.storage.service:epLocalStorageService
+        * @public
+        * @description
+        * This routine parses a key string in the form of 'object.property'
+        * and adds, updates or deletes the value at that settings location.
+        * If value is undefined, it's assumed that the property will be removed
+        * from the settings object
+        *
+        * @param {string} key represents the key that will be stored on the localCache
+        * @param {string} value represents the value that will be stored on the localCache
+        *
+        */
+        function update(key, value) {
+            /*jshint validthis: true */
+            setValueAtPath(this.settings, key.split('.'), value);
+            this.commit();
+        }
+
+        return {
+            settings: epLocalStorageConfig.settings,
+            commit: commit,
+            clear: clear,
+            get: get,
+            init: init,
+            update: update
+        };
     }]);
 
 'use strict';
@@ -2136,163 +2432,6 @@ angular.module('ep.token').factory('tokenFactory', [
     }]);
 
 'use strict';
-/**
- * @ngdoc service
- * @name ep.utils.service:localStorageService
- * @description
- * Local storage service for the ep.utils module
- *
- * @example
- *
- *    >      localStorageService.init();
- *    >      localStorageService.update('emf.key', 'newValue');
- *    >      alert('value = ' + localStorageService.get('emf.key');
- */
-angular.module('ep.utils').service('localStorageService', [
-    'utilsConfig',
-    function(utilsConfig) {
-        //  This routine parses a path string in the form of 'object.property'
-        //  and adds, updates or deletes the value at that settings location.
-        //  If value is undefined, it's assumed that the property will be removed
-        //  from the settings object
-        function setValueAtPath(obj, key, value) {
-            var head = _.first(key);
-            var tail = _.rest(key);
-
-            // recurse until we're on the last part of the path and set it's value;
-            if (tail.length) {
-                // default the sub-object as an empty object if it isn't
-                // created yet.
-                obj[head] = obj[head] || {};
-                // continue to recurse using the subobject and the rest of the path
-                setValueAtPath(obj[head], tail, value);
-            } else {
-                // No more path parts left in the key, so set or delete the value.
-                if (value === undefined) {
-                    delete obj[head];
-                } else {
-                    obj[head] = value;
-                }
-            }
-        }
-
-        //  This is the function that corresponds with the above function and returns
-        //  instead of setting them.
-        function getValueAtPath(obj, key) {
-            var head = _.first(key);
-            var tail = _.rest(key);
-
-            // recurse until we're on the last part of the path and get it's value;
-            if (tail.length) {
-                // default the sub-object as an empty object if it isn't
-                // created yet.
-                obj[head] = obj[head] || {};
-                // continue to recurse using the subobject and the rest of the path
-                return getValueAtPath(obj[head], tail);
-            } else {
-                // No more path parts left in the key, so get the value.
-                return obj[head];
-            }
-        }
-
-        function commit() {
-            // Applies any changes that have been made to the settings
-            /*jshint validthis: true */
-            localStorage.setItem(utilsConfig.settingsID, JSON.stringify(this.settings));
-        }
-
-        /**
-        * @ngdoc method
-        * @name clear
-        * @methodOf ep.utils.service:localStorageService
-        * @public
-        * @description
-        * This clears either a single key or all of the local storage.
-        * If no key is passed in, all of the settings will be cleard,
-        * otherwise only the item at the path location is removed.
-        *
-        * @param {string} key represents the key that will be removed from the localCache
-        */
-        function clear(key) {
-            if (key) {
-                var path = key.split('.');
-                // restore the individual setting to the coresponding value in
-                // the default settings
-                var defaultSetting = getValueAtPath(utilsConfig.settings, path);
-                /*jshint validthis: true */
-                setValueAtPath(this.settings, path, defaultSetting);
-            } else {
-                localStorage.removeItem(utilsConfig.settingsID);
-                this.settings = utilsConfig.settings;
-            }
-            /*jshint validthis: true */
-            this.commit();
-        }
-
-        /**
-        * @ngdoc method
-        * @name get
-        * @methodOf ep.utils.service:localStorageService
-        * @public
-        * @description
-        * This routine parses a path string in the form of 'object.property'
-        * and retrieves the value at that settings location.
-        *
-        * @param {string} key represents the key that will be used to retrieve from the localCache
-        */
-        function get(key) {
-            /*jshint validthis: true */
-            return getValueAtPath(this.settings, key.split('.'));
-        }
-        /**
-        * @ngdoc method
-        * @name init
-        * @methodOf ep.utils.service:localStorageService
-        * @public
-        * @description
-        * This initializes local storage.
-        * It will take seed data from sysconfig.json / epUtilsConfig.settings
-        */
-        function init() {
-            // Read the settings from the local storage.
-            var settingsSrc = localStorage.getItem(utilsConfig.settingsID);
-            if (settingsSrc) {
-                /*jshint validthis: true */
-                this.settings = JSON.parse(settingsSrc);
-            }
-        }
-        /**
-        * @ngdoc method
-        * @name update
-        * @methodOf ep.utils.service:localStorageService
-        * @public
-        * @description
-        * This routine parses a key string in the form of 'object.property'
-        * and adds, updates or deletes the value at that settings location.
-        * If value is undefined, it's assumed that the property will be removed
-        * from the settings object
-        *
-        * @param {string} key represents the key that will be stored on the localCache
-        * @param {string} value represents the value that will be stored on the localCache
-        *
-        */
-        function update(key, value) {
-            /*jshint validthis: true */
-            setValueAtPath(this.settings, key.split('.'), value);
-            this.commit();
-        }
-
-        return {
-            settings: utilsConfig.settings,
-            commit: commit,
-            clear: clear,
-            get: get,
-            init: init,
-            update: update
-        };
-    }]);
-
-'use strict';
 
 /**
  * @ngdoc object
@@ -2314,24 +2453,6 @@ angular.module('ep.utils').provider('utilsConfig',
             * Represents the debug mode
             */
             debug: false,
-            /**
-            * @ngdoc property
-            * @name settings
-            * @propertyOf ep.utils.object:utilsConfig
-            * @public
-            * @description
-            * Represents the default local storage settings
-            */
-            settings: {},
-            /**
-            * @ngdoc property
-            * @name settingsID
-            * @propertyOf ep.utils.object:utilsConfig
-            * @public
-            * @description
-            * Represents the default key for localStorage
-            */
-            settingsID: 'emfSettings'
         };
 
         //This $get, is kinda confusing - it does not return the provider, but it returns the "service".
@@ -2362,69 +2483,6 @@ angular.module('ep.utils').provider('utilsConfig',
             return config;
         };
     });
-
-'use strict';
-/**
- * @ngdoc service
- * @name ep.utils.factory:utilsFactory
- * @description
- * Provides Epicor Mobile Framework Utilities
- *       the browser property on utilsFactory returns isMobile and supportsDragDrop
- *
- *
- * @example
- *           if (utilsFactory.browser.isMobile() === true) {
- *               ...
- *               };
- *
- */
-angular.module('ep.utils').factory('utilsFactory', [
-    function() {
-        /**
-        * @ngdoc method
-        * @name browserIsMobile
-        * @methodOf ep.utils.factory:utilsFactory
-        * @public
-        * @description
-        * Detects if function is being executed on common mobile device
-        *
-         */
-        function browserIsMobile() {
-            return (function(a) {
-                if (typeof browserIsMobile.result !== 'undefined') {
-                    return browserIsMobile.result;
-                }
-                var res = false;
-                // http://detectmobilebrowsers.com way to check browser
-                if (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i.test(a) || /1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(a.substr(0, 4))) {
-                    res = true;
-                }
-                browserIsMobile.result = res;
-                return res;
-            })(navigator.userAgent || navigator.vendor || window.opera);
-        }
-
-        /**
-        * @ngdoc method
-        * @name supportsDragAndDrop
-        * @methodOf ep.utils.factory:utilsFactory
-        * @public
-        * @description
-        * Detects if current document node contains 'draggable'
-        *
-        * @returns {boolean} true when current document node contains 'draggable'
-        */
-        function supportsDragAndDrop() {
-            return 'draggable' in document.createElement('span');
-        }
-
-        return {
-            browser: {
-                isMobile: browserIsMobile,
-                supportsDragAndDrop: supportsDragAndDrop
-            }
-        };
-    }]);
 
 //# sourceMappingURL=app.min.js.map
 angular.module('ep.templates').run(['$templateCache', function($templateCache) {
