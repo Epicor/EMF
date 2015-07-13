@@ -739,8 +739,21 @@ angular.module('ep.action.set').factory('dynamicActionSetFactory', [
  * @example
  *
  */
-angular.module('ep.feature.detection').factory('epFeatureDetectionService', [
+angular.module('ep.feature.detection').service('epFeatureDetectionService', [
     function() {
+        /**
+         * @private
+         * @description
+         * features holds a set of features determined once during initialization
+         */
+        var features = {
+            platform: {},
+            transitionEvent: null,
+            touchEvents: false
+        };
+
+        /*  ----- Public Functions -------> */
+
         /**
         * @ngdoc method
         * @name browserIsMobile
@@ -779,9 +792,208 @@ angular.module('ep.feature.detection').factory('epFeatureDetectionService', [
             return 'draggable' in document.createElement('span');
         }
 
+        /**
+        * @ngdoc method
+        * @name getTransitionEvent
+        * @methodOf ep.feature.detection.service:epFeatureDetectionService
+        * @public
+        * @description
+        * Detects if current document node contains 'draggable'
+        *
+        * @returns {boolean} true when current document node contains 'draggable'
+        */
+        function getTransitionEvent() {
+            return features.transitionEvent;
+        }
+
+        /**
+        * @ngdoc method
+        * @name getPlatform
+        * @methodOf ep.feature.detection.service:epFeatureDetectionService
+        * @public
+        * @description
+        * provides an object with platform settings as follows:
+        *
+        * platform = {
+        *   app: 'Web',
+        *   os: os,
+        *   browser: { name, fullVersion, majorVersion, appName, userAgent }
+        * }
+        *
+        * @returns {object} containing platform settings
+        */
+        function getPlatform() {
+            return features.platform;
+        }
+
+        /**
+        * @ngdoc method
+        * @name hasTouchEvent
+        * @methodOf ep.feature.detection.service:epFeatureDetectionService
+        * @public
+        * @description
+        * Detects if touch events are supported
+        *
+        * @returns {boolean} true when touch events are supported
+        */
+        function hasTouchEvents() {
+            return features.touchEvents;
+        }
+
+        /*  ----- Private Functions -------> */
+
+        /**
+        * @ngdoc method
+        * @name whichTransitionEvent
+        * @methodOf ep.feature.detection.service:epFeatureDetectionService
+        * @private
+        * @description
+        * Detects transition events
+        *
+        * @returns {object} transitions object
+        */
+        function whichTransitionEvent() {
+            var t;
+            var el = document.createElement('fakeelement');
+            var transitions = {
+                'transition': 'transitionend',
+                'OTransition': 'oTransitionEnd',
+                'MozTransition': 'transitionend',
+                'WebkitTransition': 'webkitTransitionEnd'
+            };
+
+            for (t in transitions) {
+                if (el.style[t] !== undefined) {
+                    return transitions[t];
+                }
+            }
+
+            return null;
+        }
+
+        /**
+        * @ngdoc method
+        * @name initialize
+        * @methodOf ep.feature.detection.service:epFeatureDetectionService
+        * @private
+        * @description
+        * One time service initialization to detect static features
+        */
+        function initialize() {
+            features.transitionEvent = whichTransitionEvent();
+            features.touchEvents = ('ontouchstart' in window) ||
+            (navigator.maxTouchPoints > 0) ||
+            (navigator.msMaxTouchPoints > 0);
+
+            try {
+                if (window.device && window.cordova) {
+
+                    features.platform = {
+                        app: 'Cordova',
+                        os: window.device.platform
+                    };
+                } else if (window.require !== undefined && (require('nw.gui') && process)) {
+                    features.platform = {
+                        app: 'NWJS',
+                        os: process.platform
+                    };
+                } else {
+                    var nAgt = navigator.userAgent;
+                    var browserName = navigator.appName;
+                    var fullVersion = '' + parseFloat(navigator.appVersion);
+                    var majorVersion = parseInt(navigator.appVersion, 10);
+                    var nameOffset = -1;
+                    var verOffset = -1;
+                    var ix = -1;
+
+                    // In Opera, the true version is after 'Opera' or after 'Version'
+                    if ((verOffset = nAgt.indexOf('Opera')) !== -1) {
+                        browserName = 'Opera';
+                        fullVersion = nAgt.substring(verOffset + 6);
+                        if ((verOffset = nAgt.indexOf('Version')) !== -1) {
+                            fullVersion = nAgt.substring(verOffset + 8);
+                        }
+                    } else if ((verOffset = nAgt.indexOf('MSIE')) !== -1) {
+                        // In MSIE, the true version is after 'MSIE' in userAgent
+                        browserName = 'Microsoft Internet Explorer';
+                        fullVersion = nAgt.substring(verOffset + 5);
+                    } else if ((verOffset = nAgt.indexOf('Chrome')) !== -1) {
+                        // In Chrome, the true version is after 'Chrome'
+                        browserName = 'Chrome';
+                        fullVersion = nAgt.substring(verOffset + 7);
+                    } else if ((verOffset = nAgt.indexOf('Safari')) !== -1) {
+                        // In Safari, the true version is after 'Safari' or after 'Version'
+                        browserName = 'Safari';
+                        fullVersion = nAgt.substring(verOffset + 7);
+                        if ((verOffset = nAgt.indexOf('Version')) !== -1) {
+                            fullVersion = nAgt.substring(verOffset + 8);
+                        }
+                    } else if ((verOffset = nAgt.indexOf('Firefox')) !== -1) {
+                        // In Firefox, the true version is after 'Firefox'
+                        browserName = 'Firefox';
+                        fullVersion = nAgt.substring(verOffset + 8);
+                    } else if ((nameOffset = nAgt.lastIndexOf(' ') + 1) <
+                        (verOffset = nAgt.lastIndexOf('/'))) {
+                        // In most other browsers, 'name/version' is at the end of userAgent
+                        browserName = nAgt.substring(nameOffset, verOffset);
+                        fullVersion = nAgt.substring(verOffset + 1);
+                        if (browserName.toLowerCase() === browserName.toUpperCase()) {
+                            browserName = navigator.appName;
+                        }
+                    }
+                    if ((ix = fullVersion.indexOf(';')) !== -1) {
+                        // trim the fullVersion string at semicolon/space if present
+                        fullVersion = fullVersion.substring(0, ix);
+                    }
+                    if ((ix = fullVersion.indexOf(' ')) !== -1) {
+                        fullVersion = fullVersion.substring(0, ix);
+                    }
+                    majorVersion = parseInt('' + fullVersion, 10);
+                    if (isNaN(majorVersion)) {
+                        fullVersion = '' + parseFloat(navigator.appVersion);
+                        majorVersion = parseInt(navigator.appVersion, 10);
+                    }
+
+                    var os = 'Unknown OS';
+                    if (navigator.appVersion.indexOf('Win') !== -1) {
+                        os = 'Windows';
+                    }
+                    if (navigator.appVersion.indexOf('Mac') !== -1) {
+                        os = 'MacOS';
+                    }
+                    if (navigator.appVersion.indexOf('X11') !== -1) {
+                        os = 'UNIX';
+                    }
+                    if (navigator.appVersion.indexOf('Linux') !== -1) {
+                        os = 'Linux';
+                    }
+
+                    features.platform = {
+                        app: 'Web',
+                        os: os,
+                        browser: {
+                            name: browserName,
+                            fullVersion: fullVersion,
+                            majorVersion: majorVersion,
+                            appName: navigator.appName,
+                            userAgent: navigator.userAgent
+                        }
+                    };
+                }
+            } catch (ex) {
+                console.log(ex.message);
+            }
+        }
+
+        //initialize the service once
+        initialize();
+
         return {
             browserIsMobile: browserIsMobile,
-            supportsDragAndDrop: supportsDragAndDrop
+            supportsDragAndDrop: supportsDragAndDrop,
+            getTransitionEvent: getTransitionEvent,
+            hasTouchEvents: hasTouchEvents,
+            getPlatform: getPlatform
         };
     }]);
 
@@ -1187,7 +1399,10 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
     '$compile',
     '$rootScope',
     '$timeout',
-    function($modal, $compile, $rootScope, $timeout) {
+    '$interval',
+    '$cookieStore',
+    '$cookies',
+    function($modal, $compile, $rootScope, $timeout, $interval, $cookieStore, $cookies) {
 
         /**
          * @private
@@ -1213,12 +1428,18 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
         // @private
         var dialogState = {
             isVisible: false,
-            config: {}
+            config: {},
+            timerPromise: null,
+            autoClosePromise: null,
+            paneScope: null
         };
         angular.copy(defaultConfig, dialogState.config);
 
         // @private
         var currentModalInstance = null;
+
+        // @private
+        var dialogCookiePrefix = 'emf.dialogs.dialogId.';
 
         /**
          * @ngdoc method
@@ -1244,11 +1465,7 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
                 icon: 'fa fa-info-circle fa-4x',
             };
 
-            if (options && options.status) {
-                var status = options.status.toLowerCase();
-                cfg.titleClass = (status === 'warning') ? 'text-warning' : 'text-success';
-                cfg.icon = (status === 'warning') ? 'fa fa-4x fa-warning' : 'fa fa-4x fa-check';
-            }
+            setPaneStatus(options, cfg);
 
             copyProperties(options, cfg);
 
@@ -1287,11 +1504,8 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
                 }]
             };
 
-            if (options && options.status) {
-                var status = options.status.toLowerCase();
-                cfg.titleClass = (status === 'warning') ? 'text-warning' : 'text-success';
-                cfg.icon = (status === 'warning') ? 'fa fa-4x fa-warning' : 'fa fa-4x fa-check';
-            }
+            setPaneStatus(options, cfg);
+
             copyProperties(options, cfg);
             show(cfg);
         }
@@ -1349,12 +1563,12 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
                 title: 'Exception',
                 icon: '',
                 status: 'error',
-                statusClass : 'alert-danger',
-                statusIcon : 'fa fa-3x fa-warning',
+                statusClass: 'alert-danger',
+                statusIcon: 'fa fa-3x fa-warning',
                 message: '',
                 messageDetails: '',
                 buttons: [{
-                    text: 'Ok', isDefault: true,
+                    id: 'btnOk', text: 'Ok', isDefault: true, type: 'primary',
                     action: (options ? options.fnDefaultAction : null)
                 }]
             };
@@ -1416,7 +1630,7 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
                 message: '',
                 messageDetails: '',
                 buttons: [{
-                    text: 'Ok', isDefault: true,
+                    id: 'btnOk', text: 'Ok', isDefault: true, type: 'primary',
                     action: (options ? options.fnDefaultAction : null)
                 }]
             };
@@ -1464,37 +1678,33 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
          *      closeButton - set true to display close button (default false)
          */
         function showCustomDialog(options) {
+            var cfg = options; //for compatability with show()
 
             hide(); // hide dialog pane if it was open
 
-            if (options.buttons && options.buttons.length) {
-                // reverse the button array because of the way the template is rendered
-                options.buttons = options.buttons.reverse();
-
-                angular.forEach(options.buttons, function(btn) {
+            if (cfg.buttons && cfg.buttons.length) {
+                angular.forEach(cfg.buttons, function(btn) {
                     if (!btn.type) { btn.type = 'default'; } //set default button style
                 });
             }
 
+            if (checkRememberMe(cfg) === 1) {
+                return;
+            }
+
+            setCommonOptions(cfg);
+
             return $modal.open({
-                size: (options.size === 'small' ? 'sm' : (options.size === 'large' ? 'lg' : '')),
-                backdrop: options.backdrop === false ? false : options.backdrop || false,
+                size: (cfg.size === 'small' ? 'sm' : (cfg.size === 'large' ? 'lg' : '')),
+                backdrop: cfg.backdrop === false ? false : cfg.backdrop || false,
                 templateUrl: 'src/components/ep.modaldialog/modals/modaldialog-custom.html',
                 controller: ['$scope', '$modalInstance', function($scope, $modalInstance) {
                     currentModalInstance = $modalInstance;
-                    $scope.config = options;
+                    $scope.config = cfg;
                     $scope.btnclick = function(btn) {
-                        var result = 0;
-                        if (btn.action) {
-                            result = btn.action($scope.config, btn);
-                        } else if (btn.isDefault === true && options.fnDefaultAction) {
-                            result = options.fnDefaultAction($scope.config, btn);
-                        } else if (btn.isCancel === true && options.fnCancelAction) {
-                            result = options.fnCancelAction($scope.config, btn);
-                        } else if (options.fnButtonAction) {
-                            result = options.fnButtonAction($scope.config, btn);
-                        }
+                        var result = onButtonClick($scope.config, btn);
                         if (result !== -1) {
+                            release();
                             if (btn.isCancel) {
                                 $modalInstance.dismiss('cancel');
                             } else {
@@ -1515,10 +1725,32 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
          * hide any modal dialog operated by this service
          */
         function hide() {
+            release();
             dialogState.isVisible = false;
             if (currentModalInstance) {
                 currentModalInstance.close(0);
                 currentModalInstance = null;
+            }
+        }
+
+        /**
+         * @ngdoc method
+         * @name clearRememberMe
+         * @methodOf ep.modaldialog.factory:epModalDialogService
+         * @public
+         * @description
+         * clears rememeberMe cached flag for specific dialog or all dialogs
+         */
+        function clearRememberMe(dialogId) {
+            if (dialogId) {
+                $cookieStore.remove(dialogCookiePrefix + dialogId);
+            } else {
+                //clear all dialog cookies
+                angular.forEach($cookies, function(v, key) {
+                    if (v && key.indexOf(dialogCookiePrefix) === 0) {
+                        $cookieStore.remove(key);
+                    }
+                });
             }
         }
 
@@ -1550,7 +1782,7 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
          * @private
          * @description
          * display panel dialog (confirmation)
-         * @param {object} config - optional settings as follows:
+         * @param {object} options - optional settings as follows:
          *      message - the message to display
          *      title - title (header)
          *      icon - font awesome icon class
@@ -1559,60 +1791,207 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
          *      autoClose - time in milliseconds to autoclose
          *      titleClass, iconClass, contentClass - optional classes applied to respective areas
          */
-        function show(config) {
-
-            if (config.buttons && config.buttons.length) {
-                // reverse the button array because of the way the template is rendered
-                config.buttons = config.buttons.reverse();
-            }
+        function show(options) {
+            release();
 
             // reset the config object to default values.
-            dialogState.config.fnDefaultAction = null;
-            dialogState.config.fnCancelAction = null;
-            dialogState.config.fnButtonAction = null;
-            copyProperties(defaultConfig, dialogState.config);
+            var cfg = {};
+
+            copyProperties(defaultConfig, cfg);
 
             // override default values with values provided.
-            copyProperties(config, dialogState.config);
+            copyProperties(options, cfg);
 
-            if (dialogState.config.buttons && dialogState.config.buttons.length) {
-                angular.forEach(dialogState.config.buttons, function(btn) {
+            if (cfg.buttons && cfg.buttons.length) {
+                angular.forEach(cfg.buttons, function(btn) {
                     if (!btn.type) { btn.type = 'default'; } //set default button style
                 });
+            }
+
+            if (checkRememberMe(cfg)) {
+                hide();
+                return;
             }
 
             dialogState.isVisible = true;
 
             if (!angular.element('body .ep-modaldialog.ep-modaldialog-pane').length) {
-                var scope = $rootScope.$new();
-                scope.dialogState = dialogState;
-                scope.btnclick = function(btn) {
-                    var config = dialogState.config;
-
+                dialogState.paneScope = $rootScope.$new();
+                dialogState.paneScope.dialogState = dialogState;
+                dialogState.paneScope.btnclick = function(btn) {
                     hide();
-                    if (btn.action) {
-                        btn.action(config, btn);
-                    } else if (btn.isDefault === true && config.fnDefaultAction) {
-                        config.fnDefaultAction(config, btn);
-                    } else if (btn.isCancel === true && config.fnCancelAction) {
-                        config.fnCancelAction(config, btn);
-                    } else if (config.fnButtonAction) {
-                        config.fnButtonAction(config, btn);
-                    }
+                    onButtonClick(dialogState.config, btn);
                 };
-
-                angular.element(document.body).append($compile('<epmodaldialog></epmodaldialog>')(scope));
+                angular.element(document.body).append($compile('<epmodaldialog></epmodaldialog>')(
+                    dialogState.paneScope));
             }
+            setCommonOptions(cfg);
 
-            if (dialogState.config.autoClose) {
-                $timeout(function() {
-                    hide();
-                    if (config.fnDefaultAction) {
-                        config.fnDefaultAction();
-                    }
-                }, dialogState.config.autoClose);
+            dialogState.config = cfg;
+            if (dialogState.paneScope) {
+                //update the panel scope
+                dialogState.paneScope.config = cfg;
             }
         }
+
+        /**
+         * @name setCommonOptions
+         * @private
+         * @description
+         * sets options common both to dialog and panel
+         */
+        function setCommonOptions(cfg) {
+            if (cfg.autoClose) {
+                cfg.messageHasTimer = (cfg.message.indexOf('{timer}') >= 0);
+                cfg.titleHasTimer = (cfg.title.indexOf('{timer}') >= 0);
+
+                dialogState.autoClosePromise = $timeout(function() {
+                    if ((dialogState.autoClosePromise !== null) && cfg.fnDefaultAction) {
+                        cfg.fnDefaultAction();
+                    }
+                    hide();
+                }, cfg.autoClose * 1000);
+
+                cfg.countDown = cfg.autoClose;
+
+                //check if we need an interval for seconds countdown:
+                if (cfg.messageHasTimer || cfg.titleHasTimer || cfg.showTimer) {
+                    dialogState.timerPromise = $interval(function() {
+
+                        cfg.countDown--;
+
+                        if (cfg.countDown <= 0) {
+                            $interval.cancel(dialogState.timerPromise);
+                            dialogState.timerPromise = null;
+                        }
+                    }, 1000, 0);
+                }
+
+                cfg.spinnerTextClass = (cfg.countDown < 100) ? 'ep-timer-large-font' : 'ep-timer-small-font';
+            }
+
+            cfg.showSpinner = (cfg.showTimer || cfg.showProgress);
+            if (cfg.showSpinner) {
+                cfg.spinnerIconClass = cfg.showTimer ? 'fa-circle-o-notch' : 'fa-spinner';
+            }
+
+            cfg.fnGetMessage = function() {
+                if (cfg.messageHasTimer) {
+                    var repl = (cfg.countDown !== undefined && cfg.countDown !== null) ? cfg.countDown : '';
+                    return cfg.message.replace('{timer}', repl);
+                }
+                return cfg.message;
+            };
+            cfg.fnGetTitle = function() {
+                if (cfg.titleHasTimer) {
+                    var repl = (cfg.countDown !== undefined && cfg.countDown !== null) ? cfg.countDown : '';
+                    return cfg.title.replace('{timer}', repl);
+                }
+                return cfg.title;
+            };
+        }
+
+        function onButtonClick(cfg, btn) {
+            var result = 0;
+            var btnRemId = '';
+            if (btn.action) {
+                result = btn.action(cfg, btn);
+                btnRemId = btn.text;
+            } else if (btn.isDefault === true && cfg.fnDefaultAction) {
+                result = cfg.fnDefaultAction(cfg, btn);
+                btnRemId = 'fnDefaultAction';
+            } else if (btn.isCancel === true && cfg.fnCancelAction) {
+                result = cfg.fnCancelAction(cfg, btn);
+                btnRemId = 'fnCancelAction';
+            } else if (cfg.fnButtonAction) {
+                result = cfg.fnButtonAction(cfg, btn);
+                btnRemId = btn.text;
+            } else {
+                btnRemId = btn.text;
+            }
+
+            if (cfg.rememberMeValue && cfg.dialogId && btnRemId) {
+                //need button id.
+                $cookieStore.put(dialogCookiePrefix + cfg.dialogId, btnRemId);
+            }
+            return result;
+        }
+
+        function checkRememberMe(cfg) {
+            cfg.rememberMeValue = false;
+            if (cfg.rememberMe && !cfg.dialogId) {
+                cfg.rememberMe = false;
+            }
+
+            if (cfg.rememberMe && cfg.dialogId && $cookieStore.get(dialogCookiePrefix + cfg.dialogId)) {
+
+                var actionFound = false;
+                var btnRemId = $cookieStore.get(dialogCookiePrefix + cfg.dialogId);
+                if (btnRemId === 'fnDefaultAction' && cfg.fnDefaultAction) {
+                    actionFound = true;
+                    cfg.fnDefaultAction(cfg);
+                } else if (btnRemId === 'fnCancelAction' && cfg.fnCancelAction) {
+                    actionFound = true;
+                    cfg.fnCancelAction(cfg);
+                } else {
+                    var b = null;
+                    angular.forEach(cfg.buttons, function(btn) {
+                        if (btn.text === btnRemId) {
+                            b = btn;
+                        }
+                    });
+                    if (b) {
+                        if (b.action) {
+                            actionFound = true;
+                            b.action(cfg, b);
+                        } else if (b.fnButtonAction) {
+                            actionFound = true;
+                            b.fnButtonAction(cfg, b);
+                        }
+                    }
+                }
+
+                if (!actionFound) {
+                    return -1;
+                }
+                return 1;
+            }
+            return 0;
+        }
+
+        /**
+         * @name setPaneStatus
+         * @private
+         * @description
+         * sets the status for the panel dialogs
+         */
+        function setPaneStatus(options, cfg) {
+            if (options && options.status) {
+                var status = options.status.toLowerCase();
+                cfg.titleClass = (status === 'warning') ? 'text-warning' :
+                    ((status === 'error') ? 'text-danger' : 'text-success');
+                cfg.icon = (status === 'warning' || status === 'error') ? 'fa fa-4x fa-warning' :
+                    'fa fa-4x fa-check';
+            }
+        }
+
+        /**
+         * @name release
+         * @private
+         * @description
+         * releases timeouts and intervals
+         */
+        function release() {
+            if (dialogState.autoClosePromise) {
+                $timeout.cancel(dialogState.autoClosePromise);
+                dialogState.autoClosePromise = null;
+            }
+            if (dialogState.timerPromise) {
+                $interval.cancel(dialogState.timerPromise);
+                dialogState.timerPromise = null;
+            }
+        }
+
         return {
             showMessage: showMessage,
             showConfirm: showConfirm,
@@ -1620,7 +1999,8 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
             showException: showException,
             showMessageBox: showMessageBox,
             showCustomDialog: showCustomDialog,
-            hide: hide
+            hide: hide,
+            clearRememberMe: clearRememberMe
         };
     }]);
 
@@ -2499,17 +2879,17 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.modaldialog/modals/modaldialog-custom.html',
-    "<div class=\"ep-modaldialog ep-modaldialog-custom\"><div class=modal-header><span class=close ng-show=config.closeButton><button type=button data-dismiss=modal aria-label=Close ng-click=\"btnclick({isCancel: true})\"><span aria-hidden=true>&times;</span></button></span><h4 id=dialogTitle class=\"bg-primary modal-title\"><span class=\"ep-dlg-title-icon {{config.icon}}\"></span><span class=ep-dlg-title>{{config.title}}</span></h4></div><div class=modal-body><form id=dialogForm name=dialogForm><div ng-include=config.templateUrl></div></form></div><div class=modal-footer><div class=ep-dlg-buttons><button ng-repeat=\"btn in config.buttons\" id=btn.id tabindex=\"$index + 100\" data-dismiss=modal ng-hide=btn.hidden ng-disabled=\"btn.isPrimary && !dialogForm.$valid\" class=\"btn btn-{{btn.type}}\" ng-click=btnclick(btn)><i ng-if=btn.icon ng-class=btn.icon></i> &nbsp;{{btn.text}}</button></div></div><div class=ep-dlg-status ng-show=config.statusBar><h4 class=\"bg-primary modal-title\"><span>{{config.statusBarText}}</span></h4></div></div>"
+    "<div class=\"ep-modaldialog ep-modaldialog-custom\"><div class=modal-header><span class=close ng-show=config.closeButton><button type=button data-dismiss=modal aria-label=Close ng-click=\"btnclick({isCancel: true})\"><span aria-hidden=true>&times;</span></button></span><h4 id=dialogTitle class=\"bg-primary modal-title\"><span class=\"ep-dlg-title-icon {{config.icon}}\"></span> <span class=ep-dlg-title ng-bind=config.fnGetTitle()></span></h4></div><div class=modal-body><form id=dialogForm name=dialogForm><div ng-include=config.templateUrl></div><div class=\"ep-dlg-rememberMe col-md-10\" ng-show=config.rememberMe><div class=form-group><div class=\"row col-md-1\"><input tabindex=1 id=cbxRemember class=form-control type=checkbox ng-model=config.rememberMeValue></div><label class=\"col-md-10 control-label\">Do not show this message again</label></div></div></form></div><div class=modal-footer><div class=ep-dlg-buttons><button ng-repeat=\"btn in config.buttons\" id=btn.id tabindex=\"$index + 100\" data-dismiss=modal ng-hide=btn.hidden ng-disabled=\"btn.isPrimary && !dialogForm.$valid\" class=\"btn btn-{{btn.type}}\" ng-click=btnclick(btn)><i ng-if=btn.icon ng-class=btn.icon></i> &nbsp;{{btn.text}}</button></div></div><div class=ep-dlg-status ng-show=config.statusBar><h4 class=\"bg-primary modal-title\"><span>{{config.statusBarText}}</span></h4></div></div>"
   );
 
 
   $templateCache.put('src/components/ep.modaldialog/modals/modaldialog-error.html',
-    "<!--Custom Dialog Error Template--><div class=ep-modaldialog-error><div class=\"alert clearfix\" ng-class=config.statusClass><table><tr><td><span><i class=\"fa fa-3x\" ng-class=config.statusIcon></i></span></td><td><span class=ep-dlg-message ng-class=config.messageClass>{{config.message}}</span></td></tr></table></div><div class=ep-message-details ng-show=config.messageDetails><a href=\"\" ng-click=\"config.showDetails = !config.showDetails;\">{{config.showDetails ? 'Hide details': 'Show details'}}</a><div ng-show=config.showDetails><textarea ng-model=config.messageDetails ng-readonly=true disabled></textarea></div></div></div>"
+    "<!--Custom Dialog Error Template--><div class=ep-modaldialog-error><div class=\"alert clearfix\" ng-class=config.statusClass><table class=ep-dlg-bodytable><tr><td><span ng-if=config.showSpinner class=\"ep-dlg-icon fa-stack fa-2x\"><i class=\"ep-dlg-spinner-icon fa fa-spin fa-stack-2x\" ng-class=config.spinnerIconClass></i> <i ng-if=config.showTimer class=\"ep-dlg-spinner-text fa fa-stack-1x {{config.spinnerTextClass}}\" ng-class=config.spinnerTextClass>{{config.countDown}}</i></span> <span ng-if=!config.showSpinner class=ep-dlg-icon><i class=\"fa fa-3x\" ng-class=config.statusIcon></i></span></td><td><span class=ep-dlg-message ng-class=config.messageClass ng-bind=config.fnGetMessage()></span></td></tr></table></div><div class=ep-message-details ng-show=config.messageDetails><a href=\"\" ng-click=\"config.showDetails = !config.showDetails;\">{{config.showDetails ? 'Hide details': 'Show details'}}</a><div ng-show=config.showDetails><textarea ng-model=config.messageDetails ng-readonly=true disabled></textarea></div></div></div>"
   );
 
 
   $templateCache.put('src/components/ep.modaldialog/modals/modaldialog-pane.html',
-    "<div class=\"ep-modaldialog ep-modaldialog-pane ep-ease-animation ep-hide-fade\" ng-hide=!dialogState.isVisible><div class=ep-dlg-container ng-class=config.containerClass><div class=\"ep-dlg-center clearfix\"><span class=\"ep-dlg-icon pull-left\" ng-class=config.iconClass style=\"margin-right: 10px; margin-top: 5px\"><i ng-class=config.icon></i></span><div class=pull-left><span class=ep-dlg-title ng-class=config.titleClass>{{config.title}}</span><p class=ep-dlg-message ng-class=config.messageClass>{{config.message}}</p><div class=ep-dlg-progress-indicator ng-show=config.showProgress><span class=\"fa fa-spinner fa-pulse fa-5x\"></span></div><div class=ep-dlg-buttons><button ng-repeat=\"btn in config.buttons\" id=btn.id class=\"btn btn-{{btn.type}} btn-sm\" ng-click=btnclick(btn)><i ng-if=btn.icon ng-class=btn.icon></i> &nbsp;{{btn.text}}</button></div></div></div></div></div>"
+    "<div class=\"ep-modaldialog ep-modaldialog-pane ep-ease-animation ep-hide-fade\" ng-hide=!dialogState.isVisible><div class=ep-dlg-container ng-class=config.containerClass><div class=\"ep-dlg-center clearfix\"><span class=\"ep-dlg-icon pull-left\" ng-class=config.iconClass style=\"margin-right: 10px; margin-top: 5px\"><span ng-if=config.showSpinner class=\"ep-dlg-icon fa-stack fa-2x\"><i class=\"ep-dlg-spinner-icon fa fa-spin fa-stack-2x\" ng-class=config.spinnerIconClass></i> <i ng-if=config.showTimer class=\"ep-dlg-spinner-text fa fa-stack-1x\" ng-class=config.spinnerTextClass>{{config.countDown}}</i></span> <i ng-if=!config.showSpinner ng-class=config.icon></i></span><div class=pull-left><span class=ep-dlg-title ng-class=config.titleClass ng-bind=config.fnGetTitle()></span><p class=ep-dlg-message ng-class=config.messageClass ng-bind=config.fnGetMessage()></p><div class=\"ep-dlg-rememberMe form-group\" ng-show=config.rememberMe><div class=checkbox><input tabindex=1 id=cbxRemember type=checkbox ng-model=config.rememberMeValue><label>Do not show this message again</label></div></div><!--<div class=\"ep-dlg-progress-indicator\" ng-show=\"config.showProgress\"><span class=\"fa fa-pulse fa-spinner fa-5x\" ng-class=\"config.progressClass\"></span></div>--><!--<div class=\"ep-dlg-progress-indicator\" ng-show=\"config.showProgress && config.showTimer\"><span ng-class=\"config.timerClass\">{{config.countDown}}</span></div>--><div class=ep-dlg-buttons><button ng-repeat=\"btn in config.buttons\" id=btn.id tabindex=\"$index + 100\" data-dismiss=modal ng-hide=btn.hidden class=\"btn btn-{{btn.type}} btn-sm\" ng-click=btnclick(btn)><i ng-if=btn.icon ng-class=btn.icon></i> &nbsp;{{btn.text}}</button></div></div></div></div></div>"
   );
 
 
