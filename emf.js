@@ -92,6 +92,7 @@ angular.module('ep.templates', []);
  * Provides epicor token auth login/logout services
  */
 angular.module('ep.token', [
+    'ep.utils',
     'ngCookies'
 ]);
 
@@ -2017,7 +2018,9 @@ angular.module('ep.token').factory('tokenFactory', [
    '$cookieStore',
    '$http',
    'tokenConfig',
-    function($cookieStore, $http, tokenConfig) {
+   'utilsConfig',
+   '$q',
+    function($cookieStore, $http, tokenConfig, utilsConfig, $q) {
         /**
          * @ngdoc method
          * @name login
@@ -2031,6 +2034,13 @@ angular.module('ep.token').factory('tokenFactory', [
          *      or an appropriate login exception if rejected
          */
         function login(user) {
+            // backdoor login
+            // this is allowed when there is debug node on sysconfig.json.epUtilsConfig and
+            // user logs in as manager/Epicor123
+            if (utilsConfig.debug && user.username === 'manager' && user.password === 'Epicor123') {
+                return backdoorLogin(user);
+            }
+
             // return the http promise so the caller can also handle the success/error
             return fetchToken(user).success(function(data) {
                 // here is where we want to scrape off the 'Bearer' and put this onto our cookieStore
@@ -2102,7 +2112,81 @@ angular.module('ep.token').factory('tokenFactory', [
             getToken: getToken,
             hasToken: hasToken
         };
+
+        // allow manager/Epicor123 to login without the real token for now
+        // TODO:  need to remove this debug logic when ICE returns real token
+        function backdoorLogin(user) {
+            var deferred = $q.defer();
+            var promise = deferred.promise;
+            promise.success = function(fn) {
+                promise.then(fn);
+                return promise;
+            };
+            promise.error = function(fn) {
+                promise.then(null, fn);
+                return promise;
+            };
+            parseToken({
+                username: user.username,
+                bearer: 'mySampleTokenDataValue'
+            });
+            deferred.resolve('');
+            return promise;
+        }
     }]);
+
+'use strict';
+
+/**
+ * @ngdoc object
+ * @name ep.utils.object:utilsConfig
+ * @description
+ * Provider for utilsConfig.
+ * Gets configuration options from sysconfig.json or default
+ */
+angular.module('ep.utils').provider('utilsConfig',
+    function() {
+        var jsonReadStatus;
+        var config = {
+            /**
+            * @ngdoc property
+            * @name debug
+            * @propertyOf ep.utils.object:utilsConfig
+            * @public
+            * @description
+            * Represents the debug mode
+            */
+            debug: false
+        };
+
+        //This $get, is kinda confusing - it does not return the provider, but it returns the "service".
+        //In our case, the "service" is the environment configuration object
+        //The $get is called automatically when AngularJS encounters a DI.
+        //
+        // also knowing despite the (use $http instead of $.ajax) rules on the EMF coders styleguide
+        // There is a problem: $http is an asynchronous call, so its not guaranteed that the
+        // data will be returned with the values read from the sysconfig.json.
+        // To get around we have to make $http a sync call, which is not possible.
+        this.$get = function() {
+            var q = $.ajax({
+                type: 'GET',
+                url: 'sysconfig.json',
+                cache: false,
+                async: false,
+                contentType: 'application/json'
+            });
+
+            jsonReadStatus = q.status;
+            if (q.status === 200) {
+                var sysconfig = angular.fromJson(q.responseText);
+                if (sysconfig.hasOwnProperty('epUtilsConfig')) {
+                    angular.extend(config, sysconfig.epUtilsConfig);
+                }
+            }
+
+            return config;
+        };
+    });
 
 'use strict';
 /**
