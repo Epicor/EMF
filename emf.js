@@ -511,7 +511,7 @@ angular.module('ep.action.set').directive('epDynamicActionSet', [
  *      var actionSet = dynamicActionSetFactory.getDynamicActionSet('myActionSet'});
  *
  */
-angular.module('ep.action.set').service('dynamicActionSetFactory', [
+angular.module('ep.action.set').factory('dynamicActionSetFactory', [
     function() {
         /**
         * @ngdoc method
@@ -2136,6 +2136,163 @@ angular.module('ep.token').factory('tokenFactory', [
     }]);
 
 'use strict';
+/**
+ * @ngdoc service
+ * @name ep.utils.service:localStorageService
+ * @description
+ * Local storage service for the ep.utils module
+ *
+ * @example
+ *
+ *    >      localStorageService.init();
+ *    >      localStorageService.update('emf.key', 'newValue');
+ *    >      alert('value = ' + localStorageService.get('emf.key');
+ */
+angular.module('ep.utils').service('localStorageService', [
+    'utilsConfig',
+    function(utilsConfig) {
+        //  This routine parses a path string in the form of 'object.property'
+        //  and adds, updates or deletes the value at that settings location.
+        //  If value is undefined, it's assumed that the property will be removed
+        //  from the settings object
+        function setValueAtPath(obj, key, value) {
+            var head = _.first(key);
+            var tail = _.rest(key);
+
+            // recurse until we're on the last part of the path and set it's value;
+            if (tail.length) {
+                // default the sub-object as an empty object if it isn't
+                // created yet.
+                obj[head] = obj[head] || {};
+                // continue to recurse using the subobject and the rest of the path
+                setValueAtPath(obj[head], tail, value);
+            } else {
+                // No more path parts left in the key, so set or delete the value.
+                if (value === undefined) {
+                    delete obj[head];
+                } else {
+                    obj[head] = value;
+                }
+            }
+        }
+
+        //  This is the function that corresponds with the above function and returns
+        //  instead of setting them.
+        function getValueAtPath(obj, key) {
+            var head = _.first(key);
+            var tail = _.rest(key);
+
+            // recurse until we're on the last part of the path and get it's value;
+            if (tail.length) {
+                // default the sub-object as an empty object if it isn't
+                // created yet.
+                obj[head] = obj[head] || {};
+                // continue to recurse using the subobject and the rest of the path
+                return getValueAtPath(obj[head], tail);
+            } else {
+                // No more path parts left in the key, so get the value.
+                return obj[head];
+            }
+        }
+
+        function commit() {
+            // Applies any changes that have been made to the settings
+            /*jshint validthis: true */
+            localStorage.setItem(utilsConfig.settingsID, JSON.stringify(this.settings));
+        }
+
+        /**
+        * @ngdoc method
+        * @name clear
+        * @methodOf ep.utils.service:localStorageService
+        * @public
+        * @description
+        * This clears either a single key or all of the local storage.
+        * If no key is passed in, all of the settings will be cleard,
+        * otherwise only the item at the path location is removed.
+        *
+        * @param {string} key represents the key that will be removed from the localCache
+        */
+        function clear(key) {
+            if (key) {
+                var path = key.split('.');
+                // restore the individual setting to the coresponding value in
+                // the default settings
+                var defaultSetting = getValueAtPath(utilsConfig.settings, path);
+                /*jshint validthis: true */
+                setValueAtPath(this.settings, path, defaultSetting);
+            } else {
+                localStorage.removeItem(utilsConfig.settingsID);
+                this.settings = utilsConfig.settings;
+            }
+            /*jshint validthis: true */
+            this.commit();
+        }
+
+        /**
+        * @ngdoc method
+        * @name get
+        * @methodOf ep.utils.service:localStorageService
+        * @public
+        * @description
+        * This routine parses a path string in the form of 'object.property'
+        * and retrieves the value at that settings location.
+        *
+        * @param {string} key represents the key that will be used to retrieve from the localCache
+        */
+        function get(key) {
+            /*jshint validthis: true */
+            return getValueAtPath(this.settings, key.split('.'));
+        }
+        /**
+        * @ngdoc method
+        * @name init
+        * @methodOf ep.utils.service:localStorageService
+        * @public
+        * @description
+        * This initializes local storage.
+        * It will take seed data from sysconfig.json / epUtilsConfig.settings
+        */
+        function init() {
+            // Read the settings from the local storage.
+            var settingsSrc = localStorage.getItem(utilsConfig.settingsID);
+            if (settingsSrc) {
+                /*jshint validthis: true */
+                this.settings = JSON.parse(settingsSrc);
+            }
+        }
+        /**
+        * @ngdoc method
+        * @name update
+        * @methodOf ep.utils.service:localStorageService
+        * @public
+        * @description
+        * This routine parses a key string in the form of 'object.property'
+        * and adds, updates or deletes the value at that settings location.
+        * If value is undefined, it's assumed that the property will be removed
+        * from the settings object
+        *
+        * @param {string} key represents the key that will be stored on the localCache
+        * @param {string} value represents the value that will be stored on the localCache
+        *
+        */
+        function update(key, value) {
+            /*jshint validthis: true */
+            setValueAtPath(this.settings, key.split('.'), value);
+            this.commit();
+        }
+
+        return {
+            settings: utilsConfig.settings,
+            commit: commit,
+            clear: clear,
+            get: get,
+            init: init,
+            update: update
+        };
+    }]);
+
+'use strict';
 
 /**
  * @ngdoc object
@@ -2156,7 +2313,25 @@ angular.module('ep.utils').provider('utilsConfig',
             * @description
             * Represents the debug mode
             */
-            debug: false
+            debug: false,
+            /**
+            * @ngdoc property
+            * @name settings
+            * @propertyOf ep.utils.object:utilsConfig
+            * @public
+            * @description
+            * Represents the default local storage settings
+            */
+            settings: {},
+            /**
+            * @ngdoc property
+            * @name settingsID
+            * @propertyOf ep.utils.object:utilsConfig
+            * @public
+            * @description
+            * Represents the default key for localStorage
+            */
+            settingsID: 'emfSettings'
         };
 
         //This $get, is kinda confusing - it does not return the provider, but it returns the "service".
@@ -2207,13 +2382,12 @@ angular.module('ep.utils').factory('utilsFactory', [
     function() {
         /**
         * @ngdoc method
-        * @name login
+        * @name browserIsMobile
         * @methodOf ep.utils.factory:utilsFactory
         * @public
         * @description
         * Detects if function is being executed on common mobile device
         *
-        * @returns {boolean} true when function detects common mobile devices
          */
         function browserIsMobile() {
             return (function(a) {
