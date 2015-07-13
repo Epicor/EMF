@@ -30,6 +30,27 @@ angular.module('ep.action.set', [
 'use strict';
 /**
  * @ngdoc overview
+ * @name ep.drag.drop
+ * @description
+ * Provides emf drag drop capability
+ * HTML 5 provides native drag and drop functionality. In most cases the functionality provided by this API is enough
+ *  to stick with default API. But if we look at angularjs directives we can find that it provides a number of façade
+ *  directives that makes easier implementing some feature and makes code shorter and elegant. So our first intention
+ *  was to create simple directive that can add corresponding attributes and attach event handlers in the background
+ *  and make it easier for developer to add features in declarative way – assign ep-draggable attribute and make some
+ *  element draggable. Of course we can use html5 draggable attribute and make element draggable, but, there is one
+ *  more reason to use our implementation. HTML5 provides dataTransfer object for storing information about current
+ *  operation and pass values to drop handlers. But, this objects is string based key/value store. So we can’t store
+ *  objects in this store. In my opinion it’s bad because it adds additional amount of work for serializing and
+ *  deserializing of objects. And in some cases it can be very inefficient when we have collection of objects as value
+ *  of some property of serializing object.
+ */
+angular.module('ep.drag.drop', [
+]);
+
+'use strict';
+/**
+ * @ngdoc overview
  * @name ep.feature.detection
  * @description
  * This service detects features available on the client
@@ -726,6 +747,213 @@ angular.module('ep.action.set').factory('dynamicActionSetFactory', [
                     propHtml.join(' ') + '></ep-action-item>';
             };
         }
+    }]);
+
+'use strict';
+/**
+ * @ngdoc service
+ * @name ep.drag.drop.factory:dragOperationFactory
+ * @description
+ * Serves up an instance of the dragOperation
+ *
+ * @example
+ *
+ */
+angular.module('ep.drag.drop').factory('dragOperationFactory', [
+    function() {
+        /**
+         * @ngdoc method
+         * @name getDragOperation
+         * @methodOf ep.drag.drop.factory:dragOperationFactory
+         * @public
+         * @description
+         * Serves up an instance of the dragOperation
+         *
+         * @returns {object} object that represents the drag operation
+         *
+         */
+        function getDragOperation(scope) {
+            //save drag parameters for use from dropArea
+            var dragOperation = {};
+            dragOperation.dropCallback = scope.dropCallback;
+            dragOperation.dropCallbackParams = scope.dropCallbackParams;
+            dragOperation.dragItem = scope.dragItem;
+            dragOperation.dragItemType = scope.dragItemType;
+            return dragOperation;
+        }
+
+        return {
+            getDragOperation: getDragOperation
+        };
+    }]);
+
+'use strict';
+/**
+     * @ngdoc directive
+     * @name ep.drag.drop.directive:epDraggable
+     * @restrict A
+     *
+     * @description
+     * Represents the draggable attribue and properties
+     *
+     * >    dragItemType is required and we always should pass a value for it to correctly handle drop operation in
+     * drop-area directive. There isn’t restricted list of allowed values for this value. You can use any value, but
+     *  don’t forget add this value to dropItemTypes attribute of drop-area directive. We’ll talk about this attribute
+     *  later.
+     * >    dragItem contains an object that’s used as a model for item that is being dragged. There might be cases
+     * when we need some object to use in drop operation. This object will be used for as this context in dropHandler
+     * of drop-area directive.
+     * >    dropCallback and dropCallbackParams attributes are just helper attributes. see drop-area directive.
+     */
+angular.module('ep.drag.drop').directive('epDraggable', [
+    'dragOperationFactory',
+    function(dragOperationFactory) {
+        return {
+            restrict: 'A',
+            scope: {
+                //There might be cases when we want to handle drop not at the epDropArea side
+                //In this case we pass dropCallback that will be called from drop handler function in epDropArea.
+                //It also helpful when we have generic drop handler for multiple epDropAreas, that expects some parameter
+                //In this case the drop area as just a proxy for us to call dropCallback with required parameter
+                dropCallback: '=dropCallback',
+                dropCallbackParams: '=dropCallbackParams',
+                //dragged item's base object. For example OLAPEntity
+                dragItem: '=dragItem',
+                //used for deciding whether the dropArea should handle drop with this kind of dragged item
+                dragItemType: '=dragItemType'
+            },
+            compile: function(elem, attrs) {
+                if (!attrs.draggable) {
+                    elem.attr('draggable', 'true');
+                }
+                return function(scope, ele) {
+                    if (!scope.dragItemType) {
+                        throw new Error('Dragged item type is not specified!');
+                    }
+                    ele.on('dragstart', function(evt) {
+                        //save drag parameters for use from dropArea
+                        var dragOperation = dragOperationFactory.getDragOperation(scope);
+                        var getDragOperation = function() {
+                            return dragOperation;
+                        };
+                        scope.$root.$broadcast('startDraging', getDragOperation);
+                        evt.stopPropagation();
+                    });
+                };
+            }
+        };
+    }]);
+
+'use strict';
+
+/**
+ * @ngdoc controller
+ * @name ep.drag.drop.controller:epDropAreaCtrl
+ * @description
+ * Represents the drop area controller.
+ *
+ * @example
+ *
+ */
+angular.module('ep.drag.drop').controller('epDropAreaCtrl', [
+    '$scope',
+    function($scope) {
+        var vm = this;
+        vm.onDragStart = onDragStart;
+        vm.onDrop = onDrop;
+        vm.onDragOver = onDragOver;
+        var getDragOperationFnc;
+
+        /**
+         * @ngdoc method
+         * @name onDragStart
+         * @methodOf ep.drag.drop.controller:epDropAreaCtrl
+         * @public
+         * @description
+         * handles the onDragStart event
+         */
+        function onDragStart(scope, dragOperationGetter) {
+            getDragOperationFnc = dragOperationGetter;
+        }
+
+        /**
+         * @ngdoc method
+         * @name onDrop
+         * @methodOf ep.drag.drop.controller:epDropAreaCtrl
+         * @public
+         * @description
+         * handles the onDrop event
+         */
+        function onDrop(evt) {
+            var dragOperation = getDragOperationFnc();
+            var droppables = vm.dropItemTypes.split(',');
+            if (Array.isArray(droppables) && droppables.length > 1) {
+                if (droppables.indexOf(dragOperation.dragItemType) === -1) {
+                    return;
+                }
+            } else {
+                if (vm.dropItemTypes !== dragOperation.dragItemType) {
+                    return;
+                }
+            }
+            if ($scope[vm.dropHandler]) {
+                /*jshint validthis:true */
+                $scope[vm.dropHandler].call(dragOperation.dragItem || this, dragOperation);
+            }
+            evt.stopPropagation();
+        }
+
+        /**
+         * @ngdoc method
+         * @name onDragOver
+         * @methodOf ep.drag.drop.controller:epDropAreaCtrl
+         * @public
+         * @description
+         * handles the onDragOver event
+         */
+        function onDragOver(evt) {
+            // TODO Add visual feedback on drag to show whether this area support this kind of drop
+            evt.preventDefault();
+            return false;
+        }
+    }]);
+
+'use strict';
+/**
+     * @ngdoc directive
+     * @name ep.drag.drop.directive:epDropArea
+     * @restrict A
+     *
+     * @description
+     * Represents the drop area directive
+     *
+     * >    dropItemTypes is a string attribute that can contain comma separated list of item types that can be
+     * dropped to this area. This value will be used by ep-drop-area directive to check whether this drop is
+     * supported by this area.
+     * >    dropCallback and dropCallbackParams attributes.  In some cases we already have some block of code
+     * that we can run when some event occurs. We can reuse existing code in drop handler by passing a callback
+     * function and parameters array in dropCallback and dropCallbackParams attributes.
+     *
+     * @example
+     */
+angular.module('ep.drag.drop').directive('epDropArea', [
+    function() {
+        return {
+            restrict: 'A',
+            controller: 'epDropAreaCtrl',
+            controllerAs: 'dropCtrl',
+            compile: function() {
+                return function(scope, ele, attrs) {
+                    // set controller vm props
+                    scope.dropCtrl.dropItemTypes = attrs.dropItemTypes;
+                    scope.dropCtrl.dropHandler = attrs.dropHandler;
+                    // register the event handlers
+                    scope.$on('startDraging', scope.dropCtrl.onDragStart);
+                    ele.on('drop', scope.dropCtrl.onDrop);
+                    ele.on('dragover', scope.dropCtrl.onDragOver);
+                };
+            }
+        };
     }]);
 
 'use strict';
