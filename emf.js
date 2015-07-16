@@ -62,6 +62,17 @@ angular.module('ep.feature.detection', [
 'use strict';
 /**
  * @ngdoc overview
+ * @name ep.hello.world
+ * @description
+ * this is a test of hello world
+ */
+angular.module('ep.hello.world', [
+    'ep.templates'
+]);
+
+'use strict';
+/**
+ * @ngdoc overview
  * @name ep.local.storage
  * @description
  * Provides local storage property bag
@@ -975,9 +986,11 @@ angular.module('ep.feature.detection').service('epFeatureDetectionService', [
          * features holds a set of features determined once during initialization
          */
         var features = {
-            platform: {},
+            browserIsMobile: undefined,
+            supportsDragAndDrop: undefined,
             transitionEvent: null,
-            touchEvents: false
+            touchEvents: false,
+            platform: {}
         };
 
         /*  ----- Public Functions -------> */
@@ -992,18 +1005,21 @@ angular.module('ep.feature.detection').service('epFeatureDetectionService', [
         *
          */
         function browserIsMobile() {
-            return (function(a) {
-                if (typeof browserIsMobile.result !== 'undefined') {
-                    return browserIsMobile.result;
-                }
-                var res = false;
-                // http://detectmobilebrowsers.com way to check browser
-                if (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i.test(a) || /1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(a.substr(0, 4))) {
-                    res = true;
-                }
-                browserIsMobile.result = res;
-                return res;
-            })(navigator.userAgent || navigator.vendor || window.opera);
+            if (features.browserIsMobile === undefined) {
+                features.browserIsMobile = (function(a) {
+                    if (typeof browserIsMobile.result !== 'undefined') {
+                        return browserIsMobile.result;
+                    }
+                    var res = false;
+                    // http://detectmobilebrowsers.com way to check browser
+                    if (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i.test(a) || /1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(a.substr(0, 4))) {
+                        res = true;
+                    }
+                    browserIsMobile.result = res;
+                    return res;
+                })(navigator.userAgent || navigator.vendor || window.opera);
+            }
+            return features.browserIsMobile;
         }
 
         /**
@@ -1017,7 +1033,10 @@ angular.module('ep.feature.detection').service('epFeatureDetectionService', [
         * @returns {boolean} true when current document node contains 'draggable'
         */
         function supportsDragAndDrop() {
-            return 'draggable' in document.createElement('span');
+            if (features.supportsDragAndDrop === undefined) {
+                features.supportsDragAndDrop = 'draggable' in document.createElement('span');
+            }
+            return features.supportsDragAndDrop;
         }
 
         /**
@@ -1036,22 +1055,27 @@ angular.module('ep.feature.detection').service('epFeatureDetectionService', [
 
         /**
         * @ngdoc method
-        * @name getPlatform
+        * @name getFeatures
         * @methodOf ep.feature.detection.service:epFeatureDetectionService
         * @public
         * @description
         * provides an object with platform settings as follows:
-        *
-        * platform = {
-        *   app: 'Web',
-        *   os: os,
-        *   browser: { name, fullVersion, majorVersion, appName, userAgent }
+        * {
+        *   browserIsMobile
+        *   supportsDragAndDrop
+        *   transitionEvent
+        *   touchEvents
+        *   platform = {
+        *       app: 'Web',
+        *       os: os,
+        *       browser: { name, fullVersion, majorVersion, appName, userAgent }
+        *   }
         * }
         *
-        * @returns {object} containing platform settings
+        * @returns {object} containing features settings
         */
-        function getPlatform() {
-            return features.platform;
+        function getFeatures() {
+            return features;
         }
 
         /**
@@ -1108,6 +1132,8 @@ angular.module('ep.feature.detection').service('epFeatureDetectionService', [
         * One time service initialization to detect static features
         */
         function initialize() {
+            features.browserIsMobile = browserIsMobile();
+            features.supportsDragAndDrop = supportsDragAndDrop();
             features.transitionEvent = whichTransitionEvent();
             features.touchEvents = ('ontouchstart' in window) ||
             (navigator.maxTouchPoints > 0) ||
@@ -1221,7 +1247,87 @@ angular.module('ep.feature.detection').service('epFeatureDetectionService', [
             supportsDragAndDrop: supportsDragAndDrop,
             getTransitionEvent: getTransitionEvent,
             hasTouchEvents: hasTouchEvents,
-            getPlatform: getPlatform
+            getFeatures: getFeatures
+        };
+    }]);
+
+'use strict';
+
+/**
+ * @ngdoc controller
+ * @name ep.hello.world.controller:epHelloWorldCtrl
+ * @description
+ * Represents the epHelloWorld controller for the
+ * ep.hello.world module, or specific for directive ep-hello-world
+ *
+ * @example
+ *
+ */
+angular.module('ep.hello.world').controller('epHelloWorldCtrl', [
+    '$scope',
+    function($scope) {
+        // do something with $scope property
+        $scope.myProperty = 'emf';
+
+        /////**
+        //// * @ngdoc method
+        //// * @name myFunction
+        //// * @methodOf ep.hello.world.controller:epHelloWorldCtrl
+        //// * @public
+        //// * @description
+        //// * Handles the myFunction request
+        //// */
+        ////$scope.myFunction = function() {
+        ////    // do something else with $scope property
+        ////    // $scope.myProperty = 'new property value';
+        ////};
+    }
+]);
+
+'use strict';
+/**
+* @ngdoc directive
+* @name ep.hello.world.directive:epHelloWorld
+* @restrict E
+*
+* @description
+* Represents the ep.hello.world directive
+*
+* @example
+*/
+angular.module('ep.hello.world').directive('epHelloWorld',
+    function() {
+        return {
+            restrict: 'E',
+            controller: 'epHelloWorldCtrl',
+            templateUrl: 'src/components/ep.hello.world/hello-world.html',
+        };
+    });
+
+'use strict';
+/**
+ * @ngdoc service
+ * @name ep.hello.world.service:helloWorldService
+ * @description
+ * Service for the ep.hello.world module
+ * this is a test of hello world
+ *
+ * @example
+ *
+ */
+angular.module('ep.hello.world').service('helloWorldService', [
+    function() {
+        /**
+         * @ngdoc method
+         * @name publicFunction
+         * @methodOf ep.hello.world.service:helloWorldService
+         * @public
+         * @description
+         * sample public service function stub
+         */
+        this.publicFunction = function() {
+            // do something
+            return 'newDefault';
         };
     }]);
 
@@ -1303,6 +1409,8 @@ angular.module('ep.local.storage').provider('epLocalStorageConfig',
 angular.module('ep.local.storage').service('epLocalStorageService', [
     'epLocalStorageConfig',
     function(epLocalStorageConfig) {
+        var settings = angular.extend({}, epLocalStorageConfig.settings);
+
         //  This routine parses a path string in the form of 'object.property'
         //  and adds, updates or deletes the value at that settings location.
         //  If value is undefined, it's assumed that the property will be removed
@@ -1350,9 +1458,9 @@ angular.module('ep.local.storage').service('epLocalStorageService', [
         function commit() {
             // Applies any changes that have been made to the settings
             /*jshint validthis: true */
-            localStorage.setItem(epLocalStorageConfig.settingsID, JSON.stringify(this.settings));
+            localStorage.setItem(epLocalStorageConfig.settingsID, JSON.stringify(settings));
         }
-
+        /* ------------- Public Methods ----------------------> */
         /**
         * @ngdoc method
         * @name clear
@@ -1372,13 +1480,13 @@ angular.module('ep.local.storage').service('epLocalStorageService', [
                 // the default settings
                 var defaultSetting = getValueAtPath(epLocalStorageConfig.settings, path);
                 /*jshint validthis: true */
-                setValueAtPath(this.settings, path, defaultSetting);
+                setValueAtPath(settings, path, defaultSetting);
             } else {
                 localStorage.removeItem(epLocalStorageConfig.settingsID);
-                this.settings = epLocalStorageConfig.settings;
+                settings = angular.extend({}, epLocalStorageConfig.settings);
             }
             /*jshint validthis: true */
-            this.commit();
+            commit();
         }
 
         /**
@@ -1394,7 +1502,7 @@ angular.module('ep.local.storage').service('epLocalStorageService', [
         */
         function get(key) {
             /*jshint validthis: true */
-            return getValueAtPath(this.settings, key.split('.'));
+            return getValueAtPath(settings, key.split('.'));
         }
         /**
         * @ngdoc method
@@ -1410,7 +1518,7 @@ angular.module('ep.local.storage').service('epLocalStorageService', [
             var settingsSrc = localStorage.getItem(epLocalStorageConfig.settingsID);
             if (settingsSrc) {
                 /*jshint validthis: true */
-                this.settings = JSON.parse(settingsSrc);
+                settings = JSON.parse(settingsSrc);
             }
         }
         /**
@@ -1430,17 +1538,41 @@ angular.module('ep.local.storage').service('epLocalStorageService', [
         */
         function update(key, value) {
             /*jshint validthis: true */
-            setValueAtPath(this.settings, key.split('.'), value);
-            this.commit();
+            setValueAtPath(settings, key.split('.'), value);
+            commit();
+        }
+        /**
+        * @ngdoc method
+        * @name getOrAdd
+        * @methodOf ep.local.storage.service:epLocalStorageService
+        * @public
+        * @description
+        * This routine is a combination of two calls "get(key)" and a
+        * subsequent "update(key,value)" if the key is missing.
+        * If the key is found value is returned, if not found, the supplied value
+        * is added under this key.
+        *
+        * @param {string} key represents the key that will be stored on the localCache
+        * @param {string} value represents the value that will be stored on the localCache
+        *
+        */
+        function getOrAdd(key, value) {
+            var ret = get(key);
+            if (ret === undefined) {
+                update(key, value);
+                ret = value;
+            }
+            return ret;
         }
 
+        //call just once to initialize
+        init();
+
         return {
-            settings: epLocalStorageConfig.settings,
-            commit: commit,
-            clear: clear,
             get: get,
-            init: init,
-            update: update
+            update: update,
+            getOrAdd: getOrAdd,
+            clear: clear
         };
     }]);
 
@@ -1628,9 +1760,8 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
     '$rootScope',
     '$timeout',
     '$interval',
-    '$cookieStore',
-    '$cookies',
-    function($modal, $compile, $rootScope, $timeout, $interval, $cookieStore, $cookies) {
+    'epLocalStorageService',
+    function($modal, $compile, $rootScope, $timeout, $interval, epLocalStorageService) {
 
         /**
          * @private
@@ -1667,7 +1798,8 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
         var currentModalInstance = null;
 
         // @private
-        var dialogCookiePrefix = 'emf.dialogs.dialogId.';
+        // prefix for dialogs RememberMe option. Must end with a dot '.'
+        var dialogStoragePrefix = 'emf.dialogs.dialogId.';
 
         /**
          * @ngdoc method
@@ -1910,16 +2042,11 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
 
             hide(); // hide dialog pane if it was open
 
-            if (cfg.buttons && cfg.buttons.length) {
-                angular.forEach(cfg.buttons, function(btn) {
-                    if (!btn.type) { btn.type = 'default'; } //set default button style
-                });
-            }
-
             if (checkRememberMe(cfg) === 1) {
                 return;
             }
 
+            cfg._isModalDialog = true;
             setCommonOptions(cfg);
 
             return $modal.open({
@@ -1971,14 +2098,10 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
          */
         function clearRememberMe(dialogId) {
             if (dialogId) {
-                $cookieStore.remove(dialogCookiePrefix + dialogId);
+                epLocalStorageService.clear(dialogStoragePrefix + dialogId);
             } else {
-                //clear all dialog cookies
-                angular.forEach($cookies, function(v, key) {
-                    if (v && key.indexOf(dialogCookiePrefix) === 0) {
-                        $cookieStore.remove(key);
-                    }
-                });
+                //clear all dialog settings
+                epLocalStorageService.clear(dialogStoragePrefix.substr(0, dialogStoragePrefix.length - 1));
             }
         }
 
@@ -2030,12 +2153,6 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
             // override default values with values provided.
             copyProperties(options, cfg);
 
-            if (cfg.buttons && cfg.buttons.length) {
-                angular.forEach(cfg.buttons, function(btn) {
-                    if (!btn.type) { btn.type = 'default'; } //set default button style
-                });
-            }
-
             if (checkRememberMe(cfg)) {
                 hide();
                 return;
@@ -2053,6 +2170,8 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
                 angular.element(document.body).append($compile('<epmodaldialog></epmodaldialog>')(
                     dialogState.paneScope));
             }
+
+            cfg._isModalDialog = false;
             setCommonOptions(cfg);
 
             dialogState.config = cfg;
@@ -2069,6 +2188,21 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
          * sets options common both to dialog and panel
          */
         function setCommonOptions(cfg) {
+            if (cfg.buttons && cfg.buttons.length) {
+                angular.forEach(cfg.buttons, function(btn) {
+                    //set default button style
+                    if (!btn.type) {
+                        if (cfg._isModalDialog && btn.isDefault === true) {
+                            btn.type = 'primary';
+                        } else if (cfg._isModalDialog && btn.isCancel === true) {
+                            btn.type = 'warning';
+                        } else {
+                            btn.type = 'default';
+                        }
+                    }
+                });
+            }
+
             if (cfg.autoClose) {
                 cfg.messageHasTimer = (cfg.message.indexOf('{timer}') >= 0);
                 cfg.titleHasTimer = (cfg.title.indexOf('{timer}') >= 0);
@@ -2119,6 +2253,12 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
             };
         }
 
+        /*
+        * @name onButtonClick
+        * @private
+        * @description
+        * when button is clicked processing
+        */
         function onButtonClick(cfg, btn) {
             var result = 0;
             var btnRemId = '';
@@ -2140,21 +2280,26 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
 
             if (cfg.rememberMeValue && cfg.dialogId && btnRemId) {
                 //need button id.
-                $cookieStore.put(dialogCookiePrefix + cfg.dialogId, btnRemId);
+                epLocalStorageService.update(dialogStoragePrefix + cfg.dialogId, btnRemId);
             }
             return result;
         }
 
+        /*
+        * @name checkRememberMe
+        * @private
+        * @description
+        * checks if rememeberMe action is to be invoked
+        */
         function checkRememberMe(cfg) {
             cfg.rememberMeValue = false;
             if (cfg.rememberMe && !cfg.dialogId) {
                 cfg.rememberMe = false;
             }
 
-            if (cfg.rememberMe && cfg.dialogId && $cookieStore.get(dialogCookiePrefix + cfg.dialogId)) {
-
+            if (cfg.rememberMe && cfg.dialogId && epLocalStorageService.get(dialogStoragePrefix + cfg.dialogId)) {
                 var actionFound = false;
-                var btnRemId = $cookieStore.get(dialogCookiePrefix + cfg.dialogId);
+                var btnRemId = epLocalStorageService.get(dialogStoragePrefix + cfg.dialogId);
                 if (btnRemId === 'fnDefaultAction' && cfg.fnDefaultAction) {
                     actionFound = true;
                     cfg.fnDefaultAction(cfg);
@@ -3098,6 +3243,11 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
   $templateCache.put('src/components/ep.action.set/action-menu/action-menu.html',
     "<div id=ep-actions-menu-ctr ng-show=actionMenuCtrl.actions><ul class=\"dropdown-menu ep-actions-menu list-unstyled noselect\" role=menu><li ng-repeat=\"action in actionMenuCtrl.actions\" ng-if=\"!action.switch || action.switch(action.switchParams) == action.switchResult\" ng-switch=action.type ng-class=\"{'hidden': action.switch != null && action.switch == false}\"><a ng-switch-when=action class=ep-actions-menu-item ng-click=\"actionMenuCtrl.invokeAction($event, action)\"><span class=\"icon {{action.icon}}\"></span><span>{{::action.title}}</span></a><div ng-switch-when=separator class=ep-actions-menu-item-separator></div></li><li class=ep-actions-menu-item-mobile><a class=\"ep-actions-menu-item edd-red separate\" ng-click=actionMenuCtrl.close()><span class=\"icon icon-clear\"></span><span>Close</span></a></li></ul></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.hello.world/hello-world.html',
+    "<!--This is a partial for the ep-hello-world directive --><div class=ep-hello-world ng-controller=epHelloWorldCtrl>Hello <input ng-model=\"myProperty\"><hr><span>{{myProperty}}</span><br></div>"
   );
 
 
