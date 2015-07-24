@@ -62,17 +62,6 @@ angular.module('ep.feature.detection', [
 'use strict';
 /**
  * @ngdoc overview
- * @name ep.hello.world
- * @description
- * this is a test of hello world
- */
-angular.module('ep.hello.world', [
-    'ep.templates'
-]);
-
-'use strict';
-/**
- * @ngdoc overview
  * @name ep.local.storage
  * @description
  * Provides local storage property bag
@@ -1254,86 +1243,6 @@ angular.module('ep.feature.detection').service('epFeatureDetectionService', [
 'use strict';
 
 /**
- * @ngdoc controller
- * @name ep.hello.world.controller:epHelloWorldCtrl
- * @description
- * Represents the epHelloWorld controller for the
- * ep.hello.world module, or specific for directive ep-hello-world
- *
- * @example
- *
- */
-angular.module('ep.hello.world').controller('epHelloWorldCtrl', [
-    '$scope',
-    function($scope) {
-        // do something with $scope property
-        $scope.myProperty = 'emf';
-
-        /////**
-        //// * @ngdoc method
-        //// * @name myFunction
-        //// * @methodOf ep.hello.world.controller:epHelloWorldCtrl
-        //// * @public
-        //// * @description
-        //// * Handles the myFunction request
-        //// */
-        ////$scope.myFunction = function() {
-        ////    // do something else with $scope property
-        ////    // $scope.myProperty = 'new property value';
-        ////};
-    }
-]);
-
-'use strict';
-/**
-* @ngdoc directive
-* @name ep.hello.world.directive:epHelloWorld
-* @restrict E
-*
-* @description
-* Represents the ep.hello.world directive
-*
-* @example
-*/
-angular.module('ep.hello.world').directive('epHelloWorld',
-    function() {
-        return {
-            restrict: 'E',
-            controller: 'epHelloWorldCtrl',
-            templateUrl: 'src/components/ep.hello.world/hello-world.html',
-        };
-    });
-
-'use strict';
-/**
- * @ngdoc service
- * @name ep.hello.world.service:helloWorldService
- * @description
- * Service for the ep.hello.world module
- * this is a test of hello world
- *
- * @example
- *
- */
-angular.module('ep.hello.world').service('helloWorldService', [
-    function() {
-        /**
-         * @ngdoc method
-         * @name publicFunction
-         * @methodOf ep.hello.world.service:helloWorldService
-         * @public
-         * @description
-         * sample public service function stub
-         */
-        this.publicFunction = function() {
-            // do something
-            return 'newDefault';
-        };
-    }]);
-
-'use strict';
-
-/**
  * @ngdoc object
  * @name ep.local.storage.object:epLocalStorageConfig
  * @description
@@ -1754,7 +1663,7 @@ angular.module('ep.modaldialog').directive('epmodaldialog', [
  *          title: 'This is a custom dialog (error template)', status: 'warning', message: "Hello world" });
  *
  */
-angular.module('ep.modaldialog').factory('epModalDialogService', [
+angular.module('ep.modaldialog').service('epModalDialogService', [
     '$modal',
     '$compile',
     '$rootScope',
@@ -1809,6 +1718,7 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
          * @description
          * display standard message dialog
          * @param {object} options - optional settings as follows:
+         * <pre>
          *      message - the message to display
          *      title - title (header)
          *      icon - font awesome icon class
@@ -1818,6 +1728,7 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
          *      fnCancelAction - function to be fired on Cancel button if button has isCancel = true
          *      autoClose - time in milliseconds to autoclose
          *      titleClass, iconClass, contentClass - optional classes applied to respective areas
+         *  </pre>
          */
         function showMessage(options) {
             var cfg = {
@@ -1840,6 +1751,7 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
          * @description
          * display standard message dialog with Yes/No
          * @param {object} options - optional settings as follows:
+         * <pre>
          *      message - the message to display
          *      title - title (header)
          *      icon - font awesome icon class
@@ -1849,6 +1761,7 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
          *      fnCancelAction - function to be fired on Cancel button if button has isCancel = true
          *      autoClose - time in milliseconds to autoclose
          *      titleClass, iconClass, contentClass - optional classes applied to respective areas
+         * </pre>
          */
         function showConfirm(options) {
             var cfg = {
@@ -1878,6 +1791,7 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
          * @description
          * display standard progress dialog with message
          * @param {object} options - optional settings as follows:
+         * <pre>
          *      message - the message to display
          *      title - title (header)
          *      icon - font awesome icon class
@@ -1887,6 +1801,7 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
          *      fnCancelAction - function to be fired on Cancel button if button has isCancel = true
          *      autoClose - time in milliseconds to autoclose
          *      titleClass, iconClass, contentClass - optional classes applied to respective areas
+         * </pre>
          */
         function showProgress(options) {
             var cfg = {
@@ -1907,6 +1822,7 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
          * @description
          * display standard exception dialog
          * @param {object} options - optional settings as follows:
+         * <pre>
          *      all options from showCustomDialog() and additional:
          *      message - the message to display
          *      title - the title (header)
@@ -1915,6 +1831,7 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
          *      status - warning\error\information
          *      fnDefaultAction - function applied to default button if buttons are not supplied or isDefault = true
          *      fnCancelAction - function to be fired on Cancel button if button has isCancel = true
+         * </pre>
          * @param {object} ex - Error object thrown by javascript. Optional - not used for server exceptions
          */
         function showException(options, ex) {
@@ -1969,6 +1886,7 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
          * @description
          * display traditional message box
          * @param {object} options - settings neccessary to display dialog:
+         * <pre>
          *      all options from showCustomDialog() and additional:
          *      message - the message to display
          *      title - the title (header)
@@ -1978,6 +1896,7 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
          *      statusClass - class for status area (set by default from status)
          *      fnDefaultAction - function applied to default button if buttons are not supplied or isDefault: true set
          *      fnCancelAction - function to be fired on Cancel button if button has isCancel = true
+         * </pre>
          */
         function showMessageBox(options) {
             var cfg = {
@@ -2026,6 +1945,7 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
          * @description
          * display custom dialog based on a template
          * @param {object} options - settings neccessary to display custom dialog:
+         * <pre>
          *      templateUrl - the template html for custom dialog's container
          *      size - 'small'/'large'/'' (default)
          *      icon - font awesome icon class (icon in the header)
@@ -2036,6 +1956,7 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
          *      statusBar - set true to display status bar (default false)
          *      statusBarText - the text to display in status bar (default empty)
          *      closeButton - set true to display close button (default false)
+         * </pre>
          */
         function showCustomDialog(options) {
             var cfg = options; //for compatability with show()
@@ -2134,6 +2055,7 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
          * @description
          * display panel dialog (confirmation)
          * @param {object} options - optional settings as follows:
+         * <pre>
          *      message - the message to display
          *      title - title (header)
          *      icon - font awesome icon class
@@ -2141,6 +2063,7 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
          *      fnDefaultAction - function applied to default button if buttons are not supplied
          *      autoClose - time in milliseconds to autoclose
          *      titleClass, iconClass, contentClass - optional classes applied to respective areas
+         * </pre>
          */
         function show(options) {
             release();
@@ -2376,11 +2299,6 @@ angular.module('ep.modaldialog').factory('epModalDialogService', [
             clearRememberMe: clearRememberMe
         };
     }]);
-
-/* TO DO:
-1. Move copyProprties to utilitiesService
-
-*/
 
 'use strict';
 /**
@@ -3237,17 +3155,137 @@ angular.module('ep.utils').provider('utilsConfig',
         };
     });
 
+'use strict';
+/**
+ * @ngdoc service
+ * @name ep.utils.service:epUtilsService
+ * @description
+ * Provides Epicor Mobile Framework Utility functions
+ *
+ * @example
+ *       var str = epUtilsService.strFormat('The first name is: {0} and the last name {1}','Michael','Jackson');
+ *       //results in 'The first name is: Michael and the last name Jackson'
+ *
+ */
+angular.module('ep.utils').service('epUtilsService', [
+    function() {
+        /**
+        * @ngdoc method
+        * @name strFormat
+        * @methodOf ep.utils.service:epUtilsService
+        * @public
+        * @description
+        * Formats the string in the same way as .NET strFormat('first argument is {0}, second is {1}', 'arg1', 'arg2')
+        * will result in 'first argument is arg1, second is arg2'
+        * @example
+        *   var str = epUtilsService.strFormat('The first name is: {0} and the last name {1}','Michael','Jackson');
+        * @returns {string} string with combined arguments
+         */
+        function strFormat(str) {
+            if (!str || arguments.length < 1) {
+                return '';
+            }
+            var ret = str;
+            if (arguments.length > 1) {
+                var tempArgs = arguments;
+                ret = ret.replace(/\{\d+\}/g, function(match) {
+                    var index = +match.slice(1, -1);
+                    var arg = null;
+
+                    if (index + 1 < tempArgs.length) {
+                        arg = tempArgs[index + 1];
+                    }
+                    return arg;
+                });
+            }
+            return ret;
+        }
+
+        /**
+        * @ngdoc method
+        * @name supportsDragAndDrop
+        * @methodOf ep.utils.service:epUtilsService
+        * @public
+        * @description
+        * Constructs an object out of an array by using
+        * the idAccessor to map each item to a property name.
+        * The idAccessor can be either a string or a function.
+        * If it's a string then it must refer to a property name
+        * that exists on each item of the array.
+        * If it's a function then the function must exist on each
+        * item of the array. The result of the property/function
+        * must yield either a unique string value or a function that yields
+        * a unique string value for each item of the array.
+        * @returns {object} return a map object
+        */
+        function mapArray(arr, idAccessor) {
+            var result = {};
+            arr.forEach(function(obj) {
+                var id;
+                var idVal;
+
+                if (angular.isString(idAccessor)) {
+                    idVal = obj[idAccessor];
+                } else if (angular.isFunction(idAccessor)) {
+                    idVal = idAccessor(obj);
+                } else {
+                    throw new Error('mapArray called with an invalid idAccessor.');
+                }
+                if (angular.isFunction(idVal)) {
+                    id = idVal();
+                } else {
+                    id = idVal;
+                }
+                result[id] = obj;
+            });
+            return result;
+        }
+
+        /**
+        * @ngdoc method
+        * @name copyProperties
+        * @methodOf ep.utils.service:epUtilsService
+        * @public
+        * @description
+        * Copies properties from source to dest
+        * The property is copied only if source property is not null
+        * This is useful to copy new properties values over default object
+        * but only when new property is provided.
+        * @returns {object} copied object
+        */
+        function copyProperties(source, dest) {
+            if (!source || !dest) {
+                return;
+            }
+            angular.forEach(source, function(value, propName) {
+                if (source[propName] !== null) {
+                    if (angular.isArray(source[propName])) {
+                        dest[propName] = source[propName];
+                    } else if (angular.isObject(source[propName])) {
+                        if (!angular.isObject(dest[propName])) {
+                            dest[propName] = {};
+                        }
+                        copyProperties(source[propName], dest[propName]);
+                    } else {
+                        dest[propName] = source[propName];
+                    }
+                }
+            });
+        }
+
+        return {
+            strFormat: strFormat,
+            mapArray: mapArray,
+            copyProperties: copyProperties
+        };
+    }]);
+
 //# sourceMappingURL=app.min.js.map
 angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   'use strict';
 
   $templateCache.put('src/components/ep.action.set/action-menu/action-menu.html',
     "<div id=ep-actions-menu-ctr ng-show=actionMenuCtrl.actions><ul class=\"dropdown-menu ep-actions-menu list-unstyled noselect\" role=menu><li ng-repeat=\"action in actionMenuCtrl.actions\" ng-if=\"!action.switch || action.switch(action.switchParams) == action.switchResult\" ng-switch=action.type ng-class=\"{'hidden': action.switch != null && action.switch == false}\"><a ng-switch-when=action class=ep-actions-menu-item ng-click=\"actionMenuCtrl.invokeAction($event, action)\"><span class=\"icon {{action.icon}}\"></span><span>{{::action.title}}</span></a><div ng-switch-when=separator class=ep-actions-menu-item-separator></div></li><li class=ep-actions-menu-item-mobile><a class=\"ep-actions-menu-item edd-red separate\" ng-click=actionMenuCtrl.close()><span class=\"icon icon-clear\"></span><span>Close</span></a></li></ul></div>"
-  );
-
-
-  $templateCache.put('src/components/ep.hello.world/hello-world.html',
-    "<!--This is a partial for the ep-hello-world directive --><div class=ep-hello-world ng-controller=epHelloWorldCtrl>Hello <input ng-model=\"myProperty\"><hr><span>{{myProperty}}</span><br></div>"
   );
 
 
