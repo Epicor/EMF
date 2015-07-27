@@ -128,6 +128,17 @@ angular.module('ep.templates', []);
 'use strict';
 /**
  * @ngdoc overview
+ * @name ep.theme
+ * @description
+ * This service returns a list of themes installed in the \css\themes directory
+ */
+angular.module('ep.theme', [
+    'ep.templates'
+]);
+
+'use strict';
+/**
+ * @ngdoc overview
  * @name ep.token
  * @description
  * Provides epicor token auth login/logout services
@@ -2903,6 +2914,137 @@ angular.module('ep.search').factory('searchService', [
 
         return {
             search: search
+        };
+    }]);
+
+'use strict';
+
+/**
+ * @ngdoc object
+ * @name ep.theme.object:epThemeConfig
+ * @description
+ * Provider for epThemeConfig.
+ * Gets configuration options from sysconfig.json or default
+ */
+angular.module('ep.theme').provider('epThemeConfig',
+    function() {
+        var jsonReadStatus;
+        var config = {
+            /**
+            * @ngdoc property
+            * @name themes
+            * @propertyOf ep.theme.object:epThemeConfig
+            * @public
+            * @description
+            * Represents the collection of available themes
+            */
+            themes: [
+                { 'ThemeNam': 'bootstrap', 'ThemeCssFilename': 'bootstrap.min.css' },
+                { 'ThemeName': 'flatly', 'ThemeCssFilename': 'flatly.min.css' }
+            ],
+
+            /**
+            * @ngdoc property
+            * @name theme
+            * @propertyOf ep.theme.object:epThemeConfig
+            * @public
+            * @description
+            * Represents the default theme
+            */
+            theme: {
+                'ThemeName': 'bootstrap',
+                'ThemeCssFilename': 'bootstrap.min.css'
+            }
+        };
+
+        //This $get, is kinda confusing - it does not return the provider, but it returns the "service".
+        //In our case, the "service" is the environment configuration object
+        //The $get is called automatically when AngularJS encounters a DI.
+        //
+        // also knowing despite the (use $http instead of $.ajax) rules on the EMF coders styleguide
+        // There is a problem: $http is an asynchronous call, so its not guaranteed that the
+        // data will be returned with the values read from the sysconfig.json.
+        // To get around we have to make $http a sync call, which is not possible.
+        this.$get = function() {
+            var q = $.ajax({
+                type: 'GET',
+                url: 'sysconfig.json',
+                cache: false,
+                async: false,
+                contentType: 'application/json'
+            });
+
+            jsonReadStatus = q.status;
+            if (q.status === 200) {
+                var sysconfig = angular.fromJson(q.responseText);
+                if (sysconfig.hasOwnProperty('epThemeConfig')) {
+                    angular.extend(config, sysconfig.epThemeConfig);
+                }
+            }
+
+            return config;
+        };
+    });
+
+'use strict';
+/**
+ * @ngdoc service
+ * @name ep.theme.service:epThemeService
+ * @description
+ * Service for the ep.theme module
+ * This service returns a list of themes installed in the \css\themes directory
+ *
+ * @example
+ *
+ */
+angular.module('ep.theme').service('epThemeService', [
+    'epThemeConfig',
+    function(epThemeConfig) {
+
+        // set the default theme
+        var _theme = angular.extend({}, epThemeConfig.theme);
+
+        /**
+         * @ngdoc method
+         * @name getThemes
+         * @methodOf ep.theme.service:epThemeService
+         * @public
+         * @description
+         * Gets the collection of themes from the epThemeConfig / sysconfig.json
+         */
+        this.getThemes = function() {
+            return epThemeConfig.themes;
+        };
+        /**
+        * @ngdoc method
+        * @name getTheme
+        * @methodOf ep.theme.service:epThemeService
+        * @public
+        * @description
+        * Gets the theme by name
+        */
+        this.getTheme = function(name) {
+            return _.find(this.getThemes(), function(t) { return t.ThemeName === name; });
+        };
+
+        /**
+        * @ngdoc method
+        * @name theme
+        * @methodOf ep.theme.service:epThemeService
+        * @public
+        * @description
+        * sets the theme by name
+        */
+        this.theme = function(newTheme) {
+            if (newTheme) {
+                _theme = _.find(this.getThemes(), function(t) { return t.ThemeName === newTheme; });
+
+                // if the one that is set is not found then default it back
+                if (!_theme) {
+                    _theme = _.find(this.getThemes(), function(t) { return t.ThemeName === 'bootstrap'; });
+                }
+            }
+            return _theme;
         };
     }]);
 

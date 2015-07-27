@@ -1,5 +1,25 @@
 ﻿{
-    "epTokenConfig" : {
-    	"restUri": "https://localhost/ICE3/TokenResource.svc/"
+    "epTokenConfig": {
+        "restUri": "https://localhost/ICE3/TokenResource.svc/"
+    },
+
+    "epThemeConfig": {
+        "theme":  {"ThemeName": "bootstrap", "ThemeCssFilename": "bootstrap.min.css"},
+        "themes": [
+            { "ThemeName": "bootstrap", "ThemeCssFilename": "bootstrap.min.css" },
+            { "ThemeName": "cerulum", "ThemeCssFilename": "cerulum.min.css" },
+            { "ThemeName": "cosmo", "ThemeCssFilename": "cosmo.min.css" },
+            { "ThemeName": "cyborg", "ThemeCssFilename": "cyborg.min.css" },
+            { "ThemeName": "darkly", "ThemeCssFilename": "darkly.min.css" },
+            { "ThemeName": "flatly", "ThemeCssFilename": "flatly.min.css" },
+            { "ThemeName": "journal", "ThemeCssFilename": "journal.min.css" },
+            { "ThemeName": "paper", "ThemeCssFilename": "paper.min.css" },
+            { "ThemeName": "sandstone", "ThemeCssFilename": "sandstone.min.css" },
+            { "ThemeName": "slate", "ThemeCssFilename": "slate.min.css" },
+            { "ThemeName": "spacelab", "ThemeCssFilename": "spacelab.min.css" },
+            { "ThemeName": "superhero", "ThemeCssFilename": "superhero.min.css" },
+            { "ThemeName": "united", "ThemeCssFilename": "united.min.css" },
+            { "ThemeName": "yeti", "ThemeCssFilename": "yeti.min.css" }
+        ]
     }
 }
