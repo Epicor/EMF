@@ -4,22 +4,22 @@
     },
 
     "epThemeConfig": {
-        "theme":  {"ThemeName": "bootstrap", "ThemeCssFilename": "bootstrap.min.css"},
+        "theme":  {"name": "bootstrap", "cssFilename": "bootstrap.min.css"},
         "themes": [
-            { "ThemeName": "bootstrap", "ThemeCssFilename": "bootstrap.min.css" },
-            { "ThemeName": "cerulum", "ThemeCssFilename": "cerulum.min.css" },
-            { "ThemeName": "cosmo", "ThemeCssFilename": "cosmo.min.css" },
-            { "ThemeName": "cyborg", "ThemeCssFilename": "cyborg.min.css" },
-            { "ThemeName": "darkly", "ThemeCssFilename": "darkly.min.css" },
-            { "ThemeName": "flatly", "ThemeCssFilename": "flatly.min.css" },
-            { "ThemeName": "journal", "ThemeCssFilename": "journal.min.css" },
-            { "ThemeName": "paper", "ThemeCssFilename": "paper.min.css" },
-            { "ThemeName": "sandstone", "ThemeCssFilename": "sandstone.min.css" },
-            { "ThemeName": "slate", "ThemeCssFilename": "slate.min.css" },
-            { "ThemeName": "spacelab", "ThemeCssFilename": "spacelab.min.css" },
-            { "ThemeName": "superhero", "ThemeCssFilename": "superhero.min.css" },
-            { "ThemeName": "united", "ThemeCssFilename": "united.min.css" },
-            { "ThemeName": "yeti", "ThemeCssFilename": "yeti.min.css" }
+            { "name": "bootstrap", "cssFilename": "bootstrap.min.css" },
+            { "name": "cerulum", "cssFilename": "cerulum.min.css" },
+            { "name": "cosmo", "cssFilename": "cosmo.min.css" },
+            { "name": "cyborg", "cssFilename": "cyborg.min.css" },
+            { "name": "darkly", "cssFilename": "darkly.min.css" },
+            { "name": "flatly", "cssFilename": "flatly.min.css" },
+            { "name": "journal", "cssFilename": "journal.min.css" },
+            { "name": "paper", "cssFilename": "paper.min.css" },
+            { "name": "sandstone", "cssFilename": "sandstone.min.css" },
+            { "name": "slate", "cssFilename": "slate.min.css" },
+            { "name": "spacelab", "cssFilename": "spacelab.min.css" },
+            { "name": "superhero", "cssFilename": "superhero.min.css" },
+            { "name": "united", "cssFilename": "united.min.css" },
+            { "name": "yeti", "cssFilename": "yeti.min.css" }
         ]
     }
 }

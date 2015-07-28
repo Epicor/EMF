@@ -133,7 +133,8 @@ angular.module('ep.templates', []);
  * This service returns a list of themes installed in the \css\themes directory
  */
 angular.module('ep.theme', [
-    'ep.templates'
+    'ep.templates',
+    'ep.local.storage'
 ]);
 
 'use strict';
@@ -1322,7 +1323,6 @@ angular.module('ep.local.storage').provider('epLocalStorageConfig',
  *
  * @example
  *
- *    >      epLocalStorageService.init();
  *    >      epLocalStorageService.update('emf.key', 'newValue');
  *    >      alert('value = ' + epLocalStorageService.get('emf.key');
  */
@@ -2939,8 +2939,8 @@ angular.module('ep.theme').provider('epThemeConfig',
             * Represents the collection of available themes
             */
             themes: [
-                { 'ThemeNam': 'bootstrap', 'ThemeCssFilename': 'bootstrap.min.css' },
-                { 'ThemeName': 'flatly', 'ThemeCssFilename': 'flatly.min.css' }
+                { 'name': 'bootstrap', 'cssFilename': 'bootstrap.min.css' },
+                { 'name': 'flatly', 'cssFilename': 'flatly.min.css' }
             ],
 
             /**
@@ -2952,8 +2952,8 @@ angular.module('ep.theme').provider('epThemeConfig',
             * Represents the default theme
             */
             theme: {
-                'ThemeName': 'bootstrap',
-                'ThemeCssFilename': 'bootstrap.min.css'
+                'name': 'bootstrap',
+                'cssFilename': 'bootstrap.min.css'
             }
         };
 
@@ -2999,10 +2999,12 @@ angular.module('ep.theme').provider('epThemeConfig',
  */
 angular.module('ep.theme').service('epThemeService', [
     'epThemeConfig',
-    function(epThemeConfig) {
+    'epLocalStorageService',
+    function(epThemeConfig, epLocalStorageService) {
+        var localStorageId = 'currentTheme';
 
         // set the default theme
-        var _theme = angular.extend({}, epThemeConfig.theme);
+        var _theme = epLocalStorageService.getOrAdd(localStorageId, epThemeConfig.theme);
 
         /**
          * @ngdoc method
@@ -3024,7 +3026,7 @@ angular.module('ep.theme').service('epThemeService', [
         * Gets the theme by name
         */
         this.getTheme = function(name) {
-            return _.find(this.getThemes(), function(t) { return t.ThemeName === name; });
+            return _.find(this.getThemes(), function(t) { return t.name === name; });
         };
 
         /**
@@ -3037,12 +3039,14 @@ angular.module('ep.theme').service('epThemeService', [
         */
         this.theme = function(newTheme) {
             if (newTheme) {
-                _theme = _.find(this.getThemes(), function(t) { return t.ThemeName === newTheme; });
+                _theme = _.find(this.getThemes(), function(t) { return t.name === newTheme; });
 
                 // if the one that is set is not found then default it back
                 if (!_theme) {
-                    _theme = _.find(this.getThemes(), function(t) { return t.ThemeName === 'bootstrap'; });
+                    _theme = _.find(this.getThemes(), function(t) { return t.name === 'bootstrap'; });
                 }
+                // set the current theme back onto the epLocalStorage service
+                epLocalStorageService.update(localStorageId, _theme);
             }
             return _theme;
         };
