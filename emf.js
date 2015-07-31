@@ -1039,16 +1039,28 @@ angular.module('ep.feature.detection').service('epFeatureDetectionService', [
             }
             return features.supportsDragAndDrop;
         }
-
+        /**
+        * @ngdoc method
+        * @name getAnimationEvent
+        * @methodOf ep.feature.detection.service:epFeatureDetectionService
+        * @public
+        * @description
+        * Detects the name of the "animationEnd" event based on browser caps
+        *
+        * @returns {string} the name of the animationEnd event for the current browser
+        */
+        function getAnimationEvent() {
+            return features.animationEvent;
+        }
         /**
         * @ngdoc method
         * @name getTransitionEvent
         * @methodOf ep.feature.detection.service:epFeatureDetectionService
         * @public
         * @description
-        * Detects if current document node contains 'draggable'
+        * Detects the name of the "transitionEnd" event based on browser caps
         *
-        * @returns {boolean} true when current document node contains 'draggable'
+        * @returns {string} the name of the transitionEnd event for the current browser
         */
         function getTransitionEvent() {
             return features.transitionEvent;
@@ -1126,6 +1138,36 @@ angular.module('ep.feature.detection').service('epFeatureDetectionService', [
 
         /**
         * @ngdoc method
+        * @name whichAnimationEvent
+        * @methodOf ep.feature.detection.service:epFeatureDetectionService
+        * @private
+        * @description
+        * Detects animation events
+        *
+        * @returns {object} animations object
+        */
+        function whichAnimationEvent() {
+            var a;
+            var el = document.createElement('fakeelement');
+            var animations = {
+                'animation': 'animationend',
+                'OAnimation': 'oanimationend',
+                'MSAnimation': 'MSAnimationEnd',
+                'MozAnimation': 'mozAnimationEnd',
+                'WebkitAnimation': 'webkitAnimationEnd'
+            };
+
+            for (a in animations) {
+                if (el.style[a] !== undefined) {
+                    return animations[a];
+                }
+            }
+
+            return null;
+        }
+
+        /**
+        * @ngdoc method
         * @name initialize
         * @methodOf ep.feature.detection.service:epFeatureDetectionService
         * @private
@@ -1136,6 +1178,7 @@ angular.module('ep.feature.detection').service('epFeatureDetectionService', [
             features.browserIsMobile = browserIsMobile();
             features.supportsDragAndDrop = supportsDragAndDrop();
             features.transitionEvent = whichTransitionEvent();
+            features.animationEvent = whichAnimationEvent();
             features.touchEvents = ('ontouchstart' in window) ||
             (navigator.maxTouchPoints > 0) ||
             (navigator.msMaxTouchPoints > 0);
@@ -1246,6 +1289,7 @@ angular.module('ep.feature.detection').service('epFeatureDetectionService', [
         return {
             browserIsMobile: browserIsMobile,
             supportsDragAndDrop: supportsDragAndDrop,
+            getAnimationEvent: getAnimationEvent,
             getTransitionEvent: getTransitionEvent,
             hasTouchEvents: hasTouchEvents,
             getFeatures: getFeatures
