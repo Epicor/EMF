@@ -981,6 +981,8 @@ angular.module('ep.drag.drop').directive('epDropArea', [
  */
 angular.module('ep.feature.detection').service('epFeatureDetectionService', [
     function() {
+        var mediaRegistry;
+
         /**
          * @private
          * @description
@@ -1103,6 +1105,44 @@ angular.module('ep.feature.detection').service('epFeatureDetectionService', [
         */
         function hasTouchEvents() {
             return features.touchEvents;
+        }
+
+        /**
+        * @ngdoc method
+        * @name registerMediaQuery
+        * @methodOf ep.feature.detection.service:epFeatureDetectionService
+        * @public
+        * @description
+        * Registers handlers to respond to CSS media queries being matched
+        *
+        * @param {integer} width The width used to trigger the media query functions.
+        * @param {function} match OPTIONAL: If supplied, triggered when a media query matches.
+        * @param {function} unmatch OPTIONAL: If supplied, triggered when a media query transitions from matched to unmatched state.
+        * @param {function} setup OPTIONAL: If supplied, triggered once, when the handler is registered.
+        */
+        function registerMediaQuery(width, match, unmatch, setup) {
+            mediaRegistry = 'screen and (min-width: ' + width + 'px)';
+
+            enquire.register(mediaRegistry, {
+                match: match,
+                unmatch: unmatch,
+                setup: setup,
+                deferSetup: true
+            });
+        }
+        /**
+        * @ngdoc method
+        * @name unregisterMediaQuery
+        * @methodOf ep.feature.detection.service:epFeatureDetectionService
+        * @public
+        * @description
+        * deregisters the handlers to no longer respond to CSS media queries
+        *
+        * @param {integer} width OPTIONAL: The width used to trigger the media query functions.
+        */
+        function unregisterMediaQuery(width) {
+            var registry = width ? 'screen and (min-width: ' + width + 'px)' : mediaRegistry;
+            enquire.unregister(registry);
         }
 
         /*  ----- Private Functions -------> */
@@ -1292,7 +1332,9 @@ angular.module('ep.feature.detection').service('epFeatureDetectionService', [
             getAnimationEvent: getAnimationEvent,
             getTransitionEvent: getTransitionEvent,
             hasTouchEvents: hasTouchEvents,
-            getFeatures: getFeatures
+            getFeatures: getFeatures,
+            registerMediaQuery: registerMediaQuery,
+            unregisterMediaQuery: unregisterMediaQuery
         };
     }]);
 
@@ -2980,6 +3022,16 @@ angular.module('ep.theme').provider('epThemeConfig',
             * @propertyOf ep.theme.object:epThemeConfig
             * @public
             * @description
+            * The default path to theme css files
+            */
+            defaultPath: '',
+
+            /**
+            * @ngdoc property
+            * @name themes
+            * @propertyOf ep.theme.object:epThemeConfig
+            * @public
+            * @description
             * Represents the collection of available themes
             */
             themes: [
@@ -3094,6 +3146,32 @@ angular.module('ep.theme').service('epThemeService', [
             }
             return _theme;
         };
+
+        /**
+        * @ngdoc method
+        * @name getTheme
+        * @methodOf ep.theme.service:epThemeService
+        * @public
+        * @description
+        * Gets the theme by name
+        */
+        this.getThemeWithFullPath = function(name) {
+            var themeItem = (name) ? _.find(this.getThemes(), function(t) { return t.name === name; }) : _theme;
+            if (themeItem && epThemeConfig.defaultPath && themeItem.cssFilename) {
+                var ret = angular.extend({}, themeItem);
+
+                epThemeConfig.defaultPath = epThemeConfig.defaultPath.trim();
+                if (epThemeConfig.defaultPath.lastIndexOf('/') === epThemeConfig.defaultPath.length - 1) {
+                    epThemeConfig.defaultPath =
+                        epThemeConfig.defaultPath.substr(0, epThemeConfig.defaultPath.length - 1);
+                }
+
+                ret.cssFilename = epThemeConfig.defaultPath + '/' + ret.cssFilename;
+                return ret;
+            }
+            return themeItem;
+        };
+
     }]);
 
 'use strict';
