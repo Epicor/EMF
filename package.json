@@ -2,7 +2,7 @@
   "name": "emf",
   "description": "Epicor Mobile Framework",
   "author": "Epicor Software Corporation",
-  "version": "0.1515.6",
+  "version": "0.1515.8",
   "devDependencies": {
     "grunt": "~0.4",
     "grunt-dom-munger": "~3.4",
