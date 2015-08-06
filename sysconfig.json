@@ -1,5 +1,25 @@
 ﻿{
-    "epTokenConfig" : {
-    	"restUri": "https://localhost/ICE3/TokenResource.svc/"
+    "epTokenConfig": {
+        "restUri": "https://localhost/ICE3/TokenResource.svc/"
+    },
+
+    "epThemeConfig": {
+        "theme":  {"name": "bootstrap", "cssFilename": "bootstrap.min.css"},
+        "themes": [
+            { "name": "bootstrap", "cssFilename": "bootstrap.min.css" },
+            { "name": "cerulum", "cssFilename": "cerulum.min.css" },
+            { "name": "cosmo", "cssFilename": "cosmo.min.css" },
+            { "name": "cyborg", "cssFilename": "cyborg.min.css" },
+            { "name": "darkly", "cssFilename": "darkly.min.css" },
+            { "name": "flatly", "cssFilename": "flatly.min.css" },
+            { "name": "journal", "cssFilename": "journal.min.css" },
+            { "name": "paper", "cssFilename": "paper.min.css" },
+            { "name": "sandstone", "cssFilename": "sandstone.min.css" },
+            { "name": "slate", "cssFilename": "slate.min.css" },
+            { "name": "spacelab", "cssFilename": "spacelab.min.css" },
+            { "name": "superhero", "cssFilename": "superhero.min.css" },
+            { "name": "united", "cssFilename": "united.min.css" },
+            { "name": "yeti", "cssFilename": "yeti.min.css" }
+        ]
     }
 }

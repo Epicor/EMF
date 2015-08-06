@@ -128,6 +128,18 @@ angular.module('ep.templates', []);
 'use strict';
 /**
  * @ngdoc overview
+ * @name ep.theme
+ * @description
+ * This service returns a list of themes installed in the \css\themes directory
+ */
+angular.module('ep.theme', [
+    'ep.templates',
+    'ep.local.storage'
+]);
+
+'use strict';
+/**
+ * @ngdoc overview
  * @name ep.token
  * @description
  * Provides epicor token auth login/logout services
@@ -969,6 +981,8 @@ angular.module('ep.drag.drop').directive('epDropArea', [
  */
 angular.module('ep.feature.detection').service('epFeatureDetectionService', [
     function() {
+        var mediaRegistry;
+
         /**
          * @private
          * @description
@@ -1027,16 +1041,28 @@ angular.module('ep.feature.detection').service('epFeatureDetectionService', [
             }
             return features.supportsDragAndDrop;
         }
-
+        /**
+        * @ngdoc method
+        * @name getAnimationEvent
+        * @methodOf ep.feature.detection.service:epFeatureDetectionService
+        * @public
+        * @description
+        * Detects the name of the "animationEnd" event based on browser caps
+        *
+        * @returns {string} the name of the animationEnd event for the current browser
+        */
+        function getAnimationEvent() {
+            return features.animationEvent;
+        }
         /**
         * @ngdoc method
         * @name getTransitionEvent
         * @methodOf ep.feature.detection.service:epFeatureDetectionService
         * @public
         * @description
-        * Detects if current document node contains 'draggable'
+        * Detects the name of the "transitionEnd" event based on browser caps
         *
-        * @returns {boolean} true when current document node contains 'draggable'
+        * @returns {string} the name of the transitionEnd event for the current browser
         */
         function getTransitionEvent() {
             return features.transitionEvent;
@@ -1081,6 +1107,44 @@ angular.module('ep.feature.detection').service('epFeatureDetectionService', [
             return features.touchEvents;
         }
 
+        /**
+        * @ngdoc method
+        * @name registerMediaQuery
+        * @methodOf ep.feature.detection.service:epFeatureDetectionService
+        * @public
+        * @description
+        * Registers handlers to respond to CSS media queries being matched
+        *
+        * @param {integer} width The width used to trigger the media query functions.
+        * @param {function} match OPTIONAL: If supplied, triggered when a media query matches.
+        * @param {function} unmatch OPTIONAL: If supplied, triggered when a media query transitions from matched to unmatched state.
+        * @param {function} setup OPTIONAL: If supplied, triggered once, when the handler is registered.
+        */
+        function registerMediaQuery(width, match, unmatch, setup) {
+            mediaRegistry = 'screen and (min-width: ' + width + 'px)';
+
+            enquire.register(mediaRegistry, {
+                match: match,
+                unmatch: unmatch,
+                setup: setup,
+                deferSetup: true
+            });
+        }
+        /**
+        * @ngdoc method
+        * @name unregisterMediaQuery
+        * @methodOf ep.feature.detection.service:epFeatureDetectionService
+        * @public
+        * @description
+        * deregisters the handlers to no longer respond to CSS media queries
+        *
+        * @param {integer} width OPTIONAL: The width used to trigger the media query functions.
+        */
+        function unregisterMediaQuery(width) {
+            var registry = width ? 'screen and (min-width: ' + width + 'px)' : mediaRegistry;
+            enquire.unregister(registry);
+        }
+
         /*  ----- Private Functions -------> */
 
         /**
@@ -1114,6 +1178,36 @@ angular.module('ep.feature.detection').service('epFeatureDetectionService', [
 
         /**
         * @ngdoc method
+        * @name whichAnimationEvent
+        * @methodOf ep.feature.detection.service:epFeatureDetectionService
+        * @private
+        * @description
+        * Detects animation events
+        *
+        * @returns {object} animations object
+        */
+        function whichAnimationEvent() {
+            var a;
+            var el = document.createElement('fakeelement');
+            var animations = {
+                'animation': 'animationend',
+                'OAnimation': 'oanimationend',
+                'MSAnimation': 'MSAnimationEnd',
+                'MozAnimation': 'mozAnimationEnd',
+                'WebkitAnimation': 'webkitAnimationEnd'
+            };
+
+            for (a in animations) {
+                if (el.style[a] !== undefined) {
+                    return animations[a];
+                }
+            }
+
+            return null;
+        }
+
+        /**
+        * @ngdoc method
         * @name initialize
         * @methodOf ep.feature.detection.service:epFeatureDetectionService
         * @private
@@ -1124,6 +1218,7 @@ angular.module('ep.feature.detection').service('epFeatureDetectionService', [
             features.browserIsMobile = browserIsMobile();
             features.supportsDragAndDrop = supportsDragAndDrop();
             features.transitionEvent = whichTransitionEvent();
+            features.animationEvent = whichAnimationEvent();
             features.touchEvents = ('ontouchstart' in window) ||
             (navigator.maxTouchPoints > 0) ||
             (navigator.msMaxTouchPoints > 0);
@@ -1234,9 +1329,12 @@ angular.module('ep.feature.detection').service('epFeatureDetectionService', [
         return {
             browserIsMobile: browserIsMobile,
             supportsDragAndDrop: supportsDragAndDrop,
+            getAnimationEvent: getAnimationEvent,
             getTransitionEvent: getTransitionEvent,
             hasTouchEvents: hasTouchEvents,
-            getFeatures: getFeatures
+            getFeatures: getFeatures,
+            registerMediaQuery: registerMediaQuery,
+            unregisterMediaQuery: unregisterMediaQuery
         };
     }]);
 
@@ -1311,7 +1409,6 @@ angular.module('ep.local.storage').provider('epLocalStorageConfig',
  *
  * @example
  *
- *    >      epLocalStorageService.init();
  *    >      epLocalStorageService.update('emf.key', 'newValue');
  *    >      alert('value = ' + epLocalStorageService.get('emf.key');
  */
@@ -1610,7 +1707,7 @@ angular.module('ep.modaldialog').directive('epmodaldialog', [
                     pre: function() {
                     },
                     post: function($scope) {
-                        $scope.config = $scope.dialogState.config; //To be same as modals
+                        $scope.config = ($scope.dialogState) ? $scope.dialogState.config : {}; //To be same as modals
                     }
                 };
             }
@@ -1669,8 +1766,9 @@ angular.module('ep.modaldialog').service('epModalDialogService', [
     '$rootScope',
     '$timeout',
     '$interval',
+    '$injector',
     'epLocalStorageService',
-    function($modal, $compile, $rootScope, $timeout, $interval, epLocalStorageService) {
+    function($modal, $compile, $rootScope, $timeout, $interval, $injector, epLocalStorageService) {
 
         /**
          * @private
@@ -1947,6 +2045,7 @@ angular.module('ep.modaldialog').service('epModalDialogService', [
          * @param {object} options - settings neccessary to display custom dialog:
          * <pre>
          *      templateUrl - the template html for custom dialog's container
+         *      controller- the controller to execute when showing the dialog (default null)
          *      size - 'small'/'large'/'' (default)
          *      icon - font awesome icon class (icon in the header)
          *      backdrop - set true if dialog can closed on background click (default false)
@@ -1977,6 +2076,9 @@ angular.module('ep.modaldialog').service('epModalDialogService', [
                 controller: ['$scope', '$modalInstance', function($scope, $modalInstance) {
                     currentModalInstance = $modalInstance;
                     $scope.config = cfg;
+                    if (cfg.controller) {
+                        $injector.invoke(cfg.controller, currentModalInstance, { '$scope': $scope, '$modalInstance': $modalInstance });
+                    }
                     $scope.btnclick = function(btn) {
                         var result = onButtonClick($scope.config, btn);
                         if (result !== -1) {
@@ -2904,6 +3006,177 @@ angular.module('ep.search').factory('searchService', [
         return {
             search: search
         };
+    }]);
+
+'use strict';
+
+/**
+ * @ngdoc object
+ * @name ep.theme.object:epThemeConfig
+ * @description
+ * Provider for epThemeConfig.
+ * Gets configuration options from sysconfig.json or default
+ */
+angular.module('ep.theme').provider('epThemeConfig',
+    function() {
+        var jsonReadStatus;
+        var config = {
+            /**
+            * @ngdoc property
+            * @name themes
+            * @propertyOf ep.theme.object:epThemeConfig
+            * @public
+            * @description
+            * The default path to theme css files
+            */
+            defaultPath: '',
+
+            /**
+            * @ngdoc property
+            * @name themes
+            * @propertyOf ep.theme.object:epThemeConfig
+            * @public
+            * @description
+            * Represents the collection of available themes
+            */
+            themes: [
+                { 'name': 'bootstrap', 'cssFilename': 'bootstrap.min.css' },
+                { 'name': 'flatly', 'cssFilename': 'flatly.min.css' }
+            ],
+
+            /**
+            * @ngdoc property
+            * @name theme
+            * @propertyOf ep.theme.object:epThemeConfig
+            * @public
+            * @description
+            * Represents the default theme
+            */
+            theme: {
+                'name': 'bootstrap',
+                'cssFilename': 'bootstrap.min.css'
+            }
+        };
+
+        //This $get, is kinda confusing - it does not return the provider, but it returns the "service".
+        //In our case, the "service" is the environment configuration object
+        //The $get is called automatically when AngularJS encounters a DI.
+        //
+        // also knowing despite the (use $http instead of $.ajax) rules on the EMF coders styleguide
+        // There is a problem: $http is an asynchronous call, so its not guaranteed that the
+        // data will be returned with the values read from the sysconfig.json.
+        // To get around we have to make $http a sync call, which is not possible.
+        this.$get = function() {
+            var q = $.ajax({
+                type: 'GET',
+                url: 'sysconfig.json',
+                cache: false,
+                async: false,
+                contentType: 'application/json'
+            });
+
+            jsonReadStatus = q.status;
+            if (q.status === 200) {
+                var sysconfig = angular.fromJson(q.responseText);
+                if (sysconfig.hasOwnProperty('epThemeConfig')) {
+                    angular.extend(config, sysconfig.epThemeConfig);
+                }
+            }
+
+            return config;
+        };
+    });
+
+'use strict';
+/**
+ * @ngdoc service
+ * @name ep.theme.service:epThemeService
+ * @description
+ * Service for the ep.theme module
+ * This service returns a list of themes installed in the \css\themes directory
+ *
+ * @example
+ *
+ */
+angular.module('ep.theme').service('epThemeService', [
+    'epThemeConfig',
+    'epLocalStorageService',
+    function(epThemeConfig, epLocalStorageService) {
+        var localStorageId = 'currentTheme';
+
+        // set the default theme
+        var _theme = epLocalStorageService.getOrAdd(localStorageId, epThemeConfig.theme);
+
+        /**
+         * @ngdoc method
+         * @name getThemes
+         * @methodOf ep.theme.service:epThemeService
+         * @public
+         * @description
+         * Gets the collection of themes from the epThemeConfig / sysconfig.json
+         */
+        this.getThemes = function() {
+            return epThemeConfig.themes;
+        };
+        /**
+        * @ngdoc method
+        * @name getTheme
+        * @methodOf ep.theme.service:epThemeService
+        * @public
+        * @description
+        * Gets the theme by name
+        */
+        this.getTheme = function(name) {
+            return _.find(this.getThemes(), function(t) { return t.name === name; });
+        };
+
+        /**
+        * @ngdoc method
+        * @name theme
+        * @methodOf ep.theme.service:epThemeService
+        * @public
+        * @description
+        * sets the theme by name
+        */
+        this.theme = function(newTheme) {
+            if (newTheme) {
+                _theme = _.find(this.getThemes(), function(t) { return t.name === newTheme; });
+
+                // if the one that is set is not found then default it back
+                if (!_theme) {
+                    _theme = _.find(this.getThemes(), function(t) { return t.name === 'bootstrap'; });
+                }
+                // set the current theme back onto the epLocalStorage service
+                epLocalStorageService.update(localStorageId, _theme);
+            }
+            return _theme;
+        };
+
+        /**
+        * @ngdoc method
+        * @name getTheme
+        * @methodOf ep.theme.service:epThemeService
+        * @public
+        * @description
+        * Gets the theme by name
+        */
+        this.getThemeWithFullPath = function(name) {
+            var themeItem = (name) ? _.find(this.getThemes(), function(t) { return t.name === name; }) : _theme;
+            if (themeItem && epThemeConfig.defaultPath && themeItem.cssFilename) {
+                var ret = angular.extend({}, themeItem);
+
+                epThemeConfig.defaultPath = epThemeConfig.defaultPath.trim();
+                if (epThemeConfig.defaultPath.lastIndexOf('/') === epThemeConfig.defaultPath.length - 1) {
+                    epThemeConfig.defaultPath =
+                        epThemeConfig.defaultPath.substr(0, epThemeConfig.defaultPath.length - 1);
+                }
+
+                ret.cssFilename = epThemeConfig.defaultPath + '/' + ret.cssFilename;
+                return ret;
+            }
+            return themeItem;
+        };
+
     }]);
 
 'use strict';
