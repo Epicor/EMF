@@ -1707,7 +1707,7 @@ angular.module('ep.modaldialog').directive('epmodaldialog', [
                     pre: function() {
                     },
                     post: function($scope) {
-                        $scope.config = $scope.dialogState.config; //To be same as modals
+                        $scope.config = ($scope.dialogState) ? $scope.dialogState.config : {}; //To be same as modals
                     }
                 };
             }
@@ -1766,8 +1766,9 @@ angular.module('ep.modaldialog').service('epModalDialogService', [
     '$rootScope',
     '$timeout',
     '$interval',
+    '$injector',
     'epLocalStorageService',
-    function($modal, $compile, $rootScope, $timeout, $interval, epLocalStorageService) {
+    function($modal, $compile, $rootScope, $timeout, $interval, $injector, epLocalStorageService) {
 
         /**
          * @private
@@ -2044,6 +2045,7 @@ angular.module('ep.modaldialog').service('epModalDialogService', [
          * @param {object} options - settings neccessary to display custom dialog:
          * <pre>
          *      templateUrl - the template html for custom dialog's container
+         *      controller- the controller to execute when showing the dialog (default null)
          *      size - 'small'/'large'/'' (default)
          *      icon - font awesome icon class (icon in the header)
          *      backdrop - set true if dialog can closed on background click (default false)
@@ -2074,6 +2076,9 @@ angular.module('ep.modaldialog').service('epModalDialogService', [
                 controller: ['$scope', '$modalInstance', function($scope, $modalInstance) {
                     currentModalInstance = $modalInstance;
                     $scope.config = cfg;
+                    if (cfg.controller) {
+                        $injector.invoke(cfg.controller, currentModalInstance, { '$scope': $scope, '$modalInstance': $modalInstance });
+                    }
                     $scope.btnclick = function(btn) {
                         var result = onButtonClick($scope.config, btn);
                         if (result !== -1) {
