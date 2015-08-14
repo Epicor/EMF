@@ -117,6 +117,18 @@ angular.module('ep.search', [
 'use strict';
 /**
  * @ngdoc overview
+ * @name ep.shell
+ * @description
+ * Provides epicor shell
+ */
+angular.module('ep.shell', ['ngRoute', 'ui.bootstrap',
+    'ep.templates', 'ep.feature.detection', 'ep.local.storage', 'ep.theme', 'ep.utils']);
+
+
+
+'use strict';
+/**
+ * @ngdoc overview
  * @name ep.templates
  * @description
  * Provides module stub to inject html templates.
@@ -2077,7 +2089,8 @@ angular.module('ep.modaldialog').service('epModalDialogService', [
                     currentModalInstance = $modalInstance;
                     $scope.config = cfg;
                     if (cfg.controller) {
-                        $injector.invoke(cfg.controller, currentModalInstance, { '$scope': $scope, '$modalInstance': $modalInstance });
+                        $injector.invoke(cfg.controller, currentModalInstance,
+                            { '$scope': $scope, '$modalInstance': $modalInstance });
                     }
                     $scope.btnclick = function(btn) {
                         var result = onButtonClick($scope.config, btn);
@@ -3009,6 +3022,1253 @@ angular.module('ep.search').factory('searchService', [
     }]);
 
 'use strict';
+/**
+ * @ngdoc service
+ * @name ep.shell.service:epShellFeedbackService
+ * @description
+ * Service for the ep.shell module
+ * This service provides user feedback from the ep.shell
+ */
+angular.module('ep.shell').service('epShellFeedbackService', [
+    'epModalDialogService',
+    function(epModalDialogService) {
+
+        /**
+         * @ngdoc method
+         * @name afterSuccessSubmit
+         * @methodOf ep.shell.service:epShellFeedbackService
+         * @private
+         * @description
+         * Called after successful submit. Displays a dialog.
+         */
+        function afterSuccessSubmit() {
+            //TO DO: Shell Resources
+            var resources = {
+                strings: {
+                    FeedbackResponse:
+                    'We appreciate your feedback! We review these items regularly to help us improve the product.',
+                    FeedbackTitle:
+                    'Thank You!'
+                }
+            };
+            epModalDialogService.showMessageBox({
+                message: resources.strings.FeedbackResponse,
+                title: resources.strings.FeedbackTitle,
+                status: 'info'
+            });
+        }
+
+        /*  ----- Public Functions -------> */
+
+        /**
+         * @ngdoc method
+         * @name showForm
+         * @methodOf ep.shell.service:epShellFeedbackService
+         * @public
+         * @description
+         * Shows feedback submission form. Must pass a callback function fnOnSubmit parameter
+         * which will be invoked upon submit
+         */
+        function showForm(fnOnSubmit) {
+            var feedback = {
+                summary: '',
+                description: '',
+                customerName: '',
+                customerEmail: ''
+            };
+            epModalDialogService.showCustomDialog({
+                title: 'Submit Feedback',
+                templateUrl: 'src/components/ep.shell/feedback/feedback_dialog.html',
+                icon: 'fa fa-bullhorn fa-2x',
+                feedback: feedback,
+                summaryLabel: 'Summary',
+                descriptionLabel: 'Description',
+                customerNameLabel: 'Customer Name',
+                customerEmailLabel: 'Customer Email',
+                buttons: [
+                    {
+                        id: 'btnSubmit',
+                        isPrimary: true,
+                        text: 'Submit',
+                        action: function() {
+                            if (fnOnSubmit) {
+                                var ret = fnOnSubmit(feedback);
+                                if (ret.then) {
+                                    ret.then(function(result) {
+                                        if (result.Success) {
+                                            afterSuccessSubmit();
+                                        }
+                                    });
+                                } else {
+                                    afterSuccessSubmit();
+                                }
+                            }
+                        }
+                    },
+                    {
+                        id: 'btnCancel',
+                        isCancel: true,
+                        text: 'Cancel'
+                    }
+                ]
+            });
+        }
+        return {
+            showForm: showForm
+        };
+    }]);
+
+'use strict';
+
+/**
+ * @ngdoc object
+ * @name ep.shell.object:epShellConstants
+ * @description
+ * Cosntants for epShellConstants.
+ * ep.shell constants
+ */
+angular.module('ep.shell').constant('epShellConstants', {
+    SIDEBARWIDTH: 250,
+    NAVBARHEIGHT: 40,
+    FOOTERHEIGHT: 25,
+    MEDIA_MODE_LARGE: 'large',
+    MEDIA_MODE_SMALL: 'small',
+    MEDIA_SIZE_BREAKPOINT: 800
+});
+
+'use strict';
+/**
+ * @ngdoc controller
+ * @name ep.shell.controller:epShellCtrl
+ * @description
+ * Represents the main shell controller.
+ */
+angular.module('ep.shell').controller('epShellCtrl', [
+    '$location',
+    '$rootScope',
+    '$scope',
+    'epShellService',
+    'epLocalStorageService',
+    'epShellFeedbackService',
+    function($location, $rootScope, $scope, epShellService, epLocalStorageService, epShellFeedbackService) {
+
+        // Any logic that requires the immediate use of the emaService or the EmaRestService needs to be executed inside the "init" call in the controller.
+        // If the logic is already inside an event handler
+        function init() {
+            // get the epShellService state so it can be used in the views
+            $scope.state = epShellService.__state;
+
+            //toggle sidebar event function
+            $scope.toggleLeftSidebar = function() {
+                epShellService.toggleLeftSidebar();
+            };
+            //toggle sidebar event function
+            $scope.toggleRightSidebar = function() {
+                epShellService.toggleRightSidebar();
+            };
+
+            $scope.navButtons = epShellService.getNavbarButtons();
+
+            $rootScope.$on('navbarButtonsChanged', function() {
+                $scope.navButtons = epShellService.getNavbarButtons();
+            });
+
+            $rootScope.$on('$routeChangeStart', function() {
+                epShellService.clearInfo();
+                epShellService.cleanupViewEvents();
+            });
+
+            //launch help event function
+            $scope.launchHelp = function() {
+                $location.url('/help');
+            };
+
+            $scope.sendFeedback = function() {
+                epShellFeedbackService.showForm($scope.state.fnOnFeedback);
+            };
+        }
+
+        try {
+            $rootScope.$watch('initComplete', function(complete) {
+                if (complete) {
+                    init();
+                }
+            });
+        } catch (ex) {
+            console.log(ex);
+        }
+    }
+]);
+
+'use strict';
+/**
+     * @ngdoc directive
+     * @name ep.shell.directive:epshell
+     * @restrict E
+     *
+     * @description
+     * Represents the shell directive
+     *
+     * @example
+     * usage. place on main index page as:
+     * <body>        
+     *   <epshell><div ng-view></div></epshell>
+     * </body>
+     */
+angular.module('ep.shell').directive('epshell', [
+    function() {
+        return {
+            restrict: 'E,A',
+            replace: true,
+            transclude: true,
+            templateUrl: 'src/components/ep.shell/shell.html',
+        };
+    }
+]);
+
+'use strict';
+
+/**
+ * @ngdoc object
+ * @name ep.shell.object:epShellConfig
+ * @description
+ * Provider for epShellConfig.
+ * Gets configuration options from sysconfig.json or default
+ */
+angular.module('ep.shell').provider('epShellConfig', [
+    '$routeProvider',
+    function($routeProvider) {
+        var routeProviderReference = $routeProvider;
+        var jsonReadStatus;
+        var config = {
+            options: {
+                pageTitle: 'Epicor Mobile',
+                brandHTML: 'Epicor Mobile Framework <sup>2.0</sup>',
+                defaultTheme: 'flatly',
+                disableTheming: false
+            },
+
+            /**
+            * @ngdoc property
+            * @name themes
+            * @propertyOf ep.shell.object:epShellConfig
+            * @public
+            * @description
+            * routes is the rounting configuration. example:
+            * routes : [
+            *    { route: '/home', url: './main-application/views/homeview.html', controller: 'HomeCtrl' },
+            *    { route: '/login', url: './main-application/views/loginview.html', controller: 'LoginCtrl', isDefault: true }
+            * ]
+            */
+            routes : []
+        };
+
+        //This $get, is kinda confusing - it does not return the provider, but it returns the "service".
+        //In our case, the "service" is the environment configuration object
+        //The $get is called automatically when AngularJS encounters a DI.
+        //
+        // also knowing despite the (use $http instead of $.ajax) rules on the EMF coders styleguide
+        // There is a problem: $http is an asynchronous call, so its not guaranteed that the
+        // data will be returned with the values read from the sysconfig.json.
+        // To get around we have to make $http a sync call, which is not possible.
+        this.$get = function() {
+            var q = $.ajax({
+                type: 'GET',
+                url: 'sysconfig.json',
+                cache: false,
+                async: false,
+                contentType: 'application/json'
+            });
+
+            jsonReadStatus = q.status;
+            if (q.status === 200) {
+                var sysconfig = angular.fromJson(q.responseText);
+                if (sysconfig.hasOwnProperty('epShellConfig')) {
+                    angular.extend(config, sysconfig.epShellConfig);
+                }
+            }
+
+            angular.forEach(config.routes, function(r) {
+                routeProviderReference.when(r.route, {
+                    templateUrl: r.url,
+                    controller: r.controller,
+                    reloadOnSearch: (r.reloadOnSearch === undefined) ? true : r.reloadOnSearch
+                });
+                if (r.isDefault === true) {
+                    routeProviderReference.otherwise({ redirectTo: r.route });
+                }
+            });
+            return config;
+        };
+    }
+]);
+
+
+'use strict';
+/**
+ * @ngdoc service
+ * @name ep.shell.service:epShellService
+ * @description
+ * Service for the ep.shell
+ * This service provides functions for interaction with the ep.shell
+ *
+ * @example
+ *
+ */
+angular.module('ep.shell').service('epShellService', [
+    '$q',
+    '$rootScope',
+    '$timeout',
+    '$sce',
+    '$document',
+    'epFeatureDetectionService',
+    'epSidebarService',
+    'epThemeService',
+    'epShellConfig',
+    'epShellConstants',
+     function($q, $rootScope, $timeout, $sce, $document,
+         epFeatureDetectionService, epSidebarService, epThemeService, epShellConfig, epShellConstants) {
+         // Be careful about what dependencies are added here, because this service
+         // is used pretty much everywhere
+         var shellState = {
+             showProgressIndicator: false,
+             progressIndicatorlevel: 0,
+             feedbackEnabled: true,
+             fnOnFeedback: undefined,
+             suspend: false,
+             disableTheming: false,     //disable all theming
+             includeThemeFile: true,    //include stylesheet reference into shell.html
+             currentTheme: null,        //current theme
+             showBrand: true,
+             brandHTML: 'Mobile Access <sup>2.0</sup>',
+             freezeNavButtons: false,
+             viewSettings: {
+                 sidebar: {},
+                 small: {
+                     animateViewContainer: true,
+                     showLeftSidebar: false,
+                     enableLeftSidebar: true,
+                     autohideSidebar: false,
+                     showLeftToggleButton: false,
+                     showRightToggleButton: false,
+                     showNavbar: false,
+                     showFooter: false,
+                     showHomeButton: false,
+                     showBrand: false,
+                 },
+                 large: {
+                     animateViewContainer: true,
+                     showLeftSidebar: false,
+                     enableLeftSidebar: true,
+                     autohideSidebar: false,
+                     showLeftToggleButton: false,
+                     showRightToggleButton: false,
+                     showNavbar: false,
+                     showFooter: false,
+                     showHomeButton: false,
+                     showBrand: false,
+                 }
+             },
+             pageTitle: '',
+             colorScheme: {},
+             mediaMode: epShellConstants.MEDIA_MODE_SMALL,
+             date: {
+                 weekday: 'Tuesday',
+                 month: 'October',
+                 day: 21
+             },
+             viewDimensions: {
+                 offset: { top: 0, left: 0 },
+                 size: { width: 0, height: 0 }
+             },
+             infoMessage: '',
+             infoIcon: 'fa fa-3x fa-warning',
+             executeButton: function(btn) {
+                 shellState.navButtonClicked = null;
+                 if (btn.confirm) {
+                     btn.confirm(btn.action);
+                 } else if (shellState.freezeNavButtons !== true) {
+                     btn.action();
+                 }
+             },
+             buttonMouseDown: function(btn) {
+                 //record buttonClicked (for ng-blur events). it will be dismissed after real click.
+                 shellState.navButtonClicked = btn;
+             },
+             momentumScrollingEnabled : true,
+             allowVerticalScroll: true,
+             //Stores the nav button that is clicked on mouse down event. This state is cleared on actual click event.
+             //Useful for blur processing
+             navButtonClicked : null
+         };
+         var navbarButtons = [];
+         var boundViewEvents = {};
+
+         function initialize() {
+             //setup the epFeatureDetectionService enquireService registration at 800 px so that we can
+             //perform Javascript operations when the UI goes into large / small mode
+             epFeatureDetectionService.registerMediaQuery(epShellConstants.MEDIA_SIZE_BREAKPOINT, function() {
+                 shellState.mediaMode = epShellConstants.MEDIA_MODE_LARGE;
+                 notifyStateChanged('setMediaMode');
+             }, function() {
+                 shellState.mediaMode = epShellConstants.MEDIA_MODE_SMALL;
+                 notifyStateChanged('setMediaMode');
+             });
+
+             //Any time the size of the shell window changes fire an event to the views
+             function sendResizeEvent() {
+                 notifySizeChanged('size');
+             }
+
+             //this is to ensure it only happens one time
+             var lazySendResize = _.debounce(sendResizeEvent, 100);
+             angular.element(window).on('resize', lazySendResize);
+             $timeout(sendResizeEvent, 100);
+             $rootScope.$on('$routeChangeSuccess', sendResizeEvent);
+
+             setPageTitle(epShellConfig.options.pageTitle);
+             setBrandHTML(epShellConfig.options.brandHTML);
+
+             shellState.disableTheming = epShellConfig.options.disableTheming;
+             if (shellState.disableTheming !== true) {
+                 if (epShellConfig.options.defaultTheme) {
+                     epThemeService.theme(epShellConfig.options.defaultTheme);
+                 } else {
+                     epThemeService.theme();
+                 }
+                 shellState.currentTheme = epThemeService.getThemeWithFullPath();
+             }
+         }
+
+         function setCurrentModeFlags() {
+             var mode = shellState.viewSettings[shellState.mediaMode];
+
+             shellState.autohideSidebar = mode.autohideSidebar !== false;
+             shellState.showLeftToggleButton = mode.enableLeftSidebar;
+             shellState.enableLeftSidebar = mode.enableLeftSidebar;
+             shellState.showRightToggleButton = mode.enableRightSidebar;
+             shellState.enableRightSidebar = mode.enableRightSidebar;
+
+             shellState.showNavbar = mode.showNavbar;
+             shellState.showFooter = mode.showFooter;
+             shellState.showHomeButton = mode.showHomeButton; // We want to default as shown, so check that the attribute doesn't explicitly hide it
+             shellState.showBrand = mode.showBrand;// We want to default as shown, so check that the attribute doesn't explicitly hide it
+
+             if (mode.enableLeftSidebar && (isMediaModeLarge() || shellState.suspend)) {
+                 showLeftSidebar();
+             } else {
+                 hideLeftSidebar();
+             }
+
+             hideRightSidebar(false);
+             shellState.allowVerticalScroll = !!mode.allowVerticalScroll;
+             shellState.animateViewContainer = mode.animateViewContainer !== false;
+             shellState.momentumScrollingEnabled = mode.momentumScrollingEnabled !== false;
+             notifyStateChanged();
+         }
+
+         function viewSettings(settings) {
+             if (settings !== undefined) {
+                 shellState.viewSettings = settings;
+             }
+             return shellState.viewSettings;
+         }
+
+         //--------  Public Functions ----------------------->>>>
+         function init() {
+             window.addEventListener('load', function() {
+                 FastClick.attach(document.body);
+             }, false);
+
+             var windowWidth = $(window).width();
+             shellState.mediaMode = windowWidth >= epShellConstants.MEDIA_SIZE_BREAKPOINT ?
+                 epShellConstants.MEDIA_MODE_LARGE : epShellConstants.MEDIA_MODE_SMALL;
+             // initialize the sidebar as "shown" if we're in large mode, otherwise false.
+             shellState.showSidebar = isMediaModeLarge();
+
+             $rootScope.initComplete = true;
+         }
+
+         function showProgressIndicator() {
+             shellState.showProgressIndicator = true;
+             shellState.progressIndicatorlevel++;
+         }
+
+         function hideProgressIndicator(immediate) {
+             shellState.progressIndicatorlevel--;
+             shellState.progressIndicatorlevel = Math.max(shellState.progressIndicatorlevel, 0);
+             if (shellState.progressIndicatorlevel === 0) {
+                 if (immediate) {
+                     shellState.showProgressIndicator = false;
+                 } else {
+                     $timeout(function() { shellState.showProgressIndicator = false; });
+                 }
+             }
+         }
+
+         function resetProgressIndicator() {
+             shellState.progressIndicatorlevel = 0;
+             hideProgressIndicator(true);
+         }
+
+         function getMediaMode() {
+             return shellState.mediaMode;
+         }
+
+         function isMediaModeLarge() {
+             return shellState.mediaMode === epShellConstants.MEDIA_MODE_LARGE;
+         }
+
+         function themingDisabled() {
+             return shellState.disableTheming;
+         }
+
+         function feedbackCallback(fnOnFeedback) {
+             //set or get feedback callback function which will do actual submission of user data. 
+             //Function must return a promise.
+             if (fnOnFeedback !== undefined) {
+                 shellState.fnOnFeedback = fnOnFeedback;
+             }
+             return shellState.fnOnFeedback;
+         }
+
+         function registerViewEvent(id, eventName, callback) {
+             // clean up the old event if there is one
+             if (boundViewEvents[id]) {
+                 boundViewEvents[id]();
+             }
+
+             // register the given event in the boundViewEvents collection.
+             boundViewEvents[id] = $rootScope.$on(eventName, callback);
+         }
+
+         function cleanupViewEvents() {
+             // clean up any events that have been registered.
+             _.each(boundViewEvents, function(unregister) { unregister(); });
+             boundViewEvents = {};
+         }
+
+         function setInfo(icon, message) {
+             shellState.infoIcon = icon;
+             shellState.infoMessage = message;
+         }
+
+         function clearInfo() {
+             shellState.infoIcon = '';
+             shellState.infoMessage = '';
+         }
+
+         function setPageTitle(val) {
+             shellState.pageTitle = val;
+             $document[0].title = shellState.pageTitle;
+         }
+
+         function getPageTitle() {
+             return shellState.pageTitle;
+         }
+
+         function toggleBrand() {
+             shellState.showBrand = !shellState.showBrand;
+             shellState.viewSettings[shellState.mediaMode].showBrand = shellState.showBrand;
+         }
+
+         function showBrand(onOff) {
+             shellState.showBrand = (onOff === undefined) ? true : onOff;
+             shellState.viewSettings[shellState.mediaMode].showBrand = shellState.showBrand;
+         }
+
+         function setBrandHTML(html) {
+             shellState.brandHTML = $sce.trustAsHtml(html);
+         }
+
+         function getBrandHTML() {
+             return shellState.brandHTML;
+         }
+
+         function notifyShellButtonsChanged(event) {
+             navbarButtons = _.sortBy(navbarButtons, function(btn) { return btn.index; });
+             $rootScope.$emit('navbarButtonsChanged', event);
+             $timeout(function() { $rootScope.$apply(); });
+         }
+
+         function suspend() {
+             shellState.suspend = true;
+         }
+
+         function resume() {
+             shellState.suspend = false;
+         }
+
+         function enableFeedback() {
+             shellState.feedbackEnabled = true;
+         }
+
+         function disableFeedback() {
+             shellState.feedbackEnabled = false;
+         }
+
+         function notifyStateChanged(event) {
+             $rootScope.$emit('shellStateChanged', event);
+         }
+
+         function notifySizeChanged(event) {
+             // use timeout to wait until the animation is complete before publishing the resize event
+             $timeout(function() {
+                 $rootScope.$emit('shellSizeChanged', event);
+             }, 310);
+         }
+
+         function hideHomeButton() {
+             if (shellState.showHomeButton) {
+                 shellState.showHomeButton = false;
+                 notifyShellButtonsChanged('hideHomeButton');
+             }
+         }
+
+         function showHomeButton() {
+             if (!shellState.showHomeButton) {
+                 shellState.showHomeButton = true;
+                 notifyShellButtonsChanged('showHomeButton');
+             }
+         }
+
+         function hideLeftToggleButton() {
+             if (shellState.showLeftToggleButton) {
+                 shellState.showLeftToggleButton = false;
+                 notifyShellButtonsChanged('hideLeftToggleButton');
+             }
+         }
+
+         function showLeftToggleButton() {
+             if (!shellState.showLeftToggleButton) {
+                 shellState.showLeftToggleButton = true;
+                 notifyShellButtonsChanged('showLeftToggleButton');
+             }
+         }
+
+         function hideRightToggleButton() {
+             if (shellState.showRightToggleButton) {
+                 shellState.showRightToggleButton = false;
+
+                 notifyShellButtonsChanged('hideRightToggleButton');
+             }
+         }
+
+         function showRightToggleButton() {
+             if (!shellState.showRightToggleButton) {
+                 shellState.showRightToggleButton = true;
+
+                 notifyShellButtonsChanged('showRightToggleButton');
+             }
+         }
+
+         function toggleLeftSidebar() {
+             shellState.showLeftSidebar = !shellState.showLeftSidebar;
+             shellState.viewSettings[shellState.mediaMode].showLeftSidebar = shellState.showLeftSidebar;
+
+             notifySizeChanged(shellState.showLeftSidebar ? 'showLeftSidebar' : 'hideLeftSidebar');
+         }
+
+         function showLeftSidebar() {
+             if (!shellState.showLeftSidebar) {
+                 shellState.showLeftSidebar = true;
+                 shellState.viewSettings[shellState.mediaMode].showLeftSidebar = true;
+
+                 notifySizeChanged('showLeftSidebar');
+             }
+         }
+
+         function hideLeftSidebar() {
+             if (shellState.showLeftSidebar) {
+                 shellState.showLeftSidebar = false;
+                 shellState.viewSettings[shellState.mediaMode].showLeftSidebar = false;
+
+                 notifySizeChanged('hideLeftSidebar');
+             }
+         }
+         function disableLeftSidebar() {
+             if (shellState.enableLeftSidebar) {
+                 shellState.enableLeftSidebar = false;
+                 shellState.viewSettings.large.enableLeftSidebar = false;
+                 shellState.viewSettings.small.enableLeftSidebar = false;
+
+                 hideLeftSidebar();
+                 hideLeftToggleButton();
+                 notifyStateChanged('disableLeftSidebar');
+             }
+         }
+         function enableLeftSidebar() {
+             if (!shellState.enableLeftSidebar) {
+                 shellState.enableLeftSidebar = true;
+                 shellState.viewSettings.large.enableLeftSidebar = true;
+                 shellState.viewSettings.small.enableLeftSidebar = true;
+
+                 if (isMediaModeLarge()) {
+                     showLeftSidebar();
+                 }
+                 showLeftToggleButton();
+                 notifyStateChanged('enableLeftSidebar');
+             }
+         }
+         function clearLeftSidebar() {
+             epSidebarService.clearLeftSidebar();
+         }
+         function toggleRightSidebar() {
+             shellState.showRightSidebar = !shellState.showRightSidebar;
+             shellState.viewSettings[shellState.mediaMode].showRightSidebar = shellState.showRightSidebar;
+
+             notifySizeChanged(shellState.showRightSidebar ? 'showRightSidebar' : 'hideRightSidebar');
+
+         }
+         function showRightSidebar() {
+             if (!shellState.showRightSidebar) {
+                 shellState.showRightSidebar = true;
+                 shellState.viewSettings[shellState.mediaMode].showRightSidebar = true;
+
+                 notifyStateChanged('showRightSidebar');
+             }
+         }
+         function hideRightSidebar() {
+             if (shellState.showRightSidebar) {
+                 shellState.showRightSidebar = false;
+                 shellState.viewSettings[shellState.mediaMode].showRightSidebar = false;
+
+                 notifyStateChanged('hideRightSidebar');
+             }
+         }
+         function disableRightSidebar() {
+             if (shellState.enableRightSidebar) {
+                 shellState.enableRightSidebar = false;
+                 shellState.viewSettings.large.enableRightSidebar = false;
+                 shellState.viewSettings.small.enableRightSidebar = false;
+
+                 hideRightSidebar();
+                 hideRightToggleButton();
+                 notifyStateChanged('disableRightSidebar');
+             }
+         }
+         function enableRightSidebar() {
+             if (!shellState.enableRightSidebar) {
+                 shellState.enableRightSidebar = true;
+                 shellState.viewSettings.large.enableRightSidebar = true;
+                 shellState.viewSettings.small.enableRightSidebar = true;
+
+                 showRightToggleButton();
+                 notifyStateChanged('enableRightSidebar');
+             }
+         }
+         function clearRightSidebar() {
+             epSidebarService.clearRightSidebar();
+         }
+         function getShowLeftSidebar() {
+             return shellState.showLeftSidebar;
+         }
+         function getShowRightSidebar() {
+             return shellState.showRightSidebar;
+         }
+
+         function hideNavbar() {
+             if (shellState.showNavbar) {
+                 shellState.showNavbar = false;
+                 notifyStateChanged('hideNavbar');
+             }
+         }
+         function showNavbar() {
+             if (!shellState.showNavbar) {
+                 shellState.showNavbar = true;
+                 notifyStateChanged('showNavbar');
+             }
+         }
+         function toggleNavbar() {
+             if (!shellState.showNavbar) {
+                 shellState.showNavbar = true;
+                 notifyStateChanged('showNavbar');
+             } else {
+                 shellState.showNavbar = false;
+                 notifyStateChanged('hideNavbar');
+             }
+         }
+
+         function hideFooter() {
+             if (shellState.showFooter) {
+                 shellState.showFooter = false;
+                 notifyStateChanged('hideFooter');
+             }
+         }
+         function showFooter() {
+             if (!shellState.showFooter) {
+                 shellState.showFooter = true;
+                 notifyStateChanged('showFooter');
+             }
+         }
+         function toggleFooter() {
+             if (!shellState.showFooter) {
+                 shellState.showFooter = true;
+                 notifyStateChanged('showFooter');
+             } else {
+                 shellState.showFooter = false;
+                 notifyStateChanged('hideFooter');
+             }
+         }
+
+         function clearNavbarButtons() {
+             navbarButtons = [];
+             notifyShellButtonsChanged('clearNavbarButtons');
+         }
+         function updateNavbarButtons(buttons) {
+             navbarButtons = buttons;
+             _.each(navbarButtons, function(btn) {
+                 if (!btn.type) {
+                     btn.type = 'button';
+                 }
+             });
+             notifyShellButtonsChanged('updateNavbarButtons');
+         }
+         function addNavbarButtons(buttons) {
+             navbarButtons = _.union(navbarButtons, buttons);
+             _.each(navbarButtons, function(btn) {
+                 if (!btn.type) {
+                     btn.type = 'button';
+                 }
+             });
+             notifyShellButtonsChanged('addNavbarButtons');
+         }
+         function getNavbarButtons() {
+             return navbarButtons;
+         }
+         function getNavbarButton(id) {
+             return _.find(navbarButtons, function(btn) { return btn.id === id; });
+         }
+         function hideNavbarButton(ids) {
+             //you can pass one or more id's seperated by comma
+             var hasFound = false;
+             if (ids !== undefined) {
+                 _.each(arguments, function(arg) {
+                     var id = arg;
+                     var b = _.find(navbarButtons, function(btn) { return btn.id === id; });
+                     if (b) {
+                         b.hidden = true;
+                         hasFound = true;
+                     }
+                 });
+             }
+             if (hasFound) {
+                 notifyShellButtonsChanged('hideNavbarButton');
+             }
+         }
+         function showNavbarButton(ids) {
+             //you can pass one or more id's seperated by comma
+             var hasFound = false;
+             if (ids !== undefined) {
+                 _.each(arguments, function(arg) {
+                     var id = arg;
+                     var b = _.find(navbarButtons, function(btn) { return btn.id === id; });
+                     if (b) {
+                         b.hidden = b.enabled ? !b.enabled() : false;
+                         hasFound = true;
+                     }
+                 });
+             }
+             if (hasFound) {
+                 notifyShellButtonsChanged('showNavbarButton');
+             }
+         }
+         function hideAllNavbarButtons() {
+             _.each(navbarButtons, function(btn) { hideNavbarButton(btn.id); });
+             notifyShellButtonsChanged('hideNavbarButton');
+         }
+         function showAllNavbarButtons() {
+             _.each(navbarButtons, function(btn) { showNavbarButton(btn.id); });
+             notifyShellButtonsChanged('hideNavbarButton');
+         }
+         function disableNavbarButtons(onOff) {
+             shellState.freezeNavButtons = onOff;
+         }
+
+         //Stores the nav button that is clicked on mouse down event and this state is cleared on actual click event.
+         //Useful for blur processing
+         function navbarButtonClicked() {
+             return shellState.navButtonClicked;
+         }
+
+         function momentumScrollingEnabled(onOff) {
+             if (onOff !== undefined) {
+                 shellState.momentumScrollingEnabled = onOff;
+             }
+             return shellState.momentumScrollingEnabled;
+         }
+
+         function allowVerticalScroll(onOff) {
+             if (onOff !== undefined) {
+                 shellState.allowVerticalScroll = onOff;
+             }
+             return shellState.allowVerticalScroll;
+         }
+
+         function getViewDimensions() {
+             return shellState.viewDimensions;
+         }
+
+         initialize();
+
+         return {
+             // --- For internal module usage only --->
+             __state: shellState,
+             __setCurrentModeFlags: setCurrentModeFlags,
+             __viewSettings: viewSettings,
+             // <-------------------------------------------
+             init: init,
+             // Progress Indicator
+             showProgressIndicator: showProgressIndicator,
+             hideProgressIndicator: hideProgressIndicator,
+             resetProgressIndicator: resetProgressIndicator,
+             // Events
+             registerViewEvent: registerViewEvent,
+             cleanupViewEvents: cleanupViewEvents,
+             notifyStateChanged: notifyStateChanged,
+             notifyShellButtonsChanged: notifyShellButtonsChanged,
+             notifySizeChanged: notifySizeChanged,
+             feedbackCallback: feedbackCallback,
+             // General Settings
+             setPageTitle: setPageTitle,
+             getPageTitle: getPageTitle,
+             toggleBrand: toggleBrand,
+             showBrand: showBrand,
+             setBrandHTML: setBrandHTML,
+             getBrandHTML: getBrandHTML,
+             setInfo: setInfo,
+             clearInfo: clearInfo,
+             suspend: suspend,
+             resume: resume,
+             getMediaMode: getMediaMode,
+             isMediaModeLarge: isMediaModeLarge,
+             getViewDimensions: getViewDimensions,
+             momentumScrollingEnabled: momentumScrollingEnabled,
+             allowVerticalScroll: allowVerticalScroll,
+             themingDisabled: themingDisabled,
+             enableFeedback: enableFeedback,
+             disableFeedback: disableFeedback,
+             showHomeButton: showHomeButton,
+             hideHomeButton: hideHomeButton,
+             //Sidebar functions
+             hideLeftToggleButton: hideLeftToggleButton,
+             showLeftToggleButton: showLeftToggleButton,
+             hideRightToggleButton: hideRightToggleButton,
+             showRightToggleButton: showRightToggleButton,
+             toggleLeftSidebar: toggleLeftSidebar,
+             showLeftSidebar: showLeftSidebar,
+             hideLeftSidebar: hideLeftSidebar,
+             disableLeftSidebar: disableLeftSidebar,
+             enableLeftSidebar: enableLeftSidebar,
+             clearLeftSidebar: clearLeftSidebar,
+             toggleRightSidebar: toggleRightSidebar,
+             showRightSidebar: showRightSidebar,
+             hideRightSidebar: hideRightSidebar,
+             enableRightSidebar: enableRightSidebar,
+             disableRightSidebar: disableRightSidebar,
+             clearRightSidebar: clearRightSidebar,
+             getShowLeftSidebar: getShowLeftSidebar,
+             getShowRightSidebar: getShowRightSidebar,
+             //Navigation bar functions
+             showNavbar: showNavbar,
+             hideNavbar: hideNavbar,
+             toggleNavbar: toggleNavbar,
+             //Footer
+             showFooter: showFooter,
+             hideFooter: hideFooter,
+             toggleFooter: toggleFooter,
+             //Nav Buttons
+             clearNavbarButtons: clearNavbarButtons,
+             updateNavbarButtons: updateNavbarButtons,
+             addNavbarButtons: addNavbarButtons,
+             getNavbarButtons: getNavbarButtons,
+             getNavbarButton: getNavbarButton,
+             showNavbarButton: showNavbarButton,
+             hideNavbarButton: hideNavbarButton,
+             showAllNavbarButtons: showAllNavbarButtons,
+             hideAllNavbarButtons: hideAllNavbarButtons,
+             disableNavbarButtons: disableNavbarButtons,
+             navbarButtonClicked: navbarButtonClicked
+         };
+     }
+]);
+
+'use strict';
+/**
+     * @ngdoc directive
+     * @name ep.shell.directive:epShellSidebar
+     * @restrict E
+     *
+     * @description
+     * Represents the shell sidebar directive. For internal epShell usage only
+     */
+angular.module('ep.shell').directive('epShellSidebar', [
+    '$location',
+    '$rootScope',
+    '$routeParams',
+    'epSidebarService',
+    'epShellService',
+    'epShellConstants',
+    'epFeatureDetectionService',
+    function($location, $rootScope, $routeParams,
+        epSidebarService, epShellService, epShellConstants, epFeatureDetectionService) {
+        return {
+            restrict: 'E',
+            replace: true,
+            transclude: true,
+            templateUrl: 'src/components/ep.shell/sidebar/sidebar.html',
+            controller: function($scope) {
+                function init() {
+                    $scope.platform = epFeatureDetectionService.getFeatures().platform;
+                    $scope.shellState = epShellService.__state;
+                    $scope.sidebarState = epSidebarService.state;
+                    $('body').removeClass('cordova-padding');
+                    if ($scope.platform.app === 'Cordova' && $scope.platform.os === 'mac') {
+                        $('body').addClass('cordova-padding');
+                    }
+
+                    $scope.menuId = $routeParams.menuId;
+                    $scope.dismissRightSidebar = function() {
+                        if (!$scope.shellState.suspend) {
+                            epShellService.hideRightSidebar();
+                        }
+                    };
+
+                    $scope.dismissLeftSidebar = function() {
+                        if (epShellService.getMediaMode() === epShellConstants.MEDIA_MODE_SMALL &&
+                            !$scope.shellState.suspend) {
+                            epShellService.hideLeftSidebar();
+                        }
+                    };
+
+                    $scope.dismissSidebars = function() {
+                        $scope.dismissRightSidebar();
+                        $scope.dismissLeftSidebar();
+                    };
+                }
+
+                $rootScope.$watch('initComplete', function(initComplete) {
+                    if (initComplete) {
+                        init();
+                    }
+                });
+            }
+        };
+    }
+]);
+
+'use strict';
+angular.module('ep.shell').service('epSidebarService', [
+    '$compile',
+     function($compile) {
+         var viewContainerScope = null;
+
+         var state = {
+             shouldShowMessage: false,
+             message: null,
+             leftTemplate: null,
+             rightTemplate: null,
+             leftTemplateUrl: null,
+             rightTemplateUrl: null
+         };
+
+         function clearLeftSidebar() {
+             angular.element('#leftSidebar').empty();
+         }
+
+         function clearRightSidebar() {
+             angular.element('#rightSidebar').empty();
+         }
+
+         function clear() {
+             clearLeftSidebar();
+             clearRightSidebar();
+         }
+
+         function setScope(val) {
+             viewContainerScope = val;
+         }
+
+         function setLeftTemplateUrl(val) {
+             setLeftTemplate("<div ng-include='\"" + val + "\"'></div>");
+         }
+
+         function setRightTemplateUrl(val) {
+             setRightTemplate("<div ng-include='\"" + val + "\"'></div>");
+         }
+
+         function setLeftTemplate(val) {
+             state.leftTemplate = val;
+             var target = angular.element('#leftSidebar');
+             target
+                 .empty()
+                 .append($compile(val)(viewContainerScope));
+         }
+
+         function setRightTemplate(val) {
+             state.rightTemplate = val;
+             var target = angular.element('#rightSidebar');
+             target
+                 .empty()
+                 .append($compile(val)(viewContainerScope));
+         }
+
+         function showMessage(val) {
+             if (val) {
+                 state.shouldShowMessage = true;
+             }
+             state.message = val;
+         }
+
+         return {
+             clear: clear,
+             clearLeftSidebar: clearLeftSidebar,
+             clearRightSidebar: clearRightSidebar,
+             state: state,
+             showMessage: showMessage,
+             setScope: setScope,
+             setLeftTemplateUrl: setLeftTemplateUrl,
+             setRightTemplateUrl: setRightTemplateUrl,
+             setLeftTemplate: setLeftTemplate,
+             setRightTemplate: setRightTemplate,
+         };
+     }
+]);
+
+'use strict';
+/**
+     * @ngdoc directive
+     * @name ep.shell.directive:epShellViewContainer
+     * @restrict E
+     *
+     * @description
+     * Represents the shell view container directive. 
+     */
+(function() {
+    angular.module('ep.shell').directive('epShellViewContainer', function($rootScope,
+        epShellService, epSidebarService, epViewContainerService) {
+
+          function setSidebarSettings(sidebar, scope) {
+              if (sidebar.left) {
+                  if (sidebar.left.template) {
+                      epSidebarService.setLeftTemplate(sidebar.left.template, scope);
+                  } else if (sidebar.left.templateUrl) {
+                      epSidebarService.setLeftTemplateUrl(sidebar.left.templateUrl, scope);
+                  }
+              }
+              if (sidebar.right) {
+                  if (sidebar.right.template) {
+                      epSidebarService.setRightTemplate(sidebar.right.template, scope);
+                  } else if (sidebar.right.templateUrl) {
+                      epSidebarService.setRightTemplateUrl(sidebar.right.templateUrl, scope);
+                  }
+              }
+          }
+          return {
+              restrict: 'E',
+              transclude: true,
+              replace: false,
+              templateUrl: 'src/components/ep.shell/viewcontainer/viewcontainer.html',
+              scope: {
+                  'sidebarsettings': '@',
+                  'smallmodesettings': '@',
+                  'largemodesettings': '@'
+              },
+              compile: function() {
+                  var currentMode = '';
+                  return {
+                      pre: function($scope) {
+                          var shellState = epShellService.__state;
+                          $scope.state = shellState;
+                          currentMode = epShellService.getMediaMode();
+                          epSidebarService.setScope($scope);
+                          var viewSettings = {
+                              sidebar: $scope.sidebarsettings ? JSON.parse($scope.sidebarsettings) : {},
+                              small: $scope.smallmodesettings ? JSON.parse($scope.smallmodesettings) : {},
+                              large: $scope.largemodesettings ? JSON.parse($scope.largemodesettings) : {}
+                          };
+                          viewSettings = epShellService.__viewSettings(viewSettings);
+
+                          if (viewSettings[currentMode]) {
+                              epShellService.__setCurrentModeFlags();
+                          }
+                          if (viewSettings.sidebar) {
+                              setSidebarSettings(viewSettings.sidebar, $scope);
+                          }
+
+                          if (epViewContainerService.state.cleanup) {
+                              epViewContainerService.state.cleanup();
+                          }
+                          epViewContainerService.state.cleanup = $rootScope.$on('shellStateChanged', function() {
+                              if (currentMode !== epShellService.getMediaMode()) {
+                                  currentMode = epShellService.getMediaMode();
+                                  if (viewSettings[currentMode]) {
+                                      epShellService.__setCurrentModeFlags();
+                                  }
+                                  if (viewSettings.sidebar) {
+                                      setSidebarSettings(viewSettings.sidebar, $scope);
+                                  }
+                                  $scope.$apply();
+                              }
+                          });
+                      },
+                      post: function() { }
+                  };
+              }
+          };
+      });
+})();
+
+'use strict';
+angular.module('ep.shell').service('epViewContainerService', [
+    '$rootScope',
+    '$timeout',
+    'epShellService',
+    'epShellConstants',
+     function($rootScope, $timeout, epShellService, epShellConstants) {
+         var state = {
+             cleanup: null
+         };
+
+         function calculateDimensions(eventType) {
+             var shellState = epShellService.__state;
+             var $window = $(window);
+             var offset = {
+                 top: shellState.showNavbar ? epShellConstants.NAVBARHEIGHT : 0,
+                 left: (shellState.showLeftSidebar && epShellService.isMediaModeLarge()) ?
+                     epShellConstants.SIDEBARWIDTH : 0
+             };
+             var dim = {
+                 offset: offset,
+                 size: {
+                     width: $window.width() - offset.left,
+                     height: $window.height() - offset.top - (shellState.showFooter ? epShellConstants.FOOTERHEIGHT : 0)
+                 }
+             };
+             var curr = shellState.viewDimensions;
+             var triggerEvent = curr.size.width !== dim.size.width ||
+                                 curr.size.height !== dim.size.height ||
+                                 curr.offset.top !== dim.offset.top ||
+                                 curr.offset.left !== dim.offset.left;
+
+             shellState.viewDimensions = dim;
+             if (triggerEvent) {
+                 $rootScope.$emit('viewSizeChanged', dim, eventType);
+             }
+         }
+
+         $rootScope.$on('shellSizeChanged', function() {
+             calculateDimensions('size');
+         });
+
+         return {
+             state: state,
+             calculateDimensions: calculateDimensions
+         };
+     }
+]);
+
+'use strict';
 
 /**
  * @ngdoc object
@@ -3107,6 +4367,9 @@ angular.module('ep.theme').service('epThemeService', [
         // set the default theme
         var _theme = epLocalStorageService.getOrAdd(localStorageId, epThemeConfig.theme);
 
+        // callback on theme change
+        var _fnCallback = null;
+
         /**
          * @ngdoc method
          * @name getThemes
@@ -3115,9 +4378,9 @@ angular.module('ep.theme').service('epThemeService', [
          * @description
          * Gets the collection of themes from the epThemeConfig / sysconfig.json
          */
-        this.getThemes = function() {
+        function getThemes() {
             return epThemeConfig.themes;
-        };
+        }
         /**
         * @ngdoc method
         * @name getTheme
@@ -3126,9 +4389,9 @@ angular.module('ep.theme').service('epThemeService', [
         * @description
         * Gets the theme by name
         */
-        this.getTheme = function(name) {
-            return _.find(this.getThemes(), function(t) { return t.name === name; });
-        };
+        function getTheme(name) {
+            return _.find(getThemes(), function(t) { return t.name === name; });
+        }
 
         /**
         * @ngdoc method
@@ -3138,19 +4401,24 @@ angular.module('ep.theme').service('epThemeService', [
         * @description
         * sets the theme by name
         */
-        this.theme = function(newTheme) {
+        function theme(newTheme) {
             if (newTheme) {
-                _theme = _.find(this.getThemes(), function(t) { return t.name === newTheme; });
+                _theme = _.find(getThemes(), function(t) { return t.name === newTheme; });
 
                 // if the one that is set is not found then default it back
                 if (!_theme) {
-                    _theme = _.find(this.getThemes(), function(t) { return t.name === 'bootstrap'; });
+                    _theme = _.find(getThemes(), function(t) { return t.name === 'bootstrap'; });
                 }
+
+                if (_fnCallback) {
+                    _fnCallback(theme);
+                }
+
                 // set the current theme back onto the epLocalStorage service
                 epLocalStorageService.update(localStorageId, _theme);
             }
             return _theme;
-        };
+        }
 
         /**
         * @ngdoc method
@@ -3160,23 +4428,42 @@ angular.module('ep.theme').service('epThemeService', [
         * @description
         * Gets the theme by name
         */
-        this.getThemeWithFullPath = function(name) {
-            var themeItem = (name) ? _.find(this.getThemes(), function(t) { return t.name === name; }) : _theme;
-            if (themeItem && epThemeConfig.defaultPath && themeItem.cssFilename) {
+        function getThemeWithFullPath(name) {
+            var themeItem = (name) ?
+                _.find(getThemes(), function(t) { return t.name === name; }) : _theme;
+            var p = epThemeConfig.defaultPath;
+            if (themeItem && p && themeItem.cssFilename) {
                 var ret = angular.extend({}, themeItem);
 
-                epThemeConfig.defaultPath = epThemeConfig.defaultPath.trim();
-                if (epThemeConfig.defaultPath.lastIndexOf('/') === epThemeConfig.defaultPath.length - 1) {
-                    epThemeConfig.defaultPath =
-                        epThemeConfig.defaultPath.substr(0, epThemeConfig.defaultPath.length - 1);
+                p = p.trim();
+                if (p.lastIndexOf('/') === p.length - 1) {
+                    p = p.substr(0, p.length - 1);
                 }
-
-                ret.cssFilename = epThemeConfig.defaultPath + '/' + ret.cssFilename;
+                ret.cssFilename = p + '/' + ret.cssFilename;
                 return ret;
             }
             return themeItem;
-        };
+        }
 
+        /**
+         * @ngdoc method
+         * @name callbackOnChange
+         * @methodOf ep.theme.service:epThemeService
+         * @public
+         * @description
+         * Define callback function fnCallback(theme) that will be called when theme is called
+         */
+        function callbackOnChange(fnCallback) {
+            _fnCallback = fnCallback;
+        }
+
+        return {
+            getThemes: getThemes,
+            getTheme: getTheme,
+            theme: theme,
+            getThemeWithFullPath: getThemeWithFullPath,
+            callbackOnChange: callbackOnChange
+        };
     }]);
 
 'use strict';
@@ -3584,6 +4871,34 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
   $templateCache.put('src/components/ep.search/search.html',
     "<div><header class=reverse><div class=searchControl><form role=form ng-submit=runSearch(searchText)><input type=search placeholder=\"Enter your search terms...\" ng-model=searchText ng-change=\"changeSearch()\"> <span class=input-group-btn><button class=\"btn btn-default\" type=button><span class=\"icon icon-search\"></span></button></span> <button ng-click=runSearch(searchText) ng-disabled=!searchText>search</button></form><div class=\"alert alert-danger\" id=validationSummary role=alert ng-show=hasError>{{status}}</div></div></header><section><div ng-show=enterpriseSearch.searchText><p ng-show=enterpriseSearch.searching>Searching for the following terms: '{{enterpriseSearch.searchText}}' ...</p><p ng-show=enterpriseSearch.searchError>{{enterpriseSearch.searchError}}</p></div><ul ng-if=enterpriseSearch.searchResults class=searchResults><li ng-repeat=\"searchResult in enterpriseSearch.searchResults track by $index\" class=searchResultCategory><b>Category: {{searchResult.label | uppercase}}</b><br><ul ng-if=searchResult.results><li ng-repeat=\"result in searchResult.results\" class=searchResult><span class=searchResultHeader ng-class=searchResult.label>{{result.label | uppercase}} - {{result.companyContext}} - {{result.keyTag}}</span><br><div ng-if=result.fields><span ng-repeat=\"field in result.fields\" class=searchResultField>{{field.alias}}: {{field.FieldValue}},</span></div></li></ul></li></ul></section></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.shell/feedback/feedback_dialog.html',
+    "<div class=form-group><label>{{config.summaryLabel}} <span class=\"required-indicator text-danger fa fa-asterisk\"></span></label><input class=form-control ng-model=config.feedback.summary ng-required=\"true\"></div><div class=form-group><label>{{config.descriptionLabel}} <span class=\"required-indicator text-danger fa fa-asterisk\"></span></label><textarea class=form-control ng-model=config.feedback.description ng-required=true></textarea></div><div class=form-group><label>{{config.customerNameLabel}}</label><input class=form-control ng-model=\"config.feedback.customerName\"></div><div class=form-group><label>{{config.customerEmailLabel}}</label><input class=form-control ng-model=\"config.feedback.customerEmail\"></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.shell/shell.html',
+    "<div><section ng-controller=epShellCtrl class=ep-shell><section ng-if=\"state.disableTheming !== true && state.includeThemeFile === true\"><link rel=stylesheet ng-href={{state.currentTheme.cssFilename}}></section><div ng-show=state.showProgressIndicator class=ep-progress-idicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button\" ng-class=\"{'hidden': !state.showHomeButton}\"></a></li><li><a id=apptitle ng-class=\"{hidden: !state.showBrand}\" class=navbar-brand href=#/home><p ng-bind-html=state.brandHTML></p></a></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in navButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.disabled}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button)></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false></a><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.disabled }\" role=menu><li ng-repeat=\"opt in button.options\"><a ng-click=opt.action() ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa {{opt.icon}}\"></i><span class=ep-navmenu-item-text>{{opt.title}}</span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div ng-view class=ep-fullscreen></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" href=#/whatsnew><sup>Version {{uiVersion}}</sup></a></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.feedbackEnabled ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.shell/sidebar/sidebar.html',
+    "<div class=ep-shell-container ng-class=\"{ 'nav-padding': shellState.showNavbar, 'footer-padding': shellState.showFooter, 'ep-disable-left-sidebar': !shellState.enableLeftSidebar, 'ep-hide-left-sidebar': (!shellState.showLeftSidebar) || (!shellState.enableLeftSidebar), 'ep-hide-right-sidebar': (!shellState.showRightSidebar) || !(shellState.enableRightSidebar)}\"><!-- Left Sidebar --><div id=leftSidebar class=\"ep-sidebar-nav ep-sidebar-nav-left well ep-ease-animation\" ng-class=\"{'ep-with-navbar': shellState.showNavbar, 'ep-with-footer': shellState.showFooter, 'cordova-ios': platform.app==='Cordova' && platform.os=='mac'}\" ng-click=dismissRightSidebar()></div><div id=viewPlaceholder class=\"ep-view-placeholder ep-fullscreen\" ng-transclude ng-click=dismissSidebars()><!--VIEW CONTENT HERE--></div><!-- Right Sidebar --><div id=rightSidebar class=\"ep-sidebar-nav ep-sidebar-nav-right well ep-ease-animation\"></div></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.shell/viewcontainer/viewcontainer.html',
+    "<div id=viewContainer class=ep-view-container ng-class=\"{ 'ep-with-navbar': !!state.showNavbar,\r" +
+    "\n" +
+    "                                    'ep-with-footer': !!state.showFooter,\r" +
+    "\n" +
+    "                                    'ep-ease-animation': !!state.animateViewContainer,\r" +
+    "\n" +
+    "                                    'ep-scroll-y': !!state.allowVerticalScroll,\r" +
+    "\n" +
+    "                                    'ep-momentum-scrolling-enabled': !!state.momentumScrollingEnabled }\"><div id=viewMessage class=ep-container-message ng-if=state.infoMessage ng-style=\"{'width': state.viewDimensions.size.width + 'px', 'height': state.viewDimensions.size.height + 'px'}\"><p class=\"ep-container-message-text center-item\"><i class={{state.infoIcon}}></i><br>{{state.infoMessage}}</p></div><div class=ep-fullscreen ng-transclude></div></div>"
   );
 
 }]);
