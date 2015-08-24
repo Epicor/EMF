@@ -231,9 +231,36 @@
 .ep-hide-fade.ng-hide-remove.ng-hide-remove-active {
   opacity: 1;
 }
+.ep-center-item {
+  /* The order of these transform rules is important, proceed with caution */
+  transform: translateX(-50%);
+  -moz-transform: translateX(-50%);
+  -ms-transform: translateX(-50%);
+  -o-transform: translateX(-50%);
+  -webkit-transform: translateX(-50%);
+  transform: translateZ(0) translateX(-50%);
+  -moz-transform: translate3d(-50%, 0, 0);
+  -ms-transform: translate3d(-50%, 0, 0);
+  -o-transform: translate3d(-50%, 0, 0);
+  -webkit-transform: translate3d(-50%, 0, 0);
+  transform: translate3d(-50%, 0, 0);
+  margin-left: 50%;
+}
 
-.blah {
-  background-color: #000;
+#appHost {
+  height: 100%;
+}
+#splash {
+  position: absolute;
+  height: 100%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
+}
+#splashContainer {
+  width: 100%;
+  text-align: center;
 }
 
 .ep-modaldialog .ep-dlg-buttons {
@@ -574,6 +601,32 @@ SHELL CONTAINER
 }
 .ep-shell .ep-shell-container .ep-view-placeholder {
   overflow: hidden;
+}
+/* These rules are necessary because the container sizes defined in bootstrap 
+   needs to take into account the width of the sidebar when in large mode. */
+@media (min-width: 768px) {
+  #shellcontainer #viewContainer .container {
+    max-width: 500px;
+  }
+  #shellcontainer.hide-left-sidebar #viewContainer .container {
+    max-width: 750px;
+  }
+}
+@media (min-width: 992px) {
+  #shellcontainer #viewContainer .container {
+    max-width: 670px;
+  }
+  #shellcontainer.hide-left-sidebar #viewContainer .container {
+    max-width: 920px;
+  }
+}
+@media (min-width: 1200px) {
+  #shellcontainer #viewContainer .container {
+    max-width: 920px;
+  }
+  #shellcontainer.hide-left-sidebar #viewContainer .container {
+    max-width: 1170px;
+  }
 }
 /*
 =================================================================

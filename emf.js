@@ -51,6 +51,15 @@ angular.module('ep.drag.drop', [
 'use strict';
 /**
  * @ngdoc overview
+ * @name ep.embedded.apps
+ * @description
+ * Provides services for embedded application hosting
+ */
+angular.module('ep.embedded.apps', ['ep.templates', 'ep.sysconfig']);
+
+'use strict';
+/**
+ * @ngdoc overview
  * @name ep.feature.detection
  * @description
  * This service detects features available on the client
@@ -66,7 +75,9 @@ angular.module('ep.feature.detection', [
  * @description
  * Provides local storage property bag
  */
-angular.module('ep.local.storage', []);
+angular.module('ep.local.storage', [
+    'ep.sysconfig'
+]);
 
 'use strict';
 /**
@@ -121,10 +132,25 @@ angular.module('ep.search', [
  * @description
  * Provides epicor shell
  */
-angular.module('ep.shell', ['ngRoute', 'ui.bootstrap',
-    'ep.templates', 'ep.feature.detection', 'ep.local.storage', 'ep.theme', 'ep.utils']);
+angular.module('ep.shell', [
+    'ngRoute',
+    'ui.bootstrap',
+    'ep.templates',
+    'ep.feature.detection',
+    'ep.local.storage',
+    'ep.theme',
+    'ep.utils',
+    'ep.sysconfig']
+    );
 
-
+'use strict';
+/**
+ * @ngdoc overview
+ * @name ep.theme
+ * @description
+ * This service returns a list of themes installed in the \css\themes directory
+ */
+angular.module('ep.sysconfig', []);
 
 'use strict';
 /**
@@ -146,7 +172,8 @@ angular.module('ep.templates', []);
  */
 angular.module('ep.theme', [
     'ep.templates',
-    'ep.local.storage'
+    'ep.local.storage',
+    'ep.sysconfig'
 ]);
 
 'use strict';
@@ -168,7 +195,9 @@ angular.module('ep.token', [
  * @description
  * Provides emf utilities
  */
-angular.module('ep.utils', []);
+angular.module('ep.utils', [
+    'ep.sysconfig'
+]);
 
 'use strict';
 /**
@@ -982,6 +1011,780 @@ angular.module('ep.drag.drop').directive('epDropArea', [
 
 'use strict';
 /**
+     * @ngdoc directive
+     * @name ep.modaldialog.directive:epmodaldialog
+     * @restrict E
+     *
+     * @description
+     * Represents the dialog pane (confirmation) directive. For internal use from epModalDialogService
+     *
+     */
+angular.module('ep.embedded.apps').directive('epEmbeddedAppsLoader', [
+    '$http',
+    '$log',
+    '$compile',
+    '$timeout',
+    'epEmbeddedAppsCacheService',
+    'epEmbeddedAppsProvider',
+    function($http, $log, $compile, $timeout, epEmbeddedAppsCacheService, epEmbeddedAppsProvider) {
+        return {
+            scope: {
+                'config': '=',
+                'onComplete': '&'
+            },
+            link: function(scope, element) {
+                var childScope;
+
+                function clearContent() {
+                    if (childScope) {
+                        childScope.$destroy();
+                        childScope = null;
+                    }
+                    element.html('');
+                }
+
+                function loadTemplate(url, callback) {
+                    var resourceId = 'view:' + url;
+                    var view;
+                    if (!epEmbeddedAppsCacheService.scriptCache.get(resourceId)) {
+                        $http.get(url).
+                            success(function(data) {
+                                epEmbeddedAppsCacheService.scriptCache.put(resourceId, data);
+                                callback(data);
+                            })
+                            .error(function(data) {
+                                $log.error('Error loading template "' + url + "': " + data);
+                            });
+                    } else {
+                        view = epEmbeddedAppsCacheService.scriptCache.get(resourceId);
+                        $timeout(function() {
+                            callback(view);
+                        }, 0);
+                    }
+                }
+
+                scope.$watch(function() {
+                    return scope.config && scope.config.id;
+                }, function() {
+                    var config = scope.config;
+                    if (config && config.id) {
+                        epEmbeddedAppsProvider.load(config, function() {
+
+                            var viewId = config.activeViewId || config.startViewId;
+                            var templateUrl = epEmbeddedAppsProvider.getAppPath(config.id,
+                                config.views[viewId].templateUrl);
+
+                            loadTemplate(templateUrl, function(template) {
+                                childScope = scope.$new();
+                                element.html(template);
+                                var content = element.contents();
+                                var linkFn = $compile(content);
+
+                                linkFn(childScope);
+
+                                if (scope.onComplete) {
+                                    scope.onComplete();
+                                }
+                            });
+
+                        });
+                    } else {
+                        clearContent();
+                    }
+                });
+            }
+        };
+    }]);
+
+'use strict';
+
+/**
+ * @ngdoc controller
+ * @name ep.embedded.apps.controller:epLoginCtrl
+ * @description
+ * Represents the login controller.
+ * This controller negotiates the login/logout requests with the token factory
+ *
+ * @example
+ *
+ */
+angular.module('ep.embedded.apps').controller('epEmbeddedAppShellConfigCtrl', [
+    '$scope',
+    'epShellService',
+    'epSidebarService',
+    function($scope, epShellService, epSidebarService) {
+
+        function setupShellOptions(config, view) {
+
+            // inject the new sidebar template
+            if (view.sidebarOptions) {
+                epShellService.disableLeftSidebar();
+                if (view.sidebarOptions.left) {
+                    if (view.sidebarOptions.left.enabled) {
+                        epShellService.enableLeftSidebar();
+                    }
+                    if (view.sidebarOptions.left.templateUrl) {
+                        var lefturl = '"' + leftSidebarUrl + '"';
+                        var leftSidebarUrl = $scope.getEmbbededAppPath(config.id, view.sidebarOptions.left.templateUrl);
+                        epSidebarService.setLeftTemplate('<div ng-include=' + lefturl + '></div>');
+                        //epSidebarService.setLeftTemplate("<div ng-include='\"" + leftSidebarUrl + "\"'></div>");
+                    } else if (view.sidebarOptions.left.template) {
+                        epSidebarService.setLeftTemplate(view.sidebarOptions.left.template);
+                    }
+                }
+
+                epShellService.disableRightSidebar();
+                if (view.sidebarOptions.right) {
+                    if (view.sidebarOptions.right.enabled) {
+                        epShellService.enableRightSidebar();
+                    }
+                    if (view.sidebarOptions.right.templateUrl) {
+                        var righturl = '"' + rightSidebarUrl + '"';
+                        var rightSidebarUrl = $scope.getEmbbededAppPath(config.id,
+                            view.sidebarOptions.right.templateUrl);
+                        epSidebarService.setRightTemplate('<div ng-include=' + righturl + '></div>');
+                        //epSidebarService.setRightTemplate("<div ng-include='\"" + rightSidebarUrl + "\"'></div>");
+                    } else if (view.sidebarOptions.right.template) {
+                        epSidebarService.setRightTemplate(view.sidebarOptions.right.template);
+                    }
+                }
+            } else {
+                epShellService.disableLeftSidebar();
+                epShellService.disableRightSidebar();
+            }
+        }
+
+        $scope.$on('setupShellEvent', function(event, data) {
+            var config = $scope.appConfig;
+            if (config.name) {
+                epShellService.setPageTitle(config.name);
+            }
+            var view = config.views[data.viewId];
+            if (view) {
+                setupShellOptions(config, view);
+            }
+        });
+    }
+]);
+
+'use strict';
+/**
+     * @ngdoc directive
+     * @name ep.modaldialog.directive:epmodaldialog
+     * @restrict E
+     *
+     * @description
+     * Represents the dialog pane (confirmation) directive. For internal use from epModalDialogService
+     *
+     */
+angular.module('ep.embedded.apps').directive('epEmbeddedApps', [
+    '$log',
+    '$routeParams',
+    '$timeout',
+    'epEmbeddedAppsService',
+    function($log, $routeParams, $timeout, epEmbeddedAppsService) {
+        return {
+            restrict: 'E',
+            templateUrl: 'src/components/ep.embedded.apps/embedded-apps.html',
+            link: function($scope, element) {
+                var state = epEmbeddedAppsService.state;
+                $scope.showSplash = false;
+
+                //are we running within shell container?
+                $scope.useShell = (angular.element(element).closest('ep-shell-view-container').length > 0);
+
+                function build(appId) {
+
+                    var config = epEmbeddedAppsService.configs[appId];
+                    if (config) {
+
+                        var view;
+                        if (state.viewId) {
+                            view = config.views[state.viewId];
+                        } else {
+                            view = config.views[config.startViewId];
+                        }
+
+                        if (view) {
+                            view.parent = config;
+                            config.activeViewId = state.viewId;
+                            $scope.currentView = view;
+                        }
+
+                        if (!config.initialized) {
+                            $timeout(function() {
+                                $scope.showSplash = true;
+                            });
+                            $scope.showApp = false;
+                            var start = new Date();
+
+                            $scope.onLoaderComplete = function() {
+                                // show the splash screen for a minimum of 2 seconds...
+                                var remaining = Math.max(2000 - (new Date() - start), 0);
+                                config.initialized = true;
+
+                                $timeout(function() {
+                                    $scope.showSplash = false;
+                                    $scope.showApp = true;
+                                    $scope.$apply();
+                                }, remaining);
+                            };
+                        } else {
+                            $scope.showApp = true;
+                            config.onComplete = null;
+                        }
+
+                        $scope.appConfig = config;
+                        $scope.getEmbbededAppPath = epEmbeddedAppsService.getAppPath;
+
+                        $timeout(function() {
+                            $scope.$broadcast('setupShellEvent', {
+                                viewId: state.viewId
+                            });
+                            $scope.$apply();
+                        });
+                    }
+                }
+
+                epEmbeddedAppsService.loadConfigurations().then(function() {
+                    state.appId = $routeParams.appId;
+                    if ($routeParams.viewId) {
+                        state.viewId = $routeParams.viewId;
+                    }
+                    build(state.appId);
+                });
+            }
+        };
+    }]);
+
+'use strict';
+
+/**
+ * @ngdoc object
+ * @name ep.shell.object:epShellConfig
+ * @description
+ * Provider for epShellConfig.
+ * Gets configuration options from sysconfig.json or default
+ */
+angular.module('ep.embedded.apps')
+    .service('epEmbeddedAppsCacheService', [
+        '$cacheFactory',
+        function($cacheFactory) {
+
+            var scriptCache = $cacheFactory('scriptCache', {
+                capacity: 10
+            });
+
+            var linkCache = $cacheFactory('linkCache', {
+                capacity: 10
+            });
+
+            return {
+                scriptCache: scriptCache,
+                linkCache: linkCache
+            };
+        }])
+
+    .provider('epEmbeddedAppsProvider', [
+    '$controllerProvider',
+    '$provide',
+    '$compileProvider',
+    '$filterProvider',
+    '$routeProvider',
+    function($controllerProvider, $provide, $compileProvider, $filterProvider, $routeProvider) {
+        var regModules = ['ng'];
+
+        var sysconfig = {
+            path: 'apps',
+            provider: 'sysconfig',
+            applications: []
+        };
+
+        var modules = {};
+        var providers = {
+            $controllerProvider: $controllerProvider,
+            $compileProvider: $compileProvider,
+            $filterProvider: $filterProvider,
+            $provide: $provide
+        };
+        var moduleCache = [];
+
+        moduleCache.push = function(value) {
+            if (this.indexOf(value) === -1) {
+                Array.prototype.push.apply(this, arguments);
+            }
+        };
+
+        function moduleExists(moduleName) {
+            try {
+                angular.module(moduleName);
+            } catch (e) {
+                if (/No module/.test(e)) {
+                    return false;
+                }
+            }
+            return true;
+        }
+
+        function ensureSlashStart(v) {
+            if (v && v.indexOf('/') !== 0) {
+                return '/' + v;
+            }
+            return v || '';
+        }
+
+        function ensureSlashEnd(v) {
+            if (v && v.indexOf('/') !== v.length - 1) {
+                return v + '/';
+            }
+            return v || '';
+        }
+
+        function getRequires(module) {
+            var requires = [];
+            angular.forEach(module.requires, function(requireModule) {
+                if (regModules.indexOf(requireModule) === -1) {
+                    requires.push(requireModule);
+                }
+            });
+            return requires;
+        }
+
+        function register($log, $injector, providers, registerModules) {
+            var i;
+            var ii;
+            var k;
+            var invokeQueue;
+            var moduleName;
+            var moduleFn;
+            var invokeArgs;
+            var provider;
+            if (registerModules) {
+                var runBlocks = [];
+                var configBlocks = [];
+                for (k = registerModules.length - 1; k >= 0; k--) {
+                    moduleName = registerModules[k];
+                    regModules.push(moduleName);
+                    moduleFn = angular.module(moduleName);
+                    configBlocks = configBlocks.concat(moduleFn._configBlocks);
+                    runBlocks = runBlocks.concat(moduleFn._runBlocks);
+                    try {
+                        for (invokeQueue = moduleFn._invokeQueue, i = 0, ii = invokeQueue.length; i < ii; i++) {
+                            invokeArgs = invokeQueue[i];
+
+                            if (providers.hasOwnProperty(invokeArgs[0])) {
+                                provider = providers[invokeArgs[0]];
+                            } else {
+                                return $log.error('unsupported provider ' + invokeArgs[0]);
+                            }
+                            provider[invokeArgs[1]].apply(provider, invokeArgs[2]);
+                        }
+                    } catch (e) {
+                        if (e.message) {
+                            e.message += ' from ' + moduleName;
+                        }
+                        $log.error(e.message);
+                        throw e;
+                    }
+                    registerModules.pop();
+                }
+                angular.forEach(runBlocks, function(fn) {
+                    $injector.invoke(fn);
+                });
+            }
+            return null;
+        }
+
+        function getAppPackageService(config, $timeout) {
+            return function appPackageService($location) {
+                var data = {};
+
+                function goTo(viewId) {
+                    $location.url('/app/' + config.id + '/' + viewId);
+                }
+
+                function executeResource(method, name, value, cacheKey, reload) {
+                    if (cacheKey !== undefined && cacheKey !== null && !reload && data[cacheKey]) {
+                        return $timeout(function() {
+                            return data[cacheKey];
+                        });
+                    }
+                    //var url = settings.appServerUrl + 'api/' + name;
+                    //return $http[method](url, value).then(function (result) {
+                    //    if (cacheKey !== undefined && cacheKey !== null) {
+                    //        data[cacheKey] = result.data;
+                    //    }
+                    //    return result.data;
+                    //});
+                }
+
+                var resource = {
+                    get: function(name, cacheKey, reload) {
+                        return executeResource('get', name, '', cacheKey, reload);
+                    },
+
+                    post: function(name, value, cacheKey, reload) {
+                        return executeResource('post', name, value, cacheKey, reload);
+                    },
+
+                    put: function(name, value, cacheKey, reload) {
+                        return executeResource('put', name, value, cacheKey, reload);
+                    },
+
+                    'delete': function(name, value, cacheKey, reload) {
+                        return executeResource('delete', name, '', cacheKey, reload);
+                    }
+                };
+
+                return {
+                    config: config,
+                    resource: resource,
+                    data: data,
+                    goTo: goTo
+                };
+
+            };
+        }
+
+        function getAppPath(args) {
+            var _args = (angular.isObject(args) && args.length) ? args : arguments;
+            var path = sysconfig.path;
+            angular.forEach(_args, function(arg) {
+                path += '/' + arg;
+            });
+            return path;
+        }
+
+        this.$get = function($timeout, $document, $http, $injector, $log, epEmbeddedAppsCacheService, epSysConfig) {
+            function load(config, callback) {
+                var resourceId = 'module: ' + config.id;
+                modules[config.id] = config;
+
+                if (!config) {
+                    var errorText = 'Module not configured';
+                    $log.error(errorText);
+                    throw errorText;
+                }
+
+                function loadResources(onLoadScript, onLoadLink, onLoadComplete) {
+                    function loadScripts(scriptList) {
+                        if (scriptList.length) {
+                            var url = _.first(scriptList);
+                            var scriptId = 'script:' + url;
+                            var scriptElement;
+                            if (url && epEmbeddedAppsCacheService.scriptCache.get(scriptId)) {
+                                loadScripts(_.rest(scriptList));
+                            } else if (url) {
+                                scriptElement = $document[0].createElement('script');
+                                scriptElement.src = url;
+                                scriptElement.onload = function() {
+                                    onLoadScript(scriptId);
+                                    loadScripts(_.rest(scriptList));
+                                };
+                                scriptElement.onerror = function() {
+                                    $log.error('Error loading url: [' + url + ']');
+                                    epEmbeddedAppsCacheService.scriptCache.remove(scriptId);
+                                    loadScripts(_.rest(scriptList));
+                                };
+                                $document[0].documentElement.appendChild(scriptElement);
+                                epEmbeddedAppsCacheService.scriptCache.put(scriptId, 1);
+                            } else {
+                                loadScripts(_.rest(scriptList));
+                            }
+                        } else {
+                            $timeout(onLoadComplete);
+                        }
+                    }
+
+                    loadScripts(config.resources.scripts.map(function(url) { return getAppPath(config.id, url); }));
+
+                    config.resources.links.map(function(url) {
+                        return getAppPath(config.id, url);
+                        }).forEach(function(url) {
+                            var linkId = 'link: ' + url;
+                            var linkElement;
+                        if (url && !epEmbeddedAppsCacheService.linkCache.get(linkId)) {
+                            linkElement = $document[0].createElement('link');
+                            linkElement.rel = 'stylesheet';
+                            linkElement.href = url;
+                            linkElement.type = 'text/css';
+                            $document[0].head.appendChild(linkElement);
+                            epEmbeddedAppsCacheService.linkCache.put(linkId, 1);
+
+                            $timeout(function() {
+                                onLoadLink(linkId);
+                            });
+                        }
+                    });
+                }
+
+                function loadDependencies(moduleId, allDependencyLoad) {
+
+                    if (regModules.indexOf(moduleId) > -1) {
+                        return allDependencyLoad();
+                    }
+
+                    var loadedModule = angular.module(moduleId);
+                    var requires = getRequires(loadedModule);
+
+                    function onModuleLoad(moduleLoaded) {
+                        if (moduleLoaded) {
+
+                            var index = requires.indexOf(moduleLoaded);
+                            if (index > -1) {
+                                requires.splice(index, 1);
+                            }
+                        }
+                        if (requires.length === 0) {
+                            $timeout(function() {
+                                allDependencyLoad(moduleId);
+                            });
+                        }
+                    }
+
+                    var requireNeeded = getRequires(loadedModule);
+                    angular.forEach(requireNeeded, function(requireModule) {
+
+                        moduleCache.push(requireModule);
+
+                        if (moduleExists(requireModule)) {
+                            return onModuleLoad(requireModule);
+                        }
+
+                        var requireModuleConfig = modules[requireModule];
+                        if (requireModuleConfig) {
+                            loadResources(function() {
+
+                            }, function() {
+
+                            }, function() {
+                                loadDependencies(requireModule, function requireModuleLoaded(name) {
+                                    onModuleLoad(name);
+                                });
+                            });
+                        } else {
+                            $log.warn('module [' + requireModule + '] not loaded and not configured');
+                            onModuleLoad(requireModule);
+                        }
+                        return null;
+                    });
+
+                    if (requireNeeded.length === 0) {
+                        onModuleLoad();
+                    }
+                    return null;
+                }
+
+                if (!epEmbeddedAppsCacheService.scriptCache.get(resourceId)) {
+                    loadResources(
+                        // onLoadScript
+                        function(id) { $log.debug('Loaded ' + id); },
+
+                        //onLoadLink
+                        function(id) { $log.debug('Loaded ' + id); },
+
+                        //onLoadComplete
+                        function() {
+                            moduleCache.push(config.id);
+                            loadDependencies(config.id, function() {
+                                angular.module(config.id).factory('appPackageService',
+                                    getAppPackageService(config, $timeout, $http));
+                                register($log, $injector, providers, angular.copy(moduleCache));
+                                epEmbeddedAppsCacheService.scriptCache.put(resourceId, config);
+                                $timeout(function() {
+                                    callback(config.id);
+                                });
+                            });
+                        });
+
+                    angular.forEach(config.views, function(view) {
+                        var virtualRoute = ensureSlashStart(config.id) +
+                            ensureSlashStart(view.id) + ensureSlashStart(ensureSlashEnd(view.routeParams));
+                        var actualRoute = getAppPath(config.id, view.id,
+                            ensureSlashStart(ensureSlashEnd(view.routeParams)));
+                        $routeProvider.when(virtualRoute, { redirectTo: actualRoute });
+                    });
+                    if (config.notFoundView) {
+                        $routeProvider.otherwise({ redirectTo: ensureSlashStart(config.notFoundView) });
+                    }
+                } else {
+                    $timeout(function() {
+                        callback(config.id);
+                    });
+                }
+            }
+
+            function getConfig() {
+
+                var section = epSysConfig.section('epEmbeddedApps');
+                if (section) {
+                    angular.extend(sysconfig, section);
+                }
+
+                if (!sysconfig.path) {
+                    sysconfig.path = 'apps';
+                }
+
+                return sysconfig;
+            }
+
+            sysconfig = getConfig();
+
+            return {
+                settings: sysconfig,
+                load: load,
+                modules: modules,
+                getAppPath: getAppPath
+            };
+        };
+    }
+]);
+
+'use strict';
+/**
+ * @ngdoc service
+ * @name ep.embedded.apps.service:epEmbeddedAppsService
+ * @description
+ * service for the ep.feature.detection module
+ * This service detects features available on the client
+ *
+ * @example
+ *
+ */
+angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
+    '$http',
+    '$q',
+    '$log',
+    'epUtilsService',
+    'epEmbeddedAppsProvider',
+    function($http, $q, $log, epUtilsService, epEmbeddedAppsProvider) {
+
+        var configs = {};
+        var state = {
+                appId: '',
+                viewId: '',
+                loaded: false
+            };
+
+        var packages = [];
+        var loadedCount = 0;
+
+        function loadConfigurations() {
+            var deferred = $q.defer();
+
+            packages = [];
+            loadedCount = 0;
+
+            // We only ever want to load the configuration files once, so check if it's already loaded
+            if (state.loadComplete) {
+                deferred.resolve(true);
+            } else {
+                loadConfigurationsFromService(deferred);
+            }
+
+            return deferred.promise;
+        }
+
+        function getAppsFromConfig() {
+            var ret = {
+                Success: true,
+                apps: epEmbeddedAppsProvider.settings.applications,
+            };
+
+            var deferred = $q.defer();
+            deferred.resolve(ret);
+            return deferred.promise;
+        }
+
+        function getApplications() {
+            var provider = epEmbeddedAppsProvider.settings.provider;
+            if (provider && provider !== 'sysconfig') {
+                try {
+                    var customProvider = angular.element('html').injector().get(provider);
+                    return customProvider.getApps();
+                } catch (e) {
+                    $log.warning('Custom embedded application provider not found or failed: ' + provider);
+                }
+            }
+            return getAppsFromConfig();
+        }
+
+        function loadConfigurationsFromService(deferred)
+        {
+            //appService.getApps()
+            getApplications('config').then(function(data) {
+                try {
+                    if (data && data.Success) {
+
+                        packages = data.apps;
+                        packages.forEach(function(pkg) {
+                            var appPkgPath = epEmbeddedAppsProvider.getAppPath(pkg, 'AppPackage.json');
+                            $http.get(appPkgPath).then(function(response) {
+                                var config = response.data;
+                                $log.debug('Parsing AppPackage.config file: ' + appPkgPath);
+                                configs[config.id] = config;
+                                $log.debug('AppPackage name: ' + config.name);
+                                var tileSize = config.tileSize ? config.tileSize.split('x') : ['2', '1'];
+                                if (tileSize && tileSize.length === 2) {
+                                    try {
+                                        config.tileSize = {
+                                            width: parseInt(tileSize[0]),
+                                            height: parseInt(tileSize[1])
+                                        };
+                                    } catch (e) {
+                                        $log.warning('Invalid value in tileSize property: ' + config.tileSize);
+                                    }
+
+                                }
+                                // construct an object out of the view array so that views can be accessed
+                                // by ID without having to search through the array for them
+                                config.views = epUtilsService.mapArray(config.views, 'id');
+                                config.initialized = false;
+                                increment(deferred);
+                            },
+                                function(err) {
+                                    increment(deferred);
+                                    $log.debug('Failed retrieving AppPackage.config file: ' + appPkgPath);
+                                    $log.error('Failed retrieving AppPackage.config file.');
+                                    $log.error(err);
+                                });
+                        });
+
+                    } else {
+                        $log.warn('Unable to load app package definition files.');
+                    }
+
+                } catch (ex) {
+                    $log.error(ex);
+                    deferred.reject(ex);
+                }
+            });
+        }
+
+        // tracks the number of configuration files to load,
+        // and resolves the promise once they're all done
+        function increment(deferred) {
+
+            if (++loadedCount === packages.length) {
+                state.loadComplete = true;
+                deferred.resolve(true);
+            }
+        }
+
+        function getAppPath() {
+            return epEmbeddedAppsProvider.getAppPath(arguments);
+        }
+
+        return {
+            state: state,
+            loadConfigurations: loadConfigurations,
+            configs: configs,
+            getAppPath: getAppPath
+        };
+    }]);
+
+'use strict';
+/**
  * @ngdoc service
  * @name ep.feature.detection.service:epFeatureDetectionService
  * @description
@@ -1361,7 +2164,6 @@ angular.module('ep.feature.detection').service('epFeatureDetectionService', [
  */
 angular.module('ep.local.storage').provider('epLocalStorageConfig',
     function() {
-        var jsonReadStatus;
         var config = {
             /**
             * @ngdoc property
@@ -1387,27 +2189,13 @@ angular.module('ep.local.storage').provider('epLocalStorageConfig',
         //In our case, the "service" is the environment configuration object
         //The $get is called automatically when AngularJS encounters a DI.
         //
-        // also knowing despite the (use $http instead of $.ajax) rules on the EMF coders styleguide
-        // There is a problem: $http is an asynchronous call, so its not guaranteed that the
-        // data will be returned with the values read from the sysconfig.json.
-        // To get around we have to make $http a sync call, which is not possible.
-        this.$get = function() {
-            var q = $.ajax({
-                type: 'GET',
-                url: 'sysconfig.json',
-                cache: false,
-                async: false,
-                contentType: 'application/json'
-            });
-
-            jsonReadStatus = q.status;
-            if (q.status === 200) {
-                var sysconfig = angular.fromJson(q.responseText);
-                if (sysconfig.hasOwnProperty('epLocalStorage')) {
-                    angular.extend(config, sysconfig.epLocalStorage);
-                }
+        //we use the epSysConfig provider to perform the $http read against sysconfig.json
+        //epSysConfig.section() function returns the associated node on sysconfig.json
+        this.$get = function(epSysConfig) {
+            var section = epSysConfig.section('epLocalStorage');
+            if (section) {
+                angular.extend(config, section);
             }
-
             return config;
         };
     });
@@ -2766,7 +3554,6 @@ angular.module('ep.odata').factory('odataQueryFactory',
  */
 angular.module('ep.search').provider('searchConfig',
     function() {
-        var jsonReadStatus;
         var config = {
             /**
             * @ngdoc property
@@ -2783,27 +3570,13 @@ angular.module('ep.search').provider('searchConfig',
         //In our case, the "service" is the environment configuration object
         //The $get is called automatically when AngularJS encounters a DI.
         //
-        // also knowing despite the (use $http instead of $.ajax) rules on the EMF coders styleguide
-        // There is a problem: $http is an asynchronous call, so its not guaranteed that the
-        // data will be returned with the values read from the sysconfig.json.
-        // To get around we have to make $http a sync call, which is not possible.
-        this.$get = function() {
-            var q = $.ajax({
-                type: 'GET',
-                url: 'sysconfig.json',
-                cache: false,
-                async: false,
-                contentType: 'application/json'
-            });
-
-            jsonReadStatus = q.status;
-            if (q.status === 200) {
-                var sysconfig = angular.fromJson(q.responseText);
-                if (sysconfig.hasOwnProperty('EP_SEARCH_CONFIG')) {
-                    angular.extend(config, sysconfig.EP_SEARCH_CONFIG);
-                }
+        //we use the epSysConfig provider to perform the $http read against sysconfig.json
+        //epSysConfig.section() function returns the associated node on sysconfig.json
+        this.$get = function(epSysConfig) {
+            var section = epSysConfig.section('epSearchConfig');
+            if (section) {
+                angular.extend(config, section);
             }
-
             return config;
         };
     });
@@ -3211,7 +3984,7 @@ angular.module('ep.shell').controller('epShellCtrl', [
      *
      * @example
      * usage. place on main index page as:
-     * <body>        
+     * <body>
      *   <epshell><div ng-view></div></epshell>
      * </body>
      */
@@ -3239,7 +4012,7 @@ angular.module('ep.shell').provider('epShellConfig', [
     '$routeProvider',
     function($routeProvider) {
         var routeProviderReference = $routeProvider;
-        var jsonReadStatus;
+
         var config = {
             options: {
                 pageTitle: 'Epicor Mobile',
@@ -3271,21 +4044,11 @@ angular.module('ep.shell').provider('epShellConfig', [
         // There is a problem: $http is an asynchronous call, so its not guaranteed that the
         // data will be returned with the values read from the sysconfig.json.
         // To get around we have to make $http a sync call, which is not possible.
-        this.$get = function() {
-            var q = $.ajax({
-                type: 'GET',
-                url: 'sysconfig.json',
-                cache: false,
-                async: false,
-                contentType: 'application/json'
-            });
+        this.$get = function(epSysConfig) {
 
-            jsonReadStatus = q.status;
-            if (q.status === 200) {
-                var sysconfig = angular.fromJson(q.responseText);
-                if (sysconfig.hasOwnProperty('epShellConfig')) {
-                    angular.extend(config, sysconfig.epShellConfig);
-                }
+            var section = epSysConfig.section('epShellConfig');
+            if (section) {
+                angular.extend(config, section);
             }
 
             angular.forEach(config.routes, function(r) {
@@ -3298,11 +4061,17 @@ angular.module('ep.shell').provider('epShellConfig', [
                     routeProviderReference.otherwise({ redirectTo: r.route });
                 }
             });
+
+            if (config.options.includeEmbeddedApps) {
+                routeProviderReference.when('/app/:appId/:viewId', {
+                    templateUrl: 'src/components/ep.shell/views/ep-shell-embedded-apps-container.html'
+                });
+            }
+
             return config;
         };
     }
 ]);
-
 
 'use strict';
 /**
@@ -3524,7 +4293,7 @@ angular.module('ep.shell').service('epShellService', [
          }
 
          function feedbackCallback(fnOnFeedback) {
-             //set or get feedback callback function which will do actual submission of user data. 
+             //set or get feedback callback function which will do actual submission of user data.
              //Function must return a promise.
              if (fnOnFeedback !== undefined) {
                  shellState.fnOnFeedback = fnOnFeedback;
@@ -4142,7 +4911,7 @@ angular.module('ep.shell').service('epSidebarService', [
      * @restrict E
      *
      * @description
-     * Represents the shell view container directive. 
+     * Represents the shell view container directive.
      */
 (function() {
     angular.module('ep.shell').directive('epShellViewContainer', function($rootScope,
@@ -4272,6 +5041,61 @@ angular.module('ep.shell').service('epViewContainerService', [
 
 /**
  * @ngdoc object
+ * @name ep.sysconfig.object:epSysConfig
+ * @description
+ * Provider for epSysConfig.
+ * Gets configuration options from sysconfig.json
+ */
+angular.module('ep.sysconfig').provider('epSysConfig',
+    function() {
+        var jsonReadStatus;
+        var sysconfig = {};
+
+        //This $get, is kinda confusing - it does not return the provider, but it returns the "service".
+        //In our case, the "service" is the environment configuration object
+        //The $get is called automatically when AngularJS encounters a DI.
+        //
+        // also knowing despite the (use $http instead of $.ajax) rules on the EMF coders styleguide
+        // There is a problem: $http is an asynchronous call, so its not guaranteed that the
+        // data will be returned with the values read from the sysconfig.json.
+        // To get around we have to make $http a sync call, which is not possible.
+        this.$get = function($log) {
+            var q = $.ajax({
+                type: 'GET',
+                url: 'sysconfig.json',
+                cache: false,
+                async: false,
+                contentType: 'application/json'
+            });
+
+            jsonReadStatus = q.status;
+            if (q.status === 200) {
+                try {
+                    sysconfig = angular.fromJson(q.responseText);
+                }
+                catch (e) {
+                    $log.warning('Error parsing sysconfig: ' + e.message);
+                }
+            }
+
+            function section(id) {
+                if (sysconfig.hasOwnProperty(id)) {
+                    return sysconfig[id];
+                }
+                return undefined;
+            }
+
+            return {
+                sysconfig: sysconfig,
+                section: section
+            };
+        };
+    });
+
+'use strict';
+
+/**
+ * @ngdoc object
  * @name ep.theme.object:epThemeConfig
  * @description
  * Provider for epThemeConfig.
@@ -4279,7 +5103,6 @@ angular.module('ep.shell').service('epViewContainerService', [
  */
 angular.module('ep.theme').provider('epThemeConfig',
     function() {
-        var jsonReadStatus;
         var config = {
             /**
             * @ngdoc property
@@ -4322,25 +5145,13 @@ angular.module('ep.theme').provider('epThemeConfig',
         //In our case, the "service" is the environment configuration object
         //The $get is called automatically when AngularJS encounters a DI.
         //
-        // also knowing despite the (use $http instead of $.ajax) rules on the EMF coders styleguide
-        // There is a problem: $http is an asynchronous call, so its not guaranteed that the
-        // data will be returned with the values read from the sysconfig.json.
-        // To get around we have to make $http a sync call, which is not possible.
-        this.$get = function() {
-            var q = $.ajax({
-                type: 'GET',
-                url: 'sysconfig.json',
-                cache: false,
-                async: false,
-                contentType: 'application/json'
-            });
+        //we use the epSysConfig provider to perform the $http read against sysconfig.json
+        //epSysConfig.section() function returns the associated node on sysconfig.json
+        this.$get = function(epSysConfig) {
 
-            jsonReadStatus = q.status;
-            if (q.status === 200) {
-                var sysconfig = angular.fromJson(q.responseText);
-                if (sysconfig.hasOwnProperty('epThemeConfig')) {
-                    angular.extend(config, sysconfig.epThemeConfig);
-                }
+            var section = epSysConfig.section('epThemeConfig');
+            if (section) {
+                angular.extend(config, section);
             }
 
             return config;
@@ -4477,7 +5288,6 @@ angular.module('ep.theme').service('epThemeService', [
  */
 angular.module('ep.token').provider('tokenConfig',
     function() {
-        var jsonReadStatus;
         var config = {
             /**
             * @ngdoc property
@@ -4503,27 +5313,13 @@ angular.module('ep.token').provider('tokenConfig',
         //In our case, the "service" is the environment configuration object
         //The $get is called automatically when AngularJS encounters a DI.
         //
-        // also knowing despite the (use $http instead of $.ajax) rules on the EMF coders styleguide
-        // There is a problem: $http is an asynchronous call, so its not guaranteed that the
-        // data will be returned with the values read from the sysconfig.json.
-        // To get around we have to make $http a sync call, which is not possible.
-        this.$get = function() {
-            var q = $.ajax({
-                type: 'GET',
-                url: 'sysconfig.json',
-                cache: false,
-                async: false,
-                contentType: 'application/json'
-            });
-
-            jsonReadStatus = q.status;
-            if (q.status === 200) {
-                var sysconfig = angular.fromJson(q.responseText);
-                if (sysconfig.hasOwnProperty('epTokenConfig')) {
-                    angular.extend(config, sysconfig.epTokenConfig);
-                }
+        //we use the epSysConfig provider to perform the $http read against sysconfig.json
+        //epSysConfig.section() function returns the associated node on sysconfig.json
+        this.$get = function(epSysConfig) {
+            var section = epSysConfig.section('epTokenConfig');
+            if (section) {
+                angular.extend(config, section);
             }
-
             return config;
         };
     });
@@ -4673,7 +5469,6 @@ angular.module('ep.token').factory('tokenFactory', [
  */
 angular.module('ep.utils').provider('utilsConfig',
     function() {
-        var jsonReadStatus;
         var config = {
             /**
             * @ngdoc property
@@ -4687,30 +5482,17 @@ angular.module('ep.utils').provider('utilsConfig',
         };
 
         //This $get, is kinda confusing - it does not return the provider, but it returns the "service".
+        //This $get, is kinda confusing - it does not return the provider, but it returns the "service".
         //In our case, the "service" is the environment configuration object
         //The $get is called automatically when AngularJS encounters a DI.
         //
-        // also knowing despite the (use $http instead of $.ajax) rules on the EMF coders styleguide
-        // There is a problem: $http is an asynchronous call, so its not guaranteed that the
-        // data will be returned with the values read from the sysconfig.json.
-        // To get around we have to make $http a sync call, which is not possible.
-        this.$get = function() {
-            var q = $.ajax({
-                type: 'GET',
-                url: 'sysconfig.json',
-                cache: false,
-                async: false,
-                contentType: 'application/json'
-            });
-
-            jsonReadStatus = q.status;
-            if (q.status === 200) {
-                var sysconfig = angular.fromJson(q.responseText);
-                if (sysconfig.hasOwnProperty('epUtilsConfig')) {
-                    angular.extend(config, sysconfig.epUtilsConfig);
-                }
+        //we use the epSysConfig provider to perform the $http read against sysconfig.json
+        //epSysConfig.section() function returns the associated node on sysconfig.json
+        this.$get = function(epSysConfig) {
+            var section = epSysConfig.section('epUtilsConfig');
+            if (section) {
+                angular.extend(config, section);
             }
-
             return config;
         };
     });
@@ -4849,6 +5631,11 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   );
 
 
+  $templateCache.put('src/components/ep.embedded.apps/embedded-apps.html',
+    "<div id=appHost><div id=splash ng-show=showSplash ema-animation options=appConfig.splash.transition><div id=splashContainer ng-include=\"'apps/' + appConfig.id + '/' + appConfig.splash.templateUrl\"></div></div><div id=appContent ng-show=showApp ema-animation options=currentView.transition><section ng-if=\"useShell === true\" id=appContent ng-show=showApp ng-cloak ng-controller=epEmbeddedAppShellConfigCtrl></section><ep-embedded-apps-loader config=appConfig on-complete=onLoaderComplete()></ep-embedded-apps-loader></div></div>"
+  );
+
+
   $templateCache.put('src/components/ep.login/login.html',
     "<div class=thumbnail><div class=caption><h3 ng-hide=hasToken><span class=\"icon icon-enter\"></span> Login</h3><h3 ng-show=hasToken><span class=\"icon icon-exit\"></span> Logout</h3><hr></div><form role=form><div class=form-group><label for=user-name class=\"col-sm-2 control-label\">User:</label><div><input class=form-control id=user-name value={{::user.username}} ng-model=user.username placeholder=username required></div></div><div class=form-group><label for=user-password class=\"col-sm-2 control-label\">Password:</label><div><input type=password class=form-control id=user-password value={{::user.password}} ng-model=user.password placeholder=password required></div></div></form><hr><p></p><div class=\"alert alert-danger\" id=validationSummary role=alert ng-show=hasError>{{status}}</div><div><a class=\"btn btn-default\" ui-sref={{::cancelPath}}>Cancel</a> <button type=button class=\"btn btn-primary\" ng-hide=hasToken ng-click=login()>Login</button> <button type=button class=\"btn btn-primary\" ng-show=hasToken ng-click=logout()>Logout</button></div></div>"
   );
@@ -4898,7 +5685,12 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
     "\n" +
     "                                    'ep-scroll-y': !!state.allowVerticalScroll,\r" +
     "\n" +
-    "                                    'ep-momentum-scrolling-enabled': !!state.momentumScrollingEnabled }\"><div id=viewMessage class=ep-container-message ng-if=state.infoMessage ng-style=\"{'width': state.viewDimensions.size.width + 'px', 'height': state.viewDimensions.size.height + 'px'}\"><p class=\"ep-container-message-text center-item\"><i class={{state.infoIcon}}></i><br>{{state.infoMessage}}</p></div><div class=ep-fullscreen ng-transclude></div></div>"
+    "                                    'ep-momentum-scrolling-enabled': !!state.momentumScrollingEnabled }\"><div id=viewMessage class=ep-container-message ng-if=state.infoMessage ng-style=\"{'width': state.viewDimensions.size.width + 'px', 'height': state.viewDimensions.size.height + 'px'}\"><p class=\"ep-container-message-text ep-center-item\"><i class={{state.infoIcon}}></i><br>{{state.infoMessage}}</p></div><div class=ep-fullscreen ng-transclude></div></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.shell/views/ep-shell-embedded-apps-container.html',
+    "<ep-shell-view-container smallmodesettings=\"{ &quot;showNavbar&quot;: true, &quot;showFooter&quot;: false, &quot;enableLeftSidebar&quot;: true, &quot;enableRightSidebar&quot;: false, &quot;showHomeButton&quot;: true, &quot;showBrand&quot;: false,  &quot;animateViewContainer&quot;: false, &quot;allowVerticalScroll&quot;: true }\" largemodesettings=\"{ &quot;showNavbar&quot;: true, &quot;showFooter&quot;: false, &quot;enableLeftSidebar&quot;: true, &quot;enableRightSidebar&quot;: false, &quot;showHomeButton&quot;: true, &quot;showBrand&quot;: true,  &quot;animateViewContainer&quot;: false, &quot;allowVerticalScroll&quot;: true }\"><ep-embedded-apps></ep-embedded-apps></ep-shell-view-container>"
   );
 
 }]);
