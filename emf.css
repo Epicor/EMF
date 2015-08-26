@@ -829,7 +829,7 @@ VIEW CONTAINER [ep-view-container]
   width: calc(100% - 250px);
   height: 100%;
 }
-.ep-shell .ep-view-container .ep-momentum-scrolling-enabled {
+.ep-shell .ep-view-container.ep-momentum-scrolling-enabled {
   -webkit-overflow-scrolling: touch;
 }
 .ep-shell .ep-view-container .ep-container-message {

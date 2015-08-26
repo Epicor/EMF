@@ -3988,7 +3988,7 @@ angular.module('ep.shell').controller('epShellCtrl', [
      *   <epshell><div ng-view></div></epshell>
      * </body>
      */
-angular.module('ep.shell').directive('epshell', [
+angular.module('ep.shell').directive('epShell', [
     function() {
         return {
             restrict: 'E,A',
