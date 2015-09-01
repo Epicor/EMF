@@ -105,6 +105,19 @@ angular.module('ep.modaldialog', ['ep.templates']);
 'use strict';
 /**
  * @ngdoc overview
+ * @name ep.multi.level.menu
+ * @description
+ * Represents the Multi level menu
+ */
+angular.module('ep.multi.level.menu', [
+    'ep.templates',
+    'ep.local.storage',
+    'ep.token'
+]);
+
+'use strict';
+/**
+ * @ngdoc overview
  * @name ep.odata
  * @description
  * Provides epicor odata query services
@@ -1110,11 +1123,24 @@ angular.module('ep.embedded.apps').directive('epEmbeddedAppsLoader', [
  */
 angular.module('ep.embedded.apps').controller('epEmbeddedAppShellConfigCtrl', [
     '$scope',
+    '$location',
     'epShellService',
     'epSidebarService',
-    function($scope, epShellService, epSidebarService) {
+    function($scope, $location, epShellService, epSidebarService) {
+        var locationHdl = null;
 
         function setupShellOptions(config, view) {
+            //save shell state on entering into embedded app and then call restore on exit
+            epShellService.saveState();
+            if (!locationHdl) {
+                locationHdl = $scope.$on('$locationChangeStart', function() {
+                    if ($location.url().indexOf('/app/') !== 0) {
+                        $scope.$on('$destroy', locationHdl);
+                        locationHdl = null;
+                        epShellService.restoreState();
+                    }
+                });
+            }
 
             // inject the new sidebar template
             if (view.sidebarOptions) {
@@ -1169,6 +1195,170 @@ angular.module('ep.embedded.apps').controller('epEmbeddedAppShellConfigCtrl', [
 
 'use strict';
 /**
+ * @ngdoc service
+ * @name ep.embedded.apps.service:epEmbeddedAppsService
+ * @description
+ * service for the ep.feature.detection module
+ * This service detects features available on the client
+ *
+ * @example
+ *
+ */
+angular.module('ep.embedded.apps').service('epEmbeddedAppsShellService', [
+    '$rootScope',
+    '$location',
+    '$log',
+    'epEmbeddedAppsConstants',
+    function($rootScope, $location, $log, epEmbeddedAppsConstants) {
+        var epShellService;
+        var locationHdl;
+
+        function init() {
+            try {
+                epShellService = angular.element('html').injector().get('epShellService');
+            } catch (e) {
+                $log.warning('epShellService is not found for embedded applications');
+            }
+
+            if (epShellService) {
+                $rootScope.$on(epEmbeddedAppsConstants.CONFIG_LOADED_EVENT, function(event, data) {
+                    setupShellConfigs(data.configs);
+                });
+
+                $rootScope.$on(epEmbeddedAppsConstants.APPLICATION_LOADED_EVENT, function(event, data) {
+                    var scope = data.scope;
+                    var config = scope.appConfig;
+                    if (config.name) {
+                        epShellService.setPageTitle(config.name);
+                    }
+                    var view = config.views[data.viewId];
+                    if (view) {
+                        setupApplicationShellOptions(scope, config, view);
+                    }
+                });
+            }
+        }
+
+        function setupApplicationShellOptions($scope, config, view) {
+            //save shell state on entering into embedded app and then call restore on exit
+            epShellService.saveState();
+            if (!locationHdl) {
+                locationHdl = $rootScope.$on('$locationChangeStart', function() {
+                    if ($location.url().indexOf('/app/') !== 0) {
+                        $scope.$on('$destroy', locationHdl);
+                        locationHdl = null;
+                        epShellService.restoreState();
+                    }
+                });
+            }
+
+            // inject the new sidebar template
+            if (view.sidebarOptions) {
+                epShellService.disableLeftSidebar();
+                if (view.sidebarOptions.left) {
+                    if (view.sidebarOptions.left.enabled) {
+                        epShellService.enableLeftSidebar();
+                    }
+                    if (view.sidebarOptions.left.templateUrl) {
+                        var lefturl = '"' + leftSidebarUrl + '"';
+                        var leftSidebarUrl = $scope.getEmbbededAppPath(config.id, view.sidebarOptions.left.templateUrl);
+                        epShellService.setLeftTemplate('<div ng-include=' + lefturl + '></div>');
+                    } else if (view.sidebarOptions.left.template) {
+                        epShellService.setLeftTemplate(view.sidebarOptions.left.template);
+                    }
+                }
+
+                epShellService.disableRightSidebar();
+                if (view.sidebarOptions.right) {
+                    if (view.sidebarOptions.right.enabled) {
+                        epShellService.enableRightSidebar();
+                    }
+                    if (view.sidebarOptions.right.templateUrl) {
+                        var righturl = '"' + rightSidebarUrl + '"';
+                        var rightSidebarUrl = $scope.getEmbbededAppPath(config.id,
+                            view.sidebarOptions.right.templateUrl);
+                        epShellService.setRightTemplate('<div ng-include=' + righturl + '></div>');
+                    } else if (view.sidebarOptions.right.template) {
+                        epShellService.setRightTemplate(view.sidebarOptions.right.template);
+                    }
+                }
+            } else {
+                epShellService.disableLeftSidebar();
+                epShellService.disableRightSidebar();
+            }
+            if (config.epShellNavBar) {
+                if (config.epShellNavBar.hideHostButtons) {
+                    epShellService.updateNavbarButtons([]);
+                }
+                if (config.epShellNavBar.closeButton) {
+                    var btn = config.epShellNavBar.closeButton;
+                    epShellService.addNavbarButtons([
+                    {
+                        id: btn.id || 'ep.embedded.app_closeApp',
+                        title: btn.title || 'Close application and return home.',
+                        icon: btn.icon || 'fa-times',
+                        action: function() {
+                            $location.url('/home');
+                        }
+                    }]);
+                }
+            }
+        }
+
+        function setupShellConfigs(configs) {
+            var appStartup;
+            if (configs) {
+                //check if we need to add application buttons to shell Navigation Bar
+                angular.forEach(configs, function(app) {
+                    if (app.epShellNavBar && app.epShellNavBar.applicationButton) {
+                        var btn = app.epShellNavBar.applicationButton;
+                        epShellService.addNavbarButtons([
+                        {
+                            id: 'ep.embedded.app_' + app.id,
+                            title: btn.title || app.name,
+                            icon: btn.icon || app.icon,
+                            action: function() {
+                                $location.url('/app/' + app.id + '/' + app.startViewId);
+                            }
+                        }]);
+                    }
+                    if (app.startupInShell) {
+                        appStartup = app;
+                    }
+                });
+            }
+            if (appStartup) {
+                $location.url('/app/' + appStartup.id + '/' + appStartup.startViewId);
+            }
+        }
+
+        function initialize() {
+        }
+
+        init();
+
+        return {
+            initialize: initialize,
+            setupShellConfigs: setupShellConfigs
+        };
+    }]);
+
+'use strict';
+
+/**
+ * @ngdoc object
+ * @name ep.embedded.apps.object:epEmbeddedAppsConstants
+ * @description
+ * Constants for epEmbeddedAppsConstants.
+ * ep.embedded.apps constants
+ */
+angular.module('ep.embedded.apps').constant('epEmbeddedAppsConstants', {
+    CONFIG_LOADED_EVENT: 'CONFIG_LOADED_EVENT',
+    APPLICATION_LOADED_EVENT: 'APPLICATION_LOADED_EVENT'
+});
+
+'use strict';
+/**
      * @ngdoc directive
      * @name ep.modaldialog.directive:epmodaldialog
      * @restrict E
@@ -1182,16 +1372,14 @@ angular.module('ep.embedded.apps').directive('epEmbeddedApps', [
     '$routeParams',
     '$timeout',
     'epEmbeddedAppsService',
-    function($log, $routeParams, $timeout, epEmbeddedAppsService) {
+    'epEmbeddedAppsConstants',
+    function($log, $routeParams, $timeout, epEmbeddedAppsService, epEmbeddedAppsConstants) {
         return {
             restrict: 'E',
             templateUrl: 'src/components/ep.embedded.apps/embedded-apps.html',
-            link: function($scope, element) {
+            link: function($scope) {
                 var state = epEmbeddedAppsService.state;
                 $scope.showSplash = false;
-
-                //are we running within shell container?
-                $scope.useShell = (angular.element(element).closest('ep-shell-view-container').length > 0);
 
                 function build(appId) {
 
@@ -1238,7 +1426,8 @@ angular.module('ep.embedded.apps').directive('epEmbeddedApps', [
                         $scope.getEmbbededAppPath = epEmbeddedAppsService.getAppPath;
 
                         $timeout(function() {
-                            $scope.$broadcast('setupShellEvent', {
+                            $scope.$emit(epEmbeddedAppsConstants.APPLICATION_LOADED_EVENT, {
+                                scope: $scope,
                                 viewId: state.viewId
                             });
                             $scope.$apply();
@@ -1652,12 +1841,16 @@ angular.module('ep.embedded.apps')
  *
  */
 angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
+    '$rootScope',
     '$http',
     '$q',
     '$log',
     'epUtilsService',
     'epEmbeddedAppsProvider',
-    function($http, $q, $log, epUtilsService, epEmbeddedAppsProvider) {
+    'epEmbeddedAppsConstants',
+    'epEmbeddedAppsShellService',
+    function($rootScope, $http, $q, $log, epUtilsService,
+        epEmbeddedAppsProvider, epEmbeddedAppsConstants, epEmbeddedAppsShellService) {
 
         var configs = {};
         var state = {
@@ -1668,6 +1861,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
         var packages = [];
         var loadedCount = 0;
+
+        function initialize() {
+            return loadConfigurations();
+        }
 
         function loadConfigurations() {
             var deferred = $q.defer();
@@ -1766,6 +1963,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         function increment(deferred) {
 
             if (++loadedCount === packages.length) {
+                $rootScope.$emit(epEmbeddedAppsConstants.CONFIG_LOADED_EVENT, {
+                    configs: configs
+                });
+
                 state.loadComplete = true;
                 deferred.resolve(true);
             }
@@ -1775,11 +1976,17 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             return epEmbeddedAppsProvider.getAppPath(arguments);
         }
 
+        function setupShellOnStartup() {
+            epEmbeddedAppsShellService.setupShellConfigs(configs);
+        }
+
         return {
+            initialize: initialize,
             state: state,
             loadConfigurations: loadConfigurations,
             configs: configs,
-            getAppPath: getAppPath
+            getAppPath: getAppPath,
+            setupShellOnStartup: setupShellOnStartup
         };
     }]);
 
@@ -3204,6 +3411,391 @@ angular.module('ep.modaldialog').service('epModalDialogService', [
     }]);
 
 'use strict';
+
+/**
+ * @ngdoc controller
+ * @name ep.multilevel.menu.controller:epMultiLevelMenuCtrl
+ * @description
+ * Represents the epMultiLevelMenu controller for the
+ * ep.multi.level.menu module, or specific for directive ep-multi-level-menu
+ *
+ * @example
+ *
+ */
+angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl', [
+    '$scope',
+    '$location',
+    '$routeParams',
+    '$timeout',
+    'epMultiLevelMenuService',
+    function($scope, $location, $routeParams, $timeout, epMultiLevelMenuService) {
+        // do something with $scope property
+        $scope.state = {
+            slidingIn: false,
+            slidingOut: false,
+            searchTerm: ''
+        };
+        $scope.data = epMultiLevelMenuService.data;
+        $scope.menuId = $routeParams.menuId;
+        $scope.searchResults = [];
+
+        /**
+         * @ngdoc method
+         * @name search
+         * @methodOf ep.multilevel.menu.controller:epMultiLevelMenuCtrl
+         * @public
+         * @description
+         * Handles the search request
+         */
+        function search() {
+            var results = [];
+            var term = $scope.state.searchTerm.toLowerCase();
+            var type = $scope.state.searchType.toLowerCase();
+            _.each($scope.data.menu.levels, function(menu) {
+                menu.forEach(function(item) {
+                    if (item && item.type === type && item.caption.toLowerCase().indexOf(term) !== -1) {
+                        results.push(item);
+                    }
+                });
+            });
+            $scope.searchResults = results;
+        }
+
+         /**
+         * @ngdoc method
+         * @name navigate
+         * @methodOf ep.multilevel.menu.controller:epMultiLevelMenuCtrl
+         * @public
+         * @description
+         * Handles the navigate request
+         *
+         * @param {object} mi the menu item
+         */
+        function navigate(mi) {
+            $('.mlm-content').addClass('ep-ease-animation');
+            if (mi.id === 'modules') {
+                return;
+            }
+            $scope.menuId = mi.id;
+            $scope.data.next = mi;
+            $scope.state.slidingIn = $scope.data.current.depth < mi.depth;
+            if (!$scope.state.slidingIn) {
+                $scope.state.slidingOut = true;
+            }
+
+            if (mi.type === 'Menu') {
+                //shellService.suspend();
+                $location.url('/home/' + $scope.menuId);
+            } else {
+                $location.url('/dashboard/' + mi.id + '/none?mode=grid');
+            }
+        }
+
+        /**
+         * @ngdoc method
+         * @name toggleFavorite
+         * @methodOf ep.multilevel.menu.controller:epMultiLevelMenuCtrl
+         * @public
+         * @description
+         * Handles the toggleFavorite request
+         *
+         * @param {object} mi the menu item
+         */
+        function toggleFavorite(mi) {
+            //shellService.suspend();
+            epMultiLevelMenuService.toggleFavorite(mi);
+            //$timeout(function() {
+            //    //shellService.resume();
+            //});
+        }
+
+        $scope.navigate = navigate;
+        $scope.toggleFavorite = toggleFavorite;
+        $scope.search = search;
+    }
+]);
+
+'use strict';
+/**
+* @ngdoc directive
+* @name ep.multi.level.menu.directive:epMultiLevelMenu
+* @restrict E
+*
+* @description
+* Represents the ep.multi.level.menu directive
+*
+* @example
+*/
+angular.module('ep.multi.level.menu').directive('epMultiLevelMenu', [
+    '$timeout',
+    'epFeatureDetectionService',
+    'multilevelmenuservice',
+    function($timeout, epFeatureDetectionService, multilevelmenuservice) {
+        return {
+            restrict: 'E',
+            replace: true,
+            controller: 'epMultiLevelMenuCtrl',
+            templateUrl: 'src/components/ep.multi.level.menu/multi-level-menu.html',
+            scope: true,
+            compile: function() {
+                return {
+                    pre: function() {
+                    },
+                    post: function($scope) {
+                        $timeout(function() {
+                            var transitionEvent = epFeatureDetectionService.getTransitionEvent();
+                            /*jshint -W030 */
+                            transitionEvent && $('.mlm-content-current').on(transitionEvent, function() {
+                                // when the transition has finished, we reset the menu using the "next" level.
+                                //shellService.resume();
+                                // we need to remove the animation class so that when we reset the menu it just snaps in
+                                $('.mlm-content').removeClass('ep-ease-animation');
+                                $scope.state.slidingOut = $scope.state.slidingIn = false;
+
+                                multilevelmenuservice.setCurrentMenuParent($scope.data.next);
+                                $scope.data.next = null;
+                                $timeout(function() {
+                                    $scope.$apply();
+                                });
+                            });
+                        }, 500);
+
+                        if ($scope.menuId && multilevelmenuservice.data.menu) {
+                            multilevelmenuservice.setCurrentMenuParentById($scope.menuId);
+                        }
+                    }
+                };
+            }
+        };
+    }]);
+
+'use strict';
+/**
+ * @ngdoc service
+ * @name ep.multi.level.menu.service:epMultiLevelMenuService
+ * @description
+ * Service for the ep.multi.level.menu module
+ * Represents the Multi level menu
+ *
+ * @example
+ *
+ */
+angular.module('ep.multi.level.menu').service('epMultiLevelMenuService', [
+    'epLocalStorageService',
+    'tokenFactory',
+    function(epLocalStorageService, tokenFactory) {
+        var data = {
+            menu: null, // all of the menu data
+            current: {}
+        };
+
+        var builder = (function() {
+            var parentNode = null;
+            var depth = 0;
+
+            function buildTree(rootId) {
+                var nodes = data.menu.levels[rootId];
+                var userKey = 'user.' + tokenFactory.getToken();
+                var currentSettings = epLocalStorageService.get(userKey) ?
+                    epLocalStorageService.get(userKey + '.dashboard') || {} : {};
+                _.each(nodes, function(node) {
+                    node.children = data.menu.levels[node.id] || [];
+                    node.favorite = currentSettings[node.id] ? !!currentSettings[node.id].favorite : false;
+                    node.parent = parentNode;
+                    node.depth = depth;
+                    parentNode = node;
+                    depth++;
+                    buildTree(node.id);
+                    depth--;
+                    parentNode = node.parent;
+                });
+            }
+
+            return {
+                buildTree: buildTree
+            };
+        })();
+
+        function iterateAll(fn) {
+            var results = [];
+            function iterateLevel(root) {
+                _.each(root.children, function(item) {
+                    if (fn(item)) {
+                        results.push(item);
+                    }
+                    iterateLevel(item);
+                });
+            }
+
+            iterateLevel(data.menu.levels.root[0]);
+            return results;
+        }
+
+        function populate(menu) {// TODO: Allow injection of service
+            if (menu) {
+                data.menu = angular.extend({}, menu);
+            }
+            if (data.menu) {
+                builder.buildTree('root'); // build the proper hierarchy so we can navigate in and out
+                //data.current = findMenuItemById('MOBMENU');
+                data.favorites = getFavorites();
+            }
+        }
+        /**
+         * @ngdoc method
+         * @name setCurrentMenuParent
+         * @methodOf ep.multi.level.menu.service:epMultiLevelMenuService
+         * @public
+         * @description
+         * Handles the setCurrentMenuParent request
+         *
+         * @param {object} menuItem the menu item to set as current
+       */
+        function setCurrentMenuParent(menuItem) {
+            if (menuItem) {
+                data.current = menuItem;
+            }
+        }
+        /**
+         * @ngdoc method
+         * @name setCurrentMenuParentById
+         * @methodOf ep.multi.level.menu.service:epMultiLevelMenuService
+         * @public
+         * @description
+         * Handles the setCurrentMenuParentById request
+         *
+         * @param {object} id the menu item id to set as current
+       */
+        function setCurrentMenuParentById(id) {
+            var mi = findMenuItemById(id);
+            if (mi) {
+                setCurrentMenuParent(mi);
+            }
+        }
+        /**
+         * @ngdoc method
+         * @name findMenuItemById
+         * @methodOf ep.multi.level.menu.service:epMultiLevelMenuService
+         * @public
+         * @description
+         * Handles the findMenuItemById request
+         *
+         * @param {object} id the id to search for
+         * @param {object} root the parent menu to start the search
+       */
+        function findMenuItemById(id, root) {
+            var item;
+            if (!root) {
+                for (var top = 0; top < data.menu.levels.root.length; top++) {
+                    item = findMenuItemById(id, data.menu.levels.root[top]);
+                    if (item) {
+                        return item;
+                    }
+                }
+            }
+            for (var idx = 0; idx < root.children.length; idx++) {
+                var mi = root.children[idx];
+                if (mi.id === id) {
+                    item = mi;
+                } else {
+                    item = findMenuItemById(id, mi);
+                }
+                if (item) {
+                    return item;
+                }
+            }
+            return null;
+        }
+
+        /**
+         * @ngdoc method
+         * @name resetCache
+         * @methodOf ep.multi.level.menu.service:epMultiLevelMenuService
+         * @public
+         * @description
+         * Handles the resetCache request
+        */
+        function resetCache() {
+            clear();
+            return populate();
+        }
+        /**
+         * @ngdoc method
+         * @name clear
+         * @methodOf ep.multi.level.menu.service:epMultiLevelMenuService
+         * @public
+         * @description
+         * Handles the clear request
+        */
+        function clear() {
+            data.menu = null;
+            data.favorites = null;
+            data.current = null;
+            clearFavorites();
+        }
+        /**
+         * @ngdoc method
+         * @name toggleFavorite
+         * @methodOf ep.multi.level.menu.service:epMultiLevelMenuService
+         * @public
+         * @description
+         * Handles the toggleFavorite request
+         *
+         * @param {object} mi the menu item
+        */
+        function toggleFavorite(mi) {
+            mi.favorite = !mi.favorite;
+
+            epLocalStorageService.update(tokenFactory.getToken() +
+                    '.' + mi.id + '.favorite', mi.favorite);
+            data.favorites = getFavorites();
+        }
+        /**
+         * @ngdoc method
+         * @name getFavorites
+         * @methodOf ep.multi.level.menu.service:epMultiLevelMenuService
+         * @public
+         * @description
+         * Handles the getFavorites request
+        */
+        function getFavorites() {
+            var favList = iterateAll(function(i) { return !!i.favorite; });
+            var userKey = tokenFactory.getToken();
+            var viewSettings = epLocalStorageService.get(userKey) || {};
+
+            _.each(viewSettings, function(item) {
+                if (item.favorite) {
+                    favList.push(item);
+                }
+            });
+            return favList;
+        }
+        /**
+         * @ngdoc method
+         * @name clearFavorites
+         * @methodOf ep.multi.level.menu.service:epMultiLevelMenuService
+         * @public
+         * @description
+         * Handles the clearFavorites request
+        */
+        function clearFavorites() {
+            data.favorites = null;
+        }
+
+        return {
+            data: data,
+            populate: populate,
+            resetCache: resetCache,
+            clearFavorites: clearFavorites,
+            setCurrentMenuParent: setCurrentMenuParent,
+            setCurrentMenuParentById: setCurrentMenuParentById,
+            findMenuItemById: findMenuItemById,
+            toggleFavorite: toggleFavorite,
+            clear: clear
+        };
+    }]);
+
+'use strict';
 /**
  * @ngdoc service
  * @name ep.odata.factory:odataQueryFactory
@@ -3897,7 +4489,7 @@ angular.module('ep.shell').service('epShellFeedbackService', [
  * @ngdoc object
  * @name ep.shell.object:epShellConstants
  * @description
- * Cosntants for epShellConstants.
+ * Constants for epShellConstants.
  * ep.shell constants
  */
 angular.module('ep.shell').constant('epShellConstants', {
@@ -4018,7 +4610,8 @@ angular.module('ep.shell').provider('epShellConfig', [
                 pageTitle: 'Epicor Mobile',
                 brandHTML: 'Epicor Mobile Framework <sup>2.0</sup>',
                 defaultTheme: 'flatly',
-                disableTheming: false
+                disableTheming: false,
+                enableFeedback: true
             },
 
             /**
@@ -4080,6 +4673,8 @@ angular.module('ep.shell').provider('epShellConfig', [
  * @description
  * Service for the ep.shell
  * This service provides functions for interaction with the ep.shell
+ * The ep-shell directive is the core item that needs to be present on the page
+ * and epShellService.init() must be called from application initialization
  *
  * @example
  *
@@ -4097,8 +4692,12 @@ angular.module('ep.shell').service('epShellService', [
     'epShellConstants',
      function($q, $rootScope, $timeout, $sce, $document,
          epFeatureDetectionService, epSidebarService, epThemeService, epShellConfig, epShellConstants) {
-         // Be careful about what dependencies are added here, because this service
-         // is used pretty much everywhere
+
+         /**
+          * @private
+          * @description
+          * Holds the current shell state. Almost all settings are here
+          */
          var shellState = {
              showProgressIndicator: false,
              progressIndicatorlevel: 0,
@@ -4170,9 +4769,41 @@ angular.module('ep.shell').service('epShellService', [
              //Useful for blur processing
              navButtonClicked : null
          };
+
+         /**
+          * @private
+          * @description
+          * After saveState() is called, savedState contains certain properties of current shell state
+          * that are needed to restore later.
+          */
+         var savedState = {};
+
+         /**
+          * @private
+          * @description
+          * Contains the navigation buttons array
+          */
          var navbarButtons = [];
+
+         /**
+          * @private
+          * @description
+          * Contains the bound view events
+          */
          var boundViewEvents = {};
 
+         /**
+          * @private
+          * @description
+          * Flag if theming was initialized, to avoid second time initialization when toggling
+          */
+         var themingInitialized = false;
+
+         /**
+          * @private
+          * @description
+          * Certain things we initialize at the first reference of the service
+          */
          function initialize() {
              //setup the epFeatureDetectionService enquireService registration at 800 px so that we can
              //perform Javascript operations when the UI goes into large / small mode
@@ -4198,17 +4829,39 @@ angular.module('ep.shell').service('epShellService', [
              setPageTitle(epShellConfig.options.pageTitle);
              setBrandHTML(epShellConfig.options.brandHTML);
 
+             if (epShellConfig.options.enableFeedback !== undefined) {
+                 shellState.feedbackEnabled = epShellConfig.options.enableFeedback;
+             }
+
+             initializeTheming();
+         }
+
+         /**
+          * @private
+          * @description
+          * Initialize theming
+          */
+         function initializeTheming() {
              shellState.disableTheming = epShellConfig.options.disableTheming;
              if (shellState.disableTheming !== true) {
+                 themingInitialized = true;
                  if (epShellConfig.options.defaultTheme) {
                      epThemeService.theme(epShellConfig.options.defaultTheme);
                  } else {
                      epThemeService.theme();
                  }
                  shellState.currentTheme = epThemeService.getThemeWithFullPath();
+                 $rootScope.$on('epThemeChangedEvent', function() {
+                     shellState.currentTheme = epThemeService.getThemeWithFullPath();
+                 });
              }
          }
 
+         /**
+          * @private
+          * @description
+          * Set flags depending on current mode (small or large)
+          */
          function setCurrentModeFlags() {
              var mode = shellState.viewSettings[shellState.mediaMode];
 
@@ -4236,6 +4889,11 @@ angular.module('ep.shell').service('epShellService', [
              notifyStateChanged();
          }
 
+         /**
+          * @private
+          * @description
+          * Set or Get the viewSettings
+          */
          function viewSettings(settings) {
              if (settings !== undefined) {
                  shellState.viewSettings = settings;
@@ -4244,6 +4902,15 @@ angular.module('ep.shell').service('epShellService', [
          }
 
          //--------  Public Functions ----------------------->>>>
+
+         /**
+          * @ngdoc method
+          * @name init
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Initialization of the shell. To be called by application upon start-up
+          */
          function init() {
              window.addEventListener('load', function() {
                  FastClick.attach(document.body);
@@ -4258,11 +4925,76 @@ angular.module('ep.shell').service('epShellService', [
              $rootScope.initComplete = true;
          }
 
+         /**
+          * @ngdoc method
+          * @name saveState
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * save current shell state for later usage by restoreState(). Used by embedded applications to store
+          * shell state when embedded app is started and then to restore back when exiting embedded app
+          * @returns {object} saved state data
+          */
+         function saveState() {
+             savedState = {
+                 pageTitle: getPageTitle(),
+                 brandHTML: getBrandHTML(),
+                 navbarButtons: angular.extend([], navbarButtons)
+             };
+             return savedState;
+         }
+
+         /**
+          * @ngdoc method
+          * @name restoreState
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Used in conjunction with saveState(). This method will restore some properties
+          * of shell state to what they were at the time of saveState() call.
+          * @param {object} state - optional parameter that contains saved state data. If not
+          * provided, internal saved state data will be used
+          */
+         function restoreState(state) {
+             var oldState = (state) ? state : savedState;
+             if (oldState && oldState !== {}) {
+                 if (oldState.navbarButtons) {
+                     updateNavbarButtons(oldState.navbarButtons);
+                 }
+                 if (oldState.pageTitle) {
+                     setPageTitle(oldState.pageTitle);
+                 }
+                 if (oldState.brandHTML) {
+                     setBrandHTML(oldState.brandHTML);
+                 }
+             }
+         }
+
+         /**
+          * @ngdoc method
+          * @name showProgressIndicator
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Show progress indicator in the middle of the current view of the shell
+          */
          function showProgressIndicator() {
              shellState.showProgressIndicator = true;
              shellState.progressIndicatorlevel++;
          }
 
+         /**
+          * @ngdoc method
+          * @name hideProgressIndicator
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Hides progress indicator. Since showProgressIndicator() are stackable (queue)
+          * the hideProgressIndicator() will decrement the show calls and will actually hide when bottom of
+          * queue is reached.
+          * @param {boolean} immediate - optional parameter - if true the progress indicator is stopped
+          * immediately, otherwise after a timeout
+          */
          function hideProgressIndicator(immediate) {
              shellState.progressIndicatorlevel--;
              shellState.progressIndicatorlevel = Math.max(shellState.progressIndicatorlevel, 0);
@@ -4275,30 +5007,70 @@ angular.module('ep.shell').service('epShellService', [
              }
          }
 
+         /**
+          * @ngdoc method
+          * @name resetProgressIndicator
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Hides and resets progress indicator. Since showProgressIndicator() are stackable (queue)
+          * the hideProgressIndicator() will decrement the show calls and will actually hide when bottom of
+          * queue is reached. This method allows to hide immediately, reseeting the queue.
+          */
          function resetProgressIndicator() {
              shellState.progressIndicatorlevel = 0;
              hideProgressIndicator(true);
          }
 
+         /**
+          * @ngdoc method
+          * @name getMediaMode
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Returns the current media mode: MEDIA_MODE_LARGE or MEDIA_MODE_SMALL (epShellConstants)
+          * @returns {string} current media mode: MEDIA_MODE_LARGE or MEDIA_MODE_SMALL (epShellConstants)
+          */
          function getMediaMode() {
              return shellState.mediaMode;
          }
 
+         /**
+          * @ngdoc method
+          * @name isMediaModeLarge
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Checks if the current media mode is MEDIA_MODE_LARGE (epShellConstants)
+          */
          function isMediaModeLarge() {
              return shellState.mediaMode === epShellConstants.MEDIA_MODE_LARGE;
          }
 
-         function themingDisabled() {
-             return shellState.disableTheming;
-         }
-
-         function feedbackCallback(fnOnFeedback) {
-             //set or get feedback callback function which will do actual submission of user data.
-             //Function must return a promise.
-             if (fnOnFeedback !== undefined) {
-                 shellState.fnOnFeedback = fnOnFeedback;
+         /**
+          * @ngdoc method
+          * @name themingDisabled
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Returns the state of theming flag as set by sysconfig.json. True - if theming is disabled.
+          * Can also be used to turn off and on theming in the shell by passing the disabled parameter
+          * @param {boolean} disabled - optional parameter - if true theming is set disabled, if false set as enabled
+          * @returns {boolean} current media mode: MEDIA_MODE_LARGE or MEDIA_MODE_SMALL (epShellConstants)
+          */
+         function themingDisabled(disabled) {
+             if (disabled !== undefined) {
+                 //if disabled falg is provided, then change the state if needed
+                 shellState.disableTheming = !!disabled;
+                 if (shellState.disableTheming === false) {
+                     if (!themingInitialized) {
+                         initializeTheming();
+                     } else {
+                         shellState.currentTheme = epThemeService.getThemeWithFullPath();
+                     }
+                 }
              }
-             return shellState.fnOnFeedback;
+             return shellState.disableTheming;
          }
 
          function registerViewEvent(id, eventName, callback) {
@@ -4317,39 +5089,109 @@ angular.module('ep.shell').service('epShellService', [
              boundViewEvents = {};
          }
 
+         /**
+          * @ngdoc method
+          * @name setInfo
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Set the Info Message view overlay, that will cover the current view
+          * @param {string} icon - icon to be displayed
+          * @param {string} message - icon to be displayed
+          */
          function setInfo(icon, message) {
              shellState.infoIcon = icon;
              shellState.infoMessage = message;
          }
 
+         /**
+          * @ngdoc method
+          * @name clearInfo
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Clears the Info Message view overlay, that covers the current view.
+          */
          function clearInfo() {
              shellState.infoIcon = '';
              shellState.infoMessage = '';
          }
 
+         /**
+          * @ngdoc method
+          * @name setPageTitle
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Set the title of the page on the browser
+          */
          function setPageTitle(val) {
              shellState.pageTitle = val;
              $document[0].title = shellState.pageTitle;
          }
 
+         /**
+          * @ngdoc method
+          * @name getPageTitle
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Get the title of the page (from shell state)
+          * @returns {string} page title
+          */
          function getPageTitle() {
              return shellState.pageTitle;
          }
 
+         /**
+          * @ngdoc method
+          * @name toggleBrand
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Toggles the display of the brand in the shell
+          */
          function toggleBrand() {
              shellState.showBrand = !shellState.showBrand;
              shellState.viewSettings[shellState.mediaMode].showBrand = shellState.showBrand;
          }
 
+         /**
+          * @ngdoc method
+          * @name showBrand
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Turns on and off the display of the brand in the shell
+          * @param {boolean} onOff - if true brand is turned on, if false set as off
+          */
          function showBrand(onOff) {
              shellState.showBrand = (onOff === undefined) ? true : onOff;
              shellState.viewSettings[shellState.mediaMode].showBrand = shellState.showBrand;
          }
 
+         /**
+          * @ngdoc method
+          * @name setBrandHTML
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Sets the branding HTML.
+          * @param {string} html - branding html
+          */
          function setBrandHTML(html) {
-             shellState.brandHTML = $sce.trustAsHtml(html);
+             shellState.brandHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;
          }
 
+         /**
+          * @ngdoc method
+          * @name getBrandHTML
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Returns the branding html. (The html returned is compiled by $sce)
+          * @returns {string} brand html
+          */
          function getBrandHTML() {
              return shellState.brandHTML;
          }
@@ -4368,12 +5210,58 @@ angular.module('ep.shell').service('epShellService', [
              shellState.suspend = false;
          }
 
+         /**
+          * @ngdoc method
+          * @name feedbackCallback
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Set the callback function for Feedback which is called after the feedback form is displayed
+          * and user data is entered. The applicatio will then do whatever it nneds to do to forward the
+          * feedback appropriately.
+          */
+         function feedbackCallback(fnOnFeedback) {
+             //set or get feedback callback function which will do actual submission of user data.
+             //Function must return a promise.
+             if (fnOnFeedback !== undefined) {
+                 shellState.fnOnFeedback = fnOnFeedback;
+             }
+             return shellState.fnOnFeedback;
+         }
+
+         /**
+          * @ngdoc method
+          * @name enableFeedback
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Enable the feedback button functionality (by default on, can be overriden by sysconfig)
+          */
          function enableFeedback() {
              shellState.feedbackEnabled = true;
          }
 
+         /**
+          * @ngdoc method
+          * @name disableFeedback
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Disable the feedback button functionality (by default on, can be overriden by sysconfig)
+          */
          function disableFeedback() {
              shellState.feedbackEnabled = false;
+         }
+         /**
+          * @ngdoc method
+          * @name toggleFeedback
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Toggle the feedback button functionality (by default on, can be overriden by sysconfig)
+          */
+         function toggleFeedback() {
+             shellState.feedbackEnabled = !shellState.feedbackEnabled;
          }
 
          function notifyStateChanged(event) {
@@ -4387,6 +5275,14 @@ angular.module('ep.shell').service('epShellService', [
              }, 310);
          }
 
+         /**
+          * @ngdoc method
+          * @name hideHomeButton
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Hide home button (can be overriden by viewcontainer options)
+          */
          function hideHomeButton() {
              if (shellState.showHomeButton) {
                  shellState.showHomeButton = false;
@@ -4394,6 +5290,14 @@ angular.module('ep.shell').service('epShellService', [
              }
          }
 
+         /**
+          * @ngdoc method
+          * @name showHomeButton
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Show home button (can be overriden by viewcontainer options)
+          */
          function showHomeButton() {
              if (!shellState.showHomeButton) {
                  shellState.showHomeButton = true;
@@ -4401,6 +5305,14 @@ angular.module('ep.shell').service('epShellService', [
              }
          }
 
+         /**
+          * @ngdoc method
+          * @name hideLeftToggleButton
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Hide the left panel toggle button
+          */
          function hideLeftToggleButton() {
              if (shellState.showLeftToggleButton) {
                  shellState.showLeftToggleButton = false;
@@ -4408,6 +5320,14 @@ angular.module('ep.shell').service('epShellService', [
              }
          }
 
+         /**
+          * @ngdoc method
+          * @name showLeftToggleButton
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Show the left panel toggle button
+          */
          function showLeftToggleButton() {
              if (!shellState.showLeftToggleButton) {
                  shellState.showLeftToggleButton = true;
@@ -4415,6 +5335,14 @@ angular.module('ep.shell').service('epShellService', [
              }
          }
 
+         /**
+          * @ngdoc method
+          * @name hideRightToggleButton
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Hide the right panel toggle button
+          */
          function hideRightToggleButton() {
              if (shellState.showRightToggleButton) {
                  shellState.showRightToggleButton = false;
@@ -4423,6 +5351,14 @@ angular.module('ep.shell').service('epShellService', [
              }
          }
 
+         /**
+          * @ngdoc method
+          * @name showLeftToggleButton
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Show the right panel toggle button
+          */
          function showRightToggleButton() {
              if (!shellState.showRightToggleButton) {
                  shellState.showRightToggleButton = true;
@@ -4431,6 +5367,14 @@ angular.module('ep.shell').service('epShellService', [
              }
          }
 
+         /**
+          * @ngdoc method
+          * @name toggleLeftSidebar
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Toggle left side bar
+          */
          function toggleLeftSidebar() {
              shellState.showLeftSidebar = !shellState.showLeftSidebar;
              shellState.viewSettings[shellState.mediaMode].showLeftSidebar = shellState.showLeftSidebar;
@@ -4438,6 +5382,14 @@ angular.module('ep.shell').service('epShellService', [
              notifySizeChanged(shellState.showLeftSidebar ? 'showLeftSidebar' : 'hideLeftSidebar');
          }
 
+         /**
+          * @ngdoc method
+          * @name showLeftSidebar
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Show left side bar
+          */
          function showLeftSidebar() {
              if (!shellState.showLeftSidebar) {
                  shellState.showLeftSidebar = true;
@@ -4447,6 +5399,14 @@ angular.module('ep.shell').service('epShellService', [
              }
          }
 
+         /**
+          * @ngdoc method
+          * @name hideLeftSidebar
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Hide left side bar
+          */
          function hideLeftSidebar() {
              if (shellState.showLeftSidebar) {
                  shellState.showLeftSidebar = false;
@@ -4455,6 +5415,15 @@ angular.module('ep.shell').service('epShellService', [
                  notifySizeChanged('hideLeftSidebar');
              }
          }
+
+         /**
+          * @ngdoc method
+          * @name disableLeftSidebar
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Disable left side bar
+          */
          function disableLeftSidebar() {
              if (shellState.enableLeftSidebar) {
                  shellState.enableLeftSidebar = false;
@@ -4466,6 +5435,15 @@ angular.module('ep.shell').service('epShellService', [
                  notifyStateChanged('disableLeftSidebar');
              }
          }
+
+         /**
+          * @ngdoc method
+          * @name enableLeftSidebar
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Enable left side bar
+          */
          function enableLeftSidebar() {
              if (!shellState.enableLeftSidebar) {
                  shellState.enableLeftSidebar = true;
@@ -4479,9 +5457,27 @@ angular.module('ep.shell').service('epShellService', [
                  notifyStateChanged('enableLeftSidebar');
              }
          }
+
+         /**
+          * @ngdoc method
+          * @name clearLeftSidebar
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Clear content of the left side bar
+          */
          function clearLeftSidebar() {
              epSidebarService.clearLeftSidebar();
          }
+
+         /**
+          * @ngdoc method
+          * @name toggleRightSidebar
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Toggle the right side bar
+          */
          function toggleRightSidebar() {
              shellState.showRightSidebar = !shellState.showRightSidebar;
              shellState.viewSettings[shellState.mediaMode].showRightSidebar = shellState.showRightSidebar;
@@ -4489,6 +5485,15 @@ angular.module('ep.shell').service('epShellService', [
              notifySizeChanged(shellState.showRightSidebar ? 'showRightSidebar' : 'hideRightSidebar');
 
          }
+
+         /**
+          * @ngdoc method
+          * @name showRightSidebar
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Show the right side bar
+          */
          function showRightSidebar() {
              if (!shellState.showRightSidebar) {
                  shellState.showRightSidebar = true;
@@ -4497,6 +5502,15 @@ angular.module('ep.shell').service('epShellService', [
                  notifyStateChanged('showRightSidebar');
              }
          }
+
+         /**
+          * @ngdoc method
+          * @name hideRightSidebar
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Hide the right side bar
+          */
          function hideRightSidebar() {
              if (shellState.showRightSidebar) {
                  shellState.showRightSidebar = false;
@@ -4505,6 +5519,15 @@ angular.module('ep.shell').service('epShellService', [
                  notifyStateChanged('hideRightSidebar');
              }
          }
+
+         /**
+          * @ngdoc method
+          * @name disableRightSidebar
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Disable the right side bar
+          */
          function disableRightSidebar() {
              if (shellState.enableRightSidebar) {
                  shellState.enableRightSidebar = false;
@@ -4516,6 +5539,15 @@ angular.module('ep.shell').service('epShellService', [
                  notifyStateChanged('disableRightSidebar');
              }
          }
+
+         /**
+          * @ngdoc method
+          * @name enableRightSidebar
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Enable the right side bar
+          */
          function enableRightSidebar() {
              if (!shellState.enableRightSidebar) {
                  shellState.enableRightSidebar = true;
@@ -4526,15 +5558,68 @@ angular.module('ep.shell').service('epShellService', [
                  notifyStateChanged('enableRightSidebar');
              }
          }
+
+         /**
+          * @ngdoc method
+          * @name clearRightSidebar
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Clear the content of the right side bar
+          */
          function clearRightSidebar() {
              epSidebarService.clearRightSidebar();
          }
+
+         /**
+          * @ngdoc method
+          * @name getShowLeftSidebar
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Returns visibility flag of left side bar
+          * @returns {boolean} true if left bar is visible
+          */
          function getShowLeftSidebar() {
              return shellState.showLeftSidebar;
          }
+
+         /**
+          * @ngdoc method
+          * @name getShowRightSidebar
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Returns visibility flag of right side bar
+          * @returns {boolean} true if right bar is visible
+          */
          function getShowRightSidebar() {
              return shellState.showRightSidebar;
          }
+
+         /**
+         * @ngdoc method
+         * @name setLeftTemplate
+         * @methodOf ep.shell.service:epShellService
+         * @public
+         * @description
+         * Set the left sidabar html
+         */
+        function setLeftTemplate(html) {
+            epSidebarService.setLeftTemplate(html);
+        }
+
+         /**
+         * @ngdoc method
+         * @name setRightTemplate
+         * @methodOf ep.shell.service:epShellService
+         * @public
+         * @description
+         * Set the right sidabar html
+         */
+        function setRightTemplate(html) {
+            epSidebarService.setRightTemplate(html);
+        }
 
          function hideNavbar() {
              if (shellState.showNavbar) {
@@ -4594,6 +5679,7 @@ angular.module('ep.shell').service('epShellService', [
              notifyShellButtonsChanged('updateNavbarButtons');
          }
          function addNavbarButtons(buttons) {
+            //TO DO!!! need to check for duplicate id's
              navbarButtons = _.union(navbarButtons, buttons);
              _.each(navbarButtons, function(btn) {
                  if (!btn.type) {
@@ -4687,6 +5773,8 @@ angular.module('ep.shell').service('epShellService', [
              __viewSettings: viewSettings,
              // <-------------------------------------------
              init: init,
+             saveState: saveState,
+             restoreState: restoreState,
              // Progress Indicator
              showProgressIndicator: showProgressIndicator,
              hideProgressIndicator: hideProgressIndicator,
@@ -4697,10 +5785,10 @@ angular.module('ep.shell').service('epShellService', [
              notifyStateChanged: notifyStateChanged,
              notifyShellButtonsChanged: notifyShellButtonsChanged,
              notifySizeChanged: notifySizeChanged,
-             feedbackCallback: feedbackCallback,
              // General Settings
              setPageTitle: setPageTitle,
              getPageTitle: getPageTitle,
+             toggleFeedback: toggleFeedback,
              toggleBrand: toggleBrand,
              showBrand: showBrand,
              setBrandHTML: setBrandHTML,
@@ -4717,6 +5805,7 @@ angular.module('ep.shell').service('epShellService', [
              themingDisabled: themingDisabled,
              enableFeedback: enableFeedback,
              disableFeedback: disableFeedback,
+             feedbackCallback: feedbackCallback,
              showHomeButton: showHomeButton,
              hideHomeButton: hideHomeButton,
              //Sidebar functions
@@ -4738,6 +5827,8 @@ angular.module('ep.shell').service('epShellService', [
              clearRightSidebar: clearRightSidebar,
              getShowLeftSidebar: getShowLeftSidebar,
              getShowRightSidebar: getShowRightSidebar,
+            setLeftTemplate: setLeftTemplate,
+            setRightTemplate: setRightTemplate,
              //Navigation bar functions
              showNavbar: showNavbar,
              hideNavbar: hideNavbar,
@@ -5632,7 +6723,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.embedded.apps/embedded-apps.html',
-    "<div id=appHost><div id=splash ng-show=showSplash ema-animation options=appConfig.splash.transition><div id=splashContainer ng-include=\"'apps/' + appConfig.id + '/' + appConfig.splash.templateUrl\"></div></div><div id=appContent ng-show=showApp ema-animation options=currentView.transition><section ng-if=\"useShell === true\" id=appContent ng-show=showApp ng-cloak ng-controller=epEmbeddedAppShellConfigCtrl></section><ep-embedded-apps-loader config=appConfig on-complete=onLoaderComplete()></ep-embedded-apps-loader></div></div>"
+    "<div id=appHost><div id=splash ng-show=showSplash ema-animation options=appConfig.splash.transition><div id=splashContainer ng-include=\"'apps/' + appConfig.id + '/' + appConfig.splash.templateUrl\"></div></div><div id=appContent ng-show=showApp ema-animation options=currentView.transition><ep-embedded-apps-loader config=appConfig on-complete=onLoaderComplete()></ep-embedded-apps-loader></div></div>"
   );
 
 
@@ -5653,6 +6744,11 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
   $templateCache.put('src/components/ep.modaldialog/modals/modaldialog-pane.html',
     "<div class=\"ep-modaldialog ep-modaldialog-pane ep-ease-animation ep-hide-fade\" ng-hide=!dialogState.isVisible><div class=ep-dlg-container ng-class=config.containerClass><div class=\"ep-dlg-center clearfix\"><span class=\"ep-dlg-icon pull-left\" ng-class=config.iconClass style=\"margin-right: 10px; margin-top: 5px\"><span ng-if=config.showSpinner class=\"ep-dlg-icon fa-stack fa-2x\"><i class=\"ep-dlg-spinner-icon fa fa-spin fa-stack-2x\" ng-class=config.spinnerIconClass></i> <i ng-if=config.showTimer class=\"ep-dlg-spinner-text fa fa-stack-1x\" ng-class=config.spinnerTextClass>{{config.countDown}}</i></span> <i ng-if=!config.showSpinner ng-class=config.icon></i></span><div class=pull-left><span class=ep-dlg-title ng-class=config.titleClass ng-bind=config.fnGetTitle()></span><p class=ep-dlg-message ng-class=config.messageClass ng-bind=config.fnGetMessage()></p><div class=\"ep-dlg-rememberMe form-group\" ng-show=config.rememberMe><div class=checkbox><input tabindex=1 id=cbxRemember type=checkbox ng-model=config.rememberMeValue><label>Do not show this message again</label></div></div><!--<div class=\"ep-dlg-progress-indicator\" ng-show=\"config.showProgress\"><span class=\"fa fa-pulse fa-spinner fa-5x\" ng-class=\"config.progressClass\"></span></div>--><!--<div class=\"ep-dlg-progress-indicator\" ng-show=\"config.showProgress && config.showTimer\"><span ng-class=\"config.timerClass\">{{config.countDown}}</span></div>--><div class=ep-dlg-buttons><button ng-repeat=\"btn in config.buttons\" id=btn.id tabindex=\"$index + 100\" data-dismiss=modal ng-hide=btn.hidden class=\"btn btn-{{btn.type}} btn-sm\" ng-click=btnclick(btn)><i ng-if=btn.icon ng-class=btn.icon></i> &nbsp;{{btn.text}}</button></div></div></div></div></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.multi.level.menu/multi-level-menu.html',
+    "<div class=mlm-container><form class=mlm-search><input class=\"form-control mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search()></form><div class=mlm-canvas><div ng-if=!state.searchTerm><div class=\"mlm-content mlm-content-right ep-ease-animation\" ng-class=\"{ 'slide-in': state.slidingIn, 'slide-out': state.slidingOut }\"><div class=mlm-header ng-class=\"{ 'pointer': data.next.parent.id !== 'modules'}\" ng-click=navigate(data.next.parent)><span ng-if=\"data.next.parent.id !== 'modules'\" class=\"mlm-back-button pull-left fa fa-lg fa-caret-left\"></span><span>{{data.next.caption}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in data.next.children\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi.type === 'Dashboard'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi.type === 'Menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div><div class=\"mlm-content mlm-content-current ep-ease-animation\" ng-class=\"{ 'slide-in': state.slidingIn, 'slide-out': state.slidingOut }\"><div class=mlm-header ng-class=\"{ 'pointer': data.current.parent.id !== 'modules'}\" ng-click=navigate(data.current.parent)><span ng-if=\"data.current.parent.id !== 'modules'\" class=\"mlm-back-button pull-left fa fa-lg fa-caret-left\"></span><span>{{data.current.caption}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in data.current.children\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi.type === 'Dashboard'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi.type === 'Menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div><div class=\"mlm-content mlm-content-left ep-ease-animation\" ng-class=\"{ 'slide-in': state.slidingIn, 'slide-out': state.slidingOut }\"><div class=mlm-header ng-class=\"{ 'pointer': data.next.parent.id !== 'modules'}\" ng-click=navigate(data.next.parent)><span ng-if=\"data.next.parent.id !== 'modules'\" class=\"mlm-back-button pull-left fa fa-lg fa-caret-left\"></span><span>{{data.next.caption}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in data.next.children\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi.type === 'Dashboard'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi.type === 'Menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div></div><div class=\"mlm-content mlm-content-search\" ng-if=state.searchTerm><div class=mlm-header><span>{{resources.strings.SearchResults}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in searchResults\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div><span ng-if=\"mi.type === 'Menu'\" class=\"mlm-item-count pull-right\">{{mi.children && mi.children.length ? mi.children.length : 0}}</span></div><i ng-if=\"mi.type === 'Dashboard'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi.type === 'Menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div></div></div>"
   );
 
 
