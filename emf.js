@@ -1862,11 +1862,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         var packages = [];
         var loadedCount = 0;
 
-        function initialize() {
-            return loadConfigurations();
+        function initialize(forceConfigureShell) {
+            return loadConfigurations(forceConfigureShell);
         }
 
-        function loadConfigurations() {
+        function loadConfigurations(forceConfigureShell) {
             var deferred = $q.defer();
 
             packages = [];
@@ -1874,6 +1874,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
             // We only ever want to load the configuration files once, so check if it's already loaded
             if (state.loadComplete) {
+                if (forceConfigureShell === true) {
+                    setupShellOnStartup();
+                }
                 deferred.resolve(true);
             } else {
                 loadConfigurationsFromService(deferred);
@@ -2514,6 +2517,7 @@ angular.module('ep.local.storage').service('epLocalStorageService', [
         * @param {string} key represents the key that will be used to retrieve from the localCache
         */
         function get(key) {
+            if (!key) { return undefined; }
             /*jshint validthis: true */
             return getValueAtPath(settings, key.split('.'));
         }
@@ -3529,8 +3533,8 @@ angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl', [
 angular.module('ep.multi.level.menu').directive('epMultiLevelMenu', [
     '$timeout',
     'epFeatureDetectionService',
-    'multilevelmenuservice',
-    function($timeout, epFeatureDetectionService, multilevelmenuservice) {
+    'epMultiLevelMenuService',
+     function($timeout, epFeatureDetectionService, epMultiLevelMenuService) {
         return {
             restrict: 'E',
             replace: true,
@@ -3552,7 +3556,7 @@ angular.module('ep.multi.level.menu').directive('epMultiLevelMenu', [
                                 $('.mlm-content').removeClass('ep-ease-animation');
                                 $scope.state.slidingOut = $scope.state.slidingIn = false;
 
-                                multilevelmenuservice.setCurrentMenuParent($scope.data.next);
+                                epMultiLevelMenuService.setCurrentMenuParent($scope.data.next);
                                 $scope.data.next = null;
                                 $timeout(function() {
                                     $scope.$apply();
@@ -3560,8 +3564,8 @@ angular.module('ep.multi.level.menu').directive('epMultiLevelMenu', [
                             });
                         }, 500);
 
-                        if ($scope.menuId && multilevelmenuservice.data.menu) {
-                            multilevelmenuservice.setCurrentMenuParentById($scope.menuId);
+                        if ($scope.menuId && epMultiLevelMenuService.data.menu) {
+                            epMultiLevelMenuService.setCurrentMenuParentById($scope.menuId);
                         }
                     }
                 };
@@ -5665,86 +5669,220 @@ angular.module('ep.shell').service('epShellService', [
              }
          }
 
+         //---------> Navbar Buttons--------------->>>>>>
+
+         /**
+         * @ngdoc method
+         * @name iterateNavbarButton
+         * @methodOf ep.shell.service:epShellService
+         * @private
+         * @description
+         * Iterate through buttons and call func(button, index). If func returns
+         * true, then notifyShellButtonsChanged(eventName) is called
+         * @param {array} arrIds - an array of button id's
+         * @param {string} eventName - event name passed to notifyShellButtonsChanged
+         * @param {function} func - function called for each matched button id
+         */
+         function iterateNavbarButton(arrIds, eventName, func) {
+             //you can pass one or more id's seperated by comma
+             var hasFound = false;
+             if (arrIds !== undefined) {
+                 _.each(arrIds, function(arg) {
+                     var idx = _.findIndex(navbarButtons, function(value) {
+                         return value.id === arg;
+                     });
+                     if (idx !== -1 && func(navbarButtons[idx], idx)) {
+                         hasFound = true;
+                     }
+                 });
+             }
+             if (hasFound) {
+                 notifyShellButtonsChanged(eventName);
+             }
+         }
+
+         /**
+         * @ngdoc method
+         * @name clearNavbarButtons
+         * @methodOf ep.shell.service:epShellService
+         * @public
+         * @description
+         * Clear (delete) navigation buttons
+         */
          function clearNavbarButtons() {
              navbarButtons = [];
              notifyShellButtonsChanged('clearNavbarButtons');
          }
+         /**
+         * @ngdoc method
+         * @name updateNavbarButtons
+         * @methodOf ep.shell.service:epShellService
+         * @public
+         * @description
+         * Update navigation buttons. Old buttons are cleared.
+         * @param {array} buttons - an array of button objects
+         */
          function updateNavbarButtons(buttons) {
-             navbarButtons = buttons;
-             _.each(navbarButtons, function(btn) {
+             navbarButtons = [];
+             addNavbarButtons(buttons);
+             notifyShellButtonsChanged('updateNavbarButtons');
+         }
+         /**
+         * @ngdoc method
+         * @name addNavbarButtons
+         * @methodOf ep.shell.service:epShellService
+         * @public
+         * @description
+         * Add navigation buttons. They will be merged with existing buttons, but without duplication
+         */
+         function addNavbarButtons(buttons) {
+             var btns = _.union(navbarButtons, buttons);
+             _.each(btns, function(btn) {
                  if (!btn.type) {
                      btn.type = 'button';
                  }
              });
-             notifyShellButtonsChanged('updateNavbarButtons');
-         }
-         function addNavbarButtons(buttons) {
-            //TO DO!!! need to check for duplicate id's
-             navbarButtons = _.union(navbarButtons, buttons);
-             _.each(navbarButtons, function(btn) {
-                 if (!btn.type) {
-                     btn.type = 'button';
-                 }
+             navbarButtons = _.uniq(btns, false, function(value) {
+                 return value.id || value.title;
              });
              notifyShellButtonsChanged('addNavbarButtons');
          }
+         /**
+         * @ngdoc method
+         * @name deleteNavbarButton
+         * @methodOf ep.shell.service:epShellService
+         * @public
+         * @description
+         * Delete navigation button(s). Buttons are removed from the list for matched button id's
+         * @param {object} buttons - an array/arguments of button id's
+         * @example
+         * deleteNavbarButton('myButton1', 'myButton2');
+         * deleteNavbarButton(['myButton1', 'myButton2']);
+         */
+         function deleteNavbarButton() {
+            var args = _.flatten(arguments, true);
+            iterateNavbarButton(args, 'deleteNavbarButton', function(b, idx) {
+                navbarButtons.splice(idx, 1);
+                return true;
+            });
+         }
+
+         /**
+         * @ngdoc method
+         * @name getNavbarButtons
+         * @methodOf ep.shell.service:epShellService
+         * @public
+         * @description
+         * Return all navigation buttons - the current array of buttons is returned
+         * @returns {array} array of button objects
+         */
          function getNavbarButtons() {
              return navbarButtons;
          }
+
+         /**
+         * @ngdoc method
+         * @name getNavbarButton
+         * @methodOf ep.shell.service:epShellService
+         * @public
+         * @description
+         * Return navigation button - for matched button id
+         * @returns {object} button object or null
+         */
          function getNavbarButton(id) {
              return _.find(navbarButtons, function(btn) { return btn.id === id; });
          }
-         function hideNavbarButton(ids) {
-             //you can pass one or more id's seperated by comma
-             var hasFound = false;
-             if (ids !== undefined) {
-                 _.each(arguments, function(arg) {
-                     var id = arg;
-                     var b = _.find(navbarButtons, function(btn) { return btn.id === id; });
-                     if (b) {
-                         b.hidden = true;
-                         hasFound = true;
-                     }
-                 });
-             }
-             if (hasFound) {
-                 notifyShellButtonsChanged('hideNavbarButton');
-             }
+         /**
+         * @ngdoc method
+         * @name hideNavbarButton
+         * @methodOf ep.shell.service:epShellService
+         * @public
+         * @description
+         * Hide navigation button(s). Buttons are hidden for matched button id's
+         * @param {object} buttons - an array/arguments of button id's
+         * @example
+         * hideNavbarButton('myButton1', 'myButton2');
+         * hideNavbarButton(['myButton1', 'myButton2']);
+         */
+         function hideNavbarButton() {
+            //you can pass one or more id's seperated by comma
+            var args = _.flatten(arguments, true);
+            iterateNavbarButton(args, 'hideNavbarButton', function(b) {
+                b.hidden = true;
+                return true;
+            });
          }
-         function showNavbarButton(ids) {
-             //you can pass one or more id's seperated by comma
-             var hasFound = false;
-             if (ids !== undefined) {
-                 _.each(arguments, function(arg) {
-                     var id = arg;
-                     var b = _.find(navbarButtons, function(btn) { return btn.id === id; });
-                     if (b) {
-                         b.hidden = b.enabled ? !b.enabled() : false;
-                         hasFound = true;
-                     }
-                 });
-             }
-             if (hasFound) {
-                 notifyShellButtonsChanged('showNavbarButton');
-             }
+
+         /**
+         * @ngdoc method
+         * @name showNavbarButton
+         * @methodOf ep.shell.service:epShellService
+         * @public
+         * @description
+         * Show navigation button(s). Buttons are made visible for matched button id's
+         * @param {object} buttons - an array/arguments of button id's
+         * @example
+         * showNavbarButton('myButton1', 'myButton2');
+         * showNavbarButton(['myButton1', 'myButton2']);
+         */
+         function showNavbarButton() {
+            //you can pass one or more id's seperated by comma
+            var args = _.flatten(arguments, true);
+            iterateNavbarButton(args, 'showNavbarButton', function(b) {
+                b.hidden = b.enabled ? !b.enabled() : false;
+                return true;
+            });
          }
+         /**
+         * @ngdoc method
+         * @name hideAllNavbarButtons
+         * @methodOf ep.shell.service:epShellService
+         * @public
+         * @description
+         * Hide all navigation buttons. All user buttons in are made hidden in Navbar
+         */
          function hideAllNavbarButtons() {
              _.each(navbarButtons, function(btn) { hideNavbarButton(btn.id); });
              notifyShellButtonsChanged('hideNavbarButton');
          }
+         /**
+         * @ngdoc method
+         * @name showAllNavbarButtons
+         * @methodOf ep.shell.service:epShellService
+         * @public
+         * @description
+         * Show all navigation buttons. All user buttons in are made visible in Navbar
+         */
          function showAllNavbarButtons() {
              _.each(navbarButtons, function(btn) { showNavbarButton(btn.id); });
              notifyShellButtonsChanged('hideNavbarButton');
          }
+         /**
+         * @ngdoc method
+         * @name disableNavbarButtons
+         * @methodOf ep.shell.service:epShellService
+         * @public
+         * @description
+         * Disable/Enable all navigation buttons.
+         * @param {boolean} onOff - disable or enable flag
+         */
          function disableNavbarButtons(onOff) {
              shellState.freezeNavButtons = onOff;
          }
-
-         //Stores the nav button that is clicked on mouse down event and this state is cleared on actual click event.
-         //Useful for blur processing
+         /**
+         * @ngdoc method
+         * @name navbarButtonClicked
+         * @methodOf ep.shell.service:epShellService
+         * @public
+         * @description
+         * Get the button that was clicked - it is available in the time interval between the mouse down and
+         * click events. Useful for 'on-blur' processing.
+         * @param {boolean} onOff - disable or enable flag
+         */
          function navbarButtonClicked() {
              return shellState.navButtonClicked;
          }
+         //<<<<<--------------- Navbar Buttons --------------------------
 
          function momentumScrollingEnabled(onOff) {
              if (onOff !== undefined) {
@@ -5788,7 +5926,6 @@ angular.module('ep.shell').service('epShellService', [
              // General Settings
              setPageTitle: setPageTitle,
              getPageTitle: getPageTitle,
-             toggleFeedback: toggleFeedback,
              toggleBrand: toggleBrand,
              showBrand: showBrand,
              setBrandHTML: setBrandHTML,
@@ -5806,6 +5943,7 @@ angular.module('ep.shell').service('epShellService', [
              enableFeedback: enableFeedback,
              disableFeedback: disableFeedback,
              feedbackCallback: feedbackCallback,
+             toggleFeedback: toggleFeedback,
              showHomeButton: showHomeButton,
              hideHomeButton: hideHomeButton,
              //Sidebar functions
@@ -5827,8 +5965,8 @@ angular.module('ep.shell').service('epShellService', [
              clearRightSidebar: clearRightSidebar,
              getShowLeftSidebar: getShowLeftSidebar,
              getShowRightSidebar: getShowRightSidebar,
-            setLeftTemplate: setLeftTemplate,
-            setRightTemplate: setRightTemplate,
+             setLeftTemplate: setLeftTemplate,
+             setRightTemplate: setRightTemplate,
              //Navigation bar functions
              showNavbar: showNavbar,
              hideNavbar: hideNavbar,
@@ -5841,6 +5979,7 @@ angular.module('ep.shell').service('epShellService', [
              clearNavbarButtons: clearNavbarButtons,
              updateNavbarButtons: updateNavbarButtons,
              addNavbarButtons: addNavbarButtons,
+             deleteNavbarButton: deleteNavbarButton,
              getNavbarButtons: getNavbarButtons,
              getNavbarButton: getNavbarButton,
              showNavbarButton: showNavbarButton,
@@ -6255,22 +6394,21 @@ angular.module('ep.theme').provider('epThemeConfig',
  * @name ep.theme.service:epThemeService
  * @description
  * Service for the ep.theme module
- * This service returns a list of themes installed in the \css\themes directory
+ * This service returns a list of themes installed in the \css\themes directory.
+ * Upon theme change 'epThemeChangedEvent' is broadcasted
  *
  * @example
  *
  */
 angular.module('ep.theme').service('epThemeService', [
+    '$rootScope',
     'epThemeConfig',
     'epLocalStorageService',
-    function(epThemeConfig, epLocalStorageService) {
+    function($rootScope, epThemeConfig, epLocalStorageService) {
         var localStorageId = 'currentTheme';
 
         // set the default theme
         var _theme = epLocalStorageService.getOrAdd(localStorageId, epThemeConfig.theme);
-
-        // callback on theme change
-        var _fnCallback = null;
 
         /**
          * @ngdoc method
@@ -6301,7 +6439,7 @@ angular.module('ep.theme').service('epThemeService', [
         * @methodOf ep.theme.service:epThemeService
         * @public
         * @description
-        * sets the theme by name
+        * sets the theme by name. Upon theme change 'epThemeChangedEvent' is broadcasted
         */
         function theme(newTheme) {
             if (newTheme) {
@@ -6312,9 +6450,7 @@ angular.module('ep.theme').service('epThemeService', [
                     _theme = _.find(getThemes(), function(t) { return t.name === 'bootstrap'; });
                 }
 
-                if (_fnCallback) {
-                    _fnCallback(theme);
-                }
+                $rootScope.$emit('epThemeChangedEvent', _theme);
 
                 // set the current theme back onto the epLocalStorage service
                 epLocalStorageService.update(localStorageId, _theme);
@@ -6347,24 +6483,11 @@ angular.module('ep.theme').service('epThemeService', [
             return themeItem;
         }
 
-        /**
-         * @ngdoc method
-         * @name callbackOnChange
-         * @methodOf ep.theme.service:epThemeService
-         * @public
-         * @description
-         * Define callback function fnCallback(theme) that will be called when theme is called
-         */
-        function callbackOnChange(fnCallback) {
-            _fnCallback = fnCallback;
-        }
-
         return {
             getThemes: getThemes,
             getTheme: getTheme,
             theme: theme,
-            getThemeWithFullPath: getThemeWithFullPath,
-            callbackOnChange: callbackOnChange
+            getThemeWithFullPath: getThemeWithFullPath
         };
     }]);
 
@@ -6706,10 +6829,35 @@ angular.module('ep.utils').service('epUtilsService', [
             });
         }
 
+        /**
+        * @ngdoc method
+        * @name makePath
+        * @methodOf ep.utils.service:epUtilsService
+        * @public
+        * @description
+        * Creates path by concatination of input arguments
+        * @returns {string} path
+        * @example
+        *       var str = epUtilsService.makePath('root','dir1','dir2');
+        *       //results in '/root/dir1/dir2'
+
+        */
+        function makePath(args) {
+            var path = '';
+            var _args = (angular.isObject(args) && args.length) ? args : arguments;
+            if (_args && _args.length === 1 && angular.isObject(_args[0]) && _args[0].length === 0) {
+                return path; //special case when caller passed arguments and arguments were empty
+            }
+            angular.forEach(_args, function(arg) {
+                path += '/' + arg;
+            });
+            return path;
+        }
         return {
             strFormat: strFormat,
             mapArray: mapArray,
-            copyProperties: copyProperties
+            copyProperties: copyProperties,
+            makePath: makePath
         };
     }]);
 
@@ -6748,7 +6896,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.multi.level.menu/multi-level-menu.html',
-    "<div class=mlm-container><form class=mlm-search><input class=\"form-control mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search()></form><div class=mlm-canvas><div ng-if=!state.searchTerm><div class=\"mlm-content mlm-content-right ep-ease-animation\" ng-class=\"{ 'slide-in': state.slidingIn, 'slide-out': state.slidingOut }\"><div class=mlm-header ng-class=\"{ 'pointer': data.next.parent.id !== 'modules'}\" ng-click=navigate(data.next.parent)><span ng-if=\"data.next.parent.id !== 'modules'\" class=\"mlm-back-button pull-left fa fa-lg fa-caret-left\"></span><span>{{data.next.caption}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in data.next.children\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi.type === 'Dashboard'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi.type === 'Menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div><div class=\"mlm-content mlm-content-current ep-ease-animation\" ng-class=\"{ 'slide-in': state.slidingIn, 'slide-out': state.slidingOut }\"><div class=mlm-header ng-class=\"{ 'pointer': data.current.parent.id !== 'modules'}\" ng-click=navigate(data.current.parent)><span ng-if=\"data.current.parent.id !== 'modules'\" class=\"mlm-back-button pull-left fa fa-lg fa-caret-left\"></span><span>{{data.current.caption}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in data.current.children\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi.type === 'Dashboard'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi.type === 'Menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div><div class=\"mlm-content mlm-content-left ep-ease-animation\" ng-class=\"{ 'slide-in': state.slidingIn, 'slide-out': state.slidingOut }\"><div class=mlm-header ng-class=\"{ 'pointer': data.next.parent.id !== 'modules'}\" ng-click=navigate(data.next.parent)><span ng-if=\"data.next.parent.id !== 'modules'\" class=\"mlm-back-button pull-left fa fa-lg fa-caret-left\"></span><span>{{data.next.caption}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in data.next.children\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi.type === 'Dashboard'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi.type === 'Menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div></div><div class=\"mlm-content mlm-content-search\" ng-if=state.searchTerm><div class=mlm-header><span>{{resources.strings.SearchResults}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in searchResults\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div><span ng-if=\"mi.type === 'Menu'\" class=\"mlm-item-count pull-right\">{{mi.children && mi.children.length ? mi.children.length : 0}}</span></div><i ng-if=\"mi.type === 'Dashboard'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi.type === 'Menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div></div></div>"
+    "<div class=mlm-container><form class=mlm-search><input class=\"form-control mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search()></form><div class=mlm-canvas><div ng-if=!state.searchTerm>beh<div class=\"mlm-content mlm-content-right ep-ease-animation\" ng-class=\"{ 'slide-in': state.slidingIn, 'slide-out': state.slidingOut }\"><div class=mlm-header ng-class=\"{ 'pointer': data.next.parent.id !== 'modules'}\" ng-click=navigate(data.next.parent)><span ng-if=\"data.next.parent.id !== 'modules'\" class=\"mlm-back-button pull-left fa fa-lg fa-caret-left\"></span><span>{{data.next.caption}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in data.next.children\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi.type === 'Dashboard'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi.type === 'Menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div><div class=\"mlm-content mlm-content-current ep-ease-animation\" ng-class=\"{ 'slide-in': state.slidingIn, 'slide-out': state.slidingOut }\"><div class=mlm-header ng-class=\"{ 'pointer': data.current.parent.id !== 'modules'}\" ng-click=navigate(data.current.parent)><span ng-if=\"data.current.parent.id !== 'modules'\" class=\"mlm-back-button pull-left fa fa-lg fa-caret-left\"></span><span>{{data.current.caption}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in data.current.children\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi.type === 'Dashboard'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi.type === 'Menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div><div class=\"mlm-content mlm-content-left ep-ease-animation\" ng-class=\"{ 'slide-in': state.slidingIn, 'slide-out': state.slidingOut }\"><div class=mlm-header ng-class=\"{ 'pointer': data.next.parent.id !== 'modules'}\" ng-click=navigate(data.next.parent)><span ng-if=\"data.next.parent.id !== 'modules'\" class=\"mlm-back-button pull-left fa fa-lg fa-caret-left\"></span><span>{{data.next.caption}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in data.next.children\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi.type === 'Dashboard'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi.type === 'Menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div></div><div class=\"mlm-content mlm-content-search\" ng-if=state.searchTerm><div class=mlm-header><span>{{resources.strings.SearchResults}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in searchResults\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div><span ng-if=\"mi.type === 'Menu'\" class=\"mlm-item-count pull-right\">{{mi.children && mi.children.length ? mi.children.length : 0}}</span></div><i ng-if=\"mi.type === 'Dashboard'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi.type === 'Menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div></div></div>"
   );
 
 
