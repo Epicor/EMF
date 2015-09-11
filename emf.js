@@ -1,6 +1,18 @@
 'use strict';
 /**
  * @ngdoc overview
+ * @name my.app.pack
+ * @description
+ * my.app.pack
+ */
+angular.module('my.app.pack', [
+    'ep.templates',
+    'ep.sysconfig'
+]);
+
+'use strict';
+/**
+ * @ngdoc overview
  * @name ep.action.set
  * @description
  * #ep.action.set
@@ -25,6 +37,18 @@
 angular.module('ep.action.set', [
     'ep.feature.detection',
     'ep.templates'
+]);
+
+'use strict';
+/**
+ * @ngdoc overview
+ * @name ep.animation
+ * @description
+ * A module containing the animation directive.
+ */
+angular.module('ep.animation', [
+    'ep.templates',
+    'ep.sysconfig'
 ]);
 
 'use strict';
@@ -55,7 +79,7 @@ angular.module('ep.drag.drop', [
  * @description
  * Provides services for embedded application hosting
  */
-angular.module('ep.embedded.apps', ['ep.templates', 'ep.sysconfig']);
+angular.module('ep.embedded.apps', ['ep.templates', 'ep.sysconfig', 'ep.utils']);
 
 'use strict';
 /**
@@ -210,6 +234,39 @@ angular.module('ep.token', [
  */
 angular.module('ep.utils', [
     'ep.sysconfig'
+]);
+
+'use strict';
+
+/**
+ * @ngdoc controller
+ * @name my.app.pack.controller:myAppPackCtrl
+ * @description
+ * Represents the myAppPack controller for the
+ * my.app.pack module, or for specific  directive
+ *
+ * @example
+ *
+ */
+angular.module('my.app.pack').controller('myAppPackCtrl', [
+    '$scope',
+    function($scope) {
+        // do something with $scope property
+        $scope.myProperty = 'emf';
+
+        /**
+         * @ngdoc method
+         * @name myFunction
+         * @methodOf my.app.pack.controller:myAppPackCtrl
+         * @public
+         * @description
+         * Handles the myFunction request
+         */
+        $scope.myFunction = function() {
+            // do something else with $scope property
+            // $scope.myProperty = 'new property value';
+        };
+    }
 ]);
 
 'use strict';
@@ -817,6 +874,97 @@ angular.module('ep.action.set').factory('dynamicActionSetFactory', [
 
 'use strict';
 /**
+* @ngdoc directive
+* @name ep.animation.directive:epAnimation
+* @restrict E
+*
+* @description
+* Represents the ep.animation directive
+*
+* @example
+*/
+angular.module('ep.animation').directive('epAnimation',
+    function() {
+        function link($scope, elem, attrs) {
+
+            $scope.$watch(function() {
+                return $scope.options;
+            }, function(options) {
+                if (options) {
+                    var id = attrs.id;
+                    var $body = angular.element('body');
+                    var $animationStyle = angular.element('#animationStyle');
+
+                    if (!$animationStyle.length) {
+                        var el = document.createElement('style');
+
+                        $body.append(el);
+                        $animationStyle = angular.element(el);
+                        $animationStyle.attr('id', 'animationStyle');
+                    }
+
+                    var content = $animationStyle.get(0).textContent;
+
+                    if (!id) {
+                        id = attrs.id = _.uniqueId(elem[0].nodeName);
+                    }
+                    var exp = '';
+                    var regex;
+                    if (options.show) {
+                        exp = '#' + id + '.ng-hide-remove {.*}';
+                        regex = new RegExp(exp, 'gim');
+                        content = content.replace(regex, '');
+                        content += '\r\n#' + id + '.ng-hide-remove { animation: ' +
+                            (options.show.duration || '0.5s') + ' ' +
+                            options.show.animation + ' ' +
+                            (options.show.easing || 'ease') + '; }';
+                    }
+                    if (options.hide) {
+                        exp = '#' + id + '.ng-hide-add {.*}';
+                        regex = new RegExp(exp, 'gim');
+                        content = content.replace(regex, '');
+                        content += '\r\n#' + id + '.ng-hide-add { animation: ' +
+                            (options.hide.duration || '0.5s') + ' ' +
+                            options.hide.animation + ' ' +
+                            (options.hide.easing || 'ease') + '; }';
+                    }
+                    if (options.enter) {
+                        exp = '#' + id + '.ng-enter-active {.*}';
+                        regex = new RegExp(exp, 'gim');
+                        content = content.replace(regex, '');
+                        content += '\r\n#' + id + '.ng-enter-active { animation: ' +
+                            (options.enter.duration || '0.5s') + ' ' +
+                            options.enter.animation + ' ' +
+                            (options.enter.easing || 'ease') + '; }';
+
+                    }
+                    if (options.leave) {
+                        exp = '#' + id + '.ng-leave-active {.*}';
+                        regex = new RegExp(exp, 'gim');
+                        content = content.replace(regex, '');
+                        content += '\r\n#' + id + '.ng-leave-active { animation: ' +
+                            (options.leave.duration || '0.5s') + ' ' +
+                            options.leave.animation + ' ' +
+                            (options.leave.easing || 'ease') + '; }';
+
+                    }
+                    $animationStyle.html(content);
+                    console.log($scope.options);
+                }
+            });
+        }
+
+        return {
+            restrict: 'A',
+            scope: {
+                'options': '='
+            },
+            link: link
+        };
+    });
+
+'use strict';
+/**
  * @ngdoc service
  * @name ep.drag.drop.factory:dragOperationFactory
  * @description
@@ -1208,16 +1356,16 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsShellService', [
     '$rootScope',
     '$location',
     '$log',
+    '$timeout',
     'epEmbeddedAppsConstants',
-    function($rootScope, $location, $log, epEmbeddedAppsConstants) {
+    function($rootScope, $location, $log, $timeout, epEmbeddedAppsConstants) {
         var epShellService;
-        var locationHdl;
 
         function init() {
             try {
                 epShellService = angular.element('html').injector().get('epShellService');
             } catch (e) {
-                $log.warning('epShellService is not found for embedded applications');
+                $log.warn('epShellService is not found for embedded applications');
             }
 
             if (epShellService) {
@@ -1231,61 +1379,27 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsShellService', [
                     if (config.name) {
                         epShellService.setPageTitle(config.name);
                     }
+                    //save shell state on entering into embedded app and then call restore on exit
+                    epShellService.saveState();
+                    setupApplicationShellOptions(scope, config);
+                });
+
+                $rootScope.$on(epEmbeddedAppsConstants.APPLICATION_EXIT_EVENT, function() {
+                    epShellService.restoreState();
+                });
+
+                $rootScope.$on(epEmbeddedAppsConstants.VIEW_LOADED_EVENT, function(event, data) {
+                    var scope = data.scope;
+                    var config = scope.appConfig;
                     var view = config.views[data.viewId];
                     if (view) {
-                        setupApplicationShellOptions(scope, config, view);
+                        setupViewShellOptions(scope, config, view);
                     }
                 });
             }
         }
 
-        function setupApplicationShellOptions($scope, config, view) {
-            //save shell state on entering into embedded app and then call restore on exit
-            epShellService.saveState();
-            if (!locationHdl) {
-                locationHdl = $rootScope.$on('$locationChangeStart', function() {
-                    if ($location.url().indexOf('/app/') !== 0) {
-                        $scope.$on('$destroy', locationHdl);
-                        locationHdl = null;
-                        epShellService.restoreState();
-                    }
-                });
-            }
-
-            // inject the new sidebar template
-            if (view.sidebarOptions) {
-                epShellService.disableLeftSidebar();
-                if (view.sidebarOptions.left) {
-                    if (view.sidebarOptions.left.enabled) {
-                        epShellService.enableLeftSidebar();
-                    }
-                    if (view.sidebarOptions.left.templateUrl) {
-                        var lefturl = '"' + leftSidebarUrl + '"';
-                        var leftSidebarUrl = $scope.getEmbbededAppPath(config.id, view.sidebarOptions.left.templateUrl);
-                        epShellService.setLeftTemplate('<div ng-include=' + lefturl + '></div>');
-                    } else if (view.sidebarOptions.left.template) {
-                        epShellService.setLeftTemplate(view.sidebarOptions.left.template);
-                    }
-                }
-
-                epShellService.disableRightSidebar();
-                if (view.sidebarOptions.right) {
-                    if (view.sidebarOptions.right.enabled) {
-                        epShellService.enableRightSidebar();
-                    }
-                    if (view.sidebarOptions.right.templateUrl) {
-                        var righturl = '"' + rightSidebarUrl + '"';
-                        var rightSidebarUrl = $scope.getEmbbededAppPath(config.id,
-                            view.sidebarOptions.right.templateUrl);
-                        epShellService.setRightTemplate('<div ng-include=' + righturl + '></div>');
-                    } else if (view.sidebarOptions.right.template) {
-                        epShellService.setRightTemplate(view.sidebarOptions.right.template);
-                    }
-                }
-            } else {
-                epShellService.disableLeftSidebar();
-                epShellService.disableRightSidebar();
-            }
+        function setupApplicationShellOptions($scope, config) {
             if (config.epShellNavBar) {
                 if (config.epShellNavBar.hideHostButtons) {
                     epShellService.updateNavbarButtons([]);
@@ -1302,6 +1416,59 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsShellService', [
                         }
                     }]);
                 }
+            }
+        }
+
+        function setupViewShellOptions($scope, config, view) {
+            // inject the new sidebar template
+            if (view.sidebarOptions) {
+                epShellService.disableLeftSidebar();
+                if (view.sidebarOptions.left) {
+                    epShellService.enableLeftSidebar();
+                    if (view.sidebarOptions.left.templateUrl) {
+                        var lefturl = '"' + leftSidebarUrl + '"';
+                        var leftSidebarUrl = $scope.getEmbeddedAppPath(config.id, view.sidebarOptions.left.templateUrl);
+                        epShellService.setLeftTemplate('<div ng-include=' + lefturl + '></div>');
+                    } else if (view.sidebarOptions.left.template) {
+                        epShellService.setLeftTemplate(view.sidebarOptions.left.template);
+                    }
+                }
+
+                epShellService.disableRightSidebar();
+                if (view.sidebarOptions.right) {
+                    epShellService.enableRightSidebar();
+                    if (view.sidebarOptions.right.templateUrl) {
+                        var righturl = '"' + rightSidebarUrl + '"';
+                        var rightSidebarUrl = $scope.getEmbeddedAppPath(config.id,
+                            view.sidebarOptions.right.templateUrl);
+                        epShellService.setRightTemplate('<div ng-include=' + righturl + '></div>');
+                    } else if (view.sidebarOptions.right.template) {
+                        epShellService.setRightTemplate(view.sidebarOptions.right.template);
+                    }
+                }
+            } else {
+                epShellService.disableLeftSidebar();
+                epShellService.disableRightSidebar();
+            }
+            if (view.viewSettings) {
+                var viewSettings = view.viewSettings;
+                if (viewSettings.small) {
+                    _.each(viewSettings.small, function(val, key) {
+                        epShellService.__state.viewSettings.small[key] = val;
+                    });
+                }
+                if (viewSettings.large) {
+                    _.each(viewSettings.large, function(val, key) {
+                        epShellService.__state.viewSettings.large[key] = val;
+                    });
+                }
+                if (!viewSettings.small && !viewSettings.large) {
+                    _.each(viewSettings, function(val, key) {
+                        epShellService.__state.viewSettings.small[key] = val;
+                        epShellService.__state.viewSettings.large[key] = val;
+                    });
+                }
+                epShellService.__setCurrentModeFlags();
             }
         }
 
@@ -1335,7 +1502,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsShellService', [
         function initialize() {
         }
 
-        init();
+        $timeout(function() {
+            init();
+        });
 
         return {
             initialize: initialize,
@@ -1353,8 +1522,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsShellService', [
  * ep.embedded.apps constants
  */
 angular.module('ep.embedded.apps').constant('epEmbeddedAppsConstants', {
-    CONFIG_LOADED_EVENT: 'CONFIG_LOADED_EVENT',
-    APPLICATION_LOADED_EVENT: 'APPLICATION_LOADED_EVENT'
+    CONFIG_LOADED_EVENT: 'EMBEDDED_CONFIG_LOADED_EVENT',
+    APPLICATION_LOADED_EVENT: 'EMBEDDED_APPLICATION_LOADED_EVENT',
+    VIEW_LOADED_EVENT: 'EMBEDDED_VIEW_LOADED_EVENT',
+    APPLICATION_EXIT_EVENT: 'EMBEDDED_APPLICATION_EXIT_EVENT',
 });
 
 'use strict';
@@ -1369,11 +1540,13 @@ angular.module('ep.embedded.apps').constant('epEmbeddedAppsConstants', {
      */
 angular.module('ep.embedded.apps').directive('epEmbeddedApps', [
     '$log',
+    '$rootScope',
     '$routeParams',
+    '$location',
     '$timeout',
     'epEmbeddedAppsService',
     'epEmbeddedAppsConstants',
-    function($log, $routeParams, $timeout, epEmbeddedAppsService, epEmbeddedAppsConstants) {
+    function($log, $rootScope, $routeParams, $location, $timeout, epEmbeddedAppsService, epEmbeddedAppsConstants) {
         return {
             restrict: 'E',
             templateUrl: 'src/components/ep.embedded.apps/embedded-apps.html',
@@ -1397,9 +1570,28 @@ angular.module('ep.embedded.apps').directive('epEmbeddedApps', [
                             view.parent = config;
                             config.activeViewId = state.viewId;
                             $scope.currentView = view;
+
+                            if (view.routeParams) {
+                                // the routeParams are virtualized so that every param is named p0 through p5
+                                // this is the collection of actual routeParam names
+                                var params = view.routeParams.split('/').map(function(p) {
+                                    return p.substring(1, p.length);
+                                });
+
+                                // reify the virtual parameters into the actual parameter names & values
+                                var paramIdx = 0;
+                                angular.forEach(params, function(p) {
+                                    if (p) {
+                                        $routeParams[p] = $routeParams['p' + paramIdx];
+                                        delete $routeParams['p' + paramIdx];
+                                        paramIdx++;
+                                    }
+                                });
+                            }
+
                         }
 
-                        if (!config.initialized) {
+                        if (!config.initialized && config.splash) {
                             $timeout(function() {
                                 $scope.showSplash = true;
                             });
@@ -1420,13 +1612,43 @@ angular.module('ep.embedded.apps').directive('epEmbeddedApps', [
                         } else {
                             $scope.showApp = true;
                             config.onComplete = null;
+                            config.initialized = true;
                         }
 
                         $scope.appConfig = config;
-                        $scope.getEmbbededAppPath = epEmbeddedAppsService.getAppPath;
+                        $scope.getEmbeddedAppPath = epEmbeddedAppsService.getAppPath;
 
+                        if (config.isRunning !== true) {
+                            config.isRunning = true; //flag that app is running
+
+                            if (!config.locationHdl) {
+                                config.locationHdl = $rootScope.$on('$locationChangeStart', function() {
+                                    if (config.locationHdl && $location.url().indexOf('/app/') !== 0) {
+                                        $rootScope.$on('$destroy', config.locationHdl);
+                                        config.locationHdl = null;
+                                        config.isRunning = false;
+                                        $rootScope.$emit(epEmbeddedAppsConstants.APPLICATION_EXIT_EVENT, {
+                                            scope: $scope,
+                                            viewId: state.viewId
+                                        });
+                                        // TODO: remove the app resources from the page
+                                        $timeout(function() {
+                                            $scope.$apply();
+                                        });
+                                    }
+                                });
+                            }
+
+                            $timeout(function() {
+                                $scope.$emit(epEmbeddedAppsConstants.APPLICATION_LOADED_EVENT, {
+                                    scope: $scope,
+                                    viewId: state.viewId
+                                });
+                                $scope.$apply();
+                            });
+                        }
                         $timeout(function() {
-                            $scope.$emit(epEmbeddedAppsConstants.APPLICATION_LOADED_EVENT, {
+                            $scope.$emit(epEmbeddedAppsConstants.VIEW_LOADED_EVENT, {
                                 scope: $scope,
                                 viewId: state.viewId
                             });
@@ -1435,12 +1657,16 @@ angular.module('ep.embedded.apps').directive('epEmbeddedApps', [
                     }
                 }
 
-                epEmbeddedAppsService.loadConfigurations().then(function() {
-                    state.appId = $routeParams.appId;
-                    if ($routeParams.viewId) {
-                        state.viewId = $routeParams.viewId;
+                $rootScope.$watch(function() {
+                    return epEmbeddedAppsService.state.loadComplete;
+                }, function(complete) {
+                    if (complete) {
+                        state.appId = $routeParams.appId;
+                        if ($routeParams.viewId) {
+                            state.viewId = $routeParams.viewId;
+                        }
+                        build(state.appId);
                     }
-                    build(state.appId);
                 });
             }
         };
@@ -1480,7 +1706,7 @@ angular.module('ep.embedded.apps')
     '$compileProvider',
     '$filterProvider',
     '$routeProvider',
-    function($controllerProvider, $provide, $compileProvider, $filterProvider, $routeProvider) {
+    function($controllerProvider, $provide, $compileProvider, $filterProvider) {
         var regModules = ['ng'];
 
         var sysconfig = {
@@ -1513,20 +1739,6 @@ angular.module('ep.embedded.apps')
                 }
             }
             return true;
-        }
-
-        function ensureSlashStart(v) {
-            if (v && v.indexOf('/') !== 0) {
-                return '/' + v;
-            }
-            return v || '';
-        }
-
-        function ensureSlashEnd(v) {
-            if (v && v.indexOf('/') !== v.length - 1) {
-                return v + '/';
-            }
-            return v || '';
         }
 
         function getRequires(module) {
@@ -1584,12 +1796,29 @@ angular.module('ep.embedded.apps')
             return null;
         }
 
+        function getAppPath() {
+            var _args = _.flatten(arguments, true);
+            //var _args = (angular.isObject(args) && args.length) ? args : arguments;
+            var path = sysconfig.path;
+            angular.forEach(_args, function(arg) {
+                path += '/' + arg;
+            });
+            return path;
+        }
+
+        var activeConfig;
         function getAppPackageService(config, $timeout) {
+            activeConfig = config;
             return function appPackageService($location) {
                 var data = {};
 
-                function goTo(viewId) {
-                    $location.url('/app/' + config.id + '/' + viewId);
+                function getLocalAppPath() {
+                    var path = getAppPath(arguments);
+                    return path;
+                }
+
+                function goToView(viewId) {
+                    $location.url('/app/' + activeConfig.id + '/' + viewId);
                 }
 
                 function executeResource(method, name, value, cacheKey, reload) {
@@ -1625,23 +1854,19 @@ angular.module('ep.embedded.apps')
                     }
                 };
 
+                function getConfig() {
+                    return activeConfig;
+                }
+
                 return {
-                    config: config,
+                    getConfig: getConfig,
                     resource: resource,
                     data: data,
-                    goTo: goTo
+                    goToView: goToView,
+                    getAppPath: getLocalAppPath
                 };
 
             };
-        }
-
-        function getAppPath(args) {
-            var _args = (angular.isObject(args) && args.length) ? args : arguments;
-            var path = sysconfig.path;
-            angular.forEach(_args, function(arg) {
-                path += '/' + arg;
-            });
-            return path;
         }
 
         this.$get = function($timeout, $document, $http, $injector, $log, epEmbeddedAppsCacheService, epSysConfig) {
@@ -1689,9 +1914,9 @@ angular.module('ep.embedded.apps')
 
                     config.resources.links.map(function(url) {
                         return getAppPath(config.id, url);
-                        }).forEach(function(url) {
-                            var linkId = 'link: ' + url;
-                            var linkElement;
+                    }).forEach(function(url) {
+                        var linkId = 'link: ' + url;
+                        var linkElement;
                         if (url && !epEmbeddedAppsCacheService.linkCache.get(linkId)) {
                             linkElement = $document[0].createElement('link');
                             linkElement.rel = 'stylesheet';
@@ -1785,17 +2010,6 @@ angular.module('ep.embedded.apps')
                                 });
                             });
                         });
-
-                    angular.forEach(config.views, function(view) {
-                        var virtualRoute = ensureSlashStart(config.id) +
-                            ensureSlashStart(view.id) + ensureSlashStart(ensureSlashEnd(view.routeParams));
-                        var actualRoute = getAppPath(config.id, view.id,
-                            ensureSlashStart(ensureSlashEnd(view.routeParams)));
-                        $routeProvider.when(virtualRoute, { redirectTo: actualRoute });
-                    });
-                    if (config.notFoundView) {
-                        $routeProvider.otherwise({ redirectTo: ensureSlashStart(config.notFoundView) });
-                    }
                 } else {
                     $timeout(function() {
                         callback(config.id);
@@ -1827,7 +2041,7 @@ angular.module('ep.embedded.apps')
             };
         };
     }
-]);
+    ]);
 
 'use strict';
 /**
@@ -1854,10 +2068,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
         var configs = {};
         var state = {
-                appId: '',
-                viewId: '',
-                loaded: false
-            };
+            appId: '',
+            viewId: '',
+            loaded: false
+        };
 
         var packages = [];
         var loadedCount = 0;
@@ -1903,20 +2117,20 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     var customProvider = angular.element('html').injector().get(provider);
                     return customProvider.getApps();
                 } catch (e) {
-                    $log.warning('Custom embedded application provider not found or failed: ' + provider);
+                    $log.warn('Custom embedded application provider not found or failed: ' + provider);
                 }
             }
             return getAppsFromConfig();
         }
 
-        function loadConfigurationsFromService(deferred)
-        {
+        function loadConfigurationsFromService(deferred) {
             //appService.getApps()
             getApplications('config').then(function(data) {
                 try {
                     if (data && data.Success) {
 
                         packages = data.apps;
+                        loadedCount = 0;
                         packages.forEach(function(pkg) {
                             var appPkgPath = epEmbeddedAppsProvider.getAppPath(pkg, 'AppPackage.json');
                             $http.get(appPkgPath).then(function(response) {
@@ -1932,10 +2146,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                                             height: parseInt(tileSize[1])
                                         };
                                     } catch (e) {
-                                        $log.warning('Invalid value in tileSize property: ' + config.tileSize);
+                                        $log.warn('Invalid value in tileSize property: ' + config.tileSize);
                                     }
-
                                 }
+
                                 // construct an object out of the view array so that views can be accessed
                                 // by ID without having to search through the array for them
                                 config.views = epUtilsService.mapArray(config.views, 'id');
@@ -4630,7 +4844,7 @@ angular.module('ep.shell').provider('epShellConfig', [
             *    { route: '/login', url: './main-application/views/loginview.html', controller: 'LoginCtrl', isDefault: true }
             * ]
             */
-            routes : []
+            routes: []
         };
 
         //This $get, is kinda confusing - it does not return the provider, but it returns the "service".
@@ -4660,7 +4874,23 @@ angular.module('ep.shell').provider('epShellConfig', [
             });
 
             if (config.options.includeEmbeddedApps) {
-                routeProviderReference.when('/app/:appId/:viewId', {
+                routeProviderReference.when('/app/:appId/:viewId/', {
+                    templateUrl: 'src/components/ep.shell/views/ep-shell-embedded-apps-container.html'
+                });
+
+                routeProviderReference.when('/app/:appId/:viewId/:p0', {
+                    templateUrl: 'src/components/ep.shell/views/ep-shell-embedded-apps-container.html'
+                });
+                routeProviderReference.when('/app/:appId/:viewId/:p0/:p1', {
+                    templateUrl: 'src/components/ep.shell/views/ep-shell-embedded-apps-container.html'
+                });
+                routeProviderReference.when('/app/:appId/:viewId/:p0/:p1/:p2', {
+                    templateUrl: 'src/components/ep.shell/views/ep-shell-embedded-apps-container.html'
+                });
+                routeProviderReference.when('/app/:appId/:viewId/:p0/:p1/:p2/:p3', {
+                    templateUrl: 'src/components/ep.shell/views/ep-shell-embedded-apps-container.html'
+                });
+                routeProviderReference.when('/app/:appId/:viewId/:p0/:p1/:p2/:p3/:p4', {
                     templateUrl: 'src/components/ep.shell/views/ep-shell-embedded-apps-container.html'
                 });
             }
@@ -4681,6 +4911,18 @@ angular.module('ep.shell').provider('epShellConfig', [
  * and epShellService.init() must be called from application initialization
  *
  * @example
+ *  The main page (like index.html) should contain nothing but the shell directive like so:
+ *
+ *  <body>
+ *        <ep-shell><div ng-view></div></ep-shell>
+ *  </body>
+ *
+ *  The application run code should initialize the shell like so:
+ *
+ *   angular.module('test-app', ['ep.shell'])
+ *   .run(function(epShellService) {
+ *       epShellService.init();
+ *   });
  *
  */
 angular.module('ep.shell').service('epShellService', [
@@ -4767,11 +5009,11 @@ angular.module('ep.shell').service('epShellService', [
                  //record buttonClicked (for ng-blur events). it will be dismissed after real click.
                  shellState.navButtonClicked = btn;
              },
-             momentumScrollingEnabled : true,
+             momentumScrollingEnabled: true,
              allowVerticalScroll: true,
              //Stores the nav button that is clicked on mouse down event. This state is cleared on actual click event.
              //Useful for blur processing
-             navButtonClicked : null
+             navButtonClicked: null
          };
 
          /**
@@ -4877,8 +5119,11 @@ angular.module('ep.shell').service('epShellService', [
 
              shellState.showNavbar = mode.showNavbar;
              shellState.showFooter = mode.showFooter;
-             shellState.showHomeButton = mode.showHomeButton; // We want to default as shown, so check that the attribute doesn't explicitly hide it
-             shellState.showBrand = mode.showBrand;// We want to default as shown, so check that the attribute doesn't explicitly hide it
+             shellState.showHomeButton = mode.showHomeButton;
+             shellState.showBrand = mode.showBrand;
+             if (shellState.showBrand && mode.brandHTML) {
+                 setBrandHTML(mode.brandHTML);
+             }
 
              if (mode.enableLeftSidebar && (isMediaModeLarge() || shellState.suspend)) {
                  showLeftSidebar();
@@ -5185,6 +5430,7 @@ angular.module('ep.shell').service('epShellService', [
           */
          function setBrandHTML(html) {
              shellState.brandHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;
+             shellState.viewSettings[shellState.mediaMode].brandHTML = shellState.brandHTML;
          }
 
          /**
@@ -5608,10 +5854,11 @@ angular.module('ep.shell').service('epShellService', [
          * @public
          * @description
          * Set the left sidabar html
+         * @param {string} html - html of template to be loaded in left sidebar
          */
-        function setLeftTemplate(html) {
-            epSidebarService.setLeftTemplate(html);
-        }
+         function setLeftTemplate(html) {
+             epSidebarService.setLeftTemplate(html);
+         }
 
          /**
          * @ngdoc method
@@ -5620,10 +5867,37 @@ angular.module('ep.shell').service('epShellService', [
          * @public
          * @description
          * Set the right sidabar html
+         * @param {string} html - html of template to be loaded in right sidebar
          */
-        function setRightTemplate(html) {
-            epSidebarService.setRightTemplate(html);
-        }
+         function setRightTemplate(html) {
+             epSidebarService.setRightTemplate(html);
+         }
+
+         /**
+         * @ngdoc method
+         * @name setLeftTemplateUrl
+         * @methodOf ep.shell.service:epShellService
+         * @public
+         * @description
+         * Set the left sidabar html
+         * @param {string} url - url of template to be loaded in left sidebar
+         */
+         function setLeftTemplateUrl(url) {
+             epSidebarService.setLeftTemplateUrl(url);
+         }
+
+         /**
+         * @ngdoc method
+         * @name setRightTemplateUrl
+         * @methodOf ep.shell.service:epShellService
+         * @public
+         * @description
+         * Set the right sidabar html
+         * @param {string} url - url of template to be loaded in right sidebar
+         */
+         function setRightTemplateUrl(url) {
+             epSidebarService.setRightTemplateUrl(url);
+         }
 
          function hideNavbar() {
              if (shellState.showNavbar) {
@@ -5760,11 +6034,11 @@ angular.module('ep.shell').service('epShellService', [
          * deleteNavbarButton(['myButton1', 'myButton2']);
          */
          function deleteNavbarButton() {
-            var args = _.flatten(arguments, true);
-            iterateNavbarButton(args, 'deleteNavbarButton', function(b, idx) {
-                navbarButtons.splice(idx, 1);
-                return true;
-            });
+             var args = _.flatten(arguments, true);
+             iterateNavbarButton(args, 'deleteNavbarButton', function(b, idx) {
+                 navbarButtons.splice(idx, 1);
+                 return true;
+             });
          }
 
          /**
@@ -5805,12 +6079,12 @@ angular.module('ep.shell').service('epShellService', [
          * hideNavbarButton(['myButton1', 'myButton2']);
          */
          function hideNavbarButton() {
-            //you can pass one or more id's seperated by comma
-            var args = _.flatten(arguments, true);
-            iterateNavbarButton(args, 'hideNavbarButton', function(b) {
-                b.hidden = true;
-                return true;
-            });
+             //you can pass one or more id's seperated by comma
+             var args = _.flatten(arguments, true);
+             iterateNavbarButton(args, 'hideNavbarButton', function(b) {
+                 b.hidden = true;
+                 return true;
+             });
          }
 
          /**
@@ -5826,12 +6100,12 @@ angular.module('ep.shell').service('epShellService', [
          * showNavbarButton(['myButton1', 'myButton2']);
          */
          function showNavbarButton() {
-            //you can pass one or more id's seperated by comma
-            var args = _.flatten(arguments, true);
-            iterateNavbarButton(args, 'showNavbarButton', function(b) {
-                b.hidden = b.enabled ? !b.enabled() : false;
-                return true;
-            });
+             //you can pass one or more id's seperated by comma
+             var args = _.flatten(arguments, true);
+             iterateNavbarButton(args, 'showNavbarButton', function(b) {
+                 b.hidden = b.enabled ? !b.enabled() : false;
+                 return true;
+             });
          }
          /**
          * @ngdoc method
@@ -5967,6 +6241,8 @@ angular.module('ep.shell').service('epShellService', [
              getShowRightSidebar: getShowRightSidebar,
              setLeftTemplate: setLeftTemplate,
              setRightTemplate: setRightTemplate,
+             setLeftTemplateUrl: setLeftTemplateUrl,
+             setRightTemplateUrl: setRightTemplateUrl,
              //Navigation bar functions
              showNavbar: showNavbar,
              hideNavbar: hideNavbar,
@@ -6144,7 +6420,7 @@ angular.module('ep.shell').service('epSidebarService', [
      * Represents the shell view container directive.
      */
 (function() {
-    angular.module('ep.shell').directive('epShellViewContainer', function($rootScope,
+    angular.module('ep.shell').directive('epShellViewContainer', function($rootScope, $timeout,
         epShellService, epSidebarService, epViewContainerService) {
 
           function setSidebarSettings(sidebar, scope) {
@@ -6207,7 +6483,7 @@ angular.module('ep.shell').service('epSidebarService', [
                                   if (viewSettings.sidebar) {
                                       setSidebarSettings(viewSettings.sidebar, $scope);
                                   }
-                                  $scope.$apply();
+                                  $timeout(function() { $scope.$apply(); });
                               }
                           });
                       },
@@ -6304,7 +6580,7 @@ angular.module('ep.sysconfig').provider('epSysConfig',
                     sysconfig = angular.fromJson(q.responseText);
                 }
                 catch (e) {
-                    $log.warning('Error parsing sysconfig: ' + e.message);
+                    $log.warn('Error parsing sysconfig: ' + e.message);
                 }
             }
 
@@ -6831,6 +7107,46 @@ angular.module('ep.utils').service('epUtilsService', [
 
         /**
         * @ngdoc method
+        * @name ensureStartsWith
+        * @methodOf ep.utils.service:epUtilsService
+        * @public
+        * @description
+        * Ensures that a string starts with a given beginning
+        * @returns {string} result
+        * @example
+        *       var str = epUtilsService.ensureStartsWith('root','/');
+        *       //results in '/root'
+
+        */
+        function ensureStartsWith(beginning, str) {
+            if (str && str.indexOf(beginning) !== 0) {
+                return beginning + str;
+            }
+            return str || '';
+        }
+
+        /**
+        * @ngdoc method
+        * @name ensureEndsWith
+        * @methodOf ep.utils.service:epUtilsService
+        * @public
+        * @description
+        * Ensures that a string ends with a given ending
+        * @returns {string} result
+        * @example
+        *       var str = epUtilsService.ensureEndsWith('root','/');
+        *       //results in 'root/'
+
+        */
+        function ensureEndsWith(str, ending) {
+            if (str && str.lastIndexOf(ending) !== str.length - ending.length) {
+                return str + ending;
+            }
+            return str || '';
+        }
+
+        /**
+        * @ngdoc method
         * @name makePath
         * @methodOf ep.utils.service:epUtilsService
         * @public
@@ -6856,6 +7172,8 @@ angular.module('ep.utils').service('epUtilsService', [
         return {
             strFormat: strFormat,
             mapArray: mapArray,
+            ensureStartsWith: ensureStartsWith,
+            ensureEndsWith: ensureEndsWith,
             copyProperties: copyProperties,
             makePath: makePath
         };
@@ -6871,7 +7189,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.embedded.apps/embedded-apps.html',
-    "<div id=appHost><div id=splash ng-show=showSplash ema-animation options=appConfig.splash.transition><div id=splashContainer ng-include=\"'apps/' + appConfig.id + '/' + appConfig.splash.templateUrl\"></div></div><div id=appContent ng-show=showApp ema-animation options=currentView.transition><ep-embedded-apps-loader config=appConfig on-complete=onLoaderComplete()></ep-embedded-apps-loader></div></div>"
+    "<div id=appHost><div id=splash ng-if=appConfig.splash ng-show=showSplash ep-animation options=appConfig.splash.transition><div id=splashContainer ng-include=\"getEmbeddedAppPath(appConfig.id, appConfig.splash.templateUrl)\"></div></div><div id=appContent ng-show=showApp ep-animation options=currentView.transition><ep-embedded-apps-loader config=appConfig on-complete=onLoaderComplete()></ep-embedded-apps-loader></div></div>"
   );
 
 
@@ -6896,7 +7214,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.multi.level.menu/multi-level-menu.html',
-    "<div class=mlm-container><form class=mlm-search><input class=\"form-control mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search()></form><div class=mlm-canvas><div ng-if=!state.searchTerm>beh<div class=\"mlm-content mlm-content-right ep-ease-animation\" ng-class=\"{ 'slide-in': state.slidingIn, 'slide-out': state.slidingOut }\"><div class=mlm-header ng-class=\"{ 'pointer': data.next.parent.id !== 'modules'}\" ng-click=navigate(data.next.parent)><span ng-if=\"data.next.parent.id !== 'modules'\" class=\"mlm-back-button pull-left fa fa-lg fa-caret-left\"></span><span>{{data.next.caption}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in data.next.children\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi.type === 'Dashboard'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi.type === 'Menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div><div class=\"mlm-content mlm-content-current ep-ease-animation\" ng-class=\"{ 'slide-in': state.slidingIn, 'slide-out': state.slidingOut }\"><div class=mlm-header ng-class=\"{ 'pointer': data.current.parent.id !== 'modules'}\" ng-click=navigate(data.current.parent)><span ng-if=\"data.current.parent.id !== 'modules'\" class=\"mlm-back-button pull-left fa fa-lg fa-caret-left\"></span><span>{{data.current.caption}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in data.current.children\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi.type === 'Dashboard'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi.type === 'Menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div><div class=\"mlm-content mlm-content-left ep-ease-animation\" ng-class=\"{ 'slide-in': state.slidingIn, 'slide-out': state.slidingOut }\"><div class=mlm-header ng-class=\"{ 'pointer': data.next.parent.id !== 'modules'}\" ng-click=navigate(data.next.parent)><span ng-if=\"data.next.parent.id !== 'modules'\" class=\"mlm-back-button pull-left fa fa-lg fa-caret-left\"></span><span>{{data.next.caption}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in data.next.children\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi.type === 'Dashboard'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi.type === 'Menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div></div><div class=\"mlm-content mlm-content-search\" ng-if=state.searchTerm><div class=mlm-header><span>{{resources.strings.SearchResults}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in searchResults\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div><span ng-if=\"mi.type === 'Menu'\" class=\"mlm-item-count pull-right\">{{mi.children && mi.children.length ? mi.children.length : 0}}</span></div><i ng-if=\"mi.type === 'Dashboard'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi.type === 'Menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div></div></div>"
+    "<div class=mlm-container><form class=mlm-search><input class=\"form-control mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search()></form><div class=mlm-canvas><div ng-if=!state.searchTerm><div class=\"mlm-content mlm-content-right ep-ease-animation\" ng-class=\"{ 'slide-in': state.slidingIn, 'slide-out': state.slidingOut }\"><div class=mlm-header ng-class=\"{ 'pointer': data.next.parent.id !== 'modules'}\" ng-click=navigate(data.next.parent)><span ng-if=\"data.next.parent.id !== 'modules'\" class=\"mlm-back-button pull-left fa fa-lg fa-caret-left\"></span><span>{{data.next.caption}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in data.next.children\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi.type === 'Dashboard'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi.type === 'Menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div><div class=\"mlm-content mlm-content-current ep-ease-animation\" ng-class=\"{ 'slide-in': state.slidingIn, 'slide-out': state.slidingOut }\"><div class=mlm-header ng-class=\"{ 'pointer': data.current.parent.id !== 'modules'}\" ng-click=navigate(data.current.parent)><span ng-if=\"data.current.parent.id !== 'modules'\" class=\"mlm-back-button pull-left fa fa-lg fa-caret-left\"></span><span>{{data.current.caption}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in data.current.children\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi.type === 'Dashboard'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi.type === 'Menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div><div class=\"mlm-content mlm-content-left ep-ease-animation\" ng-class=\"{ 'slide-in': state.slidingIn, 'slide-out': state.slidingOut }\"><div class=mlm-header ng-class=\"{ 'pointer': data.next.parent.id !== 'modules'}\" ng-click=navigate(data.next.parent)><span ng-if=\"data.next.parent.id !== 'modules'\" class=\"mlm-back-button pull-left fa fa-lg fa-caret-left\"></span><span>{{data.next.caption}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in data.next.children\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi.type === 'Dashboard'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi.type === 'Menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div></div><div class=\"mlm-content mlm-content-search\" ng-if=state.searchTerm><div class=mlm-header><span>{{resources.strings.SearchResults}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in searchResults\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div><span ng-if=\"mi.type === 'Menu'\" class=\"mlm-item-count pull-right\">{{mi.children && mi.children.length ? mi.children.length : 0}}</span></div><i ng-if=\"mi.type === 'Dashboard'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi.type === 'Menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div></div></div>"
   );
 
 
@@ -6934,7 +7252,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/views/ep-shell-embedded-apps-container.html',
-    "<ep-shell-view-container smallmodesettings=\"{ &quot;showNavbar&quot;: true, &quot;showFooter&quot;: false, &quot;enableLeftSidebar&quot;: true, &quot;enableRightSidebar&quot;: false, &quot;showHomeButton&quot;: true, &quot;showBrand&quot;: false,  &quot;animateViewContainer&quot;: false, &quot;allowVerticalScroll&quot;: true }\" largemodesettings=\"{ &quot;showNavbar&quot;: true, &quot;showFooter&quot;: false, &quot;enableLeftSidebar&quot;: true, &quot;enableRightSidebar&quot;: false, &quot;showHomeButton&quot;: true, &quot;showBrand&quot;: true,  &quot;animateViewContainer&quot;: false, &quot;allowVerticalScroll&quot;: true }\"><ep-embedded-apps></ep-embedded-apps></ep-shell-view-container>"
+    "<ep-shell-view-container smallmodesettings=\"{ &quot;showNavbar&quot;: true, &quot;showFooter&quot;: false, &quot;enableLeftSidebar&quot;: true, &quot;enableRightSidebar&quot;: false, &quot;showHomeButton&quot;: false, &quot;showBrand&quot;: true,  &quot;animateViewContainer&quot;: false, &quot;allowVerticalScroll&quot;: true }\" largemodesettings=\"{ &quot;showNavbar&quot;: true, &quot;showFooter&quot;: false, &quot;enableLeftSidebar&quot;: true, &quot;enableRightSidebar&quot;: false, &quot;showHomeButton&quot;: false, &quot;showBrand&quot;: true,  &quot;animateViewContainer&quot;: false, &quot;allowVerticalScroll&quot;: true }\"><ep-embedded-apps></ep-embedded-apps></ep-shell-view-container>"
   );
 
 }]);
