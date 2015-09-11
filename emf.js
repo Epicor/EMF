@@ -1813,7 +1813,7 @@ angular.module('ep.embedded.apps')
                 var data = {};
 
                 function getLocalAppPath() {
-                    var path = getAppPath(arguments);
+                    var path = getAppPath(activeConfig.id, arguments);
                     return path;
                 }
 
