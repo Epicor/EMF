@@ -1,18 +1,6 @@
 'use strict';
 /**
  * @ngdoc overview
- * @name my.app.pack
- * @description
- * my.app.pack
- */
-angular.module('my.app.pack', [
-    'ep.templates',
-    'ep.sysconfig'
-]);
-
-'use strict';
-/**
- * @ngdoc overview
  * @name ep.action.set
  * @description
  * #ep.action.set
@@ -50,6 +38,15 @@ angular.module('ep.animation', [
     'ep.templates',
     'ep.sysconfig'
 ]);
+
+'use strict';
+/**
+ * @ngdoc overview
+ * @name ep.modaldialog
+ * @description
+ * Provides epicor modal dialo services
+ */
+angular.module('ep.datagrid', ['ep.templates']);
 
 'use strict';
 /**
@@ -234,39 +231,6 @@ angular.module('ep.token', [
  */
 angular.module('ep.utils', [
     'ep.sysconfig'
-]);
-
-'use strict';
-
-/**
- * @ngdoc controller
- * @name my.app.pack.controller:myAppPackCtrl
- * @description
- * Represents the myAppPack controller for the
- * my.app.pack module, or for specific  directive
- *
- * @example
- *
- */
-angular.module('my.app.pack').controller('myAppPackCtrl', [
-    '$scope',
-    function($scope) {
-        // do something with $scope property
-        $scope.myProperty = 'emf';
-
-        /**
-         * @ngdoc method
-         * @name myFunction
-         * @methodOf my.app.pack.controller:myAppPackCtrl
-         * @public
-         * @description
-         * Handles the myFunction request
-         */
-        $scope.myFunction = function() {
-            // do something else with $scope property
-            // $scope.myProperty = 'new property value';
-        };
-    }
 ]);
 
 'use strict';
@@ -962,6 +926,1714 @@ angular.module('ep.animation').directive('epAnimation',
             link: link
         };
     });
+
+'use strict';
+/**
+ * @ngdoc service
+ * @name ep.datagrid.factory:epDataGridDirectiveFactory
+ * @description
+ * Factory that provides interface access to the instance of ep.datagrid directive.
+ * This factory is created by the directive and exposed though it's 'ep-data-grid-on-init' event
+ *
+ * @example
+ *  directive:
+ *         <ep-data-grid ep-data-grid-on-init="ongridInit(factory)"></ep-data-grid>
+ *
+ *  controller:
+ *        scope.ongridInit = function(factory) {
+ *           scope.gridFactory = factory;
+ *        };
+ *
+ */
+angular.module('ep.datagrid').factory('epDataGridDirectiveFactory', [
+    function() {
+        var count = 0;
+        var epDataGridDirectiveFactory = function(directiveScope) {
+            var scope = directiveScope;
+            count++;
+            var id = 'epdatagrid' + count.toString();
+
+            function createGrid() {
+                scope.createGrid();
+            }
+
+            function setGridOptions(options) {
+                scope.setGridOptions(options);
+            }
+
+            function release() {
+                if (scope.state.dataTable) {
+                    scope.state.dataTable.fnDestroy(true);
+                    scope.state.dataTable = null;
+                }
+            }
+
+            function refreshData() {
+                scope.refreshData();
+            }
+
+            function updateOption(name, value) {
+                scope.options[name] = value;
+            }
+
+            function resizeTable(force) {
+                scope.resizeTable(force);
+            }
+
+            function activateRow(row) {
+                if (row) {
+                    scope.activateRow(row);
+                }
+            }
+
+            function updateTableState(isActiveRecord) {
+                if (isActiveRecord) {
+                    scope.updateTableEditStateActiveRow();
+                } else {
+                    scope.updateTableEditState();
+                }
+            }
+
+            function isTableCreated() {
+                return !!scope.state.dataTable;
+            }
+
+            function activeRow() {
+                return scope.state.activeRow;
+            }
+
+            function activeRecord() {
+                return scope.state.activeRecord;
+            }
+
+            function scrollToRow(row) {
+                scope.scrollToRow(row);
+            }
+
+            function appendRow(rowData) {
+                scope.appendRow(rowData);
+            }
+
+            function getPrevRow(currentRow) {
+                return scope.getPrevNextRow(-1, currentRow);
+            }
+
+            function getNextRow(currentRow) {
+                return scope.getPrevNextRow(1, currentRow);
+            }
+
+            function setRowEditMode(row, mode) {
+                scope.setRowEditMode(row, mode);
+            }
+
+            function callPreviousGetData() {
+                scope.callPreviousGetData();
+            }
+
+            function updateRow(data, node, col, redraw) {
+                scope.grDataTable().fnUpdate(data, node, col, redraw);
+            }
+
+            function dataTable() {
+                return scope.grDataTable();
+            }
+
+            function getRowByColumnValue(colIndex, val) {
+                return scope.getRowByColumnValue(colIndex, val);
+            }
+
+            function toggleFilter() {
+                scope.toggleFilter();
+            }
+
+            function showFilter() {
+                scope.showFilter();
+            }
+
+            function isFilterShown() {
+                return scope.state.filterShowFlag;
+            }
+
+            return {
+                id: id,
+                setGridOptions: setGridOptions,
+                createGrid: createGrid,
+                activeRecord: activeRecord,
+                activeRow: activeRow,
+                refreshData: refreshData,
+                release: release,
+                updateOption: updateOption,
+                resizeTable: resizeTable,
+                activateRow: activateRow,
+                getPrevRow: getPrevRow,
+                getNextRow: getNextRow,
+                scrollToRow: scrollToRow,
+                appendRow: appendRow,
+                updateTableState: updateTableState,
+                isTableCreated: isTableCreated,
+                setRowEditMode: setRowEditMode,
+                callPreviousGetData: callPreviousGetData,
+                updateRow: updateRow,
+                dataTable: dataTable,
+                getRowByColumnValue: getRowByColumnValue,
+                toggleFilter: toggleFilter,
+                showFilter: showFilter,
+                isFilterShown: isFilterShown
+            };
+        };
+        return epDataGridDirectiveFactory;
+    }
+]);
+
+'use strict';
+/**
+* @ngdoc directive
+* @name ep.datagrid.directive:epDataGridFilterRow
+* @restrict E
+*
+* @description
+* The directive implements a special filter row inserted into the header of the
+* datagrid to enable filtering
+* (For internal ep.datagrid directive usage only)
+*
+*/
+angular.module('ep.datagrid').directive('epDataGridFilterRow', [
+    function() {
+        return {
+            restrict: 'E',
+            replace: true,
+            templateUrl: 'src/components/ep.datagrid/datagrid-filter/datagrid-filter-row.html',
+            controller: function($scope) {
+                if (!$scope.state.filterEditors) {
+                    //Filter data has not been defined yet...
+
+                    var fEditors = [];
+                    var tHead = $scope.grApi().table().header();
+                    var firstHeaderRow = $('tr', tHead);
+                    var tHeadCols = $(firstHeaderRow).find('th');
+
+                    var filters = $scope.state.filterExpressions;
+
+                    $(tHeadCols).each(function(i, el) {
+                        var $item = $(el);
+
+                        var ctx = null;
+                        if ($item.width && $item.text()) {
+                            //Find column to header relation
+                            var col = $scope.grFindColumnByCellIndex($item.context.cellIndex);
+                            if (col !== null) {
+                                var value = '';
+                                var operator = '';
+                                if (filters) {
+                                    // restore any existing filter values
+                                    var filterExpr = _.find(filters, function(expr) {
+                                        return expr.ColName === col.sName;
+                                    });
+                                    if (filterExpr) {
+                                        value = filterExpr.Value;
+                                        operator = filterExpr.Operator;
+                                    }
+                                }
+                                operator = operator || '*';
+                                ctx = {
+                                    name: col.sName,
+                                    type: (col.userColumnDef.oFormat.FieldType === 1) ? 'number' : 'text', //TO DO!!!
+                                    value: value,
+                                    operator: operator,
+                                    operatorText: (operator === '*') ? '' : operator,
+                                };
+                            }
+                        }
+                        if (!ctx) {
+                            ctx = {
+                                hidden: true,
+                                name: 'hidden',
+                                className: 'fixed sorting_disabled ep-hide-filter-col',
+                                value: null
+                            };
+                        }
+                        fEditors.push(ctx);
+                    });
+                    $scope.state.filterEditors = fEditors;
+
+                    $scope.state.isFilterOn = true;
+                    $scope.state.filterCriteria = '';
+
+                    $scope.$watch('state.filterShowFlag', function(newValue, oldValue) {
+                        if (newValue === false && oldValue === true && $scope.onHideFilter) {
+                            $scope.onHideFilter();
+                        }
+                        $scope.resizeTable();
+                    });
+
+                    $scope.fnFilterOpChange = function(ctx) {
+                        var operators = ['*', '=', '<>', '>', '>=', '<', '<='];
+                        var index = 0;
+                        for (var idx = 0; idx < operators.length; idx++) {
+                            if (operators[idx] === ctx.operator) {
+                                index = idx;
+                                break;
+                            }
+                        }
+                        if (index + 1 >= operators.length) {
+                            index = 0;
+                        } else {
+                            index = index + 1;
+                        }
+                        ctx.operator = operators[index];
+                        ctx.operatorText = (ctx.operator === '*') ? '' : ctx.operator;
+                        if ($scope.onChangeFilter) {
+                            $scope.onChangeFilter(ctx);
+                        }
+                    };
+
+                    $scope.fnFilterBlur = function(ctx) {
+                        if ($scope.onChangeFilter && ctx.value !== '') {
+                            $scope.onChangeFilter(ctx);
+                        }
+                    };
+
+                    $scope.fnFilterKeyUp = function(ctx, e) {
+                        if ($scope.onChangeFilter && e.keyCode === 13 ||
+                            (e.keyCode !== 9 && ctx.value === '')) {
+                            $scope.onChangeFilter(ctx);
+                        }
+                    };
+                }
+            }
+        };
+    }
+]);
+
+'use strict';
+/**
+* @ngdoc directive
+* @name ep.datagrid.directive:epDataGridFilterToggle
+* @restrict E
+*
+* @description
+* The directive implements a filter toggle button for the datagrid to
+* enable/disable filtering.
+* Works only when showToggleFilterButton option is set.
+* (For internal ep.datagrid directive usage only)
+*/
+angular.module('ep.datagrid').directive('epDataGridFilterToggle', [
+    function() {
+        return {
+            restrict: 'E',
+            replace: true,
+            template: '<div><a class="btn btn-default btn-sm ep-center-item fa fa-filter" ' +
+                      'ng-click="toggleFilter()" ></a></div>',
+            controller: function() {}
+        };
+    }
+]);
+
+'use strict';
+/**
+* @ngdoc directive
+* @name ep.datagrid.directive:epDataGrid
+* @restrict E
+*
+* @description
+* The directive a data grid based on DataTables library
+*
+* The usage in html is:
+*        <ep-data-grid ep-data-grid-on-init="ongridInit(factory)"></ep-data-grid>
+*
+* or with options:
+*        <ep-data-grid ep-data-grid-pptions="gridOptions" ep-data-grid-on-init="ongridInit(factory)"></ep-data-grid>
+
+The controller code must provide the options in active scope or set them using factory.setGridOptions(options):
+
+    $scope.dataGridOptions = {
+        gridFactory: null,               //after directive initialization will expose directive's factory of methods
+        metadata: undefined,             //metadata for columns and combos
+        allowSearchInput: true,          //do we allow search input
+        retrieveDataOnCreate: true,      //should we call fnGetServerData upon creation
+        startSearchValue: null           //some starting search value
+        startSearchIndex: null           //starting search column index
+        startSearchExactMatch: false     //is starting search an exact match
+        ordering: true                   //is sorting allowed (by default true)
+        showEditIndicator: false
+        showToggleFilterButton: false
+    };
+
+Through gridFactory the controller will have access to functions exposed by the directive (running in isolated scope).
+
+The call back functions are:
+    function fnGetServerData(parameters) {} -- fetches actual data for display.
+
+==========================================================================================*/
+
+angular.module('ep.datagrid').directive('epDataGrid', [
+    '$timeout',
+    '$compile',
+    '$log',
+    '$window',
+    'epUtilsService',
+    'epFeatureDetectionService',
+    'epDataGridDirectiveFactory',
+    function($timeout, $compile, $log, $window,
+        epUtilsService, epFeatureDetectionService, epDataGridDirectiveFactory) {
+        var rowIndicator = 'fa fa-play';
+        var editIndicator = 'fa fa-square';
+        var checkedIndicator = 'fa-check-square-o';
+        var uncheckedIndicator = 'fa-square-o';
+        var editInProgressIndicator = 'fa fa-edit';
+        var features = epFeatureDetectionService.getFeatures();
+
+        function getNewState() {
+            var state = {
+                gridFactory: null,
+                scope: null,
+                tableElement: null,
+                linkElement: null,
+                dataTable: null,
+                filterShowFlag: false,
+                filterRow: null,
+                filterEditors: null,
+                filterExpressions: [],
+                allowSearchInput: true,
+                searchValue: '',
+                recordsInfo: '',
+                gridLoadPrms: {},
+                dataRetrieveInProcess: false,
+                metadata: undefined,
+                ordering: true,  //is ordering-sorting allowed,
+                activeRow: null,
+                activeRecord: null
+            };
+            return state;
+        }
+
+        // >>>>>----------------  Cell Rendering --------------------------------------->>>>>>
+
+        $window.onExternalLinkClick = onExternalLinkClick;
+
+        function onExternalLinkClick(link, event) {
+            var $link = angular.element(link);
+            var href = $link.attr('href');
+
+            var onclick = function() {
+                $window.open(href, '_blank');
+            };
+
+            switch (features.platform.app) {
+                case 'NWJS':
+                    onclick = function() {
+                        var gui = require('nw.gui');
+                        gui.Shell.openExternal(href);
+                    };
+                    break;
+                case 'Cordova':
+                    onclick = function() {
+                        $window.open(href, '_system');
+                    };
+                    break;
+            }
+            if ($link.attr('target') === '_blank') {
+                onclick();
+                event.preventDefault();
+            }
+        }
+
+        function renderBizDataPhone(data) {
+            if (data && _.isString(data)) {
+                return '<a class=\"fa fa-phone inline-link\" onclick="onExternalLinkClick(this, event)"' +
+                    ' target="_blank" href=\"tel:' + data + '\">&nbsp;&nbsp;' + data + '</a>';
+            }
+            return data;
+        }
+
+        function renderBizDataAddress(data) {
+            if (data && _.isString(data)) {
+                return '<a class=\"fa fa-map-marker inline-link\" onclick="onExternalLinkClick(this, event)"' +
+                    ' target="_blank" href=\"http://maps.google.com/maps?q=' + data + '\">&nbsp;&nbsp;' + data + '</a>';
+            }
+            return data;
+        }
+
+        function renderBizDataEmail(data) {
+            if (data && _.isString(data)) {
+                return '<a class=\"fa fa-envelope inline-link\" onclick="onExternalLinkClick(this, event)"' +
+                    ' target="_blank" href=\"mailto:' + data + '\">&nbsp;&nbsp;' + data + '</a>';
+            }
+            return data;
+        }
+
+        function renderBizDataUrl(data, row, col) {
+            if (data && _.isString(data)) {
+                var href = data;
+                if (col.userColumnDef.stringFormat) {
+                    href = epUtilsService.strFormat(col.userColumnDef.stringFormat, href);
+                }
+                //if string does not start with 'http' or 'https' then append
+                var v1 = data.trim().toLowerCase();
+                if (v1.substr(0, 4) !== 'http') {
+                    href = 'http://' + v1;
+                }
+                if (col.userColumnDef.urlLabel) {
+                    data = col.userColumnDef.urlLabel;
+                }
+                return '<a class=\"fa fa-globe inline-link\" target="_blank" href=\"' + href +
+                    '\">&nbsp;&nbsp;' + data + '</a>';
+            }
+            return data;
+        }
+
+        function renderDateFormat(data, row, col) {
+            var format = col.userColumnDef.oFormat.FormatString;
+            if (format) {
+                var wrappedDate = moment(data);
+                if (wrappedDate.isValid()) {
+                    format = format.toUpperCase().replace('HH:MM', 'HH:mm');
+                    return wrappedDate.format(format);
+                }
+            }
+            return data;
+        }
+
+        function renderBoolean(data, row, col, isGroup) {
+            var format = col.userColumnDef.sFormatString;
+            if (format === 'yes-no') {
+                var ret = data ? 'yes' : 'no';
+                return '<span>' + ret + '</span>';
+            }
+            var sColIndex = col.userColumnDef.bUpdatable ? 'mdata="' + col.mData + '"' : '';
+            var sCheckedClass = data ? checkedIndicator : uncheckedIndicator;
+            if (isGroup) {
+                return '<span class="checkbox-display fa fa-lg ' + sCheckedClass + '"' + sColIndex + '></span>';
+            }
+            return '<div class="inline checkbox-display-container"><span class="ep-center-item checkbox-display' +
+                ' fa fa-lg ' + sCheckedClass + '"' + sColIndex + '></span></div>';
+        }
+
+        function renderCurrency(data, row, col, isGroup) {
+            var val = parseFloat(data);
+            if (!isNaN(val)) {
+                var colDef = col.userColumnDef;
+                if (colDef.oFormat && colDef.oFormat.NumberFormatInfo &&
+                    colDef.oFormat.NumberFormatInfo.NumeralJSFormat) {
+                    data = numeral(val).format(colDef.oFormat.NumberFormatInfo.NumeralJSFormat);
+                } else {
+                    var numDecimalDigits = (colDef.oFormat && colDef.oFormat.NumberFormatInfo) ?
+                        colDef.oFormat.NumberFormatInfo.CurrencyDecimalDigits : 2;
+                    data = val.toFixed(numDecimalDigits);
+                }
+            }
+            return isGroup ? '<span>' + data + '</span>' : '<div class="right-align"><span>' + data + '</span></div>';
+        }
+
+        function renderDecimal(data, row, col, isGroup) {
+            var val = parseFloat(data);
+            if (!isNaN(val)) {
+                var colDef = col.userColumnDef;
+                if (colDef.oFormat && colDef.oFormat.NumberFormatInfo &&
+                    colDef.oFormat.NumberFormatInfo.NumeralJSFormat) {
+                    data = numeral(val).format(colDef.oFormat.NumberFormatInfo.NumeralJSFormat);
+                } else {
+                    var numDecimalDigits = (colDef.oFormat && colDef.oFormat.NumberFormatInfo) ?
+                        colDef.oFormat.NumberFormatInfo.NumberDecimalDigits : 2;
+                    data = val.toFixed(numDecimalDigits);
+                }
+
+            }
+            return isGroup ? '<span>' + data + '</span>' : '<div class="right-align"><span>' + data + '</span></div>';
+        }
+
+        function renderInteger(data, row, col, isGroup) {
+            var val = parseInt(data);
+            if (!isNaN(val)) {
+                data = val;
+            }
+            return isGroup ? '<span>' + data + '</span>' : '<div class="right-align"><span>' + data + '</span></div>';
+        }
+
+        function renderRowIndicator() {
+            return "<span><i class='row-indicator text-primary'></i></span>";
+        }
+
+        function renderEditIndicator() {
+            return "<span><i class='edit-indicator text-danger'></i></span>";
+        }
+
+        function renderSelectCell(data, row, col, isGroup, settings, scope) {
+            var colDef = col.userColumnDef;
+            var displayValue = scope.state.metadata.combos[colDef.sBaseType] ?
+                scope.state.metadata.combos[colDef.sBaseType][data] : '';
+            return (displayValue !== undefined) ? displayValue : data;
+        }
+
+        function renderGroup(data, row, col, isGroup, settings) {
+            var ret = '';
+            var colDef = col.userColumnDef;
+            var skipEmpty = (colDef.groupWrap && (data === undefined || data === null ||
+                (angular.isString(data) && !data)));
+            if (!skipEmpty) {
+                if (colDef.sRenderSubType && renderers[colDef.sRenderSubType]) {
+                    var rd = renderers[colDef.sRenderSubType](data, row, col, true);
+                    if (rd === null || rd === undefined) {
+                        rd = '';
+                    }
+                    ret += rd;
+                } else if (data !== null && data !== undefined) {
+                    ret += '<span>' + data + '</span>';
+                } else {
+                    ret += '<span></span>';
+                }
+            }
+
+            angular.forEach(colDef.groupMembers, function(dc) {
+                var colMember = _.find(settings.aoColumns, function(c) {
+                    return c.mData === dc;
+                });
+                var dd = row[dc];
+                var colMemberDef = colMember.userColumnDef;
+                skipEmpty = (colMemberDef.groupWrap && (dd === undefined ||
+                    dd === null || (angular.isString(dd) && !dd)));
+                if (!skipEmpty) {
+                    if (ret) {
+                        ret += '<br/>';
+                    }
+                    if (colMember && colMemberDef.sRenderType && renderers[colMemberDef.sRenderType]) {
+                        var rd = renderers[colMemberDef.sRenderType](dd, row, colMember, true);
+                        if (rd === null || rd === undefined) {
+                            rd = '';
+                        }
+                        ret += rd;
+                    } else if (dd !== null && dd !== undefined) {
+                        ret += '<span>' + dd + '</span>';
+                    } else {
+                        ret += '<span></span>';
+                    }
+                }
+            });
+            return '<div>' + ret + '</div>';
+        }
+
+        var renderers = {
+            'group': renderGroup,
+            'bool': renderBoolean,
+            'date': renderDateFormat,
+            'phone': renderBizDataPhone,
+            'address': renderBizDataAddress,
+            'email': renderBizDataEmail,
+            'url': renderBizDataUrl,
+            'currency': renderCurrency,
+            'integer': renderInteger,
+            'decimal': renderDecimal,
+            'select': renderSelectCell,
+            'rowIndicator': renderRowIndicator,
+            'editIndicator': renderEditIndicator
+        };
+
+        function renderGridCell(scope, data, type, row, meta) {
+            data = (data !== null) ? data : '';
+            var ret = data;
+
+            var col = meta.settings.aoColumns[meta.col];
+
+            if (col && col.userColumnDef) {
+                var colDef = col.userColumnDef;
+
+                if (renderers[colDef.sRenderType]) {
+                    ret = renderers[colDef.sRenderType](data, row, col, false, meta.settings, scope);
+                }
+            }
+            // TODO: This code limits the umber of characters in a grid cell to 400
+            // TODO: It has been disabled pending beta feedback
+            //if (ret.length > 400) {
+            //    ret = ret.substring(0, 397) + '...';
+            //}
+
+            if (scope.options.fnOnRenderGridCell) {
+                ret = scope.options.fnOnRenderGridCell(ret, type, row, meta, col, ret);
+            }
+
+            return ret;
+        }
+
+        // <<<<----------------  Cell Rendering ---------------------------------------<<<<<<
+
+        function destroyGrid(scope) {
+            scope.state.$table.off('click').off('dblclick');
+
+            var tbl = $.fn.dataTable.fnTables(false);
+            if (tbl.length) {
+                try {
+                    $(tbl).dataTable().fnDestroy(true);
+                } catch (e) {
+                    $log.error(e, 'failed to destroy the grid - exception from DataTables');
+                }
+            }
+            if (scope.state.tableElement.length) {
+                scope.state.tableElement.empty();
+            }
+        }
+
+        function getDataFromServer(scope, searchTerm, sortColIdx, sortDir, append, showIndicator, forceRefresh) {
+            if (scope.state.dataRetrieveInProcess === true) {
+                return;
+            }
+            scope.state.dataRetrieveInProcess = true;
+
+            var viewState = scope.state; //for compatability with grid service source code
+            //var metadata = scope.options.metadata;
+            var prms = viewState.gridLoadPrms;
+
+            if (searchTerm !== prms.previousPrms.searchTerm || forceRefresh) {
+                prms.iPageNumber = 1;
+            }
+
+            prms.previousPrms.searchTerm = searchTerm;
+            prms.previousPrms.sortColIdx = sortColIdx;
+            prms.previousPrms.sortDir = sortDir;
+
+            prms.previousCall = {
+                append: append,
+                showIndicator: showIndicator,
+                forceRefresh: forceRefresh
+            };
+
+            var gridSettings = scope.state.dataTable.fnSettings();
+
+            if (!append || forceRefresh) {
+                prms.iDisplayStart = 0;
+                prms.iDisplayLength = 50 * prms.iPageNumber;
+                prms.iLoadedRecordLength = 0;
+                prms.iTotalRecords = 0;
+            }
+
+            if (showIndicator) {
+                scope.showProgressIndicator();
+            }
+
+            prms.previousPrms.iDisplayStart = prms.iDisplayStart;
+            prms.previousPrms.iDisplayLength = prms.iDisplayLength;
+
+            //These are passed to the server must be in this format
+            var gridPrms = {
+                iDisplayStart: prms.iDisplayStart,
+                iDisplayLength: prms.iDisplayLength,
+                sSearch: searchTerm,
+                iSortCol: sortColIdx,
+                sSortDir: sortDir,
+                sEcho: '1',
+                bFilterOn: scope.state.filterShowFlag,
+                sFilterCriteria: scope.state.filterExpressions,
+                bForceRefresh: forceRefresh || false,
+            };
+
+            function setHeader(hdr, col) {
+                var $hdr = $(hdr);
+                $hdr.removeClass('sorting_disabled').addClass('sorting');
+                $hdr.off('click');
+                $hdr.on('click', function() {
+                    var dir = $hdr.hasClass('sorting_asc') ? 'desc' : 'asc';
+                    getDataFromServer(scope, viewState.gridLoadPrms.previousPrms.searchTerm, col.mData, dir,
+                        false, true, false);
+                });
+
+                if (col.mData === viewState.gridLoadPrms.previousPrms.sortColIdx) {
+                    //remove sorting from all headers and then add new sorting
+                    scope.findElement('th').removeClass('sorting_desc').removeClass('sorting_asc');
+                    var dir = viewState.gridLoadPrms.previousPrms.sortDir || 'asc';
+                    $hdr.addClass('sorting_' + dir);
+                }
+            }
+
+            function afterDataReturn(result) {
+                scope.state.dataRetrieveInProcess = false;
+
+                scope.findElement('#loadMoreDownRow').addClass('disabled').off('click');
+
+                if (result && result.Success) {
+                    if (showIndicator) {
+                        scope.hideProgressIndicator();
+                    }
+                    gridSettings = scope.state.dataTable.fnSettings();
+
+                    var loadedRecs = (result && result.aaData) ? result.aaData.length : 0;
+                    if (!append || forceRefresh) {
+                        prms.iLoadedRecordLength = loadedRecs;
+                        scope.state.dataTable.fnClearTable();
+                    } else {
+                        prms.iLoadedRecordLength += loadedRecs;
+                    }
+
+                    gridSettings._iRecordsTotal = result ? result.iTotalRecords : 0;
+                    prms.iTotalRecords = gridSettings._iRecordsDisplay = result ? result.iTotalDisplayRecords : 0;
+                    gridSettings._iDisplayLength = prms.iLoadedRecordLength;
+
+                    viewState.isLoadingMore = true;
+                    viewState.isDataLoaded = result.iTotalDisplayRecords > 0;
+
+                    viewState.totalViewRecords = result ? result.iTotalDisplayRecords : 0;
+                    viewState.hasRecords = viewState.totalViewRecords > 0;
+                    viewState.retrievingData = false;
+                    var scroller = scope.findElement('.dataTables_scrollBody');
+                    var scrollPos = scroller.scrollTop();
+                    if (loadedRecs) {
+                        scope.state.dataTable.fnAddData(result.aaData);
+                    }
+
+                    scroller.scrollTop(scrollPos);
+                    prms.iDisplayStart += result.aaData.length;
+                    prms.iDisplayStart = Math.min(result.iTotalDisplayRecords, prms.iDisplayStart);
+
+                    var loadMoreLink;
+                    viewState.configureGridActions = function() {
+                        viewState.atTheEnd = (result.iTotalDisplayRecords - prms.iLoadedRecordLength) === 0;
+
+                        if (!viewState.atTheEnd) {
+                            // Set up the 'load more' link
+                            loadMoreLink = scope.findElement('#loadMoreDownRow');
+                            if (!loadMoreLink.length) {
+                                // TODO: More oportunity for Angular templates
+                                var loadingText = '<table width="100%"><td><hr /></td><td class="load-more-cell">' +
+                                    '<span class="load-more-indicator fa fa-arrow-down"></span>  Load More  ' +
+                                    '<span class="load-more-indicator fa fa-arrow-down"></span></td><td><hr />' +
+                                    '</td></table>';
+                                loadMoreLink = $("<tr class='loading-row' id='loadMoreDownRow'><td colspan='" +
+                                    viewState.visColCount + "'><div class='load-more'><a>" + loadingText +
+                                    '</a></div></td></tr>');
+                                scope.state.dataTable.append(loadMoreLink);
+                            }
+                            loadMoreLink.off('click')
+                                .removeClass('disabled')
+                                .on('click', function() {
+                                    prms.iPageNumber++;
+                                    scope.findElement('.load-more-cell')
+                                        .empty()
+                                        .addClass('fa fa-spinner fa-2x fa-pulse');
+
+                                    var pPrms = viewState.gridLoadPrms.previousPrms;
+                                    getDataFromServer(scope, pPrms.searchTerm, pPrms.sortColIdx, pPrms.sortDir,
+                                        true, false, false);
+                                });
+                            //$timeout(function() {
+                            //    var visGridWidth = scope.findElement('#tblGridView_info').width();
+                            //    scope.findElement('.load-more').width(visGridWidth);
+                            //});
+                        }
+
+                        if (scope.state.ordering) {
+                            var table = scope.grApi();
+                            var cols = scope.grColumns();
+                            table.columns().eq(0).each(function(index) {
+                                var column = table.column(index);
+                                var col = _.find(cols, function(cc) {
+                                    return cc.idx === column.index();
+                                });
+                                if (col && col.orderable) {
+                                    setHeader(column.header(), col);
+                                }
+                            });
+                        }
+
+                        if (scope.options.showToggleFilterButton) {
+                            var colIdx = scope.grGetCellIndexByColumn('rowIndicator');
+                            if (colIdx >= 0) {
+                                var tHead = scope.grApi().column(colIdx).header();
+                                if ($(tHead).find('.fa-filter').length === 0) {
+                                    angular.element(tHead).append(
+                                        $compile('<ep-data-grid-filter-toggle></ep-data-grid-filter-toggle>')(scope));
+                                }
+                            }
+                        }
+
+                        $timeout(function() {
+                            scope.state.dataTable.fnAdjustColumnSizing(false);
+                        }, 200);
+
+                        onTableInitComplete(scope);
+                    };
+
+                    viewState.configureGridActions();
+                }
+                if (showIndicator) {
+                    scope.hideProgressIndicator();
+                }
+            }
+
+            $timeout(function() {
+                //TO DO!!!!
+                //scope.showProgress = (scope.findElement('.load-more-cell.fa-spinner').length === 0);
+            });
+
+            var returnData = scope.options.fnGetServerData(gridPrms);
+            if (returnData.then !== undefined) {
+                returnData.then(afterDataReturn);
+            } else {
+                afterDataReturn(returnData);
+            }
+
+        }
+
+        function setRenderingType(scope, col) {
+            if (!col.sRenderType) {
+                if (col.sBizType) {
+                    if (col.sBizType === 'phone' || col.sBizType === 'address' || col.sBizType === 'email' ||
+                        col.sBizType === 'url' || col.sBizType === 'currency') {
+                        col.sRenderType = col.sBizType;
+                    }
+                }
+                var tp = col.sDataType.toLowerCase();
+                if (tp.indexOf('system.') === 0) {
+                    tp = tp.substr(7);
+                }
+                if (tp === 'datetime' && col.oFormat.FormatString) {
+                    col.sRenderType = 'date';
+                } else if (tp === 'bool' || tp === 'boolean') {
+                    col.sRenderType = 'bool';
+                }
+                if (col.sControlType && col.sControlType.toLowerCase() === 'epicombo') {
+                    col.sRenderType = 'select';
+                }
+                if (tp === 'int32' || tp === 'int64' || tp === 'long' || tp === 'int16') {
+                    col.sRenderType = 'integer';
+                }
+                if (tp === 'double' || tp === 'decimal' || tp === 'float') {
+                    col.sRenderType = 'decimal';
+                }
+                if (col.groupMembers && col.sRenderType !== 'group') {
+                    col.sRenderSubType = col.sRenderType;
+                    col.sRenderType = 'group';
+                }
+            }
+            col.mRender = scope.renderGridCell;
+        }
+
+        function createGridColumns(scope, metadata, insertBefore) {
+            var columns = [];
+            var iIndex = 0;
+
+            function addColumn(c) {
+
+                if (c.oFormat === undefined) {
+                    c.oFormat = {};
+                }
+
+                if (c.sDataType === undefined) {
+                    c.sDataType = 'System.String';
+                }
+
+                setRenderingType(scope, c);
+
+                var bVisible = (c.bVisible === undefined || c.bVisible === true);
+                var orderable = false;
+                if (scope.state.ordering) {
+                    if (c.orderable === undefined) {
+                        orderable = (c.bSortable === undefined) ? true : c.bSortable;
+                    } else {
+                        orderable = c.orderable;
+                    }
+                }
+
+                if (c.oFormat.MaxLength) {
+                    var colWidth = Math.max(Math.min(c.oFormat.MaxLength * 3, 400), 120);
+                    c.sWidth = colWidth + 'px';
+                } else {
+                    c.sWidth = '120px';
+                }
+                c.sClass += ' data-col-' + c.iIndex;
+
+                var column = {
+                    iIndex: iIndex,
+                    targets: [iIndex],
+                    name: c.sName,
+                    title: c.sTitle || '',
+                    visible: bVisible === undefined ? true : bVisible,
+                    className: c.sClass,
+                    data: (c.mData === undefined) ? -1 : c.mData,
+                    orderable: orderable,
+                    render: scope.renderGridCell,
+                    userColumnDef: c
+                };
+                columns.push(column);
+                iIndex++;
+            }
+
+            angular.forEach(insertBefore, function(c) {
+                addColumn(c);
+            });
+            angular.forEach(metadata.columns, function(c) {
+                addColumn(c);
+            });
+            return columns;
+        }
+
+        function createGrid(scope) {
+
+            var metadata = scope.options.metadata;
+
+            var insertBeforeCols = [
+                {
+                    sName: 'rowIndicator',
+                    sTitle: '',
+                    bVisible: true,
+                    sClass: 'fixed',
+                    orderable: false,
+                    sRenderType: 'rowIndicator',
+                },
+                {
+                    sName: 'editIndicator',
+                    sTitle: '',
+                    bVisible: !!scope.options.showEditIndicator,
+                    sClass: 'fixed',
+                    orderable: false,
+                    sRenderType: 'editIndicator',
+                }
+            ];
+
+            scope.state.gridColumns = createGridColumns(scope, metadata, insertBeforeCols);
+
+            scope.state.gridLoadPrms = {
+                iPageNumber: 1,
+                iDisplayStart: 0,
+                iDisplayLength: 100,
+                iLoadedRecordLength: 0,
+                iTotalRecords: 0,
+                previousPrms: {
+                    sortColIdx: -1,
+                    sortDir: '',
+                    searchTerm: '',
+                    iDisplayStart: 0,
+                    iDisplayLength: 100
+                }
+            };
+
+            scope.state.options = {
+                'bDestroy': true,
+                'bServerSide': false,
+                'ordering': false, //we are doing our own ordering...
+                'order': [],
+                'bProcessing': false,
+                'pageLength': 100,
+                'bAutoWidth': false,
+                'columns': scope.state.gridColumns,
+                'sScrollY': scope.calcTableHeight(), // + 'px',
+                'sScrollX': '100%',
+                'scrollCollapse': false,
+                'sDom': 'rti',
+                'bDeferRender': true,
+
+                'infoCallback': function() {
+                    var startNum = scope.state.gridLoadPrms.iTotalRecords ? 1 : 0;
+                    scope.recordsInfo = epUtilsService.strFormat('Showing {0}records {1} to {2} of {3}',
+                        (scope.state.gridLoadPrms.previousPrms.searchTerm ? '<strong>filtered</strong> ' : ''),
+                        startNum, scope.state.gridLoadPrms.iLoadedRecordLength,
+                        scope.state.gridLoadPrms.iTotalRecords);
+                    if (scope.options.fnUpdateRecordsInfo) {
+                        scope.options.fnUpdateRecordsInfo(scope.recordsInfo);
+                        return '';
+                    }
+                    return scope.recordsInfo;
+                },
+                'createdRow': function(row, data) {
+                    if (scope.options.fnOnCreatedRow) {
+                        scope.options.fnOnCreatedRow(row, data);
+                    }
+                }
+                //'fnInitComplete': function () {
+                //    onTableInitComplete(scope);
+                //},
+                //'fnDrawCallback': function (oSettings) {
+                //    if (scope.state.isRefreshing) {
+                //        onTableInitComplete(scope);
+                //        scope.state.isRefreshing = false;
+                //    }
+                //},
+            };
+
+            scope.state.dataTable = $(scope.state.tableElement).dataTable(scope.state.options);
+
+            $timeout(function() {
+                angular.forEach(scope.state.gridColumns, function(c) {
+                    if (c.userColumnDef.bHideInGrid) {
+                        scope.grApi().column(c.iIndex).visible(false);
+                    }
+                    scope.findElement('.data-col-' + c.iIndex).css('min-width', c.userColumnDef.sWidth)
+                        .css('width', c.userColumnDef.sWidth);
+                });
+
+                scope.state.visColCount = _.filter(scope.state.gridColumns, function(c) { return c.visible; }).length;
+
+                var gridSettings = scope.state.dataTable.fnSettings();
+                var hasSorting = gridSettings.aaSorting && gridSettings.aaSorting.length;
+
+                var iSortColDefault = (scope.options.showEditIndicator === true) ? 2 : 1;
+                var iSortCol = hasSorting ? gridSettings.aaSorting[0][0] : iSortColDefault;
+                var sSortDir = hasSorting ? gridSettings.aaSorting[0][1] : 'asc';
+
+                var sortCol = scope.grFindColumnByCellIndex(iSortCol);
+                if (sortCol) {
+                    iSortCol = sortCol.mData;
+                }
+
+                scope.setInitialFilters();
+
+                getDataFromServer(scope, '', iSortCol, sSortDir, false, false, false);
+
+                scope.resizeTable(false);
+
+                // bind the click event to activate the row, or enable editors if already activated
+                scope.state.$table.on('click', scope.tableCellClick);
+                scope.state.$table.on('dblclick', scope.tableCellDblClick);
+
+                if (epFeatureDetectionService.hasTouchEvents()) {
+                    //disable double-tap to zoom into table when double click is active
+                    scope.state.$table.css('touch-action', 'manipulation');
+                }
+
+                if (scope.state.allowSearchInput) {
+                    //Configure search events
+
+                    var lastAppliedSearchTerm = '';
+                    if (scope.options.startSearchValue) {
+                        scope.state.searchValue = scope.options.startSearchValue;
+                    }
+
+                    scope.applySearch = function(searchTerm) {
+                        if (lastAppliedSearchTerm !== searchTerm && (searchTerm || lastAppliedSearchTerm)) {
+                            lastAppliedSearchTerm = searchTerm;
+                            getDataFromServer(scope, scope.state.searchValue, 0, 'asc', false, true, false);
+                            //scope.resizeTable(true);
+                        }
+                    };
+
+                    // Track the initial value of the editor - not sure if this is still needed?
+                    scope.findElement('#searchInput').each(function() {
+                        this.initVal = this.value;
+                    });
+
+                    scope.fnOnSearchFocus = function() {
+                        if (scope.searchInputClass) {
+                            scope.searchInputClass = '';
+                            scope.state.searchValue = '';
+                        }
+                    };
+
+                    scope.fnOnSearchBlur = function() {
+                        var val = scope.state.searchValue;
+                        if (val === '') {
+                            scope.searchInputClass = 'search_init';
+                            scope.state.searchValue = (scope.options.startSearchValue) ?
+                                '' : scope.state.searchInitVal;
+                        } else if (scope.options.startSearchValue && !scope.startSearchBlur &&
+                            scope.options.startSearchValue === val) {
+                            //we dont want to search on first blur
+                            scope.startSearchBlur = true;
+                            return;
+                        }
+
+                        $timeout(function() {
+                            scope.applySearch(scope.state.searchValue);
+                        }, 200);
+
+                        scope.applySearch(scope.state.searchValue);
+                    };
+
+                    scope.fnOnSearchKeyUp = function(ev) {
+                        var currentTerm = scope.state.searchValue;
+                        if (ev.keyCode === 13 || currentTerm === '') {
+                            scope.applySearch(currentTerm);
+                        }
+                    };
+
+                    scope.fnOnSearchChange = function() {
+                        var currentTerm = scope.state.searchValue;
+                        if (currentTerm === '') {
+                            scope.applySearch(currentTerm);
+                        }
+                    };
+                }
+            });
+        }
+
+        function onTableInitComplete(scope) {
+            if (scope.state.allowSearchInput) {
+                var $body = scope.state.linkElement.closest('.modal-body');
+                if ($body.length) {
+                    var gs = scope.findElement('.ep-dg-grid-search');
+                    gs.width($body.width() - 20);
+                }
+            }
+
+            var startRowIndex = -1;
+            if (scope.state.allowSearchInput && scope.options.startSearchValue &&
+                !scope.state.startSearchCompleted && scope.options.startSearchIndex >= 0) {
+                scope.state.startSearchCompleted = true; //search only on initial load
+
+                var table = scope.grApi();
+
+                var searchColIndex = scope.grGetCellIndexByColumn(scope.options.startSearchIndex);
+                if (searchColIndex !== -1) {
+                    var search = scope.options.startSearchValue.toString().toLowerCase();
+                    var rIdx = _.find(table.rows().eq(0), function(rowIdx) {
+                        var d = table.cell(rowIdx, searchColIndex).data();
+
+                        if (scope.options.startSearchExactMatch) {
+                            if (d === scope.options.startSearchValue) {
+                                return true;
+                            }
+                            if (d || d === 0) {
+                                return (d.toString().toLowerCase() === search);
+                            }
+                            return d === scope.options.startSearchValue;
+                        }
+                        if (d || d === 0) {
+                            return (d.toString().toLowerCase().indexOf(search) >= 0);
+                        }
+                        return d === scope.options.startSearchValue;
+
+                    });
+                    if (rIdx || rIdx === 0) {
+                        startRowIndex = rIdx;
+                    }
+                }
+            }
+
+            if (startRowIndex > -1) {
+                if (!scope.activateNthRow(startRowIndex, true)) {
+                    startRowIndex = -1;
+                }
+            }
+            if (startRowIndex <= -1) {
+                scope.activateFirstRow();
+            }
+            scope.state.$table.removeClass('table-hover');
+
+            if (scope.state.allowSearchInput) {
+                $timeout(function() {
+                    scope.findElement('.ep-dg-search-input').focus();
+                });
+            }
+
+            if (scope.options.fnOnTableInitComplete) {
+                scope.options.fnOnTableInitComplete();
+            }
+        }
+
+        function linkDirective(scope, element) {
+            scope.state = getNewState();
+            scope.options = {};
+            scope.state.scope = scope;
+            scope.state.linkElement = element;
+            scope.state.tableElement = element.find('#dataGridTable');
+            scope.state.$table = angular.element(scope.state.tableElement);
+            scope.viewState = scope.state;
+
+            scope.setGridOptions = function(options) {
+                scope.options = options;
+                scope.options.gridFactory = scope.state.gridFactory;
+                scope.state.allowSearchInput = scope.options.allowSearchInput;
+                scope.state.ordering = (scope.options.ordering === undefined) ?
+                    scope.state.ordering : scope.options.ordering;
+
+                if (options.metadata !== undefined && !angular.equals(options.metadata, scope.state.metadata)) {
+                    scope.state.metadata = options.metadata;
+                    if (!scope.options.createGridByFactoryOnly) {
+                        createGrid(scope);
+                    }
+                }
+            };
+
+            scope.createGrid = function() {
+                if (scope.state.dataTable) {
+                    destroyGrid(scope);
+                    scope.state.dataTable = null;
+
+                    if (scope.state.$table.length) {
+                        //grid is destroyed. Now recreate table element and remove old one
+                        var clonedTable = scope.state.$table.clone();
+                        scope.state.$table.remove();
+
+                        scope.state.tableElement = clonedTable;
+                        scope.state.$table = angular.element(scope.state.tableElement);
+                        scope.state.$table.prependTo('#gridArea');
+                    }
+                }
+                createGrid(scope);
+            };
+
+            scope.$watch('epDataGridOptions', function(newValue) {
+                if (newValue) {
+                    scope.setGridOptions(newValue);
+                }
+            });
+
+            //Private methods
+            scope.grDataTable = function() {
+                /// <summary>
+                ///   Get data table from grid
+                /// </summary>
+                return scope.state.dataTable.dataTable();
+            };
+            scope.grData = function() {
+                /// <summary>
+                ///   Get data table from grid
+                /// </summary>
+                var $tbl = scope.grDataTable();
+                return $tbl.fnGetData();
+            };
+            scope.grApi = function() {
+                /// <summary>
+                ///   Get data table api
+                /// </summary>
+                return scope.grDataTable().api();
+            };
+            scope.grColumns = function() {
+                /// <summary>
+                ///   Get grid table columns
+                /// </summary>
+                var $tbl = scope.grDataTable();
+                return $tbl.fnSettings().aoColumns;
+            };
+            scope.grGetRowNodeByIndex = function(rowIndex) {
+                /// <summary>
+                ///   Get grid row DOM element by row Index
+                /// </summary>
+                var $row = scope.grApi().row(rowIndex);
+                return ($row === null) ? null : $row.node();
+            };
+            scope.grGetCellIndexByColumn = function(column) {
+                /// <summary>
+                ///   Find cell index by column mData
+                /// </summary>
+
+                var columns = scope.grColumns();
+                var isName = angular.isString(column);
+                var col = null;
+                if (isName) {
+                    col = _.find(columns, function(c) { return c.sName === column; });
+                } else {
+                    col = _.find(columns, function(c) { return c.mData === column; });
+                }
+                if (col) {
+                    return col.idx;
+                }
+                return -1;
+            };
+
+            scope.grFindColumnByCellIndex = function(cellIndex) {
+                var columns = scope.grColumns();
+                return _.find(columns, function(c) { return c.nTh.cellIndex === cellIndex; });
+            };
+
+            scope.getRowByColumnValue = function(colIndex, val) {
+                //RowID_r
+                var row = null;
+                var cellIndex = scope.grGetCellIndexByColumn(colIndex);
+                if (cellIndex !== -1) {
+                    var table = scope.grApi();
+                    var rowIndex = $.inArray(val, table.column(cellIndex).data());
+                    row = scope.state.dataTable.find('tbody tr')[rowIndex];
+                }
+                return row;
+            };
+
+            scope.calcTableHeight = function() {
+                /// <summary>
+                ///   Attempts to measure the table to fit into the panel body.
+                /// </summary>
+                var ret = 0;
+                if (scope.state.$table.length) {
+                    ret = $(scope.state.linkElement).height();
+                    if (scope.options.fnOnCalcTableHeight) {
+                        var tableBodyOffset = scope.findElement('.dataTables_scrollBody').offset();
+                        ret = scope.options.fnOnCalcTableHeight(ret, tableBodyOffset);
+                    }
+                }
+                return ret;
+            };
+            scope.findInTable = function(selector) {
+                return scope.state.tableElement.find(selector);
+            };
+            scope.findElement = function(selector) {
+                return scope.state.linkElement.find(selector);
+            };
+            scope.renderGridCell = function(data, type, row, meta) {
+                return renderGridCell(scope, data, type, row, meta);
+            };
+
+            scope.tableCellClick = function(e) {
+                ///<summary>
+                /// Activates the row being clicked on.
+                ///</summary>
+                scope.tableCellClicked(e, false);
+            };
+
+            scope.tableCellDblClick = function(e) {
+                ///<summary>
+                /// Activates the row being clicked on.
+                ///</summary>
+                scope.tableCellClicked(e, true);
+            };
+
+            scope.tableCellClicked = function(e, isDoubleClick) {
+                ///<summary>
+                /// Activates the row being clicked on.
+                ///</summary>
+                var row = e.target;
+                while (row && row !== this) {
+                    if (row.nodeName === 'TR' && row.parentNode && row.parentNode.nodeName === 'TBODY') {
+                        scope.activateRow(row);
+                        if (isDoubleClick && scope.options.fnOnGridRowDoubleClick) {
+                            scope.options.fnOnGridRowDoubleClick(row);
+                        } else if (scope.options.fnOnCheckBoxClick) {
+                            scope.processCheckBoxGridClick(e.target, row);
+                        }
+                        return;
+                    }
+                    row = row.parentNode;
+                }
+            };
+
+            scope.processCheckBoxGridClick = function(eventTarget, row) {
+                ///<summary>
+                /// Process check box clicked directly in grid. Only supported in updatable multi-row update grid
+                /// Should consider making a directive for checkbox
+                ///</summary>
+                var state = scope.state;
+                if (scope.options.fnOnCheckBoxClick && row && state.activeRow) {
+                    var target = $(eventTarget);
+                    if (target.hasClass && target.hasClass('checkbox-display') && target.attr('mdata')) {
+                        state.activeRecord = state.dataTable.fnGetData(state.activeRow);
+                        var cell = target.closest('td');
+                        if (state.activeRecord && cell) {
+                            var mData = parseInt(target.attr('mdata'));
+                            if (!isNaN(mData)) {
+                                var col = _.find(scope.state.gridColumns, function(c) { return c.mData === mData; });
+                                if (col) {
+                                    scope.options.fnOnCheckBoxClick(state.activeRecord, col);
+                                }
+                            }
+                        }
+                    }
+                }
+            };
+
+            scope.activateFirstRow = function() {
+                //var nTop = scope.state.dataTable.find('tbody tr:first')[0];
+                //scope.activateRow(scope, nTop);
+                scope.activateNthRow(0, false);
+            };
+
+            scope.activateNthRow = function(rowIndex, scrollToRow) {
+                var row = scope.grGetRowNodeByIndex(rowIndex);
+                if (row) {
+                    $timeout(function() {
+                        angular.element(row).trigger('click');
+                        if (scrollToRow) {
+                            var sb = scope.state.linkElement.find('.dataTables_scrollBody');
+                            sb.animate({
+                                scrollTop: $(row).prop('offsetTop') - sb.height() / 2
+                            }, 100);
+                        }
+                    }, 100);
+                }
+                return row;
+            };
+
+            scope.getPrevNextRow = function(mode, curRow) {
+                if (mode !== 1 && mode !== -1) {
+                    return null;
+                }
+
+                var row1 = (curRow === undefined) ? scope.state.activeRow : curRow;
+                var row2 = (mode === 1) ? $(row1).next() : $(row1).prev();
+                if (row2 && row2.length) {
+                    var theRow = row2.get(0);
+                    if (angular.element(theRow).find('.row-alert').length) {
+                        //skip the error row
+                        return scope.getPrevNextRow(mode, theRow);
+                    }
+                    if (theRow.id === 'loadMoreDownRow') {
+                        return null;
+                    }
+                    return theRow;
+                }
+                return null;
+            };
+
+            scope.activateRow = function(row) {
+                /// <summary>
+                ///   Sets the 'active' class on the given row and saves it in the grid state.
+                ///   Deactivates all other rows.
+                /// </summary>
+                var state = scope.state;
+                if (state.activeRow) {
+                    var $row = angular.element(state.activeRow);
+                    $row.removeClass('active').find('.row-indicator').removeClass(rowIndicator);
+                }
+
+                /* jscs: disable requireCamelCaseOrUpperCaseIdentifiers */
+                if (!row || row._DT_RowIndex === undefined) {
+                    return;
+                }
+
+                state.activeRow = row;
+                state.activeRecord = state.dataTable.fnGetData(row);
+
+                if (scope.options.fnOnActivateRow) {
+                    scope.options.fnOnActivateRow(state.activeRecord, state.activeRow);
+                }
+
+                scope.updateTableEditState();
+
+                angular.element(row).addClass('active').find('.row-indicator').addClass(rowIndicator);
+            };
+
+            scope.scrollToRow = function(row) {
+                var r = angular.element(row ? row : scope.state.activeRow);
+                if (r) {
+                    $timeout(function() {
+                        var scroller = scope.findElement('.dataTables_scrollBody');
+                        var scrollPos = r.offset().top - scroller.offset().top;
+                        scroller.scrollTop(scrollPos);
+                    });
+                }
+            };
+
+            scope.updateTableEditState = function() {
+                ///<summary>
+                /// Updates the table cells that have had
+                ///  edits that have not been committed.
+                ///</summary>
+                var state = scope.state;
+                var $row = angular.element(state.activeRow);
+
+                if (!state.dataTable.find($row).length) {
+                    scope.activateFirstRow();
+                    $row = angular.element(state.activeRow);
+                }
+
+                scope.findInTable('.row-indicator').removeClass(rowIndicator);
+                state.dataTable.find('tr.active').removeClass('active');
+
+                var rows = state.dataTable.find('tr');
+                rows.find('td').removeClass('edit-pending');
+                rows.find('.edit-indicator').removeClass(editIndicator).removeClass(editInProgressIndicator);
+
+                if (scope.options.fnOnTableEditState) {
+                    scope.options.fnOnTableEditState();
+                }
+
+                $row.addClass('active').find('.row-indicator').addClass(rowIndicator);
+            };
+
+            scope.updateTableEditStateActiveRow = function() {
+                ///<summary>
+                /// Updates the table active row that have had edits that have not been committed.
+                ///</summary>
+                if (scope.state.activeRow === null || scope.state.activeRecord === null) {
+                    return;
+                }
+
+                var $row = $(scope.state.activeRow);
+
+                var ri = $row.find('.row-indicator');
+                $(ri).removeClass(rowIndicator);
+                $row.find('tr.active').removeClass('active');
+
+                ri.removeClass(editIndicator).removeClass(editInProgressIndicator);
+
+                if (scope.options.fnOnTableEditState) {
+                    scope.options.fnOnTableEditState(scope.state.activeRecord);
+                }
+
+                ri.addClass(rowIndicator);
+            };
+
+            scope.setRowEditMode = function(row, mode) {
+                var $row = angular.element(row);
+                if (mode === 'edit') {
+                    $row.find('.edit-indicator').addClass(editIndicator);
+                }
+            };
+
+            scope.appendRow = function(rowData) {
+                var settings = scope.state.dataTable.fnSettings();
+                settings._iDisplayLength++;
+                var newRowIdx = scope.state.dataTable.fnAddData(rowData, true)[0];
+
+                var rows = scope.state.dataTable.find('tr');
+                var $newRow = $(rows.get(newRowIdx + 1));
+                return $newRow;
+            };
+
+            scope.resizeTable = function(force) {
+                /// <summary>
+                ///   Resizes the table and invokes the DataTables api to retrieve more records, if necessary.
+                /// </summary>
+
+                $timeout(function() {
+                    if (scope.state.dataTable) {
+                        var tableHeight = scope.calcTableHeight();
+
+                        var settings = scope.state.dataTable.fnSettings();
+                        var tableHeightPx = tableHeight + 'px';
+
+                        //only trigger this if the vertical height has changed to load rows.
+                        if (settings && settings.oScroll && (force || settings.oScroll.sY !== tableHeightPx)) {
+                            settings.oScroll.sY = tableHeightPx;
+                            scope.findElement('.dataTables_scrollBody').height(tableHeight);
+                        }
+                    }
+                }, 300);
+            };
+
+            scope.refreshData = function() {
+                if (scope.state.dataTable) {
+                    var prms = scope.state.gridLoadPrms.previousPrms;
+                    getDataFromServer(scope, prms.searchTerm, prms.sortColIdx, prms.sortDir, true, false, true);
+                }
+            };
+
+            scope.callPreviousGetData = function() {
+                if (scope.state.dataTable) {
+                    var prms = scope.state.gridLoadPrms.previousPrms;
+                    var previousCall = scope.state.gridLoadPrms.previousCall;
+                    getDataFromServer(scope, prms.searchTerm, prms.sortColIdx, prms.sortDir,
+                        previousCall.append, previousCall.showEditIndicator, false);
+                }
+            };
+
+            scope.showProgressIndicator = function() {
+                if (scope.options.fnShowProgressIndicator) {
+                    scope.options.fnShowProgressIndicator();
+                }
+                //else {
+                //    //TO DO!!!!
+                //}
+            };
+
+            scope.hideProgressIndicator = function() {
+                if (scope.options.fnHideProgressIndicator) {
+                    scope.options.fnHideProgressIndicator();
+                }
+                //else {
+                //    //TO DO!!!
+                //}
+            };
+
+            // >>>>------------------ Filter ---------------------------------->
+
+            scope.createFilter = function() {
+                if (scope.findElement('.ep-datagrid-filter-row').length === 0) {
+                    var tHead = scope.grApi().table().header();
+                    angular.element(tHead).append(
+                        $compile('<ep-data-grid-filter-row></ep-data-grid-filter-row>')(scope));
+                    return true;
+                }
+                return false;
+            };
+
+            scope.showFilter = function() {
+                scope.createFilter();
+                scope.state.filterShowFlag = true;
+            };
+
+            scope.hideFilter = function() {
+                scope.state.filterShowFlag = false;
+            };
+
+            scope.toggleFilter = function() {
+                if (scope.createFilter()) {
+                    scope.state.filterShowFlag = true;
+                } else {
+                    scope.state.filterShowFlag = (scope.state.filterShowFlag === undefined) ?
+                        true : !scope.state.filterShowFlag;
+                }
+            };
+
+            scope.getFilterState = function() {
+                //var sFilterCriteria = '';
+                var state = scope.state;
+                state.filterExpressions = [];
+                if (scope.state.filterShowFlag && scope.state.filterEditors) {
+                    var filters = [];
+
+                    angular.forEach(scope.state.filterEditors, function(ctx) {
+                        if (!ctx.hidden && ctx.value !== '') {
+                            var colName = ctx.name;
+                            if (ctx.value !== '' && colName && ctx.operator) {
+                                var expr = {
+                                    ColName: colName,
+                                    Operator: ctx.operator,
+                                    Value: ctx.value
+                                };
+                                state.filterExpressions.push(expr);
+                                filters.push(ctx);
+                            }
+                            //else if (ctx.value === '' && colName && state.filterExpressions[colName]) {
+                            //    delete state.filterExpressions[colName];
+                            //}
+                        }
+                    });
+                    //sFilterCriteria = JSON.stringify(filters);
+                }
+                //TO DO:
+                //state.filterCriteria = sFilterCriteria;
+            };
+
+            scope.setInitialFilters = function() {
+                scope.state.filterExpressions = scope.options.filterExpressions;
+                var isFilterOn = !!(scope.state.filterExpressions && scope.state.filterExpressions.length);
+                if (isFilterOn) {
+                    scope.showFilter();
+                    //restore filter state
+                    //TO DO: may be replace with getFilterState() call
+                    //var filters = _.map(scope.state.filterExpressions, function (filter) { return filter; });
+                    //scope.state.filterCriteria = JSON.stringify(filters);
+                } else {
+                    scope.getFilterState(this);
+                }
+            };
+
+            scope.onHideFilter = function() {
+                var bChanged = false;
+                angular.forEach(scope.state.filterEditors, function(edt) {
+                    if (!edt.hidden && edt.value !== '') {
+                        bChanged = true;
+                        edt.value = '';
+                    }
+                });
+                if (bChanged) {
+                    scope.applyFilter();
+                }
+            };
+
+            scope.onChangeFilter = function() {
+                scope.applyFilter();
+            };
+
+            scope.applyFilter = function() {
+                scope.getFilterState();
+                var prms = scope.state.gridLoadPrms.previousPrms;
+                getDataFromServer(scope, prms.searchTerm, prms.sortColIdx, prms.sortDir, false, true, false);
+            };
+
+            scope.state.gridFactory = new epDataGridDirectiveFactory(scope);
+
+            if (scope.epDataGridOnInit) {
+                scope.epDataGridOnInit({ factory: scope.state.gridFactory });
+            }
+        }
+
+        return {
+            restrict: 'E',
+            templateUrl: 'src/components/ep.datagrid/datagrid.html',
+            scope: {
+                epDataGridOptions: '=',
+                epDataGridOnInit: '&'
+            },
+            link: linkDirective,
+        };
+    }
+]);
 
 'use strict';
 /**
@@ -3295,28 +4967,65 @@ angular.module('ep.modaldialog').service('epModalDialogService', [
             setCommonOptions(cfg);
 
             return $modal.open({
+                keyboard: false,
                 size: (cfg.size === 'small' ? 'sm' : (cfg.size === 'large' ? 'lg' : '')),
                 backdrop: cfg.backdrop === false ? false : cfg.backdrop || false,
                 templateUrl: 'src/components/ep.modaldialog/modals/modaldialog-custom.html',
-                controller: ['$scope', '$modalInstance', function($scope, $modalInstance) {
-                    currentModalInstance = $modalInstance;
-                    $scope.config = cfg;
-                    if (cfg.controller) {
-                        $injector.invoke(cfg.controller, currentModalInstance,
-                            { '$scope': $scope, '$modalInstance': $modalInstance });
-                    }
-                    $scope.btnclick = function(btn) {
-                        var result = onButtonClick($scope.config, btn);
-                        if (result !== -1) {
-                            release();
-                            if (btn.isCancel) {
-                                $modalInstance.dismiss('cancel');
-                            } else {
-                                $modalInstance.close(!result ? 0 : result);
+                controller: ['$scope', '$modalInstance', '$document', '$timeout',
+                    function($scope, $modalInstance, $document, $timeout) {
+
+                        currentModalInstance = $modalInstance;
+                        $scope.config = cfg;
+                        if (cfg.controller) {
+                            $injector.invoke(cfg.controller, currentModalInstance,
+                                { '$scope': $scope, '$modalInstance': $modalInstance });
+                        }
+                        $scope.btnclick = function(btn, action) {
+                            var result = onButtonClick($scope.config, btn, action);
+                            if (result !== -1) {
+                                $timeout(function() {
+                                    release();
+                                    if (action === 'fnCancelAction' || (btn && btn.isCancel)) {
+                                        $modalInstance.dismiss('cancel');
+                                    } else {
+                                        $modalInstance.close(!result ? 0 : result);
+                                    }
+                                });
+                            }
+                        };
+
+                        function onKeydown(evt) {
+                            if (evt.which === 13 || evt.which === 27) {
+                                var processed = true;
+                                var btn = _.find(cfg.buttons, function(btn) {
+                                    return (evt.which === 13) ? btn.isDefault : btn.isCancel;
+                                });
+                                if (btn) {
+                                    $scope.btnclick(btn);
+                                } else if (evt.which === 13 && cfg.fnDefaultAction) {
+                                    $scope.btnclick(null, 'fnDefaultAction');
+                                } else if (evt.which === 27 && cfg.fnCancelAction) {
+                                    $scope.btnclick(null, 'fnCancelAction');
+                                } else if (evt.which === 27) {
+                                    $timeout(function() {
+                                        release();
+                                        $modalInstance.dismiss('cancel');
+                                    });
+                                } else {
+                                    processed = false;
+                                }
+                                if (processed) {
+                                    evt.preventDefault();
+                                    evt.stopPropagation();
+                                }
                             }
                         }
-                    };
-                }]
+                        $document.on('keydown', onKeydown);
+
+                        $scope.$on('$destroy', function() {
+                            $document.off('keydown', onKeydown);
+                        });
+                    }]
             });
         }
 
@@ -3510,23 +5219,33 @@ angular.module('ep.modaldialog').service('epModalDialogService', [
         * @description
         * when button is clicked processing
         */
-        function onButtonClick(cfg, btn) {
+        function onButtonClick(cfg, btn, action) {
             var result = 0;
             var btnRemId = '';
-            if (btn.action) {
-                result = btn.action(cfg, btn);
-                btnRemId = btn.text;
-            } else if (btn.isDefault === true && cfg.fnDefaultAction) {
-                result = cfg.fnDefaultAction(cfg, btn);
-                btnRemId = 'fnDefaultAction';
-            } else if (btn.isCancel === true && cfg.fnCancelAction) {
-                result = cfg.fnCancelAction(cfg, btn);
-                btnRemId = 'fnCancelAction';
-            } else if (cfg.fnButtonAction) {
-                result = cfg.fnButtonAction(cfg, btn);
-                btnRemId = btn.text;
-            } else {
-                btnRemId = btn.text;
+            if (btn) {
+                if (btn.action) {
+                    result = btn.action(cfg, btn);
+                    btnRemId = btn.text;
+                } else if (btn.isDefault === true && cfg.fnDefaultAction) {
+                    result = cfg.fnDefaultAction(cfg, btn);
+                    btnRemId = 'fnDefaultAction';
+                } else if (btn.isCancel === true && cfg.fnCancelAction) {
+                    result = cfg.fnCancelAction(cfg, btn);
+                    btnRemId = 'fnCancelAction';
+                } else if (cfg.fnButtonAction) {
+                    result = cfg.fnButtonAction(cfg, btn);
+                    btnRemId = btn.text;
+                } else {
+                    btnRemId = btn.text;
+                }
+            } else if (action) {
+                if (action === 'fnDefaultAction' && cfg.fnDefaultAction) {
+                    result = cfg.fnDefaultAction(cfg);
+                    btnRemId = 'fnDefaultAction';
+                } else if (action === 'fnCancelAction' && cfg.fnCancelAction) {
+                    result = cfg.fnCancelAction(cfg);
+                    btnRemId = 'fnCancelAction';
+                }
             }
 
             if (cfg.rememberMeValue && cfg.dialogId && btnRemId) {
@@ -3632,6 +5351,36 @@ angular.module('ep.modaldialog').service('epModalDialogService', [
 
 /**
  * @ngdoc controller
+ * @name ep.modaldialog.controller:epModalDialogErrorCtrl
+ * @description
+ * Represents the a controller for the modaldialog-error.html template.
+ * This controller will set up the max width of the message
+ *
+ */
+angular.module('ep.modaldialog').controller('epModalDialogErrorCtrl', [
+    '$scope',
+    function($scope) {
+        var cfg = $scope.config;
+        cfg.callFnHideModalError = true;
+        //This will handle big server exception HTML errors, setting max-width of the
+        //error message. callFnHideModalError to prevent multiple times calling (perf)
+        cfg.fnHideModalError = function() {
+            var elMsg = angular.element('.ep-dlg-message');
+            var elBody = angular.element('.ep-modaldialog-error');
+            if (elMsg.length && elBody.length) {
+                if (elMsg.length && elMsg[0].clientWidth > elBody[0].clientWidth) {
+                    elMsg.css('max-width', elBody[0].clientWidth - 70);
+                    cfg.callFnHideModalError = false;
+                }
+            }
+        };
+    }
+]);
+
+'use strict';
+
+/**
+ * @ngdoc controller
  * @name ep.multilevel.menu.controller:epMultiLevelMenuCtrl
  * @description
  * Represents the epMultiLevelMenu controller for the
@@ -3642,20 +5391,18 @@ angular.module('ep.modaldialog').service('epModalDialogService', [
  */
 angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl', [
     '$scope',
-    '$location',
-    '$routeParams',
     '$timeout',
-    'epMultiLevelMenuService',
-    function($scope, $location, $routeParams, $timeout, epMultiLevelMenuService) {
-        // do something with $scope property
+    'epMultiLevelMenuFactory',
+    function($scope, $timeout, epMultiLevelMenuFactory) {
+        // init the scope properties
         $scope.state = {
             slidingIn: false,
             slidingOut: false,
-            searchTerm: ''
+            searchTerm: '',
+            searchType: 'item'
         };
-        $scope.data = epMultiLevelMenuService.data;
-        $scope.menuId = $routeParams.menuId;
         $scope.searchResults = [];
+        $scope.multiLevelMenuHelper = null;
 
         /**
          * @ngdoc method
@@ -3663,20 +5410,33 @@ angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl', [
          * @methodOf ep.multilevel.menu.controller:epMultiLevelMenuCtrl
          * @public
          * @description
-         * Handles the search request
+         * Handles the search request.   this will take the $scope.state.searchTerm from the
+         * input box on the form populates local $scope.searchResults [] collection.
+         * if $scope.state.searchType is provided, the menu.type can be used to refine the search
+         * results by type, here 'menu' or 'item' can be used.
          */
         function search() {
             var results = [];
-            var term = $scope.state.searchTerm.toLowerCase();
-            var type = $scope.state.searchType.toLowerCase();
-            _.each($scope.data.menu.levels, function(menu) {
-                menu.forEach(function(item) {
-                    if (item && item.type === type && item.caption.toLowerCase().indexOf(term) !== -1) {
-                        results.push(item);
-                    }
-                });
-            });
+            searchKids($scope.menu, results);
             $scope.searchResults = results;
+        }
+
+        // private enum to search kids for local searchTerm
+        function searchKids(menu, results) {
+            if (!menu.menuitems) {
+                return;
+            }
+            var term = $scope.state.searchTerm.toLowerCase();
+            var type = $scope.state.searchType ? $scope.state.searchType.toLowerCase() : '';
+            angular.forEach(menu.menuitems, function(kid) {
+                if (kid && kid.caption.toLowerCase().indexOf(term) !== -1) {
+                    // if we are type checking, also check the system-set _type
+                    if (type === '' || kid.type === type || kid._type === type) {
+                        results.push(kid);
+                    }
+                }
+                searchKids(kid, results);
+            });
         }
 
          /**
@@ -3685,27 +5445,27 @@ angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl', [
          * @methodOf ep.multilevel.menu.controller:epMultiLevelMenuCtrl
          * @public
          * @description
-         * Handles the navigate request
+         * Handles the navigate request.
          *
          * @param {object} mi the menu item
          */
         function navigate(mi) {
-            $('.mlm-content').addClass('ep-ease-animation');
-            if (mi.id === 'modules') {
+            if (!mi) {
                 return;
             }
-            $scope.menuId = mi.id;
-            $scope.data.next = mi;
-            $scope.state.slidingIn = $scope.data.current.depth < mi.depth;
-            if (!$scope.state.slidingIn) {
-                $scope.state.slidingOut = true;
+            if (mi._type === 'menu') {
+                $('.mlm-content').addClass('ep-ease-animation');
+                if (mi._id === 'topmenu') {
+                    return;
+                }
+                $scope.data.next = mi;
+                $scope.state.slidingIn = $scope.data.current._depth < mi._depth;
+                if (!$scope.state.slidingIn) {
+                    $scope.state.slidingOut = true;
+                }
             }
-
-            if (mi.type === 'Menu') {
-                //shellService.suspend();
-                $location.url('/home/' + $scope.menuId);
-            } else {
-                $location.url('/dashboard/' + mi.id + '/none?mode=grid');
+            if (mi._type === 'item' && mi.action && typeof mi.action === 'function') {
+                mi.action(mi);
             }
         }
 
@@ -3720,16 +5480,45 @@ angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl', [
          * @param {object} mi the menu item
          */
         function toggleFavorite(mi) {
-            //shellService.suspend();
-            epMultiLevelMenuService.toggleFavorite(mi);
-            //$timeout(function() {
-            //    //shellService.resume();
-            //});
+            $scope.multiLevelMenuHelper.toggleFavorite(mi);
+        }
+
+        // initialize the menus using the directive properties
+        function initializeMenus() {
+            // if they pass in the search-type directive property, set it on $scope.state
+            // override the default searchType = 'item'
+            if ($scope.searchType) {
+                $scope.state.searchType = $scope.searchType;
+            }
+            // now the transitionEnd event is wired up, we use the local mlmService to populate()
+            // AKA, walk up and down the menu setting the _parent and _depth properties
+            $scope.multiLevelMenuHelper = epMultiLevelMenuFactory.getMultiLevelMenuHelper();
+            $scope.multiLevelMenuHelper.populate($scope.menu);
+            // now we set the data (with _parent and _depth properties) on scope and set the 'next' panel
+            $scope.data = $scope.multiLevelMenuHelper.data;
+            $scope.data.next = $scope.multiLevelMenuHelper.data.menu;
+            // when we invoke navigate, this will add the animation class setting the initial
+            // animation into effect
+            $scope.navigate($scope.data.next);
+        }
+
+        function handleTransitionEnd() {
+            // when the transition has finished, we reset the menu using the "next" level.
+            // we remove the animation class so that when we reset the menu it just snaps in
+            $('.mlm-content').removeClass('ep-ease-animation');
+            $scope.state.slidingOut = $scope.state.slidingIn = false;
+            $scope.multiLevelMenuHelper.setCurrentMenuParent($scope.data.next);
+            $scope.data.next = null;
+            $timeout(function() {
+                $scope.$apply();
+            });
         }
 
         $scope.navigate = navigate;
         $scope.toggleFavorite = toggleFavorite;
         $scope.search = search;
+        $scope.initializeMenus = initializeMenus;
+        $scope.handleTransitionEnd = handleTransitionEnd;
     }
 ]);
 
@@ -3747,50 +5536,40 @@ angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl', [
 angular.module('ep.multi.level.menu').directive('epMultiLevelMenu', [
     '$timeout',
     'epFeatureDetectionService',
-    'epMultiLevelMenuService',
-     function($timeout, epFeatureDetectionService, epMultiLevelMenuService) {
-        return {
-            restrict: 'E',
-            replace: true,
-            controller: 'epMultiLevelMenuCtrl',
-            templateUrl: 'src/components/ep.multi.level.menu/multi-level-menu.html',
-            scope: true,
-            compile: function() {
-                return {
-                    pre: function() {
-                    },
-                    post: function($scope) {
-                        $timeout(function() {
-                            var transitionEvent = epFeatureDetectionService.getTransitionEvent();
-                            /*jshint -W030 */
-                            transitionEvent && $('.mlm-content-current').on(transitionEvent, function() {
-                                // when the transition has finished, we reset the menu using the "next" level.
-                                //shellService.resume();
-                                // we need to remove the animation class so that when we reset the menu it just snaps in
-                                $('.mlm-content').removeClass('ep-ease-animation');
-                                $scope.state.slidingOut = $scope.state.slidingIn = false;
-
-                                epMultiLevelMenuService.setCurrentMenuParent($scope.data.next);
-                                $scope.data.next = null;
-                                $timeout(function() {
-                                    $scope.$apply();
-                                });
-                            });
-                        }, 500);
-
-                        if ($scope.menuId && epMultiLevelMenuService.data.menu) {
-                            epMultiLevelMenuService.setCurrentMenuParentById($scope.menuId);
-                        }
-                    }
-                };
-            }
-        };
+     function($timeout, epFeatureDetectionService) {
+         return {
+             restrict: 'E',
+             replace: true,
+             controller: 'epMultiLevelMenuCtrl',
+             templateUrl: 'src/components/ep.multi.level.menu/multi-level-menu.html',
+             scope: {
+                searchType: '=',
+                menu: '='      // we take the menu as input parameter on the directive
+             },
+             compile: function() {
+                 return {
+                     pre: function() { },
+                     post: function($scope) {
+                         // after the directive has been compiled we invoke the timeout here
+                         // this will first wire up the transitionEnd event
+                         $timeout(function() {
+                             var transitionEndEvent = epFeatureDetectionService.getTransitionEvent();
+                             /*jshint -W030 */
+                             transitionEndEvent && $('.mlm-content-current').on(transitionEndEvent, function() {
+                                 $scope.handleTransitionEnd();
+                             });
+                             $scope.initializeMenus();
+                         }, 500);
+                     }
+                 };
+             }
+         };
     }]);
 
 'use strict';
 /**
  * @ngdoc service
- * @name ep.multi.level.menu.service:epMultiLevelMenuService
+ * @name ep.multi.level.menu.service:epMultiLevelMenuFactory
  * @description
  * Service for the ep.multi.level.menu module
  * Represents the Multi level menu
@@ -3798,219 +5577,237 @@ angular.module('ep.multi.level.menu').directive('epMultiLevelMenu', [
  * @example
  *
  */
-angular.module('ep.multi.level.menu').service('epMultiLevelMenuService', [
+angular.module('ep.multi.level.menu').factory('epMultiLevelMenuFactory', [
     'epLocalStorageService',
     'tokenFactory',
     function(epLocalStorageService, tokenFactory) {
-        var data = {
-            menu: null, // all of the menu data
-            current: {}
+        function getMultiLevelMenuHelper() {
+            return new multiLevelMenuHelper();
+        }
+        return {
+            getMultiLevelMenuHelper: getMultiLevelMenuHelper
         };
 
-        var builder = (function() {
-            var parentNode = null;
-            var depth = 0;
+        function multiLevelMenuHelper() {
+            var data = {
+                menu: null, // all of the menu data
+                current: {}
+            };
+            // internal builder class used to populate the menu structure properly
+            var builder = (function() {
+                var depth = 0;
+                // enumerate/walk up and down the menu.menuitems collection of
+                // child menus and decorate the _parent/_depth properties
+                function buildTree(menu) {
+                    if (!menu.menuitems) {
+                        menu.menuitems = [];
+                    }
+                    if (!menu._type) {
+                        menu._type = menu.menuitems === null || menu.menuitems.length <= 0 ? 'item' : 'menu';
+                    }
 
-            function buildTree(rootId) {
-                var nodes = data.menu.levels[rootId];
-                var userKey = 'user.' + tokenFactory.getToken();
-                var currentSettings = epLocalStorageService.get(userKey) ?
-                    epLocalStorageService.get(userKey + '.dashboard') || {} : {};
-                _.each(nodes, function(node) {
-                    node.children = data.menu.levels[node.id] || [];
-                    node.favorite = currentSettings[node.id] ? !!currentSettings[node.id].favorite : false;
-                    node.parent = parentNode;
-                    node.depth = depth;
-                    parentNode = node;
-                    depth++;
-                    buildTree(node.id);
-                    depth--;
-                    parentNode = node.parent;
+                    menu._depth = depth;
+                    angular.forEach(menu.menuitems, function(kid) {
+                        kid._parent = menu;
+                        depth++;
+                        buildTree(kid);
+                        depth--;
+                    });
+                }
+
+                return {
+                    buildTree: buildTree
+                };
+            })();
+            function iterateAll(fn) {
+                var results = [];
+                function iterateLevel(root) {
+                    angular.forEach(root.menuitems, function(item) {
+                        if (fn(item)) {
+                            results.push(item);
+                        }
+                        iterateLevel(item);
+                    });
+                }
+
+                iterateLevel(data.menu);
+                return results;
+            }
+
+            /**
+             * @ngdoc method
+             * @name populate
+             * @methodOf ep.multi.level.menu.service:epMultiLevelMenuFactory
+             * @public
+             * @description
+             * walk up and down the menu.menuitems and set _depth/_parent properties
+            */
+            function populate(menu) {
+                if (menu) {
+                    data.menu = angular.extend({}, menu);
+                }
+                if (data.menu) {
+                    // mock up a "_parent" for the top most menu so our html can
+                    // set the proper pointers.
+                    data.menu._parent = { _id: 'topmenu' };
+                    // walk up and down the menu.menuitems and set _depth/_parent properties
+                    builder.buildTree(data.menu);
+                    data.favorites = getFavorites();
+                }
+            }
+            /**
+             * @ngdoc method
+             * @name setCurrentMenuParent
+             * @methodOf ep.multi.level.menu.service:epMultiLevelMenuFactory
+             * @public
+             * @description
+             * Handles the setCurrentMenuParent request
+             *
+             * @param {object} menuItem the menu item to set as current
+           */
+            function setCurrentMenuParent(menuItem) {
+                if (menuItem) {
+                    data.current = angular.extend({}, menuItem);
+                }
+            }
+            /**
+             * @ngdoc method
+             * @name setCurrentMenuParentById
+             * @methodOf ep.multi.level.menu.service:epMultiLevelMenuFactory
+             * @public
+             * @description
+             * Handles the setCurrentMenuParentById request
+             *
+             * @param {object} id the menu item id to set as current
+           */
+            function setCurrentMenuParentById(id) {
+                var mi = findMenuItemById(id);
+                if (mi) {
+                    setCurrentMenuParent(mi);
+                }
+            }
+            /**
+             * @ngdoc method
+             * @name findMenuItemById
+             * @methodOf ep.multi.level.menu.service:epMultiLevelMenuFactory
+             * @public
+             * @description
+             * Handles the findMenuItemById request
+             *
+             * @param {object} id the id to search for
+             * @param {object} root the parent menu to start the search
+           */
+            function findMenuItemById(id, root) {
+                var item;
+                if (!root) {
+                    for (var top = 0; top < data.menu.menuitems.length; top++) {
+                        item = findMenuItemById(id, data.menu.menuitems[top]);
+                        if (item) {
+                            return item;
+                        }
+                    }
+                } else {
+                    for (var idx = 0; idx < root.menuitems.length; idx++) {
+                        var mi = root.menuitems[idx];
+                        if (mi.id === id) {
+                            item = mi;
+                        } else {
+                            item = findMenuItemById(id, mi);
+                        }
+                        if (item) {
+                            return item;
+                        }
+                    }
+                }
+                return null;
+            }
+            /**
+             * @ngdoc method
+             * @name resetCache
+             * @methodOf ep.multi.level.menu.service:epMultiLevelMenuFactory
+             * @public
+             * @description
+             * Handles the resetCache request
+            */
+            function resetCache() {
+                clear();
+                return populate();
+            }
+            /**
+             * @ngdoc method
+             * @name clear
+             * @methodOf ep.multi.level.menu.service:epMultiLevelMenuFactory
+             * @public
+             * @description
+             * Handles the clear request
+            */
+            function clear() {
+                data.menu = null;
+                data.favorites = null;
+                data.current = null;
+                clearFavorites();
+            }
+            /**
+             * @ngdoc method
+             * @name toggleFavorite
+             * @methodOf ep.multi.level.menu.service:epMultiLevelMenuFactory
+             * @public
+             * @description
+             * Handles the toggleFavorite request
+             *
+             * @param {object} mi the menu item
+            */
+            function toggleFavorite(mi) {
+                mi.favorite = !mi.favorite;
+
+                epLocalStorageService.update(tokenFactory.getToken() +
+                        '.' + mi.id + '.favorite', mi.favorite);
+                data.favorites = getFavorites();
+            }
+            /**
+             * @ngdoc method
+             * @name getFavorites
+             * @methodOf ep.multi.level.menu.service:epMultiLevelMenuFactory
+             * @public
+             * @description
+             * Handles the getFavorites request
+            */
+            function getFavorites() {
+                var favList = iterateAll(function(i) { return !!i.favorite; });
+                var userKey = tokenFactory.getToken();
+                var viewSettings = epLocalStorageService.get(userKey) || {};
+
+                angular.forEach(viewSettings, function(item) {
+                    if (item.favorite) {
+                        favList.push(item);
+                    }
                 });
+                return favList;
+            }
+            /**
+             * @ngdoc method
+             * @name clearFavorites
+             * @methodOf ep.multi.level.menu.service:epMultiLevelMenuFactory
+             * @public
+             * @description
+             * Handles the clearFavorites request
+            */
+            function clearFavorites() {
+                data.favorites = null;
             }
 
             return {
-                buildTree: buildTree
+                data: data,
+                populate: populate,
+                resetCache: resetCache,
+                clearFavorites: clearFavorites,
+                setCurrentMenuParent: setCurrentMenuParent,
+                setCurrentMenuParentById: setCurrentMenuParentById,
+                findMenuItemById: findMenuItemById,
+                toggleFavorite: toggleFavorite,
+                clear: clear
             };
-        })();
-
-        function iterateAll(fn) {
-            var results = [];
-            function iterateLevel(root) {
-                _.each(root.children, function(item) {
-                    if (fn(item)) {
-                        results.push(item);
-                    }
-                    iterateLevel(item);
-                });
-            }
-
-            iterateLevel(data.menu.levels.root[0]);
-            return results;
         }
-
-        function populate(menu) {// TODO: Allow injection of service
-            if (menu) {
-                data.menu = angular.extend({}, menu);
-            }
-            if (data.menu) {
-                builder.buildTree('root'); // build the proper hierarchy so we can navigate in and out
-                //data.current = findMenuItemById('MOBMENU');
-                data.favorites = getFavorites();
-            }
-        }
-        /**
-         * @ngdoc method
-         * @name setCurrentMenuParent
-         * @methodOf ep.multi.level.menu.service:epMultiLevelMenuService
-         * @public
-         * @description
-         * Handles the setCurrentMenuParent request
-         *
-         * @param {object} menuItem the menu item to set as current
-       */
-        function setCurrentMenuParent(menuItem) {
-            if (menuItem) {
-                data.current = menuItem;
-            }
-        }
-        /**
-         * @ngdoc method
-         * @name setCurrentMenuParentById
-         * @methodOf ep.multi.level.menu.service:epMultiLevelMenuService
-         * @public
-         * @description
-         * Handles the setCurrentMenuParentById request
-         *
-         * @param {object} id the menu item id to set as current
-       */
-        function setCurrentMenuParentById(id) {
-            var mi = findMenuItemById(id);
-            if (mi) {
-                setCurrentMenuParent(mi);
-            }
-        }
-        /**
-         * @ngdoc method
-         * @name findMenuItemById
-         * @methodOf ep.multi.level.menu.service:epMultiLevelMenuService
-         * @public
-         * @description
-         * Handles the findMenuItemById request
-         *
-         * @param {object} id the id to search for
-         * @param {object} root the parent menu to start the search
-       */
-        function findMenuItemById(id, root) {
-            var item;
-            if (!root) {
-                for (var top = 0; top < data.menu.levels.root.length; top++) {
-                    item = findMenuItemById(id, data.menu.levels.root[top]);
-                    if (item) {
-                        return item;
-                    }
-                }
-            }
-            for (var idx = 0; idx < root.children.length; idx++) {
-                var mi = root.children[idx];
-                if (mi.id === id) {
-                    item = mi;
-                } else {
-                    item = findMenuItemById(id, mi);
-                }
-                if (item) {
-                    return item;
-                }
-            }
-            return null;
-        }
-
-        /**
-         * @ngdoc method
-         * @name resetCache
-         * @methodOf ep.multi.level.menu.service:epMultiLevelMenuService
-         * @public
-         * @description
-         * Handles the resetCache request
-        */
-        function resetCache() {
-            clear();
-            return populate();
-        }
-        /**
-         * @ngdoc method
-         * @name clear
-         * @methodOf ep.multi.level.menu.service:epMultiLevelMenuService
-         * @public
-         * @description
-         * Handles the clear request
-        */
-        function clear() {
-            data.menu = null;
-            data.favorites = null;
-            data.current = null;
-            clearFavorites();
-        }
-        /**
-         * @ngdoc method
-         * @name toggleFavorite
-         * @methodOf ep.multi.level.menu.service:epMultiLevelMenuService
-         * @public
-         * @description
-         * Handles the toggleFavorite request
-         *
-         * @param {object} mi the menu item
-        */
-        function toggleFavorite(mi) {
-            mi.favorite = !mi.favorite;
-
-            epLocalStorageService.update(tokenFactory.getToken() +
-                    '.' + mi.id + '.favorite', mi.favorite);
-            data.favorites = getFavorites();
-        }
-        /**
-         * @ngdoc method
-         * @name getFavorites
-         * @methodOf ep.multi.level.menu.service:epMultiLevelMenuService
-         * @public
-         * @description
-         * Handles the getFavorites request
-        */
-        function getFavorites() {
-            var favList = iterateAll(function(i) { return !!i.favorite; });
-            var userKey = tokenFactory.getToken();
-            var viewSettings = epLocalStorageService.get(userKey) || {};
-
-            _.each(viewSettings, function(item) {
-                if (item.favorite) {
-                    favList.push(item);
-                }
-            });
-            return favList;
-        }
-        /**
-         * @ngdoc method
-         * @name clearFavorites
-         * @methodOf ep.multi.level.menu.service:epMultiLevelMenuService
-         * @public
-         * @description
-         * Handles the clearFavorites request
-        */
-        function clearFavorites() {
-            data.favorites = null;
-        }
-
-        return {
-            data: data,
-            populate: populate,
-            resetCache: resetCache,
-            clearFavorites: clearFavorites,
-            setCurrentMenuParent: setCurrentMenuParent,
-            setCurrentMenuParentById: setCurrentMenuParentById,
-            findMenuItemById: findMenuItemById,
-            toggleFavorite: toggleFavorite,
-            clear: clear
-        };
     }]);
 
 'use strict';
@@ -7151,16 +8948,20 @@ angular.module('ep.utils').service('epUtilsService', [
         * @methodOf ep.utils.service:epUtilsService
         * @public
         * @description
-        * Creates path by concatination of input arguments
+        * Creates path by concatination of input arguments which can be strings, array of
+        * strings or arguments object passed from another function
         * @returns {string} path
         * @example
-        *       var str = epUtilsService.makePath('root','dir1','dir2');
-        *       //results in '/root/dir1/dir2'
-
+        *   var str = epUtilsService.makePath('root','dir1','dir2');
+        *   //result: '/root/dir1/dir2'
+        *
+        *   var str = utilsService.makePath('root', ['dir1', 'dir2'], ['dir3', 'dir4'], 'dir5');
+        *   //result: '/root/dir1/dir2/dir3/dir4/dir5';
+        *
         */
-        function makePath(args) {
+        function makePath() {
             var path = '';
-            var _args = (angular.isObject(args) && args.length) ? args : arguments;
+            var _args = _.flatten(arguments, true);
             if (_args && _args.length === 1 && angular.isObject(_args[0]) && _args[0].length === 0) {
                 return path; //special case when caller passed arguments and arguments were empty
             }
@@ -7188,6 +8989,16 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   );
 
 
+  $templateCache.put('src/components/ep.datagrid/datagrid-filter/datagrid-filter-row.html',
+    "<tr id=rowFilter class=ep-datagrid-filter-row ng-show=\"state.filterShowFlag === true\"><th ng-repeat=\"ctx in state.filterEditors\" class=ep-datagrid-filter-header ng-class=ctx.className><div ng-if=\"ctx.hidden !== true\"><div class=\"ep-datagrid-filter-group input-group\"><span class=\"ep-datagrid-filter-op input-group-addon fa-stack fa-lg\" ng-click=fnFilterOpChange(ctx)><i class=\"ep-datagrid-filter-op-icon fa fa-circle-thin fa-stack-2x\"></i> <i class=\"ep-datagrid-filter-text fa-stack-1x fa\" ng-class=\"{'fa-asterisk': ctx.operator === '*', '': ctx.operator !== '*' }\" operator={{ctx.operator}} col={{ctx.columnIndex}} id=filterOp_{{ctx.columnIndex}}>{{ctx.operatorText}}</i></span> <input class=\"col-md-8 form-control editor\" style=\"color: black\" ng-model=ctx.value type={{ctx.type}} col={{ctx.columnIndex}} colname={{ctx.columnName}} operator={{ctx.operator}} id=filterInput_{{ctx.columnIndex}} ng-blur=fnFilterBlur(ctx) ng-keyup=\"fnFilterKeyUp(ctx, $event)\" name=\"filterInput_{{ctx.columnIndex}}\"></div></div></th></tr>"
+  );
+
+
+  $templateCache.put('src/components/ep.datagrid/datagrid.html',
+    "<div class=ep-data-grid><form class=\"ep-dg-grid-search navbar-inverse\" ng-show=state.allowSearchInput><!-- This needs to be a form or the \"search\" input type doesn't work on iOS --><input class=\"ep-dg-search-input form-control input-sm\" name=search type=search placeholder=Search ng-class=searchInputClass ng-model=state.searchValue ng-init=fnOnSearchBlur() ng-blur=fnOnSearchBlur($event) ng-focus=fnOnSearchFocus($event) ng-keyup=fnOnSearchKeyUp($event) ng-change=\"fnOnSearchChange($event)\"></form><div id=gridArea><table id=dataGridTable cellpadding=0 cellspacing=0 border=0 class=\"ep-dg-grid-table table table-bordered table-hover\" fixed-header></table><div class=ep-dg-progressIndicator ng-show=showProgress><span class=\"fa fa-spinner fa-pulse fa-5x\"></span></div></div></div>"
+  );
+
+
   $templateCache.put('src/components/ep.embedded.apps/embedded-apps.html',
     "<div id=appHost><div id=splash ng-if=appConfig.splash ng-show=showSplash ep-animation options=appConfig.splash.transition><div id=splashContainer ng-include=\"getEmbeddedAppPath(appConfig.id, appConfig.splash.templateUrl)\"></div></div><div id=appContent ng-show=showApp ep-animation options=currentView.transition><ep-embedded-apps-loader config=appConfig on-complete=onLoaderComplete()></ep-embedded-apps-loader></div></div>"
   );
@@ -7204,7 +9015,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.modaldialog/modals/modaldialog-error.html',
-    "<!--Custom Dialog Error Template--><div class=ep-modaldialog-error><div class=\"alert clearfix\" ng-class=config.statusClass><table class=ep-dlg-bodytable><tr><td><span ng-if=config.showSpinner class=\"ep-dlg-icon fa-stack fa-2x\"><i class=\"ep-dlg-spinner-icon fa fa-spin fa-stack-2x\" ng-class=config.spinnerIconClass></i> <i ng-if=config.showTimer class=\"ep-dlg-spinner-text fa fa-stack-1x {{config.spinnerTextClass}}\" ng-class=config.spinnerTextClass>{{config.countDown}}</i></span> <span ng-if=!config.showSpinner class=ep-dlg-icon><i class=\"fa fa-3x\" ng-class=config.statusIcon></i></span></td><td><span class=ep-dlg-message ng-class=config.messageClass ng-bind=config.fnGetMessage()></span></td></tr></table></div><div class=ep-message-details ng-show=config.messageDetails><a href=\"\" ng-click=\"config.showDetails = !config.showDetails;\">{{config.showDetails ? 'Hide details': 'Show details'}}</a><div ng-show=config.showDetails><textarea ng-model=config.messageDetails ng-readonly=true disabled></textarea></div></div></div>"
+    "<!--Custom Dialog Error Template--><div class=ep-modaldialog-error ng-controller=epModalDialogErrorCtrl><section ng-if=config.callFnHideModalError ng-hide=config.fnHideModalError()></section><div class=\"alert clearfix\" ng-class=config.statusClass><table class=ep-dlg-bodytable><tr><td><span ng-if=config.showSpinner class=\"ep-dlg-icon fa-stack fa-2x\"><i class=\"ep-dlg-spinner-icon fa fa-spin fa-stack-2x\" ng-class=config.spinnerIconClass></i> <i ng-if=config.showTimer class=\"ep-dlg-spinner-text fa fa-stack-1x {{config.spinnerTextClass}}\" ng-class=config.spinnerTextClass>{{config.countDown}}</i></span> <span ng-if=!config.showSpinner class=ep-dlg-icon><i class=\"fa fa-3x\" ng-class=config.statusIcon></i></span></td><td><span class=ep-dlg-message ng-class=config.messageClass ng-bind=config.fnGetMessage()></span></td></tr></table></div><div class=ep-message-details ng-show=config.messageDetails><a href=\"\" ng-click=\"config.showDetails = !config.showDetails;\">{{config.showDetails ? 'Hide details': 'Show details'}}</a><div ng-show=config.showDetails><textarea ng-model=config.messageDetails ng-readonly=true disabled></textarea></div></div></div>"
   );
 
 
@@ -7214,7 +9025,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.multi.level.menu/multi-level-menu.html',
-    "<div class=mlm-container><form class=mlm-search><input class=\"form-control mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search()></form><div class=mlm-canvas><div ng-if=!state.searchTerm><div class=\"mlm-content mlm-content-right ep-ease-animation\" ng-class=\"{ 'slide-in': state.slidingIn, 'slide-out': state.slidingOut }\"><div class=mlm-header ng-class=\"{ 'pointer': data.next.parent.id !== 'modules'}\" ng-click=navigate(data.next.parent)><span ng-if=\"data.next.parent.id !== 'modules'\" class=\"mlm-back-button pull-left fa fa-lg fa-caret-left\"></span><span>{{data.next.caption}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in data.next.children\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi.type === 'Dashboard'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi.type === 'Menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div><div class=\"mlm-content mlm-content-current ep-ease-animation\" ng-class=\"{ 'slide-in': state.slidingIn, 'slide-out': state.slidingOut }\"><div class=mlm-header ng-class=\"{ 'pointer': data.current.parent.id !== 'modules'}\" ng-click=navigate(data.current.parent)><span ng-if=\"data.current.parent.id !== 'modules'\" class=\"mlm-back-button pull-left fa fa-lg fa-caret-left\"></span><span>{{data.current.caption}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in data.current.children\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi.type === 'Dashboard'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi.type === 'Menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div><div class=\"mlm-content mlm-content-left ep-ease-animation\" ng-class=\"{ 'slide-in': state.slidingIn, 'slide-out': state.slidingOut }\"><div class=mlm-header ng-class=\"{ 'pointer': data.next.parent.id !== 'modules'}\" ng-click=navigate(data.next.parent)><span ng-if=\"data.next.parent.id !== 'modules'\" class=\"mlm-back-button pull-left fa fa-lg fa-caret-left\"></span><span>{{data.next.caption}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in data.next.children\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi.type === 'Dashboard'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi.type === 'Menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div></div><div class=\"mlm-content mlm-content-search\" ng-if=state.searchTerm><div class=mlm-header><span>{{resources.strings.SearchResults}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in searchResults\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div><span ng-if=\"mi.type === 'Menu'\" class=\"mlm-item-count pull-right\">{{mi.children && mi.children.length ? mi.children.length : 0}}</span></div><i ng-if=\"mi.type === 'Dashboard'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi.type === 'Menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div></div></div>"
+    "<div class=mlm-container><form class=mlm-search><input class=\"form-control mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search()></form><div class=mlm-canvas><div ng-if=!state.searchTerm><div ng-if=data.next class=\"mlm-content mlm-content-right ep-ease-animation\" ng-class=\"{ 'slide-in': state.slidingIn, 'slide-out': state.slidingOut }\"><div class=mlm-header ng-class=\"{ 'pointer': data.next._parent._id !== 'topmenu'}\" ng-click=navigate(data.next._parent)><span ng-if=\"data.next._parent._id !== 'topmenu'\" class=\"mlm-back-button pull-left fa fa-lg fa-caret-left\"></span> <span>{{data.next.caption}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in data.next.menuitems\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi._type === 'item'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi._type === 'menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div><div class=\"mlm-content mlm-content-current ep-ease-animation\" ng-class=\"{ 'slide-in': state.slidingIn, 'slide-out': state.slidingOut }\"><div class=mlm-header ng-class=\"{ 'pointer': data.current._parent._id !== 'topmenu'}\" ng-click=navigate(data.current._parent)><span ng-if=\"data.current._parent._id !== 'topmenu'\" class=\"mlm-back-button pull-left fa fa-lg fa-caret-left\"></span> <span>{{data.current.caption}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in data.current.menuitems\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi._type === 'item'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi._type === 'menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div><div class=\"mlm-content mlm-content-left ep-ease-animation\" ng-class=\"{ 'slide-in': state.slidingIn, 'slide-out': state.slidingOut }\"><div class=mlm-header ng-class=\"{ 'pointer': data.next._parent._id !== 'topmenu'}\" ng-click=navigate(data.next._parent)><span ng-if=\"data.next._parent._id !== 'topmenu'\" class=\"mlm-back-button pull-left fa fa-lg fa-caret-left\"></span> <span>{{data.next.caption}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in data.next.menuitems\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi._type === 'item'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi._type === 'menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div></div><div class=\"mlm-content mlm-content-search\" ng-if=state.searchTerm><div class=mlm-header><span>{{resources.strings.SearchResults}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in searchResults\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div><span ng-if=\"mi._type === 'menu'\" class=\"mlm-item-count pull-right\">{{mi.menuitems && mi.menuitems.length ? mi.menuitems.length : 0}}</span></div><i ng-if=\"mi._type === 'item'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi._type === 'menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div></div></div>"
   );
 
 

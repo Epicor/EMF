@@ -247,6 +247,258 @@
   margin-left: 50%;
 }
 
+/* Grid Search */
+.ep-data-grid .ep-dg-grid-search {
+  padding: 5px;
+  margin: 2px 2px 0 2px;
+}
+.ep-data-grid #gridSearch.hide {
+  visibility: hidden;
+}
+/*EMA*/
+/*.ep-data-grid .grid-info {
+    height: 48px;
+    margin: 2px 2px 0 2px;
+}
+
+.ep-data-grid .grid-info > p {
+    margin-left: 10px;
+    padding-top: 12px;
+    vertical-align: middle;
+}
+
+.ep-data-grid .grid-view {
+    top: 0;
+    right: 0;
+    bottom: 0;
+    left: 0;
+    margin: 0 2px 0 2px;
+}
+
+.ep-data-grid .grid-view.invisible {
+    visibility: hidden;
+    height: 0;
+}
+
+.ep-data-grid #gridInfo.hide {
+    visibility: hidden;
+}
+
+*/
+.ep-data-grid .dataTables_scrollBody > div {
+  display: none;
+}
+.ep-data-grid .ep-dg-grid-table > tbody > tr > td {
+  cursor: pointer;
+  white-space: normal;
+}
+.ep-data-grid .ep-dg-grid-table > thead > tr > th {
+  white-space: nowrap;
+}
+.ep-data-grid .ep-dg-grid-table > tbody > tr > td,
+.ep-data-grid .ep-dg-grid-table > thead > tr > th {
+  overflow: hidden;
+  border-collapse: collapse;
+  -ms-text-overflow: ellipsis;
+  -o-text-overflow: ellipsis;
+  text-overflow: ellipsis;
+  max-width: 400px;
+}
+.ep-data-grid .ep-dg-grid-table > tbody > tr > td.active {
+  font-weight: bold;
+  border: 2px dotted #888;
+}
+.ep-data-grid .ep-dg-grid-table > tbody > tr > td.fixed,
+.ep-data-grid .ep-dg-grid-table > thead > tr > th.fixed {
+  border-left: none;
+  border-right: none;
+  min-width: 36px;
+}
+.ep-data-grid .row-alert {
+  max-width: 800px;
+  white-space: normal;
+}
+.ep-data-grid .editable {
+  /*min-width: 120px !important;*/
+}
+.ep-data-grid .data-cell {
+  /*min-width: 120px !important;*/
+}
+.ep-data-grid div.dataTables_scrollBody {
+  -webkit-transform: translate3d(0, 0, 0);
+}
+.ep-data-grid div.dataTables_scroll {
+  -webkit-transform: translate3d(0, 0, 0);
+  height: calc(20%);
+}
+.ep-data-grid .inline-link {
+  margin: 0 10px 0 5px;
+}
+.ep-data-grid .ep-dg-grid-table > thead > tr > th {
+  min-width: 36px;
+}
+.ep-data-grid table.dataTable thead .sorting,
+.ep-data-grid table.dataTable thead .sorting_asc,
+.ep-data-grid table.dataTable thead .sorting_desc {
+  background-color: #888;
+  cursor: pointer;
+}
+.ep-data-grid table.dataTable thead .sorting {
+  background: url('sort_both.png') no-repeat center right;
+}
+.ep-data-grid table.dataTable thead .sorting_asc {
+  background: url('sort_asc.png') no-repeat center right;
+}
+.ep-data-grid table.dataTable thead .sorting_desc {
+  background: url('sort_desc.png') no-repeat center right;
+}
+.ep-data-grid #tblGridView {
+  -webkit-backface-visibility: hidden;
+  -webkit-transform: translate3d(0, 0, 0);
+}
+/* Bootstrap sets the max-width of the table element to 100%, which disables horizontal scrolling in safari. */
+.ep-data-grid table {
+  max-width: initial;
+}
+/*NOT USED???*/
+/*.ep-data-grid #tblGridView_info {
+    margin-top: 10px;
+    margin-left: 3px;
+}*/
+.ep-data-grid table.dataTable tbody tr {
+  color: inherit;
+}
+.ep-data-grid .dataTables_processing {
+  position: absolute;
+  top: 50%;
+  margin-top: -24px;
+  z-index: 9999;
+  left: 50%;
+  width: 250px;
+  margin-left: -125px;
+  border: 1px solid #ddd;
+  text-align: center;
+  color: #000;
+  background: #fff;
+  font-size: 15px !important;
+  -webkit-box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+  -moz-box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+  -ms-box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 0 4px rgba(0, 0, 0, 0.2);
+  padding: 10px 0;
+}
+.ep-data-grid .table.ep-dg-grid-table {
+  overflow: hidden;
+  margin: 0;
+}
+.ep-data-grid .ep-dg-grid-table > tr:nth-child(even) > td {
+  background-color: #fdfdfd;
+  border: #ededed solid 1px;
+}
+.ep-data-grid .load-more {
+  text-align: center;
+}
+.ep-data-grid .load-more-cell {
+  width: 1px;
+  padding: 0 10px;
+  white-space: nowrap;
+}
+.ep-data-grid .bootstrap-tagsinput {
+  width: 100%;
+}
+.ep-data-grid .typeahead,
+.ep-data-grid .tt-query,
+.ep-data-grid .tt-hint {
+  width: 396px;
+  height: 30px;
+  padding: 8px 12px;
+  font-size: 24px;
+  line-height: 30px;
+  border: 2px solid #ccc;
+  -webkit-border-radius: 8px;
+  -moz-border-radius: 8px;
+  border-radius: 8px;
+  outline: none;
+}
+.ep-data-grid .typeahead {
+  background-color: #fff;
+}
+.ep-data-grid .typeahead:focus {
+  border: 2px solid #0097cf;
+}
+.ep-data-grid .tt-query {
+  -webkit-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  -moz-box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+  box-shadow: inset 0 1px 1px rgba(0, 0, 0, 0.075);
+}
+.ep-data-grid .tt-hint {
+  color: #999;
+}
+.ep-data-grid .tt-input {
+  width: 100%;
+}
+.ep-data-grid .tt-dropdown-menu {
+  width: 422px;
+  margin-top: 12px;
+  padding: 8px 0;
+  background-color: #fff;
+  border: 1px solid #ccc;
+  border: 1px solid rgba(0, 0, 0, 0.2);
+  -webkit-border-radius: 8px;
+  -moz-border-radius: 8px;
+  border-radius: 8px;
+  -webkit-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+  -moz-box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+  box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
+}
+.ep-data-grid .tt-suggestion {
+  padding: 3px 20px;
+  font-size: 18px;
+  line-height: 24px;
+}
+.ep-data-grid .tt-suggestion.tt-cursor {
+  color: #fff;
+  background-color: #0097cf;
+}
+.ep-data-grid .tt-suggestion p {
+  margin: 0;
+}
+/*------------------- NEW GRID ------------------------------- -->>>>>>*/
+.ep-data-grid .ep-datagrid-filter-row .ep-hide-filter-col {
+  width: 0;
+  grid-column-span: 1;
+  grid-row-span: 1;
+}
+.ep-data-grid .ep-datagrid-filter-row .ep-datagrid-filter-header {
+  padding: 2px !important;
+}
+.ep-data-grid .ep-datagrid-filter-row .ep-datagrid-filter-header .ep-datagrid-filter-op {
+  vertical-align: top;
+  padding-top: 0.2em;
+  min-width: 40px;
+  font-family: Helvetica Neue, Helvetica, Arial, sans-serif;
+  cursor: pointer;
+}
+.ep-data-grid .ep-datagrid-filter-row .ep-datagrid-filter-op .ep-datagrid-filter-text {
+  margin-top: 0.5em;
+}
+.ep-data-grid .ep-dg-progressIndicator {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  -moz-transform: translateY(-50%) translateX(-50%);
+  -ms-transform: translateY(-50%) translateX(-50%);
+  -o-transform: translateY(-50%) translateX(-50%);
+  -webkit-transform: translateY(-50%) translateX(-50%);
+  transform: translateY(-50%) translateX(-50%);
+  background-color: transparent;
+  z-index: 1000;
+  padding-left: 0;
+}
+.ep-data-grid #dataGridTable {
+  max-width: initial;
+}
+
 #appHost {
   height: 100%;
 }
@@ -437,6 +689,7 @@
 .ep-modaldialog .ep-modaldialog-error .ep-dlg-message {
   display: block;
   padding: 5px;
+  overflow: auto;
 }
 .ep-modaldialog .ep-modaldialog-error .ep-dlg-icon {
   display: block;
@@ -449,6 +702,7 @@
   bottom: 0;
   right: 0;
   overflow-x: hidden;
+  width: 250px;
 }
 .mlm-search {
   margin: 8px;
