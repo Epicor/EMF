@@ -132,8 +132,7 @@ angular.module('ep.modaldialog', ['ep.templates']);
  */
 angular.module('ep.multi.level.menu', [
     'ep.templates',
-    'ep.local.storage',
-    'ep.token'
+    'ep.local.storage'
 ]);
 
 'use strict';
@@ -913,7 +912,6 @@ angular.module('ep.animation').directive('epAnimation',
 
                     }
                     $animationStyle.html(content);
-                    console.log($scope.options);
                 }
             });
         }
@@ -1103,7 +1101,7 @@ angular.module('ep.datagrid').directive('epDataGridFilterRow', [
             restrict: 'E',
             replace: true,
             templateUrl: 'src/components/ep.datagrid/datagrid-filter/datagrid-filter-row.html',
-            controller: function($scope) {
+            controller: ['$scope', function($scope) {
                 if (!$scope.state.filterEditors) {
                     //Filter data has not been defined yet...
 
@@ -1200,7 +1198,7 @@ angular.module('ep.datagrid').directive('epDataGridFilterRow', [
                         }
                     };
                 }
-            }
+            }]
         };
     }
 ]);
@@ -1224,7 +1222,7 @@ angular.module('ep.datagrid').directive('epDataGridFilterToggle', [
             replace: true,
             template: '<div><a class="btn btn-default btn-sm ep-center-item fa fa-filter" ' +
                       'ng-click="toggleFilter()" ></a></div>',
-            controller: function() {}
+            controller: [function() {}]
         };
     }
 ]);
@@ -3030,8 +3028,20 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsShellService', [
     '$log',
     '$timeout',
     'epEmbeddedAppsConstants',
-    function($rootScope, $location, $log, $timeout, epEmbeddedAppsConstants) {
+    'epEmbeddedAppsProvider',
+    function($rootScope, $location, $log, $timeout, epEmbeddedAppsConstants, epEmbeddedAppsProvider) {
         var epShellService;
+        var fnGotoView;
+
+        function loadIfReady(fn) {
+            if (epEmbeddedAppsProvider.state && epEmbeddedAppsProvider.state.loadComplete) {
+                fn();
+            } else {
+                $timeout(function() {
+                    loadIfReady(fn);
+                }, 250);
+            }
+        }
 
         function init() {
             try {
@@ -3042,6 +3052,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsShellService', [
 
             if (epShellService) {
                 $rootScope.$on(epEmbeddedAppsConstants.CONFIG_LOADED_EVENT, function(event, data) {
+                    fnGotoView = data.goToView;
                     setupShellConfigs(data.configs);
                 });
 
@@ -3065,7 +3076,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsShellService', [
                     var config = scope.appConfig;
                     var view = config.views[data.viewId];
                     if (view) {
-                        setupViewShellOptions(scope, config, view);
+                        loadIfReady(function() {
+                            setupViewShellOptions(scope, config, view);
+                        });
                     }
                 });
             }
@@ -3098,9 +3111,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsShellService', [
                 if (view.sidebarOptions.left) {
                     epShellService.enableLeftSidebar();
                     if (view.sidebarOptions.left.templateUrl) {
-                        var lefturl = '"' + leftSidebarUrl + '"';
-                        var leftSidebarUrl = $scope.getEmbeddedAppPath(config.id, view.sidebarOptions.left.templateUrl);
-                        epShellService.setLeftTemplate('<div ng-include=' + lefturl + '></div>');
+                        var leftSidebarUrl = $scope.embeddedAppsService.getAppPath(config.id,
+                            view.sidebarOptions.left.templateUrl);
+                        epShellService.setLeftTemplate('<div ng-include="\'' + leftSidebarUrl + '\'"></div>');
                     } else if (view.sidebarOptions.left.template) {
                         epShellService.setLeftTemplate(view.sidebarOptions.left.template);
                     }
@@ -3110,10 +3123,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsShellService', [
                 if (view.sidebarOptions.right) {
                     epShellService.enableRightSidebar();
                     if (view.sidebarOptions.right.templateUrl) {
-                        var righturl = '"' + rightSidebarUrl + '"';
-                        var rightSidebarUrl = $scope.getEmbeddedAppPath(config.id,
+                        var rightSidebarUrl = $scope.embeddedAppsService.getAppPath(config.id,
                             view.sidebarOptions.right.templateUrl);
-                        epShellService.setRightTemplate('<div ng-include=' + righturl + '></div>');
+                        epShellService.setRightTemplate('<div ng-include="\'' + rightSidebarUrl + '\'"></div>');
                     } else if (view.sidebarOptions.right.template) {
                         epShellService.setRightTemplate(view.sidebarOptions.right.template);
                     }
@@ -3157,7 +3169,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsShellService', [
                             title: btn.title || app.name,
                             icon: btn.icon || app.icon,
                             action: function() {
-                                $location.url('/app/' + app.id + '/' + app.startViewId);
+                                fnGotoView(app.id);
                             }
                         }]);
                     }
@@ -3167,7 +3179,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsShellService', [
                 });
             }
             if (appStartup) {
-                $location.url('/app/' + appStartup.id + '/' + appStartup.startViewId);
+                fnGotoView(appStartup.id);
             }
         }
 
@@ -3211,14 +3223,25 @@ angular.module('ep.embedded.apps').constant('epEmbeddedAppsConstants', {
      *
      */
 angular.module('ep.embedded.apps').directive('epEmbeddedApps', [
+    '$document',
     '$log',
     '$rootScope',
     '$routeParams',
     '$location',
     '$timeout',
     'epEmbeddedAppsService',
+    'epEmbeddedAppsCacheService',
     'epEmbeddedAppsConstants',
-    function($log, $rootScope, $routeParams, $location, $timeout, epEmbeddedAppsService, epEmbeddedAppsConstants) {
+    function(
+        $document,
+        $log,
+        $rootScope,
+        $routeParams,
+        $location,
+        $timeout,
+        epEmbeddedAppsService,
+        epEmbeddedAppsCacheService,
+        epEmbeddedAppsConstants) {
         return {
             restrict: 'E',
             templateUrl: 'src/components/ep.embedded.apps/embedded-apps.html',
@@ -3288,14 +3311,14 @@ angular.module('ep.embedded.apps').directive('epEmbeddedApps', [
                         }
 
                         $scope.appConfig = config;
-                        $scope.getEmbeddedAppPath = epEmbeddedAppsService.getAppPath;
+                        $scope.embeddedAppsService = epEmbeddedAppsService;
 
                         if (config.isRunning !== true) {
                             config.isRunning = true; //flag that app is running
-
+                            var appRoute = epEmbeddedAppsService.getAppRoute('');
                             if (!config.locationHdl) {
                                 config.locationHdl = $rootScope.$on('$locationChangeStart', function() {
-                                    if (config.locationHdl && $location.url().indexOf('/app/') !== 0) {
+                                    if (config.locationHdl && $location.url().indexOf(appRoute) !== 0) {
                                         $rootScope.$on('$destroy', config.locationHdl);
                                         config.locationHdl = null;
                                         config.isRunning = false;
@@ -3303,7 +3326,18 @@ angular.module('ep.embedded.apps').directive('epEmbeddedApps', [
                                             scope: $scope,
                                             viewId: state.viewId
                                         });
-                                        // TODO: remove the app resources from the page
+
+                                        // Remove all of the stylesheets added by the embedded app.
+                                        config.resources.links.forEach(function(url, idx) {
+                                            var linkId = 'link_' + idx;
+                                            var link = $document[0].getElementById(linkId);
+                                            if (link) {
+                                                $document[0].getElementsByTagName('head')[0].removeChild(link);
+                                                $log.debug('Unloading link: ' + url);
+                                            }
+                                            epEmbeddedAppsCacheService.linkCache.remove(linkId);
+                                        });
+
                                         $timeout(function() {
                                             $scope.$apply();
                                         });
@@ -3377,11 +3411,11 @@ angular.module('ep.embedded.apps')
     '$provide',
     '$compileProvider',
     '$filterProvider',
-    '$routeProvider',
     function($controllerProvider, $provide, $compileProvider, $filterProvider) {
         var regModules = ['ng'];
 
         var sysconfig = {
+            rootRoute: 'app',
             path: 'apps',
             provider: 'sysconfig',
             applications: []
@@ -3470,7 +3504,6 @@ angular.module('ep.embedded.apps')
 
         function getAppPath() {
             var _args = _.flatten(arguments, true);
-            //var _args = (angular.isObject(args) && args.length) ? args : arguments;
             var path = sysconfig.path;
             angular.forEach(_args, function(arg) {
                 path += '/' + arg;
@@ -3478,19 +3511,31 @@ angular.module('ep.embedded.apps')
             return path;
         }
 
+        function getAppRoute() {
+            var _args = _.flatten(arguments, true);
+            var route = '/' + sysconfig.rootRoute;
+            angular.forEach(_args, function(arg) {
+                route += '/' + arg;
+            });
+            return route;
+        }
+
         var activeConfig;
         function getAppPackageService(config, $timeout) {
             activeConfig = config;
-            return function appPackageService($location) {
+            return ['$location', function appPackageService($location) {
                 var data = {};
 
                 function getLocalAppPath() {
-                    var path = getAppPath(activeConfig.id, arguments);
-                    return path;
+                    return getAppPath(activeConfig.id, arguments);
+                }
+
+                function getLocalAppRoute() {
+                    return getAppRoute(activeConfig.id, arguments);
                 }
 
                 function goToView(viewId) {
-                    $location.url('/app/' + activeConfig.id + '/' + viewId);
+                    $location.url(getLocalAppRoute(viewId));
                 }
 
                 function executeResource(method, name, value, cacheKey, reload) {
@@ -3535,133 +3580,158 @@ angular.module('ep.embedded.apps')
                     resource: resource,
                     data: data,
                     goToView: goToView,
-                    getAppPath: getLocalAppPath
+                    getAppPath: getLocalAppPath,
+                    getAppRoute: getLocalAppRoute
                 };
 
-            };
+            }];
         }
 
-        this.$get = function($timeout, $document, $http, $injector, $log, epEmbeddedAppsCacheService, epSysConfig) {
-            function load(config, callback) {
-                var resourceId = 'module: ' + config.id;
-                modules[config.id] = config;
+        var state = {
+            loadComplete: false
+        };
 
-                if (!config) {
-                    var errorText = 'Module not configured';
-                    $log.error(errorText);
-                    throw errorText;
-                }
+        this.$get = [
+            '$timeout', '$document', '$http', '$injector', '$log', '$q',
+            'epEmbeddedAppsCacheService', 'epSysConfig', 'epUtilsService',
+            function($timeout, $document, $http, $injector, $log, $q,
+                epEmbeddedAppsCacheService, epSysConfig, epUtilsService) {
 
-                function loadResources(onLoadScript, onLoadLink, onLoadComplete) {
-                    function loadScripts(scriptList) {
-                        if (scriptList.length) {
-                            var url = _.first(scriptList);
-                            var scriptId = 'script:' + url;
-                            var scriptElement;
-                            if (url && epEmbeddedAppsCacheService.scriptCache.get(scriptId)) {
-                                loadScripts(_.rest(scriptList));
-                            } else if (url) {
-                                scriptElement = $document[0].createElement('script');
-                                scriptElement.src = url;
-                                scriptElement.onload = function() {
-                                    onLoadScript(scriptId);
-                                    loadScripts(_.rest(scriptList));
-                                };
-                                scriptElement.onerror = function() {
-                                    $log.error('Error loading url: [' + url + ']');
-                                    epEmbeddedAppsCacheService.scriptCache.remove(scriptId);
-                                    loadScripts(_.rest(scriptList));
-                                };
-                                $document[0].documentElement.appendChild(scriptElement);
-                                epEmbeddedAppsCacheService.scriptCache.put(scriptId, 1);
-                            } else {
-                                loadScripts(_.rest(scriptList));
+                function load(config, callback) {
+                    var resourceId = 'module: ' + config.id;
+                    modules[config.id] = config;
+
+                    if (!config) {
+                        var errorText = 'Module not configured';
+                        $log.error(errorText);
+                        throw errorText;
+                    }
+
+                    // Load all of the resources required by the app package
+                    function loadResources(onLoadScript, onLoadLink, onLoadComplete) {
+                        state.loadComplete = false;
+
+                        // loads a list of scripts and resolves once they have all completed loading
+                        function loadScriptList(list) {
+                            var deferred = $q.defer();
+                            var remaining = list.length;
+                            if (remaining === 0) {
+                                deferred.resolve();
                             }
-                        } else {
-                            $timeout(onLoadComplete);
-                        }
-                    }
-
-                    loadScripts(config.resources.scripts.map(function(url) { return getAppPath(config.id, url); }));
-
-                    config.resources.links.map(function(url) {
-                        return getAppPath(config.id, url);
-                    }).forEach(function(url) {
-                        var linkId = 'link: ' + url;
-                        var linkElement;
-                        if (url && !epEmbeddedAppsCacheService.linkCache.get(linkId)) {
-                            linkElement = $document[0].createElement('link');
-                            linkElement.rel = 'stylesheet';
-                            linkElement.href = url;
-                            linkElement.type = 'text/css';
-                            $document[0].head.appendChild(linkElement);
-                            epEmbeddedAppsCacheService.linkCache.put(linkId, 1);
-
-                            $timeout(function() {
-                                onLoadLink(linkId);
-                            });
-                        }
-                    });
-                }
-
-                function loadDependencies(moduleId, allDependencyLoad) {
-
-                    if (regModules.indexOf(moduleId) > -1) {
-                        return allDependencyLoad();
-                    }
-
-                    var loadedModule = angular.module(moduleId);
-                    var requires = getRequires(loadedModule);
-
-                    function onModuleLoad(moduleLoaded) {
-                        if (moduleLoaded) {
-
-                            var index = requires.indexOf(moduleLoaded);
-                            if (index > -1) {
-                                requires.splice(index, 1);
+                            // decrement the remaining # of scripts and resolves once it reaches 0;
+                            function dec() {
+                                remaining--;
+                                if (remaining < 1) {
+                                    deferred.resolve();
+                                }
                             }
-                        }
-                        if (requires.length === 0) {
-                            $timeout(function() {
-                                allDependencyLoad(moduleId);
+                            // queue up each script in the list
+                            list.forEach(function(url) {
+                                epUtilsService.loadScript(url, epEmbeddedAppsCacheService.scriptCache).
+                                    then(function(id) {
+                                        onLoadScript(id);
+                                    }).then(dec, dec);
                             });
-                        }
-                    }
-
-                    var requireNeeded = getRequires(loadedModule);
-                    angular.forEach(requireNeeded, function(requireModule) {
-
-                        moduleCache.push(requireModule);
-
-                        if (moduleExists(requireModule)) {
-                            return onModuleLoad(requireModule);
+                            return deferred.promise;
                         }
 
-                        var requireModuleConfig = modules[requireModule];
-                        if (requireModuleConfig) {
-                            loadResources(function() {
+                        // Load all of the third party scripts first
+                        var thirdPartyScripts = (config.resources.scripts.thirdParty || []).map(function(url) {
+                            return getAppPath(config.id, url);
+                        });
+                        loadScriptList(thirdPartyScripts).then(function() {
+                            // next get the module script syncronously
+                            var url = config.resources.scripts.module;
+                            return epUtilsService.loadScript(
+                                getAppPath(config.id, url), epEmbeddedAppsCacheService.scriptCache).
+                                then(function(id) { onLoadScript(id);
+                        });
+                        }).then(function() {
+                            // finally load the rest of the app's scripts
+                            var appScripts = config.resources.scripts.app.map(function(url) {
+                                return getAppPath(config.id, url);
+                            });
+                            return loadScriptList(appScripts);
+                        }).then(onLoadComplete);
 
-                            }, function() {
+                        // load all of the css
+                        config.resources.links.map(function(url) {
+                            return getAppPath(config.id, url);
+                        }).forEach(function(url, idx) {
+                            var linkId = 'link_' + idx;
+                            if (url && !epEmbeddedAppsCacheService.linkCache.get(linkId)) {
+                                var linkElement = $document[0].createElement('link');
+                                linkElement.setAttribute('id', linkId);
+                                linkElement.rel = 'stylesheet';
+                                linkElement.href = url;
+                                linkElement.type = 'text/css';
+                                $document[0].head.appendChild(linkElement);
+                                epEmbeddedAppsCacheService.linkCache.put(linkId, 1);
 
-                            }, function() {
-                                loadDependencies(requireModule, function requireModuleLoaded(name) {
-                                    onModuleLoad(name);
+                                $timeout(function() {
+                                    onLoadLink('Link: ' + url);
                                 });
-                            });
-                        } else {
-                            $log.warn('module [' + requireModule + '] not loaded and not configured');
-                            onModuleLoad(requireModule);
+                            }
+                        });
+                    }
+
+                    function loadDependencies(moduleId, allDependencyLoad) {
+
+                        if (regModules.indexOf(moduleId) > -1) {
+                            return allDependencyLoad();
+                        }
+
+                        var loadedModule = angular.module(moduleId);
+                        var requires = getRequires(loadedModule);
+
+                        function onModuleLoad(moduleLoaded) {
+                            if (moduleLoaded) {
+
+                                var index = requires.indexOf(moduleLoaded);
+                                if (index > -1) {
+                                    requires.splice(index, 1);
+                                }
+                            }
+                            if (requires.length === 0) {
+                                $timeout(function() {
+                                    allDependencyLoad(moduleId);
+                                });
+                            }
+                        }
+
+                        var requireNeeded = getRequires(loadedModule);
+                        angular.forEach(requireNeeded, function(requireModule) {
+
+                            moduleCache.push(requireModule);
+
+                            if (moduleExists(requireModule)) {
+                                return onModuleLoad(requireModule);
+                            }
+
+                            var requireModuleConfig = modules[requireModule];
+                            if (requireModuleConfig) {
+                                loadResources(function() {
+
+                                }, function() {
+
+                                }, function() {
+                                    loadDependencies(requireModule, function requireModuleLoaded(name) {
+                                        onModuleLoad(name);
+                                    });
+                                });
+                            } else {
+                                $log.warn('module [' + requireModule + '] not loaded and not configured');
+                                onModuleLoad(requireModule);
+                            }
+                            return null;
+                        });
+
+                        if (requireNeeded.length === 0) {
+                            onModuleLoad();
                         }
                         return null;
-                    });
-
-                    if (requireNeeded.length === 0) {
-                        onModuleLoad();
                     }
-                    return null;
-                }
 
-                if (!epEmbeddedAppsCacheService.scriptCache.get(resourceId)) {
                     loadResources(
                         // onLoadScript
                         function(id) { $log.debug('Loaded ' + id); },
@@ -3682,36 +3752,35 @@ angular.module('ep.embedded.apps')
                                 });
                             });
                         });
-                } else {
-                    $timeout(function() {
-                        callback(config.id);
-                    });
-                }
-            }
-
-            function getConfig() {
-
-                var section = epSysConfig.section('epEmbeddedApps');
-                if (section) {
-                    angular.extend(sysconfig, section);
                 }
 
-                if (!sysconfig.path) {
-                    sysconfig.path = 'apps';
+                function getConfig() {
+
+                    var section = epSysConfig.section('epEmbeddedApps');
+                    if (section) {
+                        angular.extend(sysconfig, section);
+                    }
+
+                    if (!sysconfig.path) {
+                        sysconfig.path = 'apps';
+                    }
+                    if (!sysconfig.rootRoute) {
+                        sysconfig.rootRoute = 'app';
+                    }
+                    return sysconfig;
                 }
 
-                return sysconfig;
-            }
+                sysconfig = getConfig();
 
-            sysconfig = getConfig();
-
-            return {
-                settings: sysconfig,
-                load: load,
-                modules: modules,
-                getAppPath: getAppPath
-            };
-        };
+                return {
+                    settings: sysconfig,
+                    load: load,
+                    modules: modules,
+                    getAppPath: getAppPath,
+                    getAppRoute: getAppRoute,
+                    state: state
+                };
+            }];
     }
     ]);
 
@@ -3731,12 +3800,15 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
     '$http',
     '$q',
     '$log',
+    '$location',
+    '$window',
     'epUtilsService',
     'epEmbeddedAppsProvider',
     'epEmbeddedAppsConstants',
     'epEmbeddedAppsShellService',
-    function($rootScope, $http, $q, $log, epUtilsService,
-        epEmbeddedAppsProvider, epEmbeddedAppsConstants, epEmbeddedAppsShellService) {
+    'epEmbeddedAppsCacheService',
+    function($rootScope, $http, $q, $log, $location, $window, epUtilsService,
+        epEmbeddedAppsProvider, epEmbeddedAppsConstants, epEmbeddedAppsShellService, epEmbeddedAppsCacheService) {
 
         var configs = {};
         var state = {
@@ -3795,6 +3867,43 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             return getAppsFromConfig();
         }
 
+        function loadStartupService(config) {
+            if (epUtilsService.hasProperty(config, 'resources.scripts.startup')) {
+                var url = epEmbeddedAppsProvider.getAppPath(config.id, config.resources.scripts.startup);
+                epUtilsService.loadScript(url, epEmbeddedAppsCacheService.scriptCache).
+                    then(function() {
+                        try {
+                            var injector = angular.injector([config.id, 'ng', 'ngRoute']);
+                            var svc = injector.get('appStartupService');
+                            if (svc) {
+                                config.state.startupService = svc;
+                            }
+                        } catch (e) {
+                            $log.warn('startup service [appStartupService] was not loaded for embedded application: ' +
+                                config.id);
+                        }
+
+                        if (config.state.startupService) {
+                            //try retrieve menu from startup service
+                            if ((!config.menu || config.menu.disabled !== true) &&
+                                config.state.startupService.getMenu) {
+                                var menu = config.state.startupService.getMenu();
+                                if (menu) {
+                                    if (menu.then) {
+                                        menu.then(function(result) {
+                                            config.state.menu = result;
+                                        });
+                                    } else {
+                                        config.state.menu = menu;
+                                    }
+                                }
+                            }
+                        }
+                    }, function() {
+                    });
+            }
+        }
+
         function loadConfigurationsFromService(deferred) {
             //appService.getApps()
             getApplications('config').then(function(data) {
@@ -3808,6 +3917,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             $http.get(appPkgPath).then(function(response) {
                                 var config = response.data;
                                 $log.debug('Parsing AppPackage.config file: ' + appPkgPath);
+                                config.state = {}; //to keep all internal stuff
                                 configs[config.id] = config;
                                 $log.debug('AppPackage name: ' + config.name);
                                 var tileSize = config.tileSize ? config.tileSize.split('x') : ['2', '1'];
@@ -3821,6 +3931,26 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                                         $log.warn('Invalid value in tileSize property: ' + config.tileSize);
                                     }
                                 }
+
+                                //Set default menu (unless disabled)
+                                if (!config.menu || config.menu.disabled !== true) {
+                                    config.state.menu = {
+                                        caption: config.name,
+                                        description: config.description || config.name,
+                                        id: 'embedded_apps_' + config.id + '_root', //TO DO!!!!
+                                        action: function() {
+                                            if (config.launchInTab) {
+                                                var url = './Index.html#' + getAppRoute(config.id, config.startViewId,
+                                                    'w_opportunity_maint', '');
+                                                $window.open(url);
+                                            } else {
+                                                goToView(config.id);
+                                            }
+                                        }
+                                    };
+                                }
+
+                                loadStartupService(config);
 
                                 // construct an object out of the view array so that views can be accessed
                                 // by ID without having to search through the array for them
@@ -3853,7 +3983,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
             if (++loadedCount === packages.length) {
                 $rootScope.$emit(epEmbeddedAppsConstants.CONFIG_LOADED_EVENT, {
-                    configs: configs
+                    configs: configs,
+                    goToView: goToView
                 });
 
                 state.loadComplete = true;
@@ -3865,8 +3996,29 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             return epEmbeddedAppsProvider.getAppPath(arguments);
         }
 
+        function getAppRoute() {
+            return epEmbeddedAppsProvider.getAppRoute(arguments);
+        }
+
+        function goToView(configId, viewId) {
+            var config = configs[configId];
+            if (config) {
+                $location.url(getAppRoute(config.id, viewId || config.startViewId));
+            }
+        }
+
         function setupShellOnStartup() {
             epEmbeddedAppsShellService.setupShellConfigs(configs);
+        }
+
+        function getAppsMenu() {
+            var merge = [];
+            angular.forEach(configs, function(config) {
+                if (config.state.menu) {
+                    merge.push(config.state.menu);
+                }
+            });
+            return merge;
         }
 
         return {
@@ -3875,7 +4027,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             loadConfigurations: loadConfigurations,
             configs: configs,
             getAppPath: getAppPath,
-            setupShellOnStartup: setupShellOnStartup
+            getAppRoute: getAppRoute,
+            setupShellOnStartup: setupShellOnStartup,
+            getAppsMenu: getAppsMenu,
+            goToView: goToView
         };
     }]);
 
@@ -3891,9 +4046,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  *
  */
 angular.module('ep.feature.detection').service('epFeatureDetectionService', [
-    function() {
+    '$log',
+    '$q',
+    function($log, $q) {
         var mediaRegistry;
-
+        var initialized = false;
         /**
          * @private
          * @description
@@ -4126,118 +4283,138 @@ angular.module('ep.feature.detection').service('epFeatureDetectionService', [
         * One time service initialization to detect static features
         */
         function initialize() {
-            features.browserIsMobile = browserIsMobile();
-            features.supportsDragAndDrop = supportsDragAndDrop();
-            features.transitionEvent = whichTransitionEvent();
-            features.animationEvent = whichAnimationEvent();
-            features.touchEvents = ('ontouchstart' in window) ||
-            (navigator.maxTouchPoints > 0) ||
-            (navigator.msMaxTouchPoints > 0);
+            var deferred = $q.defer();
+            if (initialized) {
+                deferred.resolve(features);
+            } else {
 
-            try {
-                if (window.device && window.cordova) {
+                features.browserIsMobile = browserIsMobile();
+                features.supportsDragAndDrop = supportsDragAndDrop();
+                features.transitionEvent = whichTransitionEvent();
+                features.animationEvent = whichAnimationEvent();
+                features.touchEvents = ('ontouchstart' in window) ||
+                (navigator.maxTouchPoints > 0) ||
+                (navigator.msMaxTouchPoints > 0);
 
-                    features.platform = {
-                        app: 'Cordova',
-                        os: window.device.platform
-                    };
-                } else if (window.require !== undefined && (require('nw.gui') && process)) {
-                    features.platform = {
-                        app: 'NWJS',
-                        os: process.platform
-                    };
-                } else {
-                    var nAgt = navigator.userAgent;
-                    var browserName = navigator.appName;
-                    var fullVersion = '' + parseFloat(navigator.appVersion);
-                    var majorVersion = parseInt(navigator.appVersion, 10);
-                    var nameOffset = -1;
-                    var verOffset = -1;
-                    var ix = -1;
+                try {
+                    if (window.cordova) {
+                        $log.debug('epFeatureDetectionService: Detected cordova application.');
+                        features.platform = {
+                            app: 'Cordova'
+                        };
 
-                    // In Opera, the true version is after 'Opera' or after 'Version'
-                    if ((verOffset = nAgt.indexOf('Opera')) !== -1) {
-                        browserName = 'Opera';
-                        fullVersion = nAgt.substring(verOffset + 6);
-                        if ((verOffset = nAgt.indexOf('Version')) !== -1) {
+                        document.addEventListener('deviceready', function() {
+                            if (window.device) {
+                                features.platform.os = window.device.platform;
+                            } else {
+                                features.platform.os = 'Unknown';
+                            }
+                            initialized = true;
+                            deferred.resolve(features);
+                        }, false);
+                    } else if (window.require !== undefined && (require('nw.gui') && process)) {
+                        features.platform = {
+                            app: 'NWJS',
+                            os: process.platform
+                        };
+                        deferred.resolve(features);
+                    } else {
+                        var nAgt = navigator.userAgent;
+                        var browserName = navigator.appName;
+                        var fullVersion = '' + parseFloat(navigator.appVersion);
+                        var majorVersion = parseInt(navigator.appVersion, 10);
+                        var nameOffset = -1;
+                        var verOffset = -1;
+                        var ix = -1;
+
+                        // In Opera, the true version is after 'Opera' or after 'Version'
+                        if ((verOffset = nAgt.indexOf('Opera')) !== -1) {
+                            browserName = 'Opera';
+                            fullVersion = nAgt.substring(verOffset + 6);
+                            if ((verOffset = nAgt.indexOf('Version')) !== -1) {
+                                fullVersion = nAgt.substring(verOffset + 8);
+                            }
+                        } else if ((verOffset = nAgt.indexOf('MSIE')) !== -1) {
+                            // In MSIE, the true version is after 'MSIE' in userAgent
+                            browserName = 'Microsoft Internet Explorer';
+                            fullVersion = nAgt.substring(verOffset + 5);
+                        } else if ((verOffset = nAgt.indexOf('Chrome')) !== -1) {
+                            // In Chrome, the true version is after 'Chrome'
+                            browserName = 'Chrome';
+                            fullVersion = nAgt.substring(verOffset + 7);
+                        } else if ((verOffset = nAgt.indexOf('Safari')) !== -1) {
+                            // In Safari, the true version is after 'Safari' or after 'Version'
+                            browserName = 'Safari';
+                            fullVersion = nAgt.substring(verOffset + 7);
+                            if ((verOffset = nAgt.indexOf('Version')) !== -1) {
+                                fullVersion = nAgt.substring(verOffset + 8);
+                            }
+                        } else if ((verOffset = nAgt.indexOf('Firefox')) !== -1) {
+                            // In Firefox, the true version is after 'Firefox'
+                            browserName = 'Firefox';
                             fullVersion = nAgt.substring(verOffset + 8);
-                        }
-                    } else if ((verOffset = nAgt.indexOf('MSIE')) !== -1) {
-                        // In MSIE, the true version is after 'MSIE' in userAgent
-                        browserName = 'Microsoft Internet Explorer';
-                        fullVersion = nAgt.substring(verOffset + 5);
-                    } else if ((verOffset = nAgt.indexOf('Chrome')) !== -1) {
-                        // In Chrome, the true version is after 'Chrome'
-                        browserName = 'Chrome';
-                        fullVersion = nAgt.substring(verOffset + 7);
-                    } else if ((verOffset = nAgt.indexOf('Safari')) !== -1) {
-                        // In Safari, the true version is after 'Safari' or after 'Version'
-                        browserName = 'Safari';
-                        fullVersion = nAgt.substring(verOffset + 7);
-                        if ((verOffset = nAgt.indexOf('Version')) !== -1) {
-                            fullVersion = nAgt.substring(verOffset + 8);
-                        }
-                    } else if ((verOffset = nAgt.indexOf('Firefox')) !== -1) {
-                        // In Firefox, the true version is after 'Firefox'
-                        browserName = 'Firefox';
-                        fullVersion = nAgt.substring(verOffset + 8);
-                    } else if ((nameOffset = nAgt.lastIndexOf(' ') + 1) <
+                        } else if ((nameOffset = nAgt.lastIndexOf(' ') + 1) <
                         (verOffset = nAgt.lastIndexOf('/'))) {
-                        // In most other browsers, 'name/version' is at the end of userAgent
-                        browserName = nAgt.substring(nameOffset, verOffset);
-                        fullVersion = nAgt.substring(verOffset + 1);
-                        if (browserName.toLowerCase() === browserName.toUpperCase()) {
-                            browserName = navigator.appName;
+                            // In most other browsers, 'name/version' is at the end of userAgent
+                            browserName = nAgt.substring(nameOffset, verOffset);
+                            fullVersion = nAgt.substring(verOffset + 1);
+                            if (browserName.toLowerCase() === browserName.toUpperCase()) {
+                                browserName = navigator.appName;
+                            }
                         }
-                    }
-                    if ((ix = fullVersion.indexOf(';')) !== -1) {
-                        // trim the fullVersion string at semicolon/space if present
-                        fullVersion = fullVersion.substring(0, ix);
-                    }
-                    if ((ix = fullVersion.indexOf(' ')) !== -1) {
-                        fullVersion = fullVersion.substring(0, ix);
-                    }
-                    majorVersion = parseInt('' + fullVersion, 10);
-                    if (isNaN(majorVersion)) {
-                        fullVersion = '' + parseFloat(navigator.appVersion);
-                        majorVersion = parseInt(navigator.appVersion, 10);
-                    }
-
-                    var os = 'Unknown OS';
-                    if (navigator.appVersion.indexOf('Win') !== -1) {
-                        os = 'Windows';
-                    }
-                    if (navigator.appVersion.indexOf('Mac') !== -1) {
-                        os = 'MacOS';
-                    }
-                    if (navigator.appVersion.indexOf('X11') !== -1) {
-                        os = 'UNIX';
-                    }
-                    if (navigator.appVersion.indexOf('Linux') !== -1) {
-                        os = 'Linux';
-                    }
-
-                    features.platform = {
-                        app: 'Web',
-                        os: os,
-                        browser: {
-                            name: browserName,
-                            fullVersion: fullVersion,
-                            majorVersion: majorVersion,
-                            appName: navigator.appName,
-                            userAgent: navigator.userAgent
+                        if ((ix = fullVersion.indexOf(';')) !== -1) {
+                            // trim the fullVersion string at semicolon/space if present
+                            fullVersion = fullVersion.substring(0, ix);
                         }
-                    };
+                        if ((ix = fullVersion.indexOf(' ')) !== -1) {
+                            fullVersion = fullVersion.substring(0, ix);
+                        }
+                        majorVersion = parseInt('' + fullVersion, 10);
+                        if (isNaN(majorVersion)) {
+                            fullVersion = '' + parseFloat(navigator.appVersion);
+                            majorVersion = parseInt(navigator.appVersion, 10);
+                        }
+
+                        var os = 'Unknown OS';
+                        if (navigator.appVersion.indexOf('Win') !== -1) {
+                            os = 'Windows';
+                        }
+                        if (navigator.appVersion.indexOf('Mac') !== -1) {
+                            os = 'MacOS';
+                        }
+                        if (navigator.appVersion.indexOf('X11') !== -1) {
+                            os = 'UNIX';
+                        }
+                        if (navigator.appVersion.indexOf('Linux') !== -1) {
+                            os = 'Linux';
+                        }
+
+                        features.platform = {
+                            app: 'Web',
+                            os: os,
+                            browser: {
+                                name: browserName,
+                                fullVersion: fullVersion,
+                                majorVersion: majorVersion,
+                                appName: navigator.appName,
+                                userAgent: navigator.userAgent
+                            }
+                        };
+                        deferred.resolve(features);
+                    }
+                    initialized = true;
+                } catch (ex) {
+                    deferred.reject(ex);
+                    console.log(ex.message);
                 }
-            } catch (ex) {
-                console.log(ex.message);
             }
+            return deferred.promise;
         }
 
-        //initialize the service once
         initialize();
 
         return {
+            initialize: initialize,
             browserIsMobile: browserIsMobile,
             supportsDragAndDrop: supportsDragAndDrop,
             getAnimationEvent: getAnimationEvent,
@@ -4259,7 +4436,7 @@ angular.module('ep.feature.detection').service('epFeatureDetectionService', [
  * Gets configuration options from sysconfig.json or default
  */
 angular.module('ep.local.storage').provider('epLocalStorageConfig',
-    function() {
+    [function() {
         var config = {
             /**
             * @ngdoc property
@@ -4287,14 +4464,14 @@ angular.module('ep.local.storage').provider('epLocalStorageConfig',
         //
         //we use the epSysConfig provider to perform the $http read against sysconfig.json
         //epSysConfig.section() function returns the associated node on sysconfig.json
-        this.$get = function(epSysConfig) {
+        this.$get = ['epSysConfig', function(epSysConfig) {
             var section = epSysConfig.section('epLocalStorage');
             if (section) {
                 angular.extend(config, section);
             }
             return config;
-        };
-    });
+        }];
+    }]);
 
 'use strict';
 /**
@@ -5380,6 +5557,19 @@ angular.module('ep.modaldialog').controller('epModalDialogErrorCtrl', [
 'use strict';
 
 /**
+ * @ngdoc object
+ * @name ep.multi.level.menu.object:epMultiLevelMenuConstants
+ * @description
+ * Constants for epEmbeddedAppsConstants.
+ * ep.embedded.apps constants
+ */
+angular.module('ep.multi.level.menu').constant('epMultiLevelMenuConstants', {
+    MLM_INITIALIZED_EVENT: 'MLM_INITIALIZED_EVENT'
+});
+
+'use strict';
+
+/**
  * @ngdoc controller
  * @name ep.multilevel.menu.controller:epMultiLevelMenuCtrl
  * @description
@@ -5390,19 +5580,37 @@ angular.module('ep.modaldialog').controller('epModalDialogErrorCtrl', [
  *
  */
 angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl', [
+    '$rootScope',
     '$scope',
     '$timeout',
     'epMultiLevelMenuFactory',
-    function($scope, $timeout, epMultiLevelMenuFactory) {
+    'epMultiLevelMenuConstants',
+    function($rootScope, $scope, $timeout, epMultiLevelMenuFactory, epMultiLevelMenuConstants) {
         // init the scope properties
         $scope.state = {
-            slidingIn: false,
-            slidingOut: false,
             searchTerm: '',
             searchType: 'item'
         };
-        $scope.searchResults = [];
+        $scope.searchResults = [];  //Current search results
+        $scope.currentItems = [];   //Current items to display (can be menu or search results)
         $scope.multiLevelMenuHelper = null;
+
+        // private clear controller results
+        function clear() {
+            $scope.searchResults = [];
+            $scope.currentItems = [];
+        }
+
+        // private set current items (search or menu)
+        function setCurrentItems() {
+            if ($scope.searchResults && $scope.searchResults.length) {
+                $scope.currentItems = $scope.searchResults;
+            } else if ($scope.data && $scope.data.next) {
+                $scope.currentItems = $scope.data.next.menuitems;
+            } else {
+                $scope.currentItems = [];
+            }
+        }
 
         /**
          * @ngdoc method
@@ -5416,14 +5624,17 @@ angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl', [
          * results by type, here 'menu' or 'item' can be used.
          */
         function search() {
+            $scope.isRightToLeft = false;
+
             var results = [];
             searchKids($scope.menu, results);
             $scope.searchResults = results;
+            setCurrentItems();
         }
 
         // private enum to search kids for local searchTerm
         function searchKids(menu, results) {
-            if (!menu.menuitems) {
+            if (!menu.menuitems || !$scope.state.searchTerm) {
                 return;
             }
             var term = $scope.state.searchTerm.toLowerCase();
@@ -5439,30 +5650,32 @@ angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl', [
             });
         }
 
-         /**
-         * @ngdoc method
-         * @name navigate
-         * @methodOf ep.multilevel.menu.controller:epMultiLevelMenuCtrl
-         * @public
-         * @description
-         * Handles the navigate request.
-         *
-         * @param {object} mi the menu item
-         */
-        function navigate(mi) {
+        /**
+        * @ngdoc method
+        * @name navigate
+        * @methodOf ep.multilevel.menu.controller:epMultiLevelMenuCtrl
+        * @public
+        * @description
+        * Handles the navigate request.
+        *
+        * @param {object} mi the menu item
+        */
+        function navigate(mi, isBackwards) {
             if (!mi) {
                 return;
             }
             if (mi._type === 'menu') {
-                $('.mlm-content').addClass('ep-ease-animation');
                 if (mi._id === 'topmenu') {
                     return;
                 }
+                //going to back to parent set 'left-to-right' animation,
+                //otherwise 'right-to-left'
+                $scope.isRightToLeft = (isBackwards !== true);
                 $scope.data.next = mi;
-                $scope.state.slidingIn = $scope.data.current._depth < mi._depth;
-                if (!$scope.state.slidingIn) {
-                    $scope.state.slidingOut = true;
-                }
+                $timeout(function() {
+                    setCurrentItems();
+                    $scope.$apply();
+                });
             }
             if (mi._type === 'item' && mi.action && typeof mi.action === 'function') {
                 mi.action(mi);
@@ -5492,7 +5705,7 @@ angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl', [
             }
             // now the transitionEnd event is wired up, we use the local mlmService to populate()
             // AKA, walk up and down the menu setting the _parent and _depth properties
-            $scope.multiLevelMenuHelper = epMultiLevelMenuFactory.getMultiLevelMenuHelper();
+            $scope.multiLevelMenuHelper = epMultiLevelMenuFactory.getMultiLevelMenuHelper($scope);
             $scope.multiLevelMenuHelper.populate($scope.menu);
             // now we set the data (with _parent and _depth properties) on scope and set the 'next' panel
             $scope.data = $scope.multiLevelMenuHelper.data;
@@ -5500,25 +5713,34 @@ angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl', [
             // when we invoke navigate, this will add the animation class setting the initial
             // animation into effect
             $scope.navigate($scope.data.next);
-        }
 
-        function handleTransitionEnd() {
-            // when the transition has finished, we reset the menu using the "next" level.
-            // we remove the animation class so that when we reset the menu it just snaps in
-            $('.mlm-content').removeClass('ep-ease-animation');
-            $scope.state.slidingOut = $scope.state.slidingIn = false;
-            $scope.multiLevelMenuHelper.setCurrentMenuParent($scope.data.next);
-            $scope.data.next = null;
-            $timeout(function() {
-                $scope.$apply();
+            if ($scope.onMenuInit) {
+                //a callback to the outside to provide factory if needed...
+                $scope.onMenuInit({ factory: $scope.multiLevelMenuHelper });
+            }
+
+            $rootScope.$emit(epMultiLevelMenuConstants.MLM_INITIALIZED_EVENT, {
+                menuId: $scope.menuId,
+                factory: $scope.multiLevelMenuHelper,
+                scope: $scope
+            });
+
+            $scope.$watch('menu', function(newValue, oldValue) {
+                if (newValue && !angular.equals(newValue, oldValue)) {
+                    $scope.multiLevelMenuHelper.populate($scope.menu, true);
+                    $scope.data = $scope.multiLevelMenuHelper.data;
+                    $scope.data.next = $scope.multiLevelMenuHelper.data.menu;
+                    setCurrentItems();
+                }
             });
         }
 
+        $scope.clear = clear;
+        $scope.setCurrentItems = setCurrentItems;
         $scope.navigate = navigate;
         $scope.toggleFavorite = toggleFavorite;
         $scope.search = search;
         $scope.initializeMenus = initializeMenus;
-        $scope.handleTransitionEnd = handleTransitionEnd;
     }
 ]);
 
@@ -5535,31 +5757,27 @@ angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl', [
 */
 angular.module('ep.multi.level.menu').directive('epMultiLevelMenu', [
     '$timeout',
-    'epFeatureDetectionService',
-     function($timeout, epFeatureDetectionService) {
+     function($timeout) {
          return {
              restrict: 'E',
              replace: true,
              controller: 'epMultiLevelMenuCtrl',
              templateUrl: 'src/components/ep.multi.level.menu/multi-level-menu.html',
              scope: {
-                searchType: '=',
-                menu: '='      // we take the menu as input parameter on the directive
+                 menuId: '=',           // menuId used to save favorites to local storage
+                 searchType: '=',
+                 searchDisabled: '=',   // disable search input
+                 menu: '=',             // we take the menu as input parameter on the directive
+                 onMenuInit: '&',       // this get fired upon menu initialization to provide factory
+                 onFavoriteChange: '&', // this get fired upon menu initialization to provide factory
              },
              compile: function() {
                  return {
                      pre: function() { },
                      post: function($scope) {
-                         // after the directive has been compiled we invoke the timeout here
-                         // this will first wire up the transitionEnd event
                          $timeout(function() {
-                             var transitionEndEvent = epFeatureDetectionService.getTransitionEvent();
-                             /*jshint -W030 */
-                             transitionEndEvent && $('.mlm-content-current').on(transitionEndEvent, function() {
-                                 $scope.handleTransitionEnd();
-                             });
                              $scope.initializeMenus();
-                         }, 500);
+                         });
                      }
                  };
              }
@@ -5579,47 +5797,59 @@ angular.module('ep.multi.level.menu').directive('epMultiLevelMenu', [
  */
 angular.module('ep.multi.level.menu').factory('epMultiLevelMenuFactory', [
     'epLocalStorageService',
-    'tokenFactory',
-    function(epLocalStorageService, tokenFactory) {
-        function getMultiLevelMenuHelper() {
-            return new multiLevelMenuHelper();
+    function(epLocalStorageService) {
+        function getMultiLevelMenuHelper(scope) {
+            return new multiLevelMenuHelper(scope);
         }
         return {
             getMultiLevelMenuHelper: getMultiLevelMenuHelper
         };
 
-        function multiLevelMenuHelper() {
+        function multiLevelMenuHelper(ctrlScope) {
+            var depth = 0;
+            var scope = ctrlScope; // scope from the controller
             var data = {
                 menu: null, // all of the menu data
-                current: {}
+                favorites: null
             };
-            // internal builder class used to populate the menu structure properly
-            var builder = (function() {
-                var depth = 0;
-                // enumerate/walk up and down the menu.menuitems collection of
-                // child menus and decorate the _parent/_depth properties
-                function buildTree(menu) {
-                    if (!menu.menuitems) {
-                        menu.menuitems = [];
-                    }
-                    if (!menu._type) {
-                        menu._type = menu.menuitems === null || menu.menuitems.length <= 0 ? 'item' : 'menu';
-                    }
 
-                    menu._depth = depth;
-                    angular.forEach(menu.menuitems, function(kid) {
-                        kid._parent = menu;
-                        depth++;
-                        buildTree(kid);
-                        depth--;
-                    });
+            /**
+             * @ngdoc method
+             * @name buildTree
+             * @methodOf ep.multi.level.menu.service:epMultiLevelMenuFactory
+             * @private
+             * @description
+             * enumerate/walk up and down the menu.menuitems collection of
+             * child menus and decorate the _parent/_depth properties
+             * @param {array} menu - array of menu items
+            */
+            function buildTree(menu) {
+                if (!menu.menuitems) {
+                    menu.menuitems = [];
+                }
+                if (!menu._type) {
+                    menu._type = menu.menuitems === null || menu.menuitems.length <= 0 ? 'item' : 'menu';
                 }
 
-                return {
-                    buildTree: buildTree
-                };
-            })();
-            function iterateAll(fn) {
+                menu._depth = depth;
+                angular.forEach(menu.menuitems, function(kid) {
+                    kid._parent = menu;
+                    depth++;
+                    buildTree(kid);
+                    depth--;
+                });
+            }
+
+            /**
+             * @ngdoc method
+             * @name findAll
+             * @methodOf ep.multi.level.menu.service:epMultiLevelMenuFactory
+             * @private
+             * @description
+             * find all menu items satisfying a criteria specified by given function
+             * @param {function} fn - criteria function must evaluate to true/false
+            */
+            function findAll(fn) {
                 var results = [];
                 function iterateLevel(root) {
                     angular.forEach(root.menuitems, function(item) {
@@ -5636,13 +5866,37 @@ angular.module('ep.multi.level.menu').factory('epMultiLevelMenuFactory', [
 
             /**
              * @ngdoc method
+             * @name findFirst
+             * @methodOf ep.multi.level.menu.service:epMultiLevelMenuFactory
+             * @private
+             * @description
+             * find menu item satisfying a criteria specified by given function
+             * @param {string} root - start search from this node
+             * @param {function} fn - criteria function must evaluate to true/false
+            */
+            function findFirst(root, fn) {
+                var foundItem = fn(root) ? root : null;
+                if (!foundItem) {
+                    angular.forEach(root.menuitems, function(item) {
+                        if (!foundItem) {
+                            foundItem = findFirst(item, fn);
+                        }
+                    });
+                }
+                return foundItem;
+            }
+
+            /**
+             * @ngdoc method
              * @name populate
              * @methodOf ep.multi.level.menu.service:epMultiLevelMenuFactory
              * @public
              * @description
              * walk up and down the menu.menuitems and set _depth/_parent properties
+             * @param {object} menu - menu json source
+             * @param {boolean} refresh - optional parameter if need to redraw the menu
             */
-            function populate(menu) {
+            function populate(menu, refresh) {
                 if (menu) {
                     data.menu = angular.extend({}, menu);
                 }
@@ -5651,10 +5905,70 @@ angular.module('ep.multi.level.menu').factory('epMultiLevelMenuFactory', [
                     // set the proper pointers.
                     data.menu._parent = { _id: 'topmenu' };
                     // walk up and down the menu.menuitems and set _depth/_parent properties
-                    builder.buildTree(data.menu);
+                    buildTree(data.menu);
                     data.favorites = getFavorites();
+                    data.next = data.menu;
+
+                    if (refresh) {
+                        scope.navigate(data.menu);
+                    }
                 }
             }
+
+            /**
+             * @ngdoc method
+             * @name mergeMenu
+             * @methodOf ep.multi.level.menu.service:epMultiLevelMenuFactory
+             * @public
+             * @description
+             * merge menu items to top level children
+             * @param {array} menuItems - array of menu items
+             * @param {boolean} refresh - optional parameter if need to redraw the menu
+            */
+            function mergeMenu(menuItems, refresh) {
+                data.menu = data.menu || {};
+                mergeMenuItems(data.menu, menuItems);
+                populate();
+                if (refresh) {
+                    scope.navigate(data.menu);
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name mergeMenuItems
+             * @methodOf ep.multi.level.menu.service:epMultiLevelMenuFactory
+             * @public
+             * @description
+             * merge menu items to top level children of menu object. Helper function which
+             * does not affect internal data
+             * @param {object} menu - main menu object
+             * @param {array} menuItems - array of menu items to merge
+             * @returns {object} merged menu object
+            */
+            function mergeMenuItems(menu, menuItems) {
+                menu = menu || {};
+                if (!menu.menuitems) {
+                    menu.menuitems = [];
+                }
+
+                //avoid duplicates check by id or caption
+                angular.forEach(menuItems, function(m) {
+                    if (m.id) {
+                        if (!findMenuItemById(m.id, menu)) {
+                            menu.menuitems.push(m);
+                        }
+                    } else {
+                        if (!findFirst(menu, function(mm) {
+                            return mm.caption === m.caption;
+                        })) {
+                            menu.menuitems.push(m);
+                        }
+                    }
+                });
+                return menu;
+            }
+
             /**
              * @ngdoc method
              * @name setCurrentMenuParent
@@ -5667,7 +5981,7 @@ angular.module('ep.multi.level.menu').factory('epMultiLevelMenuFactory', [
            */
             function setCurrentMenuParent(menuItem) {
                 if (menuItem) {
-                    data.current = angular.extend({}, menuItem);
+                    data.next = menuItem;
                 }
             }
             /**
@@ -5698,28 +6012,10 @@ angular.module('ep.multi.level.menu').factory('epMultiLevelMenuFactory', [
              * @param {object} root the parent menu to start the search
            */
             function findMenuItemById(id, root) {
-                var item;
-                if (!root) {
-                    for (var top = 0; top < data.menu.menuitems.length; top++) {
-                        item = findMenuItemById(id, data.menu.menuitems[top]);
-                        if (item) {
-                            return item;
-                        }
-                    }
-                } else {
-                    for (var idx = 0; idx < root.menuitems.length; idx++) {
-                        var mi = root.menuitems[idx];
-                        if (mi.id === id) {
-                            item = mi;
-                        } else {
-                            item = findMenuItemById(id, mi);
-                        }
-                        if (item) {
-                            return item;
-                        }
-                    }
-                }
-                return null;
+                var fn = function(item) {
+                    return (item.id === id);
+                };
+                return findFirst((!root) ? data.menu : root, fn);
             }
             /**
              * @ngdoc method
@@ -5744,7 +6040,8 @@ angular.module('ep.multi.level.menu').factory('epMultiLevelMenuFactory', [
             function clear() {
                 data.menu = null;
                 data.favorites = null;
-                data.current = null;
+                data.next = null;
+                scope.clear();
                 clearFavorites();
             }
             /**
@@ -5760,9 +6057,19 @@ angular.module('ep.multi.level.menu').factory('epMultiLevelMenuFactory', [
             function toggleFavorite(mi) {
                 mi.favorite = !mi.favorite;
 
-                epLocalStorageService.update(tokenFactory.getToken() +
-                        '.' + mi.id + '.favorite', mi.favorite);
+                var userKey = 'emf.multi-level-menu.' + scope.menuId + '.favorite';
+                var menuKey = userKey + '.' + mi.id;
+                if (mi.favorite) {
+                    epLocalStorageService.update(menuKey, mi.id);
+                } else {
+                    epLocalStorageService.clear(menuKey);
+                }
+
                 data.favorites = getFavorites();
+
+                if (scope.onFavoriteChange) {
+                    scope.onFavoriteChange({ menuItem: mi, favorites: data.favorites });
+                }
             }
             /**
              * @ngdoc method
@@ -5773,13 +6080,20 @@ angular.module('ep.multi.level.menu').factory('epMultiLevelMenuFactory', [
              * Handles the getFavorites request
             */
             function getFavorites() {
-                var favList = iterateAll(function(i) { return !!i.favorite; });
-                var userKey = tokenFactory.getToken();
-                var viewSettings = epLocalStorageService.get(userKey) || {};
+                var favList = findAll(function(i) { return !!i.favorite; });
 
-                angular.forEach(viewSettings, function(item) {
-                    if (item.favorite) {
-                        favList.push(item);
+                var userKey = 'emf.multi-level-menu.' + scope.menuId + '.favorite';
+                var savedItems = epLocalStorageService.get(userKey) || {};
+
+                angular.forEach(savedItems, function(itemId) {
+                    if (!_.find(favList, function(listItem) {
+                        return listItem.id === itemId;
+                    })) {
+                        var savedFav = findMenuItemById(itemId);
+                        if (savedFav) {
+                            savedFav.favorite = true;
+                            favList.push(savedFav);
+                        }
                     }
                 });
                 return favList;
@@ -5794,6 +6108,8 @@ angular.module('ep.multi.level.menu').factory('epMultiLevelMenuFactory', [
             */
             function clearFavorites() {
                 data.favorites = null;
+                var userKey = 'emf.multi-level-menu.' + scope.menuId + '.favorite';
+                epLocalStorageService.clear(userKey);
             }
 
             return {
@@ -5805,7 +6121,9 @@ angular.module('ep.multi.level.menu').factory('epMultiLevelMenuFactory', [
                 setCurrentMenuParentById: setCurrentMenuParentById,
                 findMenuItemById: findMenuItemById,
                 toggleFavorite: toggleFavorite,
-                clear: clear
+                clear: clear,
+                mergeMenu: mergeMenu,
+                mergeMenuItems: mergeMenuItems
             };
         }
     }]);
@@ -6179,13 +6497,13 @@ angular.module('ep.search').provider('searchConfig',
         //
         //we use the epSysConfig provider to perform the $http read against sysconfig.json
         //epSysConfig.section() function returns the associated node on sysconfig.json
-        this.$get = function(epSysConfig) {
+        this.$get = ['epSysConfig', function(epSysConfig) {
             var section = epSysConfig.section('epSearchConfig');
             if (section) {
                 angular.extend(config, section);
             }
             return config;
-        };
+        }];
     });
 
 'use strict';
@@ -6652,7 +6970,7 @@ angular.module('ep.shell').provider('epShellConfig', [
         // There is a problem: $http is an asynchronous call, so its not guaranteed that the
         // data will be returned with the values read from the sysconfig.json.
         // To get around we have to make $http a sync call, which is not possible.
-        this.$get = function(epSysConfig) {
+        this.$get = ['epSysConfig', function(epSysConfig) {
 
             var section = epSysConfig.section('epShellConfig');
             if (section) {
@@ -6671,29 +6989,35 @@ angular.module('ep.shell').provider('epShellConfig', [
             });
 
             if (config.options.includeEmbeddedApps) {
-                routeProviderReference.when('/app/:appId/:viewId/', {
+
+                //For now this is good enough, consider using injection of embedded apps service
+                //to retrieve rootRoute
+                var sectionEmbedded = epSysConfig.section('epEmbeddedApps');
+                var rootRoute = '/' + (sectionEmbedded.rootRoute || 'app') + '/:appId/:viewId/';
+
+                routeProviderReference.when(rootRoute, {
                     templateUrl: 'src/components/ep.shell/views/ep-shell-embedded-apps-container.html'
                 });
 
-                routeProviderReference.when('/app/:appId/:viewId/:p0', {
+                routeProviderReference.when(rootRoute + ':p0', {
                     templateUrl: 'src/components/ep.shell/views/ep-shell-embedded-apps-container.html'
                 });
-                routeProviderReference.when('/app/:appId/:viewId/:p0/:p1', {
+                routeProviderReference.when(rootRoute + ':p0/:p1', {
                     templateUrl: 'src/components/ep.shell/views/ep-shell-embedded-apps-container.html'
                 });
-                routeProviderReference.when('/app/:appId/:viewId/:p0/:p1/:p2', {
+                routeProviderReference.when(rootRoute + ':p0/:p1/:p2', {
                     templateUrl: 'src/components/ep.shell/views/ep-shell-embedded-apps-container.html'
                 });
-                routeProviderReference.when('/app/:appId/:viewId/:p0/:p1/:p2/:p3', {
+                routeProviderReference.when(rootRoute + ':p0/:p1/:p2/:p3', {
                     templateUrl: 'src/components/ep.shell/views/ep-shell-embedded-apps-container.html'
                 });
-                routeProviderReference.when('/app/:appId/:viewId/:p0/:p1/:p2/:p3/:p4', {
+                routeProviderReference.when(rootRoute + ':p0/:p1/:p2/:p3/:p4', {
                     templateUrl: 'src/components/ep.shell/views/ep-shell-embedded-apps-container.html'
                 });
             }
 
             return config;
-        };
+        }];
     }
 ]);
 
@@ -6735,6 +7059,8 @@ angular.module('ep.shell').service('epShellService', [
     'epShellConstants',
      function($q, $rootScope, $timeout, $sce, $document,
          epFeatureDetectionService, epSidebarService, epThemeService, epShellConfig, epShellConstants) {
+
+         $rootScope.shellServiceInitComplete = false;
 
          /**
           * @private
@@ -6958,6 +7284,7 @@ angular.module('ep.shell').service('epShellService', [
           * Initialization of the shell. To be called by application upon start-up
           */
          function init() {
+
              window.addEventListener('load', function() {
                  FastClick.attach(document.body);
              }, false);
@@ -6967,7 +7294,6 @@ angular.module('ep.shell').service('epShellService', [
                  epShellConstants.MEDIA_MODE_LARGE : epShellConstants.MEDIA_MODE_SMALL;
              // initialize the sidebar as "shown" if we're in large mode, otherwise false.
              shellState.showSidebar = isMediaModeLarge();
-
              $rootScope.initComplete = true;
          }
 
@@ -8089,7 +8415,7 @@ angular.module('ep.shell').directive('epShellSidebar', [
             replace: true,
             transclude: true,
             templateUrl: 'src/components/ep.shell/sidebar/sidebar.html',
-            controller: function($scope) {
+            controller: ['$scope', function($scope) {
                 function init() {
                     $scope.platform = epFeatureDetectionService.getFeatures().platform;
                     $scope.shellState = epShellService.__state;
@@ -8124,7 +8450,7 @@ angular.module('ep.shell').directive('epShellSidebar', [
                         init();
                     }
                 });
-            }
+            }]
         };
     }
 ]);
@@ -8217,8 +8543,9 @@ angular.module('ep.shell').service('epSidebarService', [
      * Represents the shell view container directive.
      */
 (function() {
-    angular.module('ep.shell').directive('epShellViewContainer', function($rootScope, $timeout,
-        epShellService, epSidebarService, epViewContainerService) {
+    angular.module('ep.shell').directive('epShellViewContainer', [
+        '$rootScope', '$timeout', 'epShellService', 'epSidebarService', 'epViewContainerService',
+        function($rootScope, $timeout, epShellService, epSidebarService, epViewContainerService) {
 
           function setSidebarSettings(sidebar, scope) {
               if (sidebar.left) {
@@ -8288,7 +8615,7 @@ angular.module('ep.shell').service('epSidebarService', [
                   };
               }
           };
-      });
+      }]);
 })();
 
 'use strict';
@@ -8302,6 +8629,29 @@ angular.module('ep.shell').service('epViewContainerService', [
              cleanup: null
          };
 
+         function measureElement(selector) {
+             var el = $(selector);
+             return {
+                 width: el.width(),
+                 height: el.height()
+             };
+         }
+
+         // calculates the size of a navbar group by summing the element widths,
+         // and taking the max value of their heights.
+         function measureNavbarGroup(selector) {
+             var sizes = [];
+             $(selector).each(function(idx, b) {
+                 sizes.push(measureElement(b));
+             });
+             return {
+                 width: (sizes.map(function(sz) { return sz.width; })
+                     .reduce(function(a, b) { return a + b; }, 0) || 0) + 11,
+                 height: (Math.max(sizes.map(function(btn) { return btn.height; })) || 0)
+             };
+         }
+
+         // TODO: Consider making this async
          function calculateDimensions(eventType) {
              var shellState = epShellService.__state;
              var $window = $(window);
@@ -8310,13 +8660,43 @@ angular.module('ep.shell').service('epViewContainerService', [
                  left: (shellState.showLeftSidebar && epShellService.isMediaModeLarge()) ?
                      epShellConstants.SIDEBARWIDTH : 0
              };
+             var footerHeight = (shellState.showFooter ? epShellConstants.FOOTERHEIGHT : 0);
+             var windowSize = {
+                 width: $window.width(),
+                 height: $window.height()
+             };
+             var vcSize = {
+                 width: windowSize.width - offset.left,
+                 height: windowSize.height - offset.top - footerHeight
+             };
+
              var dim = {
                  offset: offset,
-                 size: {
-                     width: $window.width() - offset.left,
-                     height: $window.height() - offset.top - (shellState.showFooter ? epShellConstants.FOOTERHEIGHT : 0)
+                 size: vcSize,
+                 navbar: {
+                     height: offset.top,
+                     width: windowSize.width,
+                     buttonGroup: {
+                         left: {
+                             width: $('.navbar-brand').offset().left,
+                             height: offset.top
+                         },
+                         right: measureNavbarGroup('.right-button')
+                     },
+                     brand: measureElement('.navbar-brand')
+                 },
+                 footer: {
+                     height: footerHeight,
+                     width: windowSize.width
                  }
              };
+             var maxBrandWidth = windowSize.width -
+                 (dim.navbar.buttonGroup.left.width + dim.navbar.buttonGroup.right.width);
+             $('.navbar-brand').css('max-width', maxBrandWidth + 'px');
+             if (dim.navbar.brand.width > maxBrandWidth) {
+                 dim.navbar.brand.width = maxBrandWidth;
+             }
+
              var curr = shellState.viewDimensions;
              var triggerEvent = curr.size.width !== dim.size.width ||
                                  curr.size.height !== dim.size.height ||
@@ -8362,7 +8742,7 @@ angular.module('ep.sysconfig').provider('epSysConfig',
         // There is a problem: $http is an asynchronous call, so its not guaranteed that the
         // data will be returned with the values read from the sysconfig.json.
         // To get around we have to make $http a sync call, which is not possible.
-        this.$get = function($log) {
+        this.$get = ['$log', function($log) {
             var q = $.ajax({
                 type: 'GET',
                 url: 'sysconfig.json',
@@ -8392,7 +8772,7 @@ angular.module('ep.sysconfig').provider('epSysConfig',
                 sysconfig: sysconfig,
                 section: section
             };
-        };
+        }];
     });
 
 'use strict';
@@ -8450,7 +8830,7 @@ angular.module('ep.theme').provider('epThemeConfig',
         //
         //we use the epSysConfig provider to perform the $http read against sysconfig.json
         //epSysConfig.section() function returns the associated node on sysconfig.json
-        this.$get = function(epSysConfig) {
+        this.$get = ['epSysConfig', function(epSysConfig) {
 
             var section = epSysConfig.section('epThemeConfig');
             if (section) {
@@ -8458,7 +8838,7 @@ angular.module('ep.theme').provider('epThemeConfig',
             }
 
             return config;
-        };
+        }];
     });
 
 'use strict';
@@ -8602,13 +8982,13 @@ angular.module('ep.token').provider('tokenConfig',
         //
         //we use the epSysConfig provider to perform the $http read against sysconfig.json
         //epSysConfig.section() function returns the associated node on sysconfig.json
-        this.$get = function(epSysConfig) {
+        this.$get = ['epSysConfig', function(epSysConfig) {
             var section = epSysConfig.section('epTokenConfig');
             if (section) {
                 angular.extend(config, section);
             }
             return config;
-        };
+        }];
     });
 
 'use strict';
@@ -8775,13 +9155,13 @@ angular.module('ep.utils').provider('utilsConfig',
         //
         //we use the epSysConfig provider to perform the $http read against sysconfig.json
         //epSysConfig.section() function returns the associated node on sysconfig.json
-        this.$get = function(epSysConfig) {
+        this.$get = ['epSysConfig', function(epSysConfig) {
             var section = epSysConfig.section('epUtilsConfig');
             if (section) {
                 angular.extend(config, section);
             }
             return config;
-        };
+        }];
     });
 
 'use strict';
@@ -8796,8 +9176,8 @@ angular.module('ep.utils').provider('utilsConfig',
  *       //results in 'The first name is: Michael and the last name Jackson'
  *
  */
-angular.module('ep.utils').service('epUtilsService', [
-    function() {
+angular.module('ep.utils').service('epUtilsService', ['$document', '$log', '$q',
+    function($document, $log, $q) {
         /**
         * @ngdoc method
         * @name strFormat
@@ -8970,13 +9350,67 @@ angular.module('ep.utils').service('epUtilsService', [
             });
             return path;
         }
+
+        /**
+        * @ngdoc method
+        * @name loadScript
+        * @methodOf ep.utils.service:epUtilsService
+        * @public
+        * @description
+        * Adds a new script element to the page with the given url,
+        * optionally checking/adding the script to a given cache
+        * @returns {Promise} a promise that resolves or rejects depending on the result
+        * of adding the script to the page.
+        */
+        function loadScript(url, cache) {
+            var deferred = $q.defer();
+            var scriptId = 'script:' + url;
+            var scriptElement;
+            if (url && cache.get(scriptId)) {
+                deferred.resolve(scriptId);
+            } else {
+                scriptElement = $document[0].createElement('script');
+                scriptElement.src = url;
+                scriptElement.onload = function() {
+                    deferred.resolve(scriptId);
+                };
+                scriptElement.onerror = function(e) {
+                    $log.error('Error loading url: [' + url + ']');
+                    deferred.reject(e, scriptId);
+                };
+                $document[0].documentElement.appendChild(scriptElement);
+                cache.put(scriptId, 1);
+            }
+
+            return deferred.promise;
+        }
+
+        function hasProperty(obj, property) {
+            var o = obj;
+            if (!angular.isObject(obj)) {
+                return false;
+            }
+            if (!angular.isString(property) || !property) {
+                return false;
+            }
+            return !_.find(property.split('.'), function(prop) {
+                var ret = o.hasOwnProperty(prop);
+                if (ret) {
+                    o = o[prop];
+                }
+                return !ret;
+            });
+        }
+
         return {
             strFormat: strFormat,
             mapArray: mapArray,
             ensureStartsWith: ensureStartsWith,
             ensureEndsWith: ensureEndsWith,
             copyProperties: copyProperties,
-            makePath: makePath
+            makePath: makePath,
+            loadScript: loadScript,
+            hasProperty: hasProperty
         };
     }]);
 
@@ -9025,7 +9459,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.multi.level.menu/multi-level-menu.html',
-    "<div class=mlm-container><form class=mlm-search><input class=\"form-control mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search()></form><div class=mlm-canvas><div ng-if=!state.searchTerm><div ng-if=data.next class=\"mlm-content mlm-content-right ep-ease-animation\" ng-class=\"{ 'slide-in': state.slidingIn, 'slide-out': state.slidingOut }\"><div class=mlm-header ng-class=\"{ 'pointer': data.next._parent._id !== 'topmenu'}\" ng-click=navigate(data.next._parent)><span ng-if=\"data.next._parent._id !== 'topmenu'\" class=\"mlm-back-button pull-left fa fa-lg fa-caret-left\"></span> <span>{{data.next.caption}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in data.next.menuitems\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi._type === 'item'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi._type === 'menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div><div class=\"mlm-content mlm-content-current ep-ease-animation\" ng-class=\"{ 'slide-in': state.slidingIn, 'slide-out': state.slidingOut }\"><div class=mlm-header ng-class=\"{ 'pointer': data.current._parent._id !== 'topmenu'}\" ng-click=navigate(data.current._parent)><span ng-if=\"data.current._parent._id !== 'topmenu'\" class=\"mlm-back-button pull-left fa fa-lg fa-caret-left\"></span> <span>{{data.current.caption}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in data.current.menuitems\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi._type === 'item'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi._type === 'menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div><div class=\"mlm-content mlm-content-left ep-ease-animation\" ng-class=\"{ 'slide-in': state.slidingIn, 'slide-out': state.slidingOut }\"><div class=mlm-header ng-class=\"{ 'pointer': data.next._parent._id !== 'topmenu'}\" ng-click=navigate(data.next._parent)><span ng-if=\"data.next._parent._id !== 'topmenu'\" class=\"mlm-back-button pull-left fa fa-lg fa-caret-left\"></span> <span>{{data.next.caption}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in data.next.menuitems\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi._type === 'item'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi._type === 'menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div></div><div class=\"mlm-content mlm-content-search\" ng-if=state.searchTerm><div class=mlm-header><span>{{resources.strings.SearchResults}}</span></div><ul class=mlm-list><li class=\"mlm-item clearfix\" ng-repeat=\"mi in searchResults\"><div class=\"pull-left clearfix\" ng-click=navigate(mi)><div class=\"mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div><span ng-if=\"mi._type === 'menu'\" class=\"mlm-item-count pull-right\">{{mi.menuitems && mi.menuitems.length ? mi.menuitems.length : 0}}</span></div><i ng-if=\"mi._type === 'item'\" class=\"mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi._type === 'menu'\" class=\"mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div></div></div>"
+    "<div class=ep-mlm-container ng-class=\"{'ep-left-to-right': !isRightToLeft, 'ep-right-to-left': isRightToLeft}\"><form class=ep-mlm-search ng-hide=searchDisabled><input class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-focus=\"isRightToLeft = false\"></form><div ng-if=data.next class=\"ep-mlm-content ep-fadein-animation\"><div ng-hide=state.searchTerm class=ep-mlm-header ng-class=\"{ 'pointer': data.next._parent._id !== 'topmenu'}\" ng-click=\"navigate(data.next._parent, true, $event)\"><span ng-if=\"data.next._parent._id !== 'topmenu'\" class=\"ep-mlm-back-button pull-left fa fa-lg fa-caret-left\"></span> <span>{{data.next.caption}}</span></div><div ng-show=state.searchTerm class=ep-mlm-header><span>Search Results</span></div><ul><li ng-repeat=\"mi in currentItems\" class=\"ep-mlm-item clearfix ep-repeat-animation\"><div class=\"pull-left clearfix ep-mlm-item-div\" ng-click=navigate(mi)><div class=\"ep-mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi._type === 'item'\" class=\"ep-mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi._type === 'menu'\" class=\"ep-mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div></div>"
   );
 
 
@@ -9040,7 +9474,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/shell.html',
-    "<div><section ng-controller=epShellCtrl class=ep-shell><section ng-if=\"state.disableTheming !== true && state.includeThemeFile === true\"><link rel=stylesheet ng-href={{state.currentTheme.cssFilename}}></section><div ng-show=state.showProgressIndicator class=ep-progress-idicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button\" ng-class=\"{'hidden': !state.showHomeButton}\"></a></li><li><a id=apptitle ng-class=\"{hidden: !state.showBrand}\" class=navbar-brand href=#/home><p ng-bind-html=state.brandHTML></p></a></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in navButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.disabled}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button)></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false></a><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.disabled }\" role=menu><li ng-repeat=\"opt in button.options\"><a ng-click=opt.action() ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa {{opt.icon}}\"></i><span class=ep-navmenu-item-text>{{opt.title}}</span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div ng-view class=ep-fullscreen></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" href=#/whatsnew><sup>Version {{uiVersion}}</sup></a></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.feedbackEnabled ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
+    "<div><section ng-controller=epShellCtrl class=ep-shell><section ng-if=\"state.disableTheming !== true && state.includeThemeFile === true\"><link rel=stylesheet ng-href={{state.currentTheme.cssFilename}}></section><div ng-show=state.showProgressIndicator class=ep-progress-idicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\"></a></li><li><a id=apptitle ng-class=\"{hidden: !state.showBrand}\" class=navbar-brand href=#/home ng-bind-html=state.brandHTML></a></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in navButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.disabled}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button)></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false></a><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.disabled }\" role=menu><li ng-repeat=\"opt in button.options\"><a ng-click=opt.action() ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa {{opt.icon}}\"></i><span class=ep-navmenu-item-text>{{opt.title}}</span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div ng-view class=ep-fullscreen></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" href=#/whatsnew><sup>Version {{uiVersion}}</sup></a></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.feedbackEnabled ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
   );
 
 
