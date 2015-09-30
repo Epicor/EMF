@@ -329,7 +329,10 @@
 }
 .ep-data-grid div.dataTables_scroll {
   -webkit-transform: translate3d(0, 0, 0);
-  height: calc(20%);
+  height: -moz-calc(100% - 80px);
+  height: -webkit-calc(100% - 80px);
+  height: -o-calc(100% - 80px);
+  height: calc(100% - 80px);
 }
 .ep-data-grid .inline-link {
   margin: 0 10px 0 5px;
@@ -710,7 +713,8 @@
 }
 .ep-mlm-container .ep-mlm-search-input {
   border-radius: 8px !important;
-  width: 220px !important;
+  width: 100% !important;
+  max-width: 220px !important;
 }
 .ep-mlm-container .ep-mlm-search-icon {
   position: relative;

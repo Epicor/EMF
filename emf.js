@@ -3749,6 +3749,7 @@ angular.module('ep.embedded.apps')
                                 epEmbeddedAppsCacheService.scriptCache.put(resourceId, config);
                                 $timeout(function() {
                                     callback(config.id);
+                                    state.loadComplete = true;
                                 });
                             });
                         });
@@ -3870,37 +3871,39 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         function loadStartupService(config) {
             if (epUtilsService.hasProperty(config, 'resources.scripts.startup')) {
                 var url = epEmbeddedAppsProvider.getAppPath(config.id, config.resources.scripts.startup);
-                epUtilsService.loadScript(url, epEmbeddedAppsCacheService.scriptCache).
-                    then(function() {
-                        try {
-                            var injector = angular.injector([config.id, 'ng', 'ngRoute']);
-                            var svc = injector.get('appStartupService');
-                            if (svc) {
-                                config.state.startupService = svc;
+                if (url) {
+                    epUtilsService.loadScript(url, epEmbeddedAppsCacheService.scriptCache).
+                        then(function() {
+                            try {
+                                var injector = angular.injector([config.id + '-startup', 'ng', 'ngRoute']);
+                                var svc = injector.get('appStartupService');
+                                if (svc) {
+                                    config.state.startupService = svc;
+                                }
+                            } catch (e) {
+                                $log.warn('startup service [appStartupService] was not loaded for embedded app: ' +
+                                    config.id);
                             }
-                        } catch (e) {
-                            $log.warn('startup service [appStartupService] was not loaded for embedded application: ' +
-                                config.id);
-                        }
 
-                        if (config.state.startupService) {
-                            //try retrieve menu from startup service
-                            if ((!config.menu || config.menu.disabled !== true) &&
-                                config.state.startupService.getMenu) {
-                                var menu = config.state.startupService.getMenu();
-                                if (menu) {
-                                    if (menu.then) {
-                                        menu.then(function(result) {
-                                            config.state.menu = result;
-                                        });
-                                    } else {
-                                        config.state.menu = menu;
+                            if (config.state.startupService) {
+                                //try retrieve menu from startup service
+                                if ((!config.menu || config.menu.disabled !== true) &&
+                                    config.state.startupService.getMenu) {
+                                    var menu = config.state.startupService.getMenu();
+                                    if (menu) {
+                                        if (menu.then) {
+                                            menu.then(function(result) {
+                                                config.state.menu = result;
+                                            });
+                                        } else {
+                                            config.state.menu = menu;
+                                        }
                                     }
                                 }
                             }
-                        }
-                    }, function() {
-                    });
+                        }, function() {
+                        });
+                }
             }
         }
 
@@ -5589,21 +5592,25 @@ angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl', [
         // init the scope properties
         $scope.state = {
             searchTerm: '',
-            searchType: 'item'
+            searchType: 'item',
+            lastSearchTerm: ''
         };
         $scope.searchResults = [];  //Current search results
         $scope.currentItems = [];   //Current items to display (can be menu or search results)
         $scope.multiLevelMenuHelper = null;
 
+        var searchTimeout;
+
         // private clear controller results
         function clear() {
             $scope.searchResults = [];
             $scope.currentItems = [];
+            $scope.state.lastSearchTerm = '';
         }
 
         // private set current items (search or menu)
         function setCurrentItems() {
-            if ($scope.searchResults && $scope.searchResults.length) {
+            if ($scope.state.searchTerm) {
                 $scope.currentItems = $scope.searchResults;
             } else if ($scope.data && $scope.data.next) {
                 $scope.currentItems = $scope.data.next.menuitems;
@@ -5625,28 +5632,47 @@ angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl', [
          */
         function search() {
             $scope.isRightToLeft = false;
+            if (searchTimeout) {
+                $timeout.cancel(searchTimeout);
+            }
 
-            var results = [];
-            searchKids($scope.menu, results);
-            $scope.searchResults = results;
-            setCurrentItems();
+            if (!$scope.menu || !$scope.menu.menuitems || !$scope.state.searchTerm) {
+                $scope.searchResults = [];
+                $scope.state.lastSearchTerm = '';
+                setCurrentItems();
+                return;
+            }
+
+            searchTimeout = $timeout(function() {
+                var results = [];
+
+                var term = $scope.state.searchTerm.toLowerCase();
+                var type = $scope.state.searchType ? $scope.state.searchType.toLowerCase() : '';
+
+                if ($scope.state.lastSearchTerm && term.indexOf($scope.state.lastSearchTerm) === 0) {
+                    //search in our prior result set
+                    searchKids($scope.searchResults, term, type, false, results);
+                } else {
+                    searchKids($scope.menu.menuitems, term, type, true, results);
+                }
+                $scope.searchResults = results;
+                setCurrentItems();
+                $scope.state.lastSearchTerm = term;
+            }, 250); // delay 150 ms in case user types too fast...
         }
 
         // private enum to search kids for local searchTerm
-        function searchKids(menu, results) {
-            if (!menu.menuitems || !$scope.state.searchTerm) {
-                return;
-            }
-            var term = $scope.state.searchTerm.toLowerCase();
-            var type = $scope.state.searchType ? $scope.state.searchType.toLowerCase() : '';
-            angular.forEach(menu.menuitems, function(kid) {
+        function searchKids(menuitems, term, type, recursive, results) {
+            angular.forEach(menuitems, function(kid) {
                 if (kid && kid.caption.toLowerCase().indexOf(term) !== -1) {
                     // if we are type checking, also check the system-set _type
                     if (type === '' || kid.type === type || kid._type === type) {
                         results.push(kid);
                     }
                 }
-                searchKids(kid, results);
+                if (recursive && kid.menuitems) {
+                    searchKids(kid.menuitems, term, type, recursive, results);
+                }
             });
         }
 
@@ -5726,7 +5752,7 @@ angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl', [
             });
 
             $scope.$watch('menu', function(newValue, oldValue) {
-                if (newValue && !angular.equals(newValue, oldValue)) {
+                if (newValue && (!angular.equals(newValue, oldValue) || !$scope.data || !$scope.data.menu)) {
                     $scope.multiLevelMenuHelper.populate($scope.menu, true);
                     $scope.data = $scope.multiLevelMenuHelper.data;
                     $scope.data.next = $scope.multiLevelMenuHelper.data.menu;
@@ -9459,7 +9485,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.multi.level.menu/multi-level-menu.html',
-    "<div class=ep-mlm-container ng-class=\"{'ep-left-to-right': !isRightToLeft, 'ep-right-to-left': isRightToLeft}\"><form class=ep-mlm-search ng-hide=searchDisabled><input class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-focus=\"isRightToLeft = false\"></form><div ng-if=data.next class=\"ep-mlm-content ep-fadein-animation\"><div ng-hide=state.searchTerm class=ep-mlm-header ng-class=\"{ 'pointer': data.next._parent._id !== 'topmenu'}\" ng-click=\"navigate(data.next._parent, true, $event)\"><span ng-if=\"data.next._parent._id !== 'topmenu'\" class=\"ep-mlm-back-button pull-left fa fa-lg fa-caret-left\"></span> <span>{{data.next.caption}}</span></div><div ng-show=state.searchTerm class=ep-mlm-header><span>Search Results</span></div><ul><li ng-repeat=\"mi in currentItems\" class=\"ep-mlm-item clearfix ep-repeat-animation\"><div class=\"pull-left clearfix ep-mlm-item-div\" ng-click=navigate(mi)><div class=\"ep-mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi._type === 'item'\" class=\"ep-mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi._type === 'menu'\" class=\"ep-mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul></div></div>"
+    "<div class=ep-mlm-container ng-class=\"{'ep-left-to-right': !isRightToLeft, 'ep-right-to-left': isRightToLeft}\"><form class=ep-mlm-search ng-hide=searchDisabled><input class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-focus=\"isRightToLeft = false\"></form><div ng-if=data.next class=\"ep-mlm-content ep-fadein-animation\"><div ng-hide=state.searchTerm class=ep-mlm-header ng-class=\"{ 'pointer': data.next._parent._id !== 'topmenu'}\" ng-click=\"navigate(data.next._parent, true, $event)\"><span ng-if=\"data.next._parent._id !== 'topmenu'\" class=\"ep-mlm-back-button pull-left fa fa-lg fa-caret-left\"></span> <span>{{data.next.caption}}</span></div><div ng-show=state.searchTerm class=ep-mlm-header><span>Search Results</span></div><ul><li ng-repeat=\"mi in currentItems\" class=\"ep-mlm-item clearfix ep-repeat-animation\"><div class=\"pull-left clearfix ep-mlm-item-div\" ng-click=navigate(mi)><div class=\"ep-mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi._type === 'item'\" class=\"ep-mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star gold': mi.favorite}\"></i> <i ng-if=\"mi._type === 'menu'\" class=\"ep-mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul><alert ng-show=\"state.searchTerm && (!currentItems || currentItems.length === 0)\" type=warning>The term \"{{state.searchTerm}}\" did not match any menu items.</alert></div></div>"
   );
 
 
