@@ -723,6 +723,10 @@
   background-color: white;
   color: black;
 }
+.ep-mlm-container .ep-mlm-alert {
+  margin-left: 8px;
+  margin-right: 8px;
+}
 /* MLM Content */
 .ep-mlm-container.ep-mlm-content {
   position: relative;
