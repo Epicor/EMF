@@ -72,6 +72,18 @@ angular.module('ep.drag.drop', [
 'use strict';
 /**
  * @ngdoc overview
+ * @name ep.dynamic.directive
+ * @description
+ * This is the dynamic directive builder module
+ */
+angular.module('ep.dynamic.directive', [
+    'ep.templates',
+    'ep.sysconfig'
+]);
+
+'use strict';
+/**
+ * @ngdoc overview
  * @name ep.embedded.apps
  * @description
  * Provides services for embedded application hosting
@@ -984,6 +996,10 @@ angular.module('ep.datagrid').factory('epDataGridDirectiveFactory', [
                 }
             }
 
+            function activateNthRow(rowIndex) {
+                scope.activateNthRow(rowIndex, false);
+            }
+
             function updateTableState(isActiveRecord) {
                 if (isActiveRecord) {
                     scope.updateTableEditStateActiveRow();
@@ -1018,6 +1034,10 @@ angular.module('ep.datagrid').factory('epDataGridDirectiveFactory', [
 
             function getNextRow(currentRow) {
                 return scope.getPrevNextRow(1, currentRow);
+            }
+
+            function isValidRow(row) {
+                return scope.isValidRow(row);
             }
 
             function setRowEditMode(row, mode) {
@@ -1063,8 +1083,10 @@ angular.module('ep.datagrid').factory('epDataGridDirectiveFactory', [
                 updateOption: updateOption,
                 resizeTable: resizeTable,
                 activateRow: activateRow,
+                activateNthRow: activateNthRow,
                 getPrevRow: getPrevRow,
                 getNextRow: getNextRow,
+                isValidRow: isValidRow,
                 scrollToRow: scrollToRow,
                 appendRow: appendRow,
                 updateTableState: updateTableState,
@@ -1249,6 +1271,7 @@ The controller code must provide the options in active scope or set them using f
         metadata: undefined,             //metadata for columns and combos
         allowSearchInput: true,          //do we allow search input
         retrieveDataOnCreate: true,      //should we call fnGetServerData upon creation
+        startRowIndex: null,             //activate row with this index upon start (0 - first row, etc)
         startSearchValue: null           //some starting search value
         startSearchIndex: null           //starting search column index
         startSearchExactMatch: false     //is starting search an exact match
@@ -1260,7 +1283,18 @@ The controller code must provide the options in active scope or set them using f
 Through gridFactory the controller will have access to functions exposed by the directive (running in isolated scope).
 
 The call back functions are:
-    function fnGetServerData(parameters) {} -- fetches actual data for display.
+    fnGetServerData(parameters) {} -- fetches actual data for display.
+    fnOnTableInitComplete() - called after table initialized, after refresh, data fetched
+    fnOnTableEditState(activeRecord)
+    fnOnRenderGridCell(ret, type, row, meta, col, ret)
+    fnUpdateRecordsInfo(scope.recordsInfo)
+    fnOnCreatedRow(row, data)
+    fnOnGridRowDoubleClick(row)
+    fnOnCalcTableHeight(ret, tableBodyOffset)
+    fnExpandCollapseChildGrid(e, row, scope)
+    fnSetRowIndicator(row, scope)
+    fnOnActivateRow(activeRecord, activeRow);
+    fnShowProgressIndicator()
 
 ==========================================================================================*/
 
@@ -2065,7 +2099,9 @@ angular.module('ep.datagrid').directive('epDataGrid', [
             }
 
             var startRowIndex = -1;
-            if (scope.state.allowSearchInput && scope.options.startSearchValue &&
+            if (scope.options.startRowIndex || scope.options.startRowIndex === 0) {
+                startRowIndex = scope.options.startRowIndex;
+            } else if (scope.state.allowSearchInput && scope.options.startSearchValue &&
                 !scope.state.startSearchCompleted && scope.options.startSearchIndex >= 0) {
                 scope.state.startSearchCompleted = true; //search only on initial load
 
@@ -2098,14 +2134,6 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                 }
             }
 
-            if (startRowIndex > -1) {
-                if (!scope.activateNthRow(startRowIndex, true)) {
-                    startRowIndex = -1;
-                }
-            }
-            if (startRowIndex <= -1) {
-                scope.activateFirstRow();
-            }
             scope.state.$table.removeClass('table-hover');
 
             if (scope.state.allowSearchInput) {
@@ -2116,6 +2144,16 @@ angular.module('ep.datagrid').directive('epDataGrid', [
 
             if (scope.options.fnOnTableInitComplete) {
                 scope.options.fnOnTableInitComplete();
+            }
+
+            //If search row was enabled it must be set
+            if (startRowIndex > -1) {
+                if (!scope.activateNthRow(startRowIndex, true)) {
+                    startRowIndex = -1;
+                }
+            } else if (!scope.state.activeRow) {
+                //if active row has not been defined (by user event) then set it
+                scope.activateFirstRow();
             }
         }
 
@@ -2388,20 +2426,27 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                     return;
                 }
 
-                state.activeRow = row;
-                state.activeRecord = state.dataTable.fnGetData(row);
+                if (scope.isValidRow(row)) {
+                    state.activeRow = row;
+                    state.activeRecord = state.dataTable.fnGetData(row);
 
-                if (scope.options.fnOnActivateRow) {
-                    scope.options.fnOnActivateRow(state.activeRecord, state.activeRow);
+                    if (scope.options.fnOnActivateRow) {
+                        scope.options.fnOnActivateRow(state.activeRecord, state.activeRow);
+                    }
+
+                    scope.updateTableEditState();
+
+                    angular.element(row).addClass('active').find('.row-indicator').addClass(rowIndicator);
+                    if (scope.options.fnSetRowIndicator) {
+                        scope.options.fnSetRowIndicator(row, scope);
+                    }
+                } else {
+                    $log.error('scope.activateRow(row) - trying to activate an invalid row');
+
+                    state.activeRow = null;
+                    state.activeRecord = null;
+                    scope.updateTableEditState();
                 }
-
-                scope.updateTableEditState();
-
-                angular.element(row).addClass('active').find('.row-indicator').addClass(rowIndicator);
-                if (scope.options.fnSetRowIndicator) {
-                    scope.options.fnSetRowIndicator(row, scope);
-                }
-
             };
 
             scope.scrollToRow = function(row) {
@@ -2480,6 +2525,16 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                 var rows = scope.state.dataTable.find('tr');
                 var $newRow = $(rows.get(newRowIdx + 1));
                 return $newRow;
+            };
+
+            scope.isValidRow = function(row) {
+                if (row) {
+                    var $row = angular.element(row);
+                    if ($row && $row.index && scope.state.dataTable.fnGetData(row)) {
+                        return true;
+                    }
+                }
+                return false;
             };
 
             scope.resizeTable = function(force) {
@@ -2859,6 +2914,139 @@ angular.module('ep.drag.drop').directive('epDropArea', [
     }]);
 
 'use strict';
+
+/**
+ * @ngdoc controller
+ * @name ep.dynamic.directive.controller:epDynamicDirectiveCtrl
+ * @description
+ * Represents the epDynamicDirective controller for the
+ * ep.dynamic.directive module, or for specific ep-dynamic-directive directive
+ *
+ * @example
+ *
+ */
+angular.module('ep.dynamic.directive').controller('epDynamicDirectiveCtrl', [
+    '$scope',
+    'epDynamicDirectiveService',
+    function($scope, epDynamicDirectiveService) {
+        var vm = this;
+        vm.scope = $scope;
+        $scope.$watch(function() { return vm.directiveInfo; }, renderDirective);
+
+        function renderDirective() {
+            vm.compiled = epDynamicDirectiveService.build(vm.directiveInfo.name,
+                vm.directiveInfo.scopeProperties, vm.scope);
+            if (vm.element) {
+                vm.element.html(vm.compiled);
+            }
+        }
+
+        renderDirective();
+    }
+]);
+
+'use strict';
+/**
+* @ngdoc directive
+* @name ep.dynamic.directive.directive:epDynamicDirective
+* @restrict E
+*
+* @description
+* Represents the ep.dynamic.directive directive
+*
+* @example
+*/
+angular.module('ep.dynamic.directive').directive('epDynamicDirective',
+    function() {
+        return {
+            restrict: 'E',
+            controller: 'epDynamicDirectiveCtrl',
+            controllerAs: 'dynamicDirective',
+            bindToController: true,
+            scope: {
+                directiveInfo: '='
+            },
+            compile: function() {
+                return {
+                    pre: function(scope, iElement) {
+                        scope.dynamicDirective.element = iElement;
+                    },
+                    post: function(scope, iElement) {
+                        if (scope.dynamicDirective.compiled !== null) {
+                            iElement.append(scope.dynamicDirective.compiled);
+                            //added for passing unit tests
+                            if (!scope.$root.$$phase) {
+                                scope.$apply();
+                            }
+                        }
+                    }
+                };
+            }
+        };
+    });
+
+'use strict';
+/**
+ * @ngdoc service
+ * @name ep.dynamic.directive.service:epDynamicDirectiveService
+ * @description
+ * Service for the ep.dynamic.directive module
+ * This is the dynamic directive builder module
+ *
+ * @example
+ *
+ */
+angular.module('ep.dynamic.directive').service('epDynamicDirectiveService', [
+    '$rootScope',
+    '$compile',
+    function($rootScope, $compile) {
+        var templates = {};
+        /**
+         * @ngdoc method
+         * @name build
+         * @methodOf ep.dynamic.directive.service:epDynamicDirectiveService
+         * @public
+         * @description
+         * builds the dynamic directive
+         */
+        this.build = function(directiveName, scopeProps, parentScope, skipScopeCreation) {
+            var newScope = skipScopeCreation ? parentScope || $rootScope :
+                parentScope ? parentScope.$new() : $rootScope.$new();
+            angular.extend(newScope, scopeProps);
+
+            var template = this.getTemplate(directiveName);
+            if (template) {
+                return $compile(template)(newScope);
+            }
+            return null;
+        };
+        /**
+        * @ngdoc method
+        * @name registerTemplate
+        * @methodOf ep.dynamic.directive.service:epDynamicDirectiveService
+        * @public
+        * @description
+        * registers the html template for the dynamic created directive
+        */
+        this.registerTemplate = function(template) {
+            if (!templates[template.id]) {
+                templates[template.id] = template.value;
+            }
+        };
+        /**
+        * @ngdoc method
+        * @name getTemplate
+        * @methodOf ep.dynamic.directive.service:epDynamicDirectiveService
+        * @public
+        * @description
+        * gets the html template for the dynamic created directive
+        */
+        this.getTemplate = function(id) {
+            return templates[id];
+        };
+    }]);
+
+'use strict';
 /**
      * @ngdoc directive
      * @name ep.modaldialog.directive:epmodaldialog
@@ -2916,9 +3104,9 @@ angular.module('ep.embedded.apps').directive('epEmbeddedAppsLoader', [
                     return deferred.promise;
                 }
 
-                scope.$watch('config.id', function(newId, oldId) {
+                scope.$watch('config.id', function() {
                     var config = scope.config;
-                    if (newId === oldId && config && config.id) {
+                    if (config && config.id) {
                         epEmbeddedAppsProvider.load(config).then(function() {
 
                             var viewId = config.activeViewId || config.startViewId;
@@ -3544,6 +3732,25 @@ angular.module('ep.embedded.apps')
                         throw errorText;
                     }
 
+                    function loadLinks(urls, onLoadLink) {
+                        urls.forEach(function(url, idx) {
+                            var linkId = 'link_' + idx;
+                            if (url && !epEmbeddedAppsCacheService.linkCache.get(linkId)) {
+                                var linkElement = $document[0].createElement('link');
+                                linkElement.setAttribute('id', linkId);
+                                linkElement.rel = 'stylesheet';
+                                linkElement.href = url;
+                                linkElement.type = 'text/css';
+                                $document[0].head.appendChild(linkElement);
+                                epEmbeddedAppsCacheService.linkCache.put(linkId, 1);
+
+                                $timeout(function() {
+                                    onLoadLink('Link: ' + url);
+                                });
+                            }
+                        });
+                    }
+
                     // Load all of the resources required by the app package
                     function loadResources(onLoadScript, onLoadLink, onLoadComplete) {
                         state.loadComplete = false;
@@ -3592,24 +3799,10 @@ angular.module('ep.embedded.apps')
                         }).then(onLoadComplete);
 
                         // load all of the css
-                        config.resources.links.map(function(url) {
+                        var urls = config.resources.links.map(function(url) {
                             return getAppPath(config.id, url);
-                        }).forEach(function(url, idx) {
-                            var linkId = 'link_' + idx;
-                            if (url && !epEmbeddedAppsCacheService.linkCache.get(linkId)) {
-                                var linkElement = $document[0].createElement('link');
-                                linkElement.setAttribute('id', linkId);
-                                linkElement.rel = 'stylesheet';
-                                linkElement.href = url;
-                                linkElement.type = 'text/css';
-                                $document[0].head.appendChild(linkElement);
-                                epEmbeddedAppsCacheService.linkCache.put(linkId, 1);
-
-                                $timeout(function() {
-                                    onLoadLink('Link: ' + url);
-                                });
-                            }
                         });
+                        loadLinks(urls, onLoadLink);
                     }
 
                     function loadDependencies(moduleId, allDependencyLoad) {
@@ -3672,6 +3865,15 @@ angular.module('ep.embedded.apps')
                     if (epEmbeddedAppsCacheService.scriptCache.get(resourceId)) {
                         $log.debug('AppPackage ' + config.id + ' already loaded.');
                         deferredLoad.resolve(config.id);
+                        // load all of the css links
+                        // even though the module has already been loaded, we still need to reload the css
+                        // since it gets removed from the page when the package is unloaded.
+                        var urls = config.resources.links.map(function(url) {
+                            return getAppPath(config.id, url);
+                        });
+                        loadLinks(urls, function(id) {
+                            $log.debug('Loaded ' + id);
+                        });
                     } else {
 
                         loadResources(
