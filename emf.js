@@ -236,6 +236,19 @@ angular.module('ep.token', [
 'use strict';
 /**
  * @ngdoc overview
+ * @name ep.ui.range.slider
+ * @description
+ * This is the range slider directive
+ */
+angular.module('ep.ui.range.slider', [
+    'ep.templates',
+    'ep.sysconfig',
+    'ngTouch'
+]);
+
+'use strict';
+/**
+ * @ngdoc overview
  * @name ep.utils
  * @description
  * Provides emf utilities
@@ -971,6 +984,10 @@ angular.module('ep.datagrid').factory('epDataGridDirectiveFactory', [
                 scope.setGridOptions(options);
             }
 
+            function getGridOptions() {
+                return scope.options;
+            }
+
             function release() {
                 if (scope.state.dataTable) {
                     scope.state.dataTable.fnDestroy(true);
@@ -1018,6 +1035,10 @@ angular.module('ep.datagrid').factory('epDataGridDirectiveFactory', [
 
             function activeRecord() {
                 return scope.state.activeRecord;
+            }
+
+            function activeCell() {
+                return scope.state.activeCell;
             }
 
             function scrollToRow(row) {
@@ -1072,12 +1093,18 @@ angular.module('ep.datagrid').factory('epDataGridDirectiveFactory', [
                 return scope.state.filterShowFlag;
             }
 
+            function setDataSource(ds, refreshData) {
+                scope.setDataSource(ds, refreshData);
+            }
+
             return {
                 id: id,
                 setGridOptions: setGridOptions,
-                createGrid: createGrid,
+                getGridOptions: getGridOptions,
+                    createGrid: createGrid,
                 activeRecord: activeRecord,
                 activeRow: activeRow,
+                activeCell: activeCell,
                 refreshData: refreshData,
                 release: release,
                 updateOption: updateOption,
@@ -1098,7 +1125,8 @@ angular.module('ep.datagrid').factory('epDataGridDirectiveFactory', [
                 getRowByColumnValue: getRowByColumnValue,
                 toggleFilter: toggleFilter,
                 showFilter: showFilter,
-                isFilterShown: isFilterShown
+                isFilterShown: isFilterShown,
+                setDataSource: setDataSource
             };
         };
         return epDataGridDirectiveFactory;
@@ -1276,8 +1304,19 @@ The controller code must provide the options in active scope or set them using f
         startSearchIndex: null           //starting search column index
         startSearchExactMatch: false     //is starting search an exact match
         ordering: true                   //is sorting allowed (by default true)
-        showEditIndicator: false
-        showToggleFilterButton: false
+        showEditIndicator: false         //show edit indicator (by default false)
+        showToggleFilterButton: false    //show internal filter button (by default false)
+        pageLength: 100                  //default page length (how many records in a page)
+        tableHeight: null                //fixed table height (used only if fnOnCalcTableHeight is undefined)
+        enableCellHighlight: true        //enable the highlighting of cell on cell click
+
+        //static table options:
+        staticMode: false                //is static datatable (by default false)
+        dataSource: null                 //data source as json rows array
+
+        //hierarchy child grid options:
+        isChildGrid: false              //is it a child grid (by default false)
+        childGridOptions:               //datagrid options for the child table
     };
 
 Through gridFactory the controller will have access to functions exposed by the directive (running in isolated scope).
@@ -1287,7 +1326,7 @@ The call back functions are:
     fnOnTableInitComplete() - called after table initialized, after refresh, data fetched
     fnOnTableEditState(activeRecord)
     fnOnRenderGridCell(ret, type, row, meta, col, ret)
-    fnUpdateRecordsInfo(scope.recordsInfo)
+    fnUpdateRecordsInfo(scope.recordsInfo, plainTextInfo) -- custom display of record information
     fnOnCreatedRow(row, data)
     fnOnGridRowDoubleClick(row)
     fnOnCalcTableHeight(ret, tableBodyOffset)
@@ -1295,7 +1334,23 @@ The call back functions are:
     fnSetRowIndicator(row, scope)
     fnOnActivateRow(activeRecord, activeRow);
     fnShowProgressIndicator()
+    //hierarchy child table events:
+    fnExpandCollapseChildGrid()
+    fnSetRowIndicator()
 
+
+Column Metadata Properties:
+Column = {
+    sTitle      - (string) column caption
+    sDataType   - (string) column data type (string/int/bool/decimal/datetime)
+    mData       - (int) the index in data array to which this column is bound
+    bVisible    - (bool) (default = true) is column visible
+    orderable   - (bool) (default = true) is column sortable
+    width       - (int) column width pixels. ('' - ignored) - Examples: 100, 200, (in pexels)
+    widthFactor - (decimal) column width factor if width not provided. (<=0 ignored) - Examples: 0.5, 2.0, etc
+    canSelectCells - (bool) (default = false) column cells can be selected,
+    sClass      - (string) add user class on the column
+}
 ==========================================================================================*/
 
 angular.module('ep.datagrid').directive('epDataGrid', [
@@ -1334,7 +1389,13 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                 metadata: undefined,
                 ordering: true,  //is ordering-sorting allowed,
                 activeRow: null,
-                activeRecord: null
+                activeRecord: null,
+                activeCell: null,
+                pageLength: 100,
+                tableHeight: null,
+                staticMode: false,
+                dataSource: null,
+                isChildGrid: false
             };
             return state;
         }
@@ -1415,8 +1476,8 @@ angular.module('ep.datagrid').directive('epDataGrid', [
         }
 
         function renderDateFormat(data, row, col) {
-            var format = col.userColumnDef.oFormat.FormatString;
-            if (format) {
+            var format = col.userColumnDef.oFormat.FormatString || 'M/d/yyyy';
+            if (format && data) {
                 var wrappedDate = moment(data);
                 if (wrappedDate.isValid()) {
                     format = format.toUpperCase().replace('HH:MM', 'HH:mm');
@@ -1591,10 +1652,10 @@ angular.module('ep.datagrid').directive('epDataGrid', [
         function destroyGrid(scope) {
             scope.state.$table.off('click').off('dblclick');
 
-            var tbl = $.fn.dataTable.fnTables(false);
-            if (tbl.length) {
+            var dt = scope.grApi();
+            if (dt) {
                 try {
-                    $(tbl).dataTable().fnDestroy(true);
+                    dt.destroy(true);
                 } catch (e) {
                     $log.error(e, 'failed to destroy the grid - exception from DataTables');
                 }
@@ -1605,6 +1666,10 @@ angular.module('ep.datagrid').directive('epDataGrid', [
         }
 
         function getDataFromServer(scope, searchTerm, sortColIdx, sortDir, append, showIndicator, forceRefresh) {
+            if (scope.state.staticMode === true) {
+                return;
+            }
+
             if (scope.state.dataRetrieveInProcess === true) {
                 return;
             }
@@ -1753,7 +1818,7 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                             //});
                         }
 
-                        if (scope.state.ordering) {
+                        if (scope.state.ordering && scope.state.staticMode !== true) {
                             var table = scope.grApi();
                             var cols = scope.grColumns();
                             table.columns().eq(0).each(function(index) {
@@ -1818,7 +1883,7 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                 if (tp.indexOf('system.') === 0) {
                     tp = tp.substr(7);
                 }
-                if (tp === 'datetime' && col.oFormat.FormatString) {
+                if (tp === 'datetime') {
                     col.sRenderType = 'date';
                 } else if (tp === 'bool' || tp === 'boolean') {
                     col.sRenderType = 'bool';
@@ -1844,7 +1909,7 @@ angular.module('ep.datagrid').directive('epDataGrid', [
             var columns = [];
             var iIndex = 0;
 
-            function addColumn(c) {
+            var fnAddColumn = function(c) {
 
                 if (c.oFormat === undefined) {
                     c.oFormat = {};
@@ -1866,13 +1931,23 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                     }
                 }
 
-                if (c.oFormat.MaxLength) {
-                    var colWidth = Math.max(Math.min(c.oFormat.MaxLength * 3, 400), 120);
-                    c.sWidth = colWidth + 'px';
-                } else {
-                    c.sWidth = '120px';
+                //determine optimized column width
+                var sWidth = '120px';
+                if (c.width && angular.isNumber(c.width)) {
+                    sWidth = c.width + 'px';
+                } else if (c.widthFactor && angular.isNumber(c.widthFactor)) {
+                    sWidth = parseInt(120 * parseFloat(c.widthFactor)) + 'px';
+                } else if (c.oFormat.MaxLength) {
+                    sWidth = Math.max(Math.min(c.oFormat.MaxLength * 3, 400), 120) + 'px';
                 }
-                c.sClass += ' data-col-' + (c.cssClassSuffix ? c.cssClassSuffix : c.iIndex);
+
+                var sClass = (c.sClass ? c.sClass + ' ' : '');
+                sClass += 'data-col-' + (c.cssClassSuffix ? c.cssClassSuffix : iIndex);
+
+                if (c.canSelectCells === true) {
+                    scope.state.canSelectCells = true;
+                    sClass += ' selectable';
+                }
 
                 var column = {
                     iIndex: iIndex,
@@ -1880,21 +1955,22 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                     name: c.sName,
                     title: c.sTitle || '',
                     visible: bVisible === undefined ? true : bVisible,
-                    className: c.sClass,
+                    className: sClass,
                     data: (c.mData === undefined) ? -1 : c.mData,
                     orderable: orderable,
                     render: scope.renderGridCell,
+                    userWidth: sWidth,
                     userColumnDef: c
                 };
                 columns.push(column);
                 iIndex++;
-            }
+            };
 
             angular.forEach(insertBefore, function(c) {
-                addColumn(c);
+                fnAddColumn(c);
             });
             angular.forEach(metadata.columns, function(c) {
-                addColumn(c);
+                fnAddColumn(c);
             });
             return columns;
         }
@@ -1941,48 +2017,89 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                 }
             };
 
-            scope.state.options = {
-                'bDestroy': true,
-                'bServerSide': false,
-                'ordering': false, //we are doing our own ordering...
-                'order': [],
-                'bProcessing': false,
-                'pageLength': 100,
-                'bAutoWidth': false,
-                'columns': scope.state.gridColumns,
-                'sScrollY': scope.calcTableHeight(), // + 'px',
-                'sScrollX': '100%',
-                'scrollCollapse': false,
-                'sDom': 'rti',
-                'bDeferRender': true,
+            if (scope.state.staticMode === true) {
+                scope.state.options = {
+                    'data': scope.state.dataSource,
+                    'paging': true,
+                    'ordering': scope.state.ordering,
+                    'bDestroy': true,
+                    'bServerSide': false,
+                    'order': [],
+                    'bProcessing': false,
+                    'pageLength': scope.state.pageLength,
+                    'bAutoWidth': true,
+                    'columns': scope.state.gridColumns,
+                    'sScrollY': scope.calcTableHeight(), // + 'px',
+                    'sScrollX': '100%',
+                    'sScrollXInner': (scope.options.isChildGrid) ? '90%' : '100%',
+                    'sDom': 'rtip',
+                    'infoCallback': function() {
+                        var startNum = scope.state.gridLoadPrms.iTotalRecords ? 1 : 0;
+                        scope.recordsInfo = epUtilsService.strFormat('Showing {0}records {1} to {2} of {3}',
+                            (scope.state.gridLoadPrms.previousPrms.searchTerm ? '<strong>filtered</strong> ' : ''),
+                            startNum, scope.state.gridLoadPrms.iLoadedRecordLength,
+                            scope.state.gridLoadPrms.iTotalRecords);
+                        var plainText = epUtilsService.strFormat('Showing {0}records {1} to {2} of {3}',
+                            (scope.state.gridLoadPrms.previousPrms.searchTerm ? 'filtered ' : ''),
+                            startNum, scope.state.gridLoadPrms.iLoadedRecordLength,
+                            scope.state.gridLoadPrms.iTotalRecords);
+                        if (scope.options.fnUpdateRecordsInfo) {
+                            scope.options.fnUpdateRecordsInfo(scope.recordsInfo, plainText);
+                            return '';
+                        }
+                        return scope.recordsInfo;
+                    },
+                    'createdRow': function(row, data) {
+                        if (scope.options.fnOnCreatedRow) {
+                            scope.options.fnOnCreatedRow(row, data);
+                        }
+                    }
+                };
+            } else {
+                scope.state.options = {
+                    'bDestroy': true,
+                    'bServerSide': false,
+                    'ordering': false, //we are doing our own ordering...
+                    'order': [],
+                    'bProcessing': false,
+                    'pageLength': scope.state.pageLength,
+                    'bAutoWidth': true,
+                    'columns': scope.state.gridColumns,
+                    'sScrollY': scope.calcTableHeight(), // + 'px',
+                    'sScrollX': '100%',
+                    'sScrollXInner': (scope.options.isChildGrid) ? '90%' : '100%',
+                    'scrollCollapse': false,
+                    'sDom': 'rti',
+                    'bDeferRender': true,
 
-                'infoCallback': function() {
-                    var startNum = scope.state.gridLoadPrms.iTotalRecords ? 1 : 0;
-                    scope.recordsInfo = epUtilsService.strFormat('Showing {0}records {1} to {2} of {3}',
-                        (scope.state.gridLoadPrms.previousPrms.searchTerm ? '<strong>filtered</strong> ' : ''),
-                        startNum, scope.state.gridLoadPrms.iLoadedRecordLength,
-                        scope.state.gridLoadPrms.iTotalRecords);
-                    if (scope.options.fnUpdateRecordsInfo) {
-                        scope.options.fnUpdateRecordsInfo(scope.recordsInfo);
-                        return '';
+                    'infoCallback': function() {
+                        var startNum = scope.state.gridLoadPrms.iTotalRecords ? 1 : 0;
+                        scope.recordsInfo = epUtilsService.strFormat('Showing {0}records {1} to {2} of {3}',
+                            (scope.state.gridLoadPrms.previousPrms.searchTerm ? '<strong>filtered</strong> ' : ''),
+                            startNum, scope.state.gridLoadPrms.iLoadedRecordLength,
+                            scope.state.gridLoadPrms.iTotalRecords);
+                        if (scope.options.fnUpdateRecordsInfo) {
+                            scope.options.fnUpdateRecordsInfo(scope.recordsInfo);
+                            return '';
+                        }
+                        return scope.recordsInfo;
+                    },
+                    'createdRow': function(row, data) {
+                        if (scope.options.fnOnCreatedRow) {
+                            scope.options.fnOnCreatedRow(row, data);
+                        }
                     }
-                    return scope.recordsInfo;
-                },
-                'createdRow': function(row, data) {
-                    if (scope.options.fnOnCreatedRow) {
-                        scope.options.fnOnCreatedRow(row, data);
-                    }
-                }
-                //'fnInitComplete': function () {
-                //    onTableInitComplete(scope);
-                //},
-                //'fnDrawCallback': function (oSettings) {
-                //    if (scope.state.isRefreshing) {
-                //        onTableInitComplete(scope);
-                //        scope.state.isRefreshing = false;
-                //    }
-                //},
-            };
+                    //'fnInitComplete': function () {
+                    //    onTableInitComplete(scope);
+                    //},
+                    //'fnDrawCallback': function (oSettings) {
+                    //    if (scope.state.isRefreshing) {
+                    //        onTableInitComplete(scope);
+                    //        scope.state.isRefreshing = false;
+                    //    }
+                    //},
+                };
+            }
 
             scope.state.dataTable = $(scope.state.tableElement).dataTable(scope.state.options);
 
@@ -1991,8 +2108,8 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                     if (c.userColumnDef.bHideInGrid) {
                         scope.grApi().column(c.iIndex).visible(false);
                     }
-                    scope.findElement('.data-col-' + c.iIndex).css('min-width', c.userColumnDef.sWidth)
-                        .css('width', c.userColumnDef.sWidth);
+                    scope.findElement('.data-col-' + c.iIndex).css('min-width', c.userWidth)
+                        .css('width', c.userWidth);
                 });
 
                 scope.state.visColCount = _.filter(scope.state.gridColumns, function(c) { return c.visible; }).length;
@@ -2035,8 +2152,11 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                     scope.applySearch = function(searchTerm) {
                         if (lastAppliedSearchTerm !== searchTerm && (searchTerm || lastAppliedSearchTerm)) {
                             lastAppliedSearchTerm = searchTerm;
-                            getDataFromServer(scope, scope.state.searchValue, 0, 'asc', false, true, false);
-                            //scope.resizeTable(true);
+                            if (scope.state.staticMode === true) {
+                                scope.grApi().search(scope.state.searchValue).draw();
+                            } else {
+                                getDataFromServer(scope, scope.state.searchValue, 0, 'asc', false, true, false);
+                            }
                         }
                     };
 
@@ -2070,6 +2190,9 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                         }, 200);
 
                         scope.applySearch(scope.state.searchValue);
+                    };
+                    scope.clearSearch = function() {
+                        scope.applySearch(scope.state.searchValue = '');
                     };
 
                     scope.fnOnSearchKeyUp = function(ev) {
@@ -2161,8 +2284,8 @@ angular.module('ep.datagrid').directive('epDataGrid', [
             scope.state = getNewState();
             scope.state.gridFactory = new epDataGridDirectiveFactory(scope);
 
-            scope.state.dataGridId = (scope.epDataGridOptions && scope.epDataGridOptions.dataTableId) ?
-                scope.epDataGridOptions.dataTableId : scope.state.gridFactory.id;
+            scope.state.userGridId = ((scope.epDataGridOptions) ? scope.epDataGridOptions.dataTableId : '') || '';
+            scope.state.dataGridId = scope.state.gridFactory.id;
 
             scope.options = {};
             scope.state.scope = scope;
@@ -2175,10 +2298,21 @@ angular.module('ep.datagrid').directive('epDataGrid', [
             scope.setGridOptions = function(options) {
                 scope.options = options;
                 scope.options.gridFactory = scope.state.gridFactory;
+                scope.state.userGridId = options.dataTableId || scope.state.userGridId;
+                scope.state.isChildGrid = (options.isChildGrid === true);
                 scope.state.allowSearchInput = scope.options.allowSearchInput;
                 scope.state.ordering = (scope.options.ordering === undefined) ?
                     scope.state.ordering : scope.options.ordering;
 
+                scope.state.staticMode = (scope.options.staticMode === true);
+                scope.state.dataSource = scope.options.dataSource;
+
+                if (scope.options.pageLength && angular.isNumber(scope.options.pageLength)) {
+                    scope.state.pageLength = scope.options.pageLength;
+                }
+                if (scope.options.tableHeight && angular.isNumber(scope.options.tableHeight)) {
+                    scope.state.tableHeight = scope.options.tableHeight;
+                }
                 if (options.metadata !== undefined && !angular.equals(options.metadata, scope.state.metadata)) {
                     scope.state.metadata = options.metadata;
                     if (!scope.options.createGridByFactoryOnly) {
@@ -2288,9 +2422,14 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                 var ret = 0;
                 if (scope.state.$table.length) {
                     ret = $(scope.state.linkElement).height();
+                    if (ret === 0 && scope.state.linkElement[0].parentNode) {
+                        ret = $(scope.state.linkElement[0].parentNode).height();
+                    }
                     if (scope.options.fnOnCalcTableHeight) {
                         var tableBodyOffset = scope.findElement('.dataTables_scrollBody').offset();
                         ret = scope.options.fnOnCalcTableHeight(ret, tableBodyOffset);
+                    } else if (scope.state.tableHeight && angular.isNumber(scope.state.tableHeight)) {
+                        ret = scope.state.tableHeight;
                     }
                 }
                 return ret;
@@ -2324,8 +2463,15 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                 /// Activates the row being clicked on.
                 ///</summary>
                 var row = e.target;
+                var dg = $(row).closest('.ep-data-grid');
+                if (!dg.length || $(dg).attr('id') !== scope.state.dataGridId) {
+                    //check if event belongs to this table...
+                    return;
+                }
+
                 while (row && row !== this) {
                     if (row.nodeName === 'TR' && row.parentNode && row.parentNode.nodeName === 'TBODY') {
+                        scope.activateCell(e, row);
                         scope.activateRow(row);
                         if (isDoubleClick && scope.options.fnOnGridRowDoubleClick) {
                             scope.options.fnOnGridRowDoubleClick(row);
@@ -2367,6 +2513,28 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                 }
             };
 
+            scope.activateCell = function(e, row) {
+                ///Internal function to set active cell from table cell click event
+                if (!e || !e.target || (scope.state.canSelectCells !== true)) {
+                    return;
+                }
+
+                scope.findInTable('td.info').removeClass('info').removeClass('activeCell');
+                var cell = angular.element($(e.target).closest('td'));
+                if (cell && cell.length && cell.hasClass('selectable')) {
+                    var cellRow = cell.closest('tr');
+                    if (cellRow.length && cellRow[0] === row) {
+                        //make sure the cell is in our row
+                        if (!cell.hasClass('fixed')) {
+                            //Show selected column by adding bootstrap 'info' class.
+                            cell.addClass('info activeCell');
+                        }
+                        var columnIndex = cellRow.children().index(cell);
+                        scope.state.activeCell = { 'index': columnIndex, 'cell': cell };
+                    }
+                }
+            };
+
             scope.activateFirstRow = function() {
                 //var nTop = scope.state.dataTable.find('tbody tr:first')[0];
                 //scope.activateRow(scope, nTop);
@@ -2376,6 +2544,7 @@ angular.module('ep.datagrid').directive('epDataGrid', [
             scope.activateNthRow = function(rowIndex, scrollToRow) {
                 var row = scope.grGetRowNodeByIndex(rowIndex);
                 if (row) {
+                    scope.activateRow(row);
                     $timeout(function() {
                         angular.element(row).trigger('click');
                         if (scrollToRow) {
@@ -2416,6 +2585,11 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                 ///   Deactivates all other rows.
                 /// </summary>
                 var state = scope.state;
+
+                if (state.prevActiveRowSet === row) {
+                    return;
+                }
+
                 if (state.activeRow) {
                     var $row = angular.element(state.activeRow);
                     $row.removeClass('active').find('.row-indicator').removeClass(rowIndicator);
@@ -2441,12 +2615,12 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                         scope.options.fnSetRowIndicator(row, scope);
                     }
                 } else {
-                    $log.error('scope.activateRow(row) - trying to activate an invalid row');
-
+                    $log.debug('scope.activateRow(row) - trying to activate an invalid row');
                     state.activeRow = null;
                     state.activeRecord = null;
                     scope.updateTableEditState();
                 }
+                state.prevActiveRowSet = state.activeRow;
             };
 
             scope.scrollToRow = function(row) {
@@ -2562,6 +2736,17 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                 if (scope.state.dataTable) {
                     var prms = scope.state.gridLoadPrms.previousPrms;
                     getDataFromServer(scope, prms.searchTerm, prms.sortColIdx, prms.sortDir, true, false, true);
+                }
+            };
+
+            scope.setDataSource = function(ds, refreshData) {
+                //Only for static Mode. Set datasource
+                if (scope.state.staticMode === true) {
+                    scope.state.dataSource = ds;
+                    if (refreshData && scope.state.dataTable) {
+                        scope.state.dataTable.fnClearTable();
+                        scope.state.dataTable.fnAddData(ds);
+                    }
                 }
             };
 
@@ -2974,10 +3159,6 @@ angular.module('ep.dynamic.directive').directive('epDynamicDirective',
                     post: function(scope, iElement) {
                         if (scope.dynamicDirective.compiled !== null) {
                             iElement.append(scope.dynamicDirective.compiled);
-                            //added for passing unit tests
-                            if (!scope.$root.$$phase) {
-                                scope.$apply();
-                            }
                         }
                     }
                 };
@@ -5084,6 +5265,7 @@ angular.module('ep.modaldialog').directive('epmodaldialog', [
  *
  */
 angular.module('ep.modaldialog').service('epModalDialogService', [
+    '$sce',
     '$modal',
     '$compile',
     '$rootScope',
@@ -5091,7 +5273,7 @@ angular.module('ep.modaldialog').service('epModalDialogService', [
     '$interval',
     '$injector',
     'epLocalStorageService',
-    function($modal, $compile, $rootScope, $timeout, $interval, $injector, epLocalStorageService) {
+    function($sce, $modal, $compile, $rootScope, $timeout, $interval, $injector, epLocalStorageService) {
 
         /**
          * @private
@@ -5376,7 +5558,7 @@ angular.module('ep.modaldialog').service('epModalDialogService', [
          *      fnDefaultAction - function applied to default button if buttons are not supplied or button has iDefault = true
          *      fnCancelAction - function to be fired on Cancel button if button has isCancel = true
          *      statusBar - set true to display status bar (default false)
-         *      statusBarText - the text to display in status bar (default empty)
+         *      statusBarText - the text to display in status bar. Can be HTML. (default empty)
          *      closeButton - set true to display close button (default false)
          * </pre>
          */
@@ -5391,6 +5573,14 @@ angular.module('ep.modaldialog').service('epModalDialogService', [
 
             cfg._isModalDialog = true;
             setCommonOptions(cfg);
+
+            //In case someone wants to set status bar text from within modal dialog
+            cfg.setStatusBarText = function(text) {
+                cfg.statusBarTextHTML = angular.isString(text) ?
+                    $sce.trustAsHtml(text) : text;
+            };
+
+            cfg.setStatusBarText(cfg.statusBarText);
 
             return $modal.open({
                 keyboard: false,
@@ -7454,7 +7644,7 @@ angular.module('ep.shell').service('epShellService', [
          var shellState = {
              showProgressIndicator: false,
              progressIndicatorlevel: 0,
-             feedbackEnabled: true,
+             enableFeedback: true,
              fnOnFeedback: undefined,
              suspend: false,
              disableTheming: false,     //disable all theming
@@ -7583,7 +7773,7 @@ angular.module('ep.shell').service('epShellService', [
              setBrandHTML(epShellConfig.options.brandHTML);
 
              if (epShellConfig.options.enableFeedback !== undefined) {
-                 shellState.feedbackEnabled = epShellConfig.options.enableFeedback;
+                 shellState.enableFeedback = epShellConfig.options.enableFeedback;
              }
 
              initializeTheming();
@@ -7623,7 +7813,7 @@ angular.module('ep.shell').service('epShellService', [
              shellState.enableLeftSidebar = mode.enableLeftSidebar;
              shellState.showRightToggleButton = mode.enableRightSidebar;
              shellState.enableRightSidebar = mode.enableRightSidebar;
-
+             shellState.enableFeedback = mode.enableFeedback;
              shellState.showNavbar = mode.showNavbar;
              shellState.showFooter = mode.showFooter;
              shellState.showHomeButton = mode.showHomeButton;
@@ -7995,7 +8185,7 @@ angular.module('ep.shell').service('epShellService', [
           * Enable the feedback button functionality (by default on, can be overriden by sysconfig)
           */
          function enableFeedback() {
-             shellState.feedbackEnabled = true;
+             shellState.enableFeedback = true;
          }
 
          /**
@@ -8007,7 +8197,7 @@ angular.module('ep.shell').service('epShellService', [
           * Disable the feedback button functionality (by default on, can be overriden by sysconfig)
           */
          function disableFeedback() {
-             shellState.feedbackEnabled = false;
+             shellState.enableFeedback = false;
          }
          /**
           * @ngdoc method
@@ -8018,7 +8208,7 @@ angular.module('ep.shell').service('epShellService', [
           * Toggle the feedback button functionality (by default on, can be overriden by sysconfig)
           */
          function toggleFeedback() {
-             shellState.feedbackEnabled = !shellState.feedbackEnabled;
+             shellState.enableFeedback = !shellState.enableFeedback;
          }
 
          function notifyStateChanged(event) {
@@ -8657,7 +8847,47 @@ angular.module('ep.shell').service('epShellService', [
              //you can pass one or more id's seperated by comma
              var args = _.flatten(arguments, true);
              iterateNavbarButton(args, 'showNavbarButton', function(b) {
-                 b.hidden = b.enabled ? !b.enabled() : false;
+                 b.hidden = false;
+                 return true;
+             });
+         }
+         /**
+         * @ngdoc method
+         * @name enableNavbarButton
+         * @methodOf ep.shell.service:epShellService
+         * @public
+         * @description
+         * Enable navigation button(s). Buttons are made visible for matched button id's
+         * @param {object} buttons - an array/arguments of button id's
+         * @example
+         * enableNavbarButton('myButton1', 'myButton2');
+         * enableNavbarButton(['myButton1', 'myButton2']);
+         */
+         function enableNavbarButton() {
+             //you can pass one or more id's seperated by comma
+             var args = _.flatten(arguments, true);
+             iterateNavbarButton(args, 'enableNavbarButton', function(b) {
+                 b.enabled = true;
+                 return true;
+             });
+         }
+         /**
+         * @ngdoc method
+         * @name disableNavbarButton
+         * @methodOf ep.shell.service:epShellService
+         * @public
+         * @description
+         * Disable navigation button(s). Buttons are made visible for matched button id's
+         * @param {object} buttons - an array/arguments of button id's
+         * @example
+         * disableNavbarButton('myButton1', 'myButton2');
+         * disableNavbarButton(['myButton1', 'myButton2']);
+         */
+         function disableNavbarButton() {
+             //you can pass one or more id's seperated by comma
+             var args = _.flatten(arguments, true);
+             iterateNavbarButton(args, 'disableNavbarButton', function(b) {
+                 b.enabled = false;
                  return true;
              });
          }
@@ -8842,6 +9072,8 @@ angular.module('ep.shell').service('epShellService', [
              hideNavbarButton: hideNavbarButton,
              showAllNavbarButtons: showAllNavbarButtons,
              hideAllNavbarButtons: hideAllNavbarButtons,
+             enableNavbarButton: enableNavbarButton,
+             disableNavbarButton: disableNavbarButton,
              disableNavbarButtons: disableNavbarButtons,
              navbarButtonClicked: navbarButtonClicked
          };
@@ -9024,7 +9256,7 @@ angular.module('ep.shell').service('epSidebarService', [
               restrict: 'E',
               transclude: true,
               replace: false,
-              templateUrl: 'src/components/ep.shell/viewcontainer/viewcontainer.html',
+              templateUrl: 'src/components/ep.shell/view-container/view-container.html',
               scope: {
                   'sidebarsettings': '@',
                   'smallmodesettings': '@',
@@ -9592,6 +9824,298 @@ angular.module('ep.token').factory('tokenFactory', [
 
 'use strict';
 
+angular.module('ep.ui.range.slider').controller('epRangeSliderCtrl', [
+    '$scope',
+    function($scope) {
+        var handle;
+        var axisClickX;
+        var handleWidth;
+        var lastX;
+        var minHandleX = 0;
+        var maxHandleX = 0;
+        var isHandleClicked;
+        var axisWidth;
+
+        function positionRange(pos) {
+            $scope.range.css('left', pos + 'px');
+        }
+
+        function positionHandle(handleType, pos) {
+            var handle = handleType === 'left' ? $scope.minHandle : $scope.maxHandle;
+            handle.css('left', pos + 'px');
+        }
+
+        function processRangeDrag(swipeCoords, evt) {
+            var diff;
+            var evtCoords = getEventCoordinates(evt);
+            var minHandleLeftPos = parseInt($scope.minHandle.css('left'));
+            var maxHandleLeftPos = parseInt($scope.maxHandle.css('left'));
+
+            axisWidth = $scope.axis.width();
+            if (lastX === null || lastX === undefined) {
+                lastX = axisClickX;
+            }
+
+            if (swipeCoords.x > lastX) {
+                diff = evtCoords.x - lastX;
+                if ((maxHandleLeftPos + handleWidth) >= axisWidth) {
+                    return;
+                }
+                positionRange(parseInt($scope.range.css('left')) + diff);
+                minHandleX = minHandleLeftPos + diff;
+                maxHandleX = maxHandleLeftPos + diff;
+                positionHandle('left', minHandleX);
+                positionHandle('right', maxHandleX);
+            } else {
+                diff = lastX - evtCoords.x;
+                if (minHandleLeftPos <= 0) {
+                    return;
+                }
+                positionRange(parseInt($scope.range.css('left')) - diff);
+                minHandleX = minHandleLeftPos - diff;
+                maxHandleX = maxHandleLeftPos - diff;
+                positionHandle('left', minHandleX);
+                positionHandle('right', maxHandleX);
+            }
+            $scope.rangeMin = minHandleLeftPos === 1 ? $scope.min :
+                getHandleValue(minHandleLeftPos);
+            $scope.rangeMax = getHandleValue(maxHandleLeftPos + handleWidth);
+            lastX = swipeCoords.x;
+            $scope.$digest();
+        }
+        function processHandleDrag(swipeCoords, evt) {
+            var diff;
+            var newPos;
+            var evtCoords = getEventCoordinates(evt);
+            var isMinHandle = handle.is('.js-handle-min');
+            var width;
+
+            if (maxHandleX === 0 || isNaN(maxHandleX)) {
+                maxHandleX = axisWidth - handleWidth;
+            }
+
+            if (lastX === null || lastX === undefined) {
+                lastX = axisClickX;
+            }
+
+            if (swipeCoords.x > lastX) {
+                diff = evtCoords.x - lastX;
+                newPos = parseInt(handle.css('left')) + diff;
+                if ((newPos) > axisWidth) {
+                    return;
+                }
+                if (isMinHandleHitMaxHandle()) {
+                    return;
+                }
+                if (!isMinHandle && (newPos + handleWidth) >= axisWidth) {
+                    return;
+                }
+                width = isMinHandle ? $scope.range.width() - diff : $scope.range.width() + diff;
+            } else {
+                diff = lastX - evtCoords.x;
+                newPos = (parseInt(handle.css('left')) || maxHandleX) - diff;
+                if (newPos <= 0) {
+                    return;
+                }
+                if (isMaxHandleHitMinHandle()) {
+                    return;
+                }
+                width = isMinHandle ? $scope.range.width() + diff : $scope.range.width() - diff;
+            }
+
+            if (isMinHandle) {
+                minHandleX = newPos;
+                $scope.rangeMin = newPos === 1 ? $scope.min :
+                    getHandleValue(newPos);
+            } else {
+                maxHandleX = newPos;
+                $scope.rangeMax = newPos + handleWidth >= axisWidth ? $scope.max :
+                    getHandleValue(newPos + handleWidth);
+            }
+
+            $scope.range.css({ left: (minHandleX + handleWidth) + 'px', width: width });
+            positionHandle(isMinHandle ? 'left' : 'right', newPos);
+            lastX = swipeCoords.x;
+            $scope.$digest();
+
+            function isMinHandleHitMaxHandle() {
+                return isMinHandle && newPos >= maxHandleX - handleWidth;
+            }
+
+            function isMaxHandleHitMinHandle() {
+                return !isMinHandle && minHandleX + handleWidth >= newPos;
+            }
+        }
+        function getEventCoordinates(evt) {
+            var res = { x: 0, y: 0 };
+            if (evt.originalEvent && evt.originalEvent instanceof TouchEvent) {
+                res.x = evt.originalEvent.changedTouches[0].clientX;
+                res.y = evt.originalEvent.changedTouches[0].clientY;
+            } else if (evt.originalEvent && evt.originalEvent instanceof MouseEvent) {
+                res.x = evt.clientX;
+                res.y = evt.clientY;
+            }
+            return res;
+        }
+        function onMouseUp(evt) {
+            var trg = $(evt.target);
+            if (!(trg.is('.ep-range-slide-handle') ||
+                trg.is('.ep-range-ctr') ||
+                trg.is('.ep-range-slider-value-axis'))) {
+                $scope.axis.trigger('touchend');
+                $(document.body).off('mouseup', onMouseUp);
+            }
+            $scope.axis.removeClass('ep-range-handle-drag').removeClass('ep-range-drag');
+            isHandleClicked = false;
+            evt.stopPropagation();
+        }
+
+        $scope.value = 0;
+        $scope.touch = true;
+        $scope.rangeMax = $scope.max;
+        $scope.rangeMin = $scope.min;
+        $scope.steps = [25, 50, 75];
+        $scope.$watch('rangeMin', onRangeMinChange);
+        $scope.$watch('rangeMax', onRangeMaxChange);
+
+        $scope.toggleRangeInputMode = function() {
+            axisWidth = axisWidth || $scope.axis.width();
+            handleWidth = handleWidth || $scope.minHandle.outerWidth();
+            $scope.touch = !$scope.touch;
+        };
+        function onRangeMaxChange() {
+            if ($scope.touch) {
+                return;
+            }
+            var max = parseInt($scope.rangeMax);
+            if (max > $scope.max) {
+                max = $scope.max;
+                $scope.rangeMax = max;
+            }
+
+            maxHandleX = (((max - $scope.min) / ($scope.max - $scope.min)) * axisWidth) - handleWidth;
+            positionHandle('right', maxHandleX);
+            $scope.range.css({ left: minHandleX + handleWidth, width: maxHandleX - minHandleX - handleWidth });
+        }
+
+        function onRangeMinChange() {
+            if ($scope.touch) {
+                return;
+            }
+            var min = parseInt($scope.rangeMin);
+            if (min < $scope.min) {
+                min = $scope.min;
+                $scope.rangeMin = min;
+            }
+            minHandleX = (((min - $scope.min) / ($scope.max - $scope.min)) * axisWidth);
+
+            positionHandle('left', minHandleX);
+            if (maxHandleX === 0) {
+                maxHandleX = axisWidth - handleWidth;
+            }
+            $scope.range.css({ left: minHandleX + handleWidth, width: maxHandleX - minHandleX - handleWidth});
+        }
+
+        $scope.onSwipe = function(coords, evt) {
+            if (isHandleClicked) {
+                processHandleDrag(coords, evt);
+            } else {
+                processRangeDrag(coords, evt);
+            }
+            evt.stopPropagation();
+        };
+
+        $scope.onAxisClick = function(evt) {
+            var target = $(evt.target);
+            axisClickX = getEventCoordinates(evt).x;
+            axisWidth = $scope.axis.width();
+            $scope.axisWithAndX = axisWidth + ', ' + $scope.axis.position().left;
+            if (target.is('.ep-range-slide-handle')) {
+                handle = target;
+                handleWidth = handle.outerWidth();
+                $scope.axis.addClass('ep-range-handle-drag').removeClass('ep-range-drag');
+                isHandleClicked = true;
+            } else if (target.is('.ep-range-ctr') || target.is('.ep-range')) {
+                $scope.axis.addClass('ep-range-drag').removeClass('ep-range-handle-drag');
+            }
+            $(document.body).mouseup(onMouseUp);
+            evt.stopPropagation();
+        };
+
+        $scope.swipeStart = function() {
+            $scope.axis.parent().addClass('active');
+        };
+        $scope.swipeEnd = function() {
+            $scope.axis.parent().removeClass('active');
+            lastX = axisClickX = null;
+        };
+
+        function getHandleValue(pos) {
+            var percent = pos / axisWidth;
+            $scope.newPoint = Math.ceil($scope.min + (percent * ($scope.max - $scope.min)));
+            return $scope.newPoint;
+        }
+
+        function getSelection() {
+            return { min: $scope.rangeMin, max: $scope.rangeMax };
+        }
+        function clearRange() {
+            $scope.rangeMin = $scope.min;
+            $scope.rangeMax = $scope.max;
+        }
+
+        $scope.out.getSelection = getSelection;
+        $scope.out.clear = clearRange;
+
+    }
+]);
+
+'use strict';
+/**
+* @ngdoc directive
+* @name ep.ui.range.slider.directive:epRangeSlider
+* @restrict E
+*
+* @description
+* Represents the ep.ui.range.slider directive
+*
+* @example
+*/
+angular.module('ep.ui.range.slider').directive('epRangeSlider',[
+    '$swipe',
+    function($swipe) {
+        return {
+            restrict: 'E',
+            controller: 'epRangeSliderCtrl',
+            templateUrl: 'src/components/ep.ui.range.slider/ep-range-slider.html',
+            scope: {
+                min: '=',
+                max: '=',
+                out: '='
+            },
+            compile: function() {
+                return function(scope, ele) {
+                    scope.container = ele.parent();
+                    scope.min = scope.min || 0;
+                    scope.minHandle = scope.container.find('.js-handle-min');
+                    scope.maxHandle = scope.container.find('.js-handle-max');
+                    scope.range = scope.container.find('.ep-range-ctr');
+                    //scope.rangeFrame = scope.container.find('.range-frame');
+                    scope.axis = scope.container.find('.ep-range-slider-value-axis');
+                    scope.axis.mousedown(scope.onAxisClick);
+                    scope.axis.bind('touchstart', scope.onAxisClick);
+                    $swipe.bind(scope.axis, {
+                        move: scope.onSwipe,
+                        start: scope.swipeStart,
+                        end: scope.swipeEnd
+                    });
+                };
+            }
+        };
+    }]);
+
+'use strict';
+
 /**
  * @ngdoc object
  * @name ep.utils.object:utilsConfig
@@ -9938,7 +10462,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.datagrid/datagrid.html',
-    "<div class=ep-data-grid id={{state.dataGridId}}><form class=\"ep-dg-grid-search navbar-inverse\" ng-show=state.allowSearchInput><!-- This needs to be a form or the \"search\" input type doesn't work on iOS --><input class=\"ep-dg-search-input form-control input-sm\" name=search type=search placeholder=Search ng-class=searchInputClass ng-model=state.searchValue ng-init=fnOnSearchBlur() ng-blur=fnOnSearchBlur($event) ng-focus=fnOnSearchFocus($event) ng-keyup=fnOnSearchKeyUp($event) ng-change=\"fnOnSearchChange($event)\"></form><div id=tblArea_{{state.dataGridId}} class=ep-dg-grid-table-area><table id=tbl_{{state.dataGridId}} cellpadding=0 cellspacing=0 border=0 class=\"ep-dg-grid-table table table-bordered table-hover\" fixed-header></table><div class=ep-dg-progressIndicator ng-show=showProgress><span class=\"fa fa-spinner fa-pulse fa-5x\"></span></div></div></div>"
+    "<div class=ep-data-grid id={{state.dataGridId}} ng-class=\"{'ep-data-grid-child' : state.isChildGrid}\"><div class=\"ep-dg-grid-search navbar-inverse clearfix\" ng-show=state.allowSearchInput><!-- This needs to be a form or the \"search\" input type doesn't work on iOS --><input class=\"ep-dg-search-input form-control input-sm pull-left\" name=search type=search placeholder=Search ng-class=searchInputClass ng-model=state.searchValue ng-init=fnOnSearchBlur() ng-blur=fnOnSearchBlur($event) ng-focus=fnOnSearchFocus($event) ng-keyup=fnOnSearchKeyUp($event) ng-change=\"fnOnSearchChange($event)\"> <span class=\"ep-dg-search-icon-overlay pull-right\" ng-class=\"{'invisible': state.searchValue + '' === ''}\" ng-click=clearSearch()><i class=\"fa fa-lg fa-times\"></i></span></div><div id=tblArea_{{state.dataGridId}} class=ep-dg-grid-table-area><table id=tbl_{{state.dataGridId}} cellpadding=0 cellspacing=0 border=0 class=\"ep-dg-grid-table table table-bordered table-hover\" fixed-header></table><div class=ep-dg-progressIndicator ng-show=showProgress><span class=\"fa fa-spinner fa-pulse fa-5x\"></span></div></div></div>"
   );
 
 
@@ -9953,7 +10477,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.modaldialog/modals/modaldialog-custom.html',
-    "<div class=\"ep-modaldialog ep-modaldialog-custom\"><div class=modal-header><span class=close ng-show=config.closeButton><button type=button data-dismiss=modal aria-label=Close ng-click=\"btnclick({isCancel: true})\"><span aria-hidden=true>&times;</span></button></span><h4 id=dialogTitle class=\"bg-primary modal-title\"><span class=\"ep-dlg-title-icon {{config.icon}}\"></span> <span class=ep-dlg-title ng-bind=config.fnGetTitle()></span></h4></div><div class=modal-body><form id=dialogForm name=dialogForm><div ng-include=config.templateUrl></div><div class=\"ep-dlg-rememberMe col-md-10\" ng-show=config.rememberMe><div class=form-group><div class=\"row col-md-1\"><input tabindex=1 id=cbxRemember class=form-control type=checkbox ng-model=config.rememberMeValue></div><label class=\"col-md-10 control-label\">Do not show this message again</label></div></div></form></div><div class=modal-footer><div class=ep-dlg-buttons><button ng-repeat=\"btn in config.buttons\" id=btn.id tabindex=\"$index + 100\" data-dismiss=modal ng-hide=btn.hidden ng-disabled=\"btn.isPrimary && !dialogForm.$valid\" class=\"btn btn-{{btn.type}}\" ng-click=btnclick(btn)><i ng-if=btn.icon ng-class=btn.icon></i> &nbsp;{{btn.text}}</button></div></div><div class=ep-dlg-status ng-show=config.statusBar><h4 class=\"bg-primary modal-title\"><span>{{config.statusBarText}}</span></h4></div></div>"
+    "<div class=\"ep-modaldialog ep-modaldialog-custom\"><div class=modal-header><span class=close ng-show=config.closeButton><button type=button data-dismiss=modal aria-label=Close ng-click=\"btnclick({isCancel: true})\"><span aria-hidden=true>&times;</span></button></span><h4 id=dialogTitle class=\"bg-primary modal-title\"><span class=\"ep-dlg-title-icon {{config.icon}}\"></span> <span class=ep-dlg-title ng-bind=config.fnGetTitle()></span></h4></div><div class=modal-body><form id=dialogForm name=dialogForm><div ng-include=config.templateUrl></div><div class=\"ep-dlg-rememberMe col-md-10\" ng-show=config.rememberMe><div class=form-group><div class=\"row col-md-1\"><input tabindex=1 id=cbxRemember class=form-control type=checkbox ng-model=config.rememberMeValue></div><label class=\"col-md-10 control-label\">Do not show this message again</label></div></div></form></div><div class=modal-footer><div class=ep-dlg-buttons><button ng-repeat=\"btn in config.buttons\" id=btn.id tabindex=\"$index + 100\" data-dismiss=modal ng-hide=btn.hidden ng-disabled=\"btn.isPrimary && !dialogForm.$valid\" class=\"btn btn-{{btn.type}}\" ng-click=btnclick(btn)><i ng-if=btn.icon ng-class=btn.icon></i> &nbsp;{{btn.text}}</button></div></div><div class=ep-dlg-status ng-show=config.statusBar><h4 class=\"bg-primary modal-title\"><span ng-if=!config.statusBarTextHTML>{{config.statusBarText}}</span> <span ng-if=config.statusBarTextHTML ng-bind-html=config.statusBarTextHTML></span></h4></div></div>"
   );
 
 
@@ -9983,7 +10507,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/shell.html',
-    "<div><section ng-controller=epShellCtrl class=ep-shell><section ng-if=\"state.disableTheming !== true && state.includeThemeFile === true\"><link rel=stylesheet ng-href={{state.currentTheme.cssFilename}}></section><div ng-show=state.showProgressIndicator class=ep-progress-idicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\"></a></li><li><a id=apptitle ng-class=\"{hidden: !state.showBrand}\" class=navbar-brand href=#/home ng-bind-html=state.brandHTML></a></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in navButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.disabled}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button)></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false></a><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.disabled }\" role=menu><li ng-repeat=\"opt in button.options\"><a ng-click=opt.action() ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa {{opt.icon}}\"></i><span class=ep-navmenu-item-text>{{opt.title}}</span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div ng-view class=ep-fullscreen></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" href=#/whatsnew><sup>Version {{uiVersion}}</sup></a></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.feedbackEnabled ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
+    "<div><section ng-controller=epShellCtrl class=ep-shell><section ng-if=\"state.disableTheming !== true && state.includeThemeFile === true\"><link rel=stylesheet ng-href={{state.currentTheme.cssFilename}}></section><div ng-show=state.showProgressIndicator class=ep-progress-idicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\"></a></li><li><a id=apptitle ng-class=\"{hidden: !state.showBrand}\" class=navbar-brand href=#/home ng-bind-html=state.brandHTML></a></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in navButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.enabled === false}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button)></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false></a><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\"><a ng-click=opt.action() ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa {{opt.icon}}\"></i><span class=ep-navmenu-item-text>{{opt.title}}</span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div ng-view class=ep-fullscreen></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" href=#/whatsnew><sup>Version {{uiVersion}}</sup></a></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.enableFeedback ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
   );
 
 
@@ -9992,7 +10516,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   );
 
 
-  $templateCache.put('src/components/ep.shell/viewcontainer/viewcontainer.html',
+  $templateCache.put('src/components/ep.shell/view-container/view-container.html',
     "<div id=viewContainer class=ep-view-container ng-class=\"{ 'ep-with-navbar': !!state.showNavbar,\r" +
     "\n" +
     "                                    'ep-with-footer': !!state.showFooter,\r" +
@@ -10007,6 +10531,11 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
   $templateCache.put('src/components/ep.shell/views/ep-shell-embedded-apps-container.html',
     "<ep-shell-view-container smallmodesettings=\"{ &quot;showNavbar&quot;: true, &quot;showFooter&quot;: false, &quot;enableLeftSidebar&quot;: true, &quot;enableRightSidebar&quot;: false, &quot;showHomeButton&quot;: false, &quot;showBrand&quot;: true,  &quot;animateViewContainer&quot;: false, &quot;allowVerticalScroll&quot;: true }\" largemodesettings=\"{ &quot;showNavbar&quot;: true, &quot;showFooter&quot;: false, &quot;enableLeftSidebar&quot;: true, &quot;enableRightSidebar&quot;: false, &quot;showHomeButton&quot;: false, &quot;showBrand&quot;: true,  &quot;animateViewContainer&quot;: false, &quot;allowVerticalScroll&quot;: true }\"><ep-embedded-apps></ep-embedded-apps></ep-shell-view-container>"
+  );
+
+
+  $templateCache.put('src/components/ep.ui.range.slider/ep-range-slider.html',
+    "<div class=ep-range-slider-ctr><div ng-show=touch><div class=ep-range-slider-value-ctr ng-click=toggleRangeInputMode()>{{rangeMin}} - {{rangeMax}}</div><div class=ep-range-slider-value-axis><div class=ep-range-ctr><div class=ep-range></div></div><div class=\"ep-range-slide-handle ep-range-slide-handle-min js-handle-min\"></div><div class=\"ep-range-slide-handle ep-range-slide-handle-max js-handle-max\"></div></div><div class=ep-range-steps-ctr><span class=\"ep-range-step ep-range-step-{{::step}}\" ng-repeat=\"step in steps\"></span></div></div><div ng-show=!touch><input class=\"form-control ep-range-input-min\" name=tbMin ng-model=rangeMin ng-model-options=\"{ debounce: 500 }\"><label for=tbMax>and</label><input class=\"form-control ep-range-input-max\" name=tbMax ng-model=rangeMax ng-model-options=\"{ debounce: 500 }\"><div class=range-slider-mode-toggle-ctr><small class=ep-range-slider-toggle-mode ng-click=toggleRangeInputMode()>Switch to slider</small></div></div></div>"
   );
 
 }]);
