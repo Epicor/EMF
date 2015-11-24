@@ -3441,18 +3441,28 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsShellService', [
             }
             if (view.viewSettings) {
                 var viewSettings = view.viewSettings;
+                var defaultBrandTarget = epEmbeddedAppsProvider.getAppRoute(config.id, config.startViewId);
                 if (viewSettings.small) {
-                    _.each(viewSettings.small, function(val, key) {
+                    if (config.startupInShell && !viewSettings.small.brandTarget) {
+                        viewSettings.small.brandTarget = defaultBrandTarget;
+                    }
+                    angular.forEach(viewSettings.small, function(val, key) {
                         epShellService.__state.viewSettings.small[key] = val;
                     });
                 }
                 if (viewSettings.large) {
-                    _.each(viewSettings.large, function(val, key) {
+                    if (config.startupInShell && !viewSettings.large.brandTarget) {
+                        viewSettings.large.brandTarget = defaultBrandTarget;
+                    }
+                    angular.forEach(viewSettings.large, function(val, key) {
                         epShellService.__state.viewSettings.large[key] = val;
                     });
                 }
                 if (!viewSettings.small && !viewSettings.large) {
-                    _.each(viewSettings, function(val, key) {
+                    if (config.startupInShell && !viewSettings.brandTarget) {
+                        viewSettings.brandTarget = defaultBrandTarget;
+                    }
+                    angular.forEach(viewSettings, function(val, key) {
                         epShellService.__state.viewSettings.small[key] = val;
                         epShellService.__state.viewSettings.large[key] = val;
                     });
@@ -3827,6 +3837,7 @@ angular.module('ep.embedded.apps')
 
         var activeConfig;
         function getAppPackageService(config, $timeout) {
+            // this active config switching needs work-- it's causing a problem where the wrong application is routed to. see EMA-855
             activeConfig = config;
             return ['$location', function appPackageService($location) {
                 var data = {};
@@ -7698,7 +7709,7 @@ angular.module('ep.shell').service('epShellService', [
                  shellState.navButtonClicked = null;
                  if (btn.confirm) {
                      btn.confirm(btn.action);
-                 } else if (shellState.freezeNavButtons !== true) {
+                 } else if (shellState.freezeNavButtons !== true && btn.enabled !== false) {
                      btn.action();
                  }
              },
@@ -8847,7 +8858,15 @@ angular.module('ep.shell').service('epShellService', [
              //you can pass one or more id's seperated by comma
              var args = _.flatten(arguments, true);
              iterateNavbarButton(args, 'showNavbarButton', function(b) {
-                 b.hidden = false;
+                 if (b.fnVisible && angular.isFunction(b.fnVisible)) {
+                     b.hidden = !b.fnVisible();
+                 } else if (b.enabled && angular.isFunction(b.enabled)) {
+                     //Obsolete - enabled should not be used for show/hide!!!
+                     //Only temporary for EMA
+                     b.hidden = !b.enabled();
+                 } else {
+                     b.hidden = false;
+                 }
                  return true;
              });
          }
