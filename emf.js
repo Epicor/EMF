@@ -999,6 +999,10 @@ angular.module('ep.datagrid').factory('epDataGridDirectiveFactory', [
                 scope.refreshData();
             }
 
+            function draw(mode) {
+                scope.draw(mode);
+            }
+
             function updateOption(name, value) {
                 scope.options[name] = value;
             }
@@ -1101,11 +1105,12 @@ angular.module('ep.datagrid').factory('epDataGridDirectiveFactory', [
                 id: id,
                 setGridOptions: setGridOptions,
                 getGridOptions: getGridOptions,
-                    createGrid: createGrid,
+                createGrid: createGrid,
                 activeRecord: activeRecord,
                 activeRow: activeRow,
                 activeCell: activeCell,
                 refreshData: refreshData,
+                draw: draw,
                 release: release,
                 updateOption: updateOption,
                 resizeTable: resizeTable,
@@ -1306,9 +1311,10 @@ The controller code must provide the options in active scope or set them using f
         ordering: true                   //is sorting allowed (by default true)
         showEditIndicator: false         //show edit indicator (by default false)
         showToggleFilterButton: false    //show internal filter button (by default false)
-        pageLength: 100                  //default page length (how many records in a page)
+        pageLength: 50                   //default page length (how many records in a page)
         tableHeight: null                //fixed table height (used only if fnOnCalcTableHeight is undefined)
         enableCellHighlight: true        //enable the highlighting of cell on cell click
+        disableRecordInfo: false         //disable display of record info
 
         //static table options:
         staticMode: false                //is static datatable (by default false)
@@ -1391,7 +1397,7 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                 activeRow: null,
                 activeRecord: null,
                 activeCell: null,
-                pageLength: 100,
+                pageLength: 50,
                 tableHeight: null,
                 staticMode: false,
                 dataSource: null,
@@ -1697,7 +1703,7 @@ angular.module('ep.datagrid').directive('epDataGrid', [
 
             if (!append || forceRefresh) {
                 prms.iDisplayStart = 0;
-                prms.iDisplayLength = 50 * prms.iPageNumber;
+                prms.iDisplayLength = scope.state.pageLength * prms.iPageNumber;
                 prms.iLoadedRecordLength = 0;
                 prms.iTotalRecords = 0;
             }
@@ -2005,7 +2011,7 @@ angular.module('ep.datagrid').directive('epDataGrid', [
             scope.state.gridLoadPrms = {
                 iPageNumber: 1,
                 iDisplayStart: 0,
-                iDisplayLength: 100,
+                iDisplayLength: scope.state.pageLength,
                 iLoadedRecordLength: 0,
                 iTotalRecords: 0,
                 previousPrms: {
@@ -2013,7 +2019,7 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                     sortDir: '',
                     searchTerm: '',
                     iDisplayStart: 0,
-                    iDisplayLength: 100
+                    iDisplayLength: scope.state.pageLength
                 }
             };
 
@@ -2033,21 +2039,9 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                     'sScrollX': '100%',
                     'sScrollXInner': (scope.options.isChildGrid) ? '90%' : '100%',
                     'sDom': 'rtip',
-                    'infoCallback': function() {
-                        var startNum = scope.state.gridLoadPrms.iTotalRecords ? 1 : 0;
-                        scope.recordsInfo = epUtilsService.strFormat('Showing {0}records {1} to {2} of {3}',
-                            (scope.state.gridLoadPrms.previousPrms.searchTerm ? '<strong>filtered</strong> ' : ''),
-                            startNum, scope.state.gridLoadPrms.iLoadedRecordLength,
-                            scope.state.gridLoadPrms.iTotalRecords);
-                        var plainText = epUtilsService.strFormat('Showing {0}records {1} to {2} of {3}',
-                            (scope.state.gridLoadPrms.previousPrms.searchTerm ? 'filtered ' : ''),
-                            startNum, scope.state.gridLoadPrms.iLoadedRecordLength,
-                            scope.state.gridLoadPrms.iTotalRecords);
-                        if (scope.options.fnUpdateRecordsInfo) {
-                            scope.options.fnUpdateRecordsInfo(scope.recordsInfo, plainText);
-                            return '';
-                        }
-                        return scope.recordsInfo;
+                    'infoCallback': function(settings, start, end, max, total, pre) {
+                        return !scope.options.disableRecordInfo ?
+                            infoCallback(scope, settings, start, end, max, total, pre) : '';
                     },
                     'createdRow': function(row, data) {
                         if (scope.options.fnOnCreatedRow) {
@@ -2071,33 +2065,15 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                     'scrollCollapse': false,
                     'sDom': 'rti',
                     'bDeferRender': true,
-
-                    'infoCallback': function() {
-                        var startNum = scope.state.gridLoadPrms.iTotalRecords ? 1 : 0;
-                        scope.recordsInfo = epUtilsService.strFormat('Showing {0}records {1} to {2} of {3}',
-                            (scope.state.gridLoadPrms.previousPrms.searchTerm ? '<strong>filtered</strong> ' : ''),
-                            startNum, scope.state.gridLoadPrms.iLoadedRecordLength,
-                            scope.state.gridLoadPrms.iTotalRecords);
-                        if (scope.options.fnUpdateRecordsInfo) {
-                            scope.options.fnUpdateRecordsInfo(scope.recordsInfo);
-                            return '';
-                        }
-                        return scope.recordsInfo;
+                    'infoCallback': function(settings, start, end, max, total, pre) {
+                        return !scope.options.disableRecordInfo ?
+                            infoCallback(scope, settings, start, end, max, total, pre) : '';
                     },
                     'createdRow': function(row, data) {
                         if (scope.options.fnOnCreatedRow) {
                             scope.options.fnOnCreatedRow(row, data);
                         }
                     }
-                    //'fnInitComplete': function () {
-                    //    onTableInitComplete(scope);
-                    //},
-                    //'fnDrawCallback': function (oSettings) {
-                    //    if (scope.state.isRefreshing) {
-                    //        onTableInitComplete(scope);
-                    //        scope.state.isRefreshing = false;
-                    //    }
-                    //},
                 };
             }
 
@@ -2210,6 +2186,28 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                     };
                 }
             });
+        }
+
+        function infoCallback(scope, settings, start, end, max, total, pre) {
+            var ret = '';
+            if (scope.state.staticMode === true) {
+                ret = scope.recordsInfo = pre;
+            } else {
+                var iLoaded = settings._iDisplayLength;
+                var iTotal = settings._iRecordsTotal;
+                if (total > 0 && (iLoaded > scope.viewState.gridLoadPrms.iLoadedRecordLength)) {
+                    iTotal += (iLoaded - scope.viewState.gridLoadPrms.iLoadedRecordLength);
+                }
+                var startNum = total ? 1 : 0;
+                ret = scope.recordsInfo = epUtilsService.strFormat('Showing {0}records {1} to {2} of {3}',
+                    (scope.state.gridLoadPrms.previousPrms.searchTerm ? '<strong>filtered</strong> ' : ''),
+                    startNum, iLoaded, iTotal);
+            }
+            if (scope.options.fnUpdateRecordsInfo) {
+                scope.options.fnUpdateRecordsInfo(scope.recordsInfo);
+                ret = '';
+            }
+            return ret;
         }
 
         function onTableInitComplete(scope) {
@@ -2736,6 +2734,13 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                 if (scope.state.dataTable) {
                     var prms = scope.state.gridLoadPrms.previousPrms;
                     getDataFromServer(scope, prms.searchTerm, prms.sortColIdx, prms.sortDir, true, false, true);
+                }
+            };
+
+            scope.draw = function(mode) {
+                var tbl = scope.grApi();
+                if (tbl) {
+                    tbl.draw(mode);
                 }
             };
 
@@ -4056,6 +4061,7 @@ angular.module('ep.embedded.apps')
 
                     if (epEmbeddedAppsCacheService.scriptCache.get(resourceId)) {
                         $log.debug('AppPackage ' + config.id + ' already loaded.');
+                        activeConfig = config;
                         deferredLoad.resolve(config.id);
                         // load all of the css links
                         // even though the module has already been loaded, we still need to reload the css
@@ -7663,6 +7669,7 @@ angular.module('ep.shell').service('epShellService', [
              currentTheme: null,        //current theme
              showBrand: true,
              brandHTML: 'Mobile Access <sup>2.0</sup>',
+             brandTarget: '',
              freezeNavButtons: false,
              viewSettings: {
                  sidebar: {},
@@ -7832,6 +7839,7 @@ angular.module('ep.shell').service('epShellService', [
              if (shellState.showBrand && mode.brandHTML) {
                  setBrandHTML(mode.brandHTML);
              }
+             shellState.brandTarget = mode.brandTarget;
 
              if (mode.enableLeftSidebar && (isMediaModeLarge() || shellState.suspend)) {
                  showLeftSidebar();
@@ -10526,7 +10534,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/shell.html',
-    "<div><section ng-controller=epShellCtrl class=ep-shell><section ng-if=\"state.disableTheming !== true && state.includeThemeFile === true\"><link rel=stylesheet ng-href={{state.currentTheme.cssFilename}}></section><div ng-show=state.showProgressIndicator class=ep-progress-idicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\"></a></li><li><a id=apptitle ng-class=\"{hidden: !state.showBrand}\" class=navbar-brand href=#/home ng-bind-html=state.brandHTML></a></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in navButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.enabled === false}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button)></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false></a><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\"><a ng-click=opt.action() ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa {{opt.icon}}\"></i><span class=ep-navmenu-item-text>{{opt.title}}</span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div ng-view class=ep-fullscreen></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" href=#/whatsnew><sup>Version {{uiVersion}}</sup></a></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.enableFeedback ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
+    "<div><section ng-controller=epShellCtrl class=ep-shell><section ng-if=\"state.disableTheming !== true && state.includeThemeFile === true\"><link rel=stylesheet ng-href={{state.currentTheme.cssFilename}}></section><div ng-show=state.showProgressIndicator class=ep-progress-idicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\"></a></li><li><a id=apptitle ng-class=\"{hidden: !state.showBrand}\" class=navbar-brand ng-href=\"#{{(state.brandTarget || '/home')}}\" ng-bind-html=state.brandHTML></a></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in navButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.enabled === false}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button)></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false></a><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\"><a ng-click=opt.action() ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa {{opt.icon}}\"></i><span class=ep-navmenu-item-text>{{opt.title}}</span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div ng-view class=ep-fullscreen></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" href=#/whatsnew><sup>Version {{uiVersion}}</sup></a></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.enableFeedback ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
   );
 
 
