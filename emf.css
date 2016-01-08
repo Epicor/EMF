@@ -302,6 +302,7 @@
   border-left: none;
   border-right: none;
   min-width: 36px;
+  width: 36px;
 }
 .ep-data-grid .row-alert {
   max-width: 800px;
@@ -1055,7 +1056,7 @@
  NavBar Buttons / Menu
 ***********************************************************/
 .ep-shell .ep-main-navbar .ep-navbar-button {
-  padding: 10px 5px;
+  padding: 10px 0 5px 5px;
   text-decoration: none;
   cursor: pointer;
   margin-right: 0;

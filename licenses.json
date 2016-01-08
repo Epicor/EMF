@@ -1,32 +1,12 @@
 {
-    "angular-bootstrap@0.13.4": {
-        "licenses": [
-            "MIT"
-        ],
-        "repository": "git+https://github.com/angular-ui/bootstrap"
-    },
-    "angular-resource@1.3.20": {
-        "licenses": [
-            "MIT"
-        ],
-        "repository": "git+https://github.com/angular/angular.js"
-    },
-    "angular-ui-router@0.2.15": {
-        "licenses": [
-            "MIT*"
-        ]
+    "angular-ui-utils@0.2.3": {
+        "licenses": "UNKNOWN"
     },
     "animate.css@undefined": {
         "licenses": "UNKNOWN",
         "repository": "git+https://github.com/daneden/animate.css"
     },
-    "angular-sanitize@1.3.20": {
-        "licenses": [
-            "MIT"
-        ],
-        "repository": "git+https://github.com/angular/angular.js"
-    },
-    "fastclick@undefined": {
+    "angular-ui-router@0.2.15": {
         "licenses": [
             "MIT*"
         ]
@@ -39,30 +19,31 @@
         ],
         "homepage": "http://fontawesome.io"
     },
-    "angular-mocks@1.3.20": {
+    "datatables@1.10.10": {
         "licenses": [
             "MIT"
-        ],
-        "repository": "git+https://github.com/angular/angular.js"
+        ]
+    },
+    "fastclick@undefined": {
+        "licenses": [
+            "MIT*"
+        ]
     },
     "jquery@2.1.4": {
         "licenses": [
             "MIT"
         ]
     },
-    "angular-ui-utils@0.2.3": {
-        "licenses": "UNKNOWN"
-    },
-    "datatables@1.10.10": {
+    "lesshat@3.0.2": {
         "licenses": [
-            "MIT"
-        ]
-    },
-    "angular-route@1.3.20": {
-        "licenses": [
-            "MIT"
+            "MIT*"
         ],
-        "repository": "git+https://github.com/angular/angular.js"
+        "homepage": "https://github.com/csshat/lesshat"
+    },
+    "underscore@1.8.3": {
+        "licenses": [
+            "MIT*"
+        ]
     },
     "numeral@1.5.3": {
         "licenses": [
@@ -70,7 +51,70 @@
         ],
         "repository": "git+https://github.com/adamwdraper/Numeral-js"
     },
+    "angular-route@1.3.20": {
+        "licenses": [
+            "MIT"
+        ],
+        "repository": "git+https://github.com/angular/angular.js"
+    },
     "angular-touch@1.3.20": {
+        "licenses": [
+            "MIT"
+        ],
+        "repository": "git+https://github.com/angular/angular.js"
+    },
+    "bootswatch@undefined": {
+        "licenses": [
+            "MIT"
+        ],
+        "repository": {
+            "type": "git",
+            "url": "git://github.com/thomaspark/bootswatch.git"
+        },
+        "homepage": "http://bootswatch.com"
+    },
+    "moment@2.8.4": {
+        "licenses": [
+            "MIT*"
+        ]
+    },
+    "angular-bootstrap@0.13.4": {
+        "licenses": [
+            "MIT"
+        ],
+        "repository": "git+https://github.com/angular-ui/bootstrap"
+    },
+    "angular-aria@1.3.20": {
+        "licenses": [
+            "MIT"
+        ],
+        "repository": "git+https://github.com/angular/angular.js"
+    },
+    "angular-resource@1.3.20": {
+        "licenses": [
+            "MIT"
+        ],
+        "repository": "git+https://github.com/angular/angular.js"
+    },
+    "angular-mocks@1.3.20": {
+        "licenses": [
+            "MIT"
+        ],
+        "repository": "git+https://github.com/angular/angular.js"
+    },
+    "angular-sanitize@1.3.20": {
+        "licenses": [
+            "MIT"
+        ],
+        "repository": "git+https://github.com/angular/angular.js"
+    },
+    "angular-cookies@1.3.20": {
+        "licenses": [
+            "MIT"
+        ],
+        "repository": "git+https://github.com/angular/angular.js"
+    },
+    "angular@1.3.20": {
         "licenses": [
             "MIT"
         ],
@@ -83,57 +127,13 @@
         "homepage": "http://getbootstrap.com",
         "repository": "git+https://github.com/twbs/bootstrap"
     },
-    "angular-aria@1.3.20": {
-        "licenses": [
-            "MIT"
-        ],
-        "repository": "git+https://github.com/angular/angular.js"
-    },
-    "angular-animate@1.3.20": {
-        "licenses": [
-            "MIT"
-        ],
-        "repository": "git+https://github.com/angular/angular.js"
-    },
-    "angular-cookies@1.3.20": {
-        "licenses": [
-            "MIT"
-        ],
-        "repository": "git+https://github.com/angular/angular.js"
-    },
-    "moment@2.8.4": {
-        "licenses": [
-            "MIT*"
-        ]
-    },
-    "lesshat@3.0.2": {
-        "licenses": [
-            "MIT*"
-        ],
-        "homepage": "https://github.com/csshat/lesshat"
-    },
     "enquire@2.1.2": {
         "licenses": [
             "MIT"
         ],
         "repository": "https://github.com/WickyNilliams/enquire.js"
     },
-    "underscore@1.8.3": {
-        "licenses": [
-            "MIT*"
-        ]
-    },
-    "bootswatch@undefined": {
-        "licenses": [
-            "MIT"
-        ],
-        "repository": {
-            "type": "git",
-            "url": "git://github.com/thomaspark/bootswatch.git"
-        },
-        "homepage": "http://bootswatch.com"
-    },
-    "angular@1.3.20": {
+    "angular-animate@1.3.20": {
         "licenses": [
             "MIT"
         ],
