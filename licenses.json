@@ -1,11 +1,17 @@
 {
+    "angular-ui-utils@0.2.3": {
+        "licenses": "UNKNOWN"
+    },
     "angular-ui-router@0.2.15": {
         "licenses": [
             "MIT*"
         ]
     },
-    "angular-ui-utils@0.2.3": {
-        "licenses": "UNKNOWN"
+    "animate.css@undefined": {
+        "licenses": [
+            "MIT"
+        ],
+        "repository": "git+https://github.com/daneden/animate.css"
     },
     "bootswatch@undefined": {
         "licenses": [
@@ -17,6 +23,21 @@
         },
         "homepage": "http://bootswatch.com"
     },
+    "fastclick@undefined": {
+        "licenses": [
+            "MIT*"
+        ]
+    },
+    "datatables@1.10.10": {
+        "licenses": [
+            "MIT"
+        ]
+    },
+    "lesshat@3.0.2": {
+        "licenses": [
+            "MIT*"
+        ]
+    },
     "font-awesome@undefined": {
         "licenses": [
             "OFL-1.1",
@@ -25,36 +46,27 @@
         ],
         "homepage": "http://fontawesome.io"
     },
-    "animate.css@undefined": {
-        "licenses": "UNKNOWN",
-        "repository": "git+https://github.com/daneden/animate.css"
-    },
-    "jquery@2.1.4": {
-        "licenses": [
-            "MIT"
-        ]
-    },
     "moment@2.8.4": {
         "licenses": [
             "MIT*"
         ]
     },
-    "angular@1.3.20": {
+    "numeral@1.5.3": {
         "licenses": [
             "MIT"
         ],
-        "repository": "git+https://github.com/angular/angular.js"
+        "repository": "git+https://github.com/adamwdraper/Numeral-js"
+    },
+    "underscore@1.8.3": {
+        "licenses": [
+            "MIT*"
+        ]
     },
     "angular-animate@1.3.20": {
         "licenses": [
             "MIT"
         ],
         "repository": "git+https://github.com/angular/angular.js"
-    },
-    "underscore@1.8.3": {
-        "licenses": [
-            "MIT*"
-        ]
     },
     "angular-aria@1.3.20": {
         "licenses": [
@@ -68,23 +80,7 @@
         ],
         "repository": "git+https://github.com/angular-ui/bootstrap"
     },
-    "fastclick@undefined": {
-        "licenses": [
-            "MIT*"
-        ]
-    },
-    "numeral@1.5.3": {
-        "licenses": [
-            "MIT"
-        ],
-        "repository": "git+https://github.com/adamwdraper/Numeral-js"
-    },
-    "datatables@1.10.10": {
-        "licenses": [
-            "MIT"
-        ]
-    },
-    "angular-cookies@1.3.20": {
+    "angular@1.3.20": {
         "licenses": [
             "MIT"
         ],
@@ -97,12 +93,6 @@
         "repository": "git+https://github.com/angular/angular.js"
     },
     "angular-resource@1.3.20": {
-        "licenses": [
-            "MIT"
-        ],
-        "repository": "git+https://github.com/angular/angular.js"
-    },
-    "angular-route@1.3.20": {
         "licenses": [
             "MIT"
         ],
@@ -127,16 +117,27 @@
         "homepage": "http://getbootstrap.com",
         "repository": "git+https://github.com/twbs/bootstrap"
     },
+    "jquery@2.1.4": {
+        "licenses": [
+            "MIT"
+        ]
+    },
+    "angular-cookies@1.3.20": {
+        "licenses": [
+            "MIT"
+        ],
+        "repository": "git+https://github.com/angular/angular.js"
+    },
+    "angular-route@1.3.20": {
+        "licenses": [
+            "MIT"
+        ],
+        "repository": "git+https://github.com/angular/angular.js"
+    },
     "enquire@2.1.2": {
         "licenses": [
             "MIT"
         ],
         "repository": "https://github.com/WickyNilliams/enquire.js"
-    },
-    "lesshat@3.0.2": {
-        "licenses": [
-            "MIT*"
-        ],
-        "homepage": "https://github.com/csshat/lesshat"
     }
 }

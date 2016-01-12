@@ -200,6 +200,18 @@ angular.module('ep.sysconfig', []);
 'use strict';
 /**
  * @ngdoc overview
+ * @name ep.tabbar
+ * @description
+ * tabbar components
+ */
+angular.module('ep.tabbar', [
+    'ep.templates',
+    'ep.sysconfig'
+]);
+
+'use strict';
+/**
+ * @ngdoc overview
  * @name ep.templates
  * @description
  * Provides module stub to inject html templates.
@@ -1081,6 +1093,10 @@ angular.module('ep.datagrid').factory('epDataGridDirectiveFactory', [
                 return scope.grDataTable();
             }
 
+            function api() {
+                return scope.grApi();
+            }
+
             function getRowByColumnValue(colIndex, val) {
                 return scope.getRowByColumnValue(colIndex, val);
             }
@@ -1127,6 +1143,7 @@ angular.module('ep.datagrid').factory('epDataGridDirectiveFactory', [
                 callPreviousGetData: callPreviousGetData,
                 updateRow: updateRow,
                 dataTable: dataTable,
+                api: api,
                 getRowByColumnValue: getRowByColumnValue,
                 toggleFilter: toggleFilter,
                 showFilter: showFilter,
@@ -1152,6 +1169,21 @@ angular.module('ep.datagrid').factory('epDataGridDirectiveFactory', [
 */
 angular.module('ep.datagrid').directive('epDataGridFilterRow', [
     function() {
+
+        function hideFilterRow(scope) {
+            //hide filter row - reset values, return changed flag
+            var bChanged = false;
+            angular.forEach(scope.state.filterEditors, function(f) {
+                if (!f.hidden && f.value !== '') {
+                    bChanged = true;
+                    f.value = '';
+                }
+                f.operator = '*';
+                f.operatorText = '';
+            });
+            return bChanged;
+        }
+
         return {
             restrict: 'E',
             replace: true,
@@ -1188,9 +1220,13 @@ angular.module('ep.datagrid').directive('epDataGridFilterRow', [
                                     }
                                 }
                                 operator = operator || '*';
+                                var sType = 'text';
+                                if (col.userColumnDef.sType === 'integer' || col.userColumnDef.sType === 'decimal') {
+                                    sType = 'number';
+                                }
                                 ctx = {
                                     name: col.sName,
-                                    type: (col.userColumnDef.oFormat.FieldType === 1) ? 'number' : 'text', //TO DO!!!
+                                    type: sType,
                                     value: value,
                                     operator: operator,
                                     operatorText: (operator === '*') ? '' : operator,
@@ -1208,13 +1244,15 @@ angular.module('ep.datagrid').directive('epDataGridFilterRow', [
                         fEditors.push(ctx);
                     });
                     $scope.state.filterEditors = fEditors;
+                    $scope.state.filterFunctions = {};
 
                     $scope.state.isFilterOn = true;
                     $scope.state.filterCriteria = '';
 
                     $scope.$watch('state.filterShowFlag', function(newValue, oldValue) {
                         if (newValue === false && oldValue === true && $scope.onHideFilter) {
-                            $scope.onHideFilter();
+                            var changedFilter = hideFilterRow($scope);
+                            $scope.onHideFilter(changedFilter);
                         }
                         $scope.resizeTable();
                     });
@@ -1235,7 +1273,7 @@ angular.module('ep.datagrid').directive('epDataGridFilterRow', [
                         }
                         ctx.operator = operators[index];
                         ctx.operatorText = (ctx.operator === '*') ? '' : ctx.operator;
-                        if ($scope.onChangeFilter) {
+                        if ($scope.onChangeFilter && ctx.value !== '') {
                             $scope.onChangeFilter(ctx);
                         }
                     };
@@ -1249,8 +1287,30 @@ angular.module('ep.datagrid').directive('epDataGridFilterRow', [
                     $scope.fnFilterKeyUp = function(ctx, e) {
                         if ($scope.onChangeFilter && e.keyCode === 13 ||
                             (e.keyCode !== 9 && ctx.value === '')) {
-                            $scope.onChangeFilter(ctx);
+                            if ($scope.onChangeFilter) {
+                                $scope.onChangeFilter(ctx);
+                            }
                         }
+                    };
+
+                    $scope.state.filterFunctions.getFilterExpressions = function() {
+                        var fExpr = [];
+                        if ($scope.state.filterShowFlag && $scope.state.filterEditors) {
+                            angular.forEach($scope.state.filterEditors, function(ctx) {
+                                if (!ctx.hidden && ctx.value !== '') {
+                                    if (ctx.name && ctx.operator) {
+                                        var expr = {
+                                            ColName: ctx.name,
+                                            Operator: ctx.operator,
+                                            Value: ctx.value
+                                        };
+                                        fExpr.push(expr);
+                                    }
+                                }
+                            });
+                        }
+                        $scope.state.filterExpressions = fExpr;
+                        return fExpr;
                     };
                 }
             }]
@@ -1309,12 +1369,14 @@ The controller code must provide the options in active scope or set them using f
         startSearchIndex: null           //starting search column index
         startSearchExactMatch: false     //is starting search an exact match
         ordering: true                   //is sorting allowed (by default true)
+        orderColumn: null                //initial order column index or name or '$first' (first col)
         showEditIndicator: false         //show edit indicator (by default false)
         showToggleFilterButton: false    //show internal filter button (by default false)
         pageLength: 50                   //default page length (how many records in a page)
         tableHeight: null                //fixed table height (used only if fnOnCalcTableHeight is undefined)
         enableCellHighlight: true        //enable the highlighting of cell on cell click
         disableRecordInfo: false         //disable display of record info
+        filterExpressions: null          //initial filter expressions
 
         //static table options:
         staticMode: false                //is static datatable (by default false)
@@ -1356,6 +1418,8 @@ Column = {
     widthFactor - (decimal) column width factor if width not provided. (<=0 ignored) - Examples: 0.5, 2.0, etc
     canSelectCells - (bool) (default = false) column cells can be selected,
     sClass      - (string) add user class on the column
+    align       - 'left'/'right'/'center'
+    oFormat     - formatting object
 }
 ==========================================================================================*/
 
@@ -1640,11 +1704,6 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                     ret = renderers[colDef.sRenderType](data, row, col, false, meta.settings, scope);
                 }
             }
-            // TODO: This code limits the umber of characters in a grid cell to 400
-            // TODO: It has been disabled pending beta feedback
-            //if (ret.length > 400) {
-            //    ret = ret.substring(0, 397) + '...';
-            //}
 
             if (scope.options.fnOnRenderGridCell) {
                 ret = scope.options.fnOnRenderGridCell(ret, type, row, meta, col, ret);
@@ -1672,13 +1731,12 @@ angular.module('ep.datagrid').directive('epDataGrid', [
         }
 
         function getDataFromServer(scope, searchTerm, sortColIdx, sortDir, append, showIndicator, forceRefresh) {
-            if (scope.state.staticMode === true) {
+            if (scope.state.staticMode === true) { return; }
+
+            if (scope.state.dataRetrieveInProcess === true || !scope.state.dataTable) {
                 return;
             }
 
-            if (scope.state.dataRetrieveInProcess === true) {
-                return;
-            }
             scope.state.dataRetrieveInProcess = true;
 
             var viewState = scope.state; //for compatability with grid service source code
@@ -1731,30 +1789,12 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                 parentKey: scope.options.parentKey
             };
 
-            function setHeader(hdr, col) {
-                var $hdr = $(hdr);
-                $hdr.removeClass('sorting_disabled').addClass('sorting');
-                $hdr.off('click');
-                $hdr.on('click', function() {
-                    var dir = $hdr.hasClass('sorting_asc') ? 'desc' : 'asc';
-                    getDataFromServer(scope, viewState.gridLoadPrms.previousPrms.searchTerm, col.mData, dir,
-                        false, true, false);
-                });
-
-                if (col.mData === viewState.gridLoadPrms.previousPrms.sortColIdx) {
-                    //remove sorting from all headers and then add new sorting
-                    scope.findElement('th').removeClass('sorting_desc').removeClass('sorting_asc');
-                    var dir = viewState.gridLoadPrms.previousPrms.sortDir || 'asc';
-                    $hdr.addClass('sorting_' + dir);
-                }
-            }
-
             function afterDataReturn(result) {
                 scope.state.dataRetrieveInProcess = false;
 
                 scope.findElement('#loadMoreDownRow').addClass('disabled').off('click');
 
-                if (result && result.Success) {
+                if (result && result.Success && scope.state.dataTable) {
                     if (showIndicator) {
                         scope.hideProgressIndicator();
                     }
@@ -1824,35 +1864,6 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                             //});
                         }
 
-                        if (scope.state.ordering && scope.state.staticMode !== true) {
-                            var table = scope.grApi();
-                            var cols = scope.grColumns();
-                            table.columns().eq(0).each(function(index) {
-                                var column = table.column(index);
-                                var col = _.find(cols, function(cc) {
-                                    return cc.idx === column.index();
-                                });
-                                if (col && col.orderable) {
-                                    setHeader(column.header(), col);
-                                }
-                            });
-                        }
-
-                        if (scope.options.showToggleFilterButton) {
-                            var colIdx = scope.grGetCellIndexByColumn('rowIndicator');
-                            if (colIdx >= 0) {
-                                var tHead = scope.grApi().column(colIdx).header();
-                                if ($(tHead).find('.fa-filter').length === 0) {
-                                    angular.element(tHead).append(
-                                        $compile('<ep-data-grid-filter-toggle></ep-data-grid-filter-toggle>')(scope));
-                                }
-                            }
-                        }
-
-                        $timeout(function() {
-                            scope.state.dataTable.fnAdjustColumnSizing(false);
-                        }, 200);
-
                         onTableInitComplete(scope);
                     };
 
@@ -1874,7 +1885,27 @@ angular.module('ep.datagrid').directive('epDataGrid', [
             } else {
                 afterDataReturn(returnData);
             }
+        }
 
+        function setType(col) {
+            if (!col.sType) {
+                col.sType = 'string';
+                var tp = col.sDataType.toLowerCase();
+                if (tp.indexOf('system.') === 0) {
+                    tp = tp.substr(7);
+                }
+                if (tp === 'datetime') {
+                    col.sType = 'date';
+                } else if (tp === 'bool' || tp === 'boolean') {
+                    col.sType = 'bool';
+                } else if (tp === 'int' || tp === 'integer' || tp === 'int32' || tp === 'int64' ||
+                    tp === 'long' || tp === 'int16') {
+                    col.sType = 'integer';
+                }
+                if (tp === 'double' || tp === 'decimal' || tp === 'float') {
+                    col.sType = 'decimal';
+                }
+            }
         }
 
         function setRenderingType(scope, col) {
@@ -1885,22 +1916,19 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                         col.sRenderType = col.sBizType;
                     }
                 }
-                var tp = col.sDataType.toLowerCase();
-                if (tp.indexOf('system.') === 0) {
-                    tp = tp.substr(7);
-                }
-                if (tp === 'datetime') {
+                var tp = col.sType;
+                if (tp === 'date') {
                     col.sRenderType = 'date';
-                } else if (tp === 'bool' || tp === 'boolean') {
+                } else if (tp === 'bool') {
                     col.sRenderType = 'bool';
                 }
                 if (col.sControlType && col.sControlType.toLowerCase() === 'epicombo') {
                     col.sRenderType = 'select';
                 }
-                if (tp === 'int32' || tp === 'int64' || tp === 'long' || tp === 'int16') {
+                if (tp === 'integer') {
                     col.sRenderType = 'integer';
                 }
-                if (tp === 'double' || tp === 'decimal' || tp === 'float') {
+                if (tp === 'decimal') {
                     col.sRenderType = 'decimal';
                 }
                 if (col.groupMembers && col.sRenderType !== 'group') {
@@ -1925,9 +1953,11 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                     c.sDataType = 'System.String';
                 }
 
+                setType(c);
                 setRenderingType(scope, c);
 
-                var bVisible = (c.bVisible === undefined || c.bVisible === true);
+                var bVisible = ((c.bVisible === undefined || c.bVisible === true) && (c.bHideInGrid !== true));
+
                 var orderable = false;
                 if (scope.state.ordering) {
                     if (c.orderable === undefined) {
@@ -1939,7 +1969,9 @@ angular.module('ep.datagrid').directive('epDataGrid', [
 
                 //determine optimized column width
                 var sWidth = '120px';
-                if (c.width && angular.isNumber(c.width)) {
+                if (c.sName === 'editIndicator' || c.sName === 'rowIndicator') {
+                    sWidth = '';
+                } else if (c.width && angular.isNumber(c.width)) {
                     sWidth = c.width + 'px';
                 } else if (c.widthFactor && angular.isNumber(c.widthFactor)) {
                     sWidth = parseInt(120 * parseFloat(c.widthFactor)) + 'px';
@@ -1948,11 +1980,14 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                 }
 
                 var sClass = (c.sClass ? c.sClass + ' ' : '');
-                sClass += 'data-col-' + (c.cssClassSuffix ? c.cssClassSuffix : iIndex);
+                sClass += 'data-col-' + iIndex;
 
                 if (c.canSelectCells === true) {
                     scope.state.canSelectCells = true;
                     sClass += ' selectable';
+                }
+                if (c.align && (c.align === 'right' || c.align === 'left' || c.align === 'center')) {
+                    sClass += ' dt-' + c.align;
                 }
 
                 var column = {
@@ -1960,7 +1995,7 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                     targets: [iIndex],
                     name: c.sName,
                     title: c.sTitle || '',
-                    visible: bVisible === undefined ? true : bVisible,
+                    visible: bVisible,
                     className: sClass,
                     data: (c.mData === undefined) ? -1 : c.mData,
                     orderable: orderable,
@@ -1990,22 +2025,23 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                     sName: 'rowIndicator',
                     sTitle: '',
                     bVisible: true,
-                    sClass: 'fixed',
+                    sClass: 'fixed i-row',
                     orderable: false,
                     sRenderType: 'rowIndicator',
-                    cssClassSuffix: 'ri'
+                    align: 'center'
                 },
                 {
                     sName: 'editIndicator',
                     sTitle: '',
                     bVisible: !!scope.options.showEditIndicator,
-                    sClass: 'fixed',
+                    sClass: 'fixed i-edit',
                     orderable: false,
                     sRenderType: 'editIndicator',
-                    cssClassSuffix: 'ei'
+                    align: 'center'
                 }
             ];
 
+            scope.state.filterEditors = null;
             scope.state.gridColumns = createGridColumns(scope, metadata, insertBeforeCols);
 
             scope.state.gridLoadPrms = {
@@ -2024,13 +2060,23 @@ angular.module('ep.datagrid').directive('epDataGrid', [
             };
 
             if (scope.state.staticMode === true) {
+                var order = [];
+                if (scope.state.ordering) {
+                    var col = scope.grGetMetaColumn(scope.options.orderColumn);
+                    if (col) {
+                        order = [[col.iIndex, 'asc']];
+                    } else if (scope.options.orderColumn === '$first') {
+                        var icol = (scope.options.showEditIndicator === true) ? 2 : 1;
+                        order = [[icol, 'asc']];
+                    }
+                }
                 scope.state.options = {
                     'data': scope.state.dataSource,
                     'paging': true,
                     'ordering': scope.state.ordering,
                     'bDestroy': true,
                     'bServerSide': false,
-                    'order': [],
+                    'order': order,
                     'bProcessing': false,
                     'pageLength': scope.state.pageLength,
                     'bAutoWidth': true,
@@ -2047,6 +2093,11 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                         if (scope.options.fnOnCreatedRow) {
                             scope.options.fnOnCreatedRow(row, data);
                         }
+                    },
+                    'initComplete': function() {
+                        $timeout(function() {
+                            onTableInitComplete(scope);
+                        });
                     }
                 };
             } else {
@@ -2081,31 +2132,36 @@ angular.module('ep.datagrid').directive('epDataGrid', [
 
             $timeout(function() {
                 angular.forEach(scope.state.gridColumns, function(c) {
-                    if (c.userColumnDef.bHideInGrid) {
-                        scope.grApi().column(c.iIndex).visible(false);
+                    if (c.userWidth) {
+                        scope.findElement('.data-col-' + c.iIndex).css('min-width', c.userWidth)
+                            .css('width', c.userWidth);
                     }
-                    scope.findElement('.data-col-' + c.iIndex).css('min-width', c.userWidth)
-                        .css('width', c.userWidth);
                 });
 
                 scope.state.visColCount = _.filter(scope.state.gridColumns, function(c) { return c.visible; }).length;
 
-                var gridSettings = scope.state.dataTable.fnSettings();
-                var hasSorting = gridSettings.aaSorting && gridSettings.aaSorting.length;
-
-                var iSortColDefault = (scope.options.showEditIndicator === true) ? 2 : 1;
-                var iSortCol = hasSorting ? gridSettings.aaSorting[0][0] : iSortColDefault;
-                var sSortDir = hasSorting ? gridSettings.aaSorting[0][1] : 'asc';
-
-                var sortCol = scope.grFindColumnByCellIndex(iSortCol);
-                if (sortCol) {
-                    iSortCol = sortCol.mData;
-                }
-
                 scope.setInitialFilters();
 
-                getDataFromServer(scope, '', iSortCol, sSortDir, false, false, false);
+                if (scope.state.staticMode !== true) {
+                    //set the initial sorting information for the server
+                    var sSortDir = 'asc';
+                    var iSortCol = -1;
+                    if (scope.state.ordering) {
+                        //determine initial ordering column
+                        var col = null;
+                        if (scope.options.orderColumn === '$first') {
+                            var fi = (scope.options.showEditIndicator === true) ? 2 : 1;
+                            col = scope.grFindColumnByCellIndex(fi);
 
+                        } else {
+                            col = scope.grGetColumn(scope.options.orderColumn);
+                        }
+                        if (col) {
+                            iSortCol = col.mData;
+                        }
+                    }
+                    getDataFromServer(scope, '', iSortCol, sSortDir, false, false, false);
+                }
                 scope.resizeTable(false);
 
                 // bind the click event to activate the row, or enable editors if already activated
@@ -2211,6 +2267,37 @@ angular.module('ep.datagrid').directive('epDataGrid', [
         }
 
         function onTableInitComplete(scope) {
+            var table = scope.grApi();
+            if (scope.state.ordering && scope.state.staticMode !== true) {
+                var cols = scope.grColumns();
+                table.columns().eq(0).each(function(index) {
+                    var column = table.column(index);
+                    var col = _.find(cols, function(cc) {
+                        return cc.idx === column.index();
+                    });
+                    if (col && col.orderable) {
+                        setHeader(scope, column.header(), col);
+                    }
+                });
+            }
+
+            if (scope.options.showToggleFilterButton) {
+                var colIdx = scope.grGetCellIndexByColumn('rowIndicator');
+                if (colIdx >= 0) {
+                    var tHead = table.column(colIdx).header();
+                    if ($(tHead).find('.fa-filter').length === 0) {
+                        angular.element(tHead).append(
+                            $compile('<ep-data-grid-filter-toggle></ep-data-grid-filter-toggle>')(scope));
+                    }
+                }
+            }
+
+            $timeout(function() {
+                if (scope.state.dataTable) {
+                    scope.state.dataTable.fnAdjustColumnSizing(false);
+                }
+            }, 200);
+
             if (scope.state.allowSearchInput) {
                 var $body = scope.state.linkElement.closest('.modal-body');
                 if ($body.length) {
@@ -2225,8 +2312,6 @@ angular.module('ep.datagrid').directive('epDataGrid', [
             } else if (scope.state.allowSearchInput && scope.options.startSearchValue &&
                 !scope.state.startSearchCompleted && scope.options.startSearchIndex >= 0) {
                 scope.state.startSearchCompleted = true; //search only on initial load
-
-                var table = scope.grApi();
 
                 var searchColIndex = scope.grGetCellIndexByColumn(scope.options.startSearchIndex);
                 if (searchColIndex !== -1) {
@@ -2278,6 +2363,26 @@ angular.module('ep.datagrid').directive('epDataGrid', [
             }
         }
 
+        function setHeader(scope, hdr, col) {
+            var state = scope.state;
+
+            var $hdr = $(hdr);
+            $hdr.removeClass('sorting_disabled').addClass('sorting');
+            $hdr.off('click');
+            $hdr.on('click', function() {
+                var dir = $hdr.hasClass('sorting_asc') ? 'desc' : 'asc';
+                getDataFromServer(scope, state.gridLoadPrms.previousPrms.searchTerm, col.mData, dir,
+                    false, true, false);
+            });
+
+            if (col.mData === state.gridLoadPrms.previousPrms.sortColIdx) {
+                //remove sorting from all headers and then add new sorting
+                scope.findElement('th').removeClass('sorting_desc').removeClass('sorting_asc');
+                var dir = state.gridLoadPrms.previousPrms.sortDir || 'asc';
+                $hdr.addClass('sorting_' + dir);
+            }
+        }
+
         function linkDirective(scope, element) {
             scope.state = getNewState();
             scope.state.gridFactory = new epDataGridDirectiveFactory(scope);
@@ -2302,6 +2407,9 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                 scope.state.ordering = (scope.options.ordering === undefined) ?
                     scope.state.ordering : scope.options.ordering;
 
+                if (options.filterExpressions) {
+                    scope.state.filterExpressions = options.filterExpressions;
+                }
                 scope.state.staticMode = (scope.options.staticMode === true);
                 scope.state.dataSource = scope.options.dataSource;
 
@@ -2381,7 +2489,16 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                 /// <summary>
                 ///   Find cell index by column mData
                 /// </summary>
-
+                var col = scope.grGetColumn(column);
+                return col ? col.idx : -1;
+            };
+            scope.grGetColumn = function(column) {
+                /// <summary>
+                ///   Find column index by column (index or column name)
+                /// </summary>
+                if (!column && column !== 0) {
+                    return null;
+                }
                 var columns = scope.grColumns();
                 var isName = angular.isString(column);
                 var col = null;
@@ -2390,12 +2507,26 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                 } else {
                     col = _.find(columns, function(c) { return c.mData === column; });
                 }
-                if (col) {
-                    return col.idx;
-                }
-                return -1;
+                return col;
             };
-
+            scope.grGetMetaColumn = function(column) {
+                /// <summary>
+                ///   Find column (in meta column def) index by column (index or column name)
+                ///   Used when table is not available yet
+                /// </summary>
+                if (!column && column !== 0) {
+                    return null;
+                }
+                var columns = scope.state.gridColumns;
+                var isName = angular.isString(column);
+                var col = null;
+                if (isName) {
+                    col = _.find(columns, function(c) { return c.name === column; });
+                } else {
+                    col = _.find(columns, function(c) { return c.data === column; });
+                }
+                return col;
+            };
             scope.grFindColumnByCellIndex = function(cellIndex) {
                 var columns = scope.grColumns();
                 return _.find(columns, function(c) { return c.nTh.cellIndex === cellIndex; });
@@ -2733,7 +2864,7 @@ angular.module('ep.datagrid').directive('epDataGrid', [
             scope.refreshData = function() {
                 if (scope.state.dataTable) {
                     var prms = scope.state.gridLoadPrms.previousPrms;
-                    getDataFromServer(scope, prms.searchTerm, prms.sortColIdx, prms.sortDir, true, false, true);
+                    getDataFromServer(scope, prms.searchTerm, prms.sortColIdx, prms.sortDir, false, false, true);
                 }
             };
 
@@ -2813,37 +2944,13 @@ angular.module('ep.datagrid').directive('epDataGrid', [
             };
 
             scope.getFilterState = function() {
-                //var sFilterCriteria = '';
-                var state = scope.state;
-                state.filterExpressions = [];
-                if (scope.state.filterShowFlag && scope.state.filterEditors) {
-                    var filters = [];
-
-                    angular.forEach(scope.state.filterEditors, function(ctx) {
-                        if (!ctx.hidden && ctx.value !== '') {
-                            var colName = ctx.name;
-                            if (ctx.value !== '' && colName && ctx.operator) {
-                                var expr = {
-                                    ColName: colName,
-                                    Operator: ctx.operator,
-                                    Value: ctx.value
-                                };
-                                state.filterExpressions.push(expr);
-                                filters.push(ctx);
-                            }
-                            //else if (ctx.value === '' && colName && state.filterExpressions[colName]) {
-                            //    delete state.filterExpressions[colName];
-                            //}
-                        }
-                    });
-                    //sFilterCriteria = JSON.stringify(filters);
+                if (scope.state.filterFunctions) {
+                    scope.state.filterFunctions.getFilterExpressions();
                 }
-                //TO DO:
-                //state.filterCriteria = sFilterCriteria;
             };
 
             scope.setInitialFilters = function() {
-                scope.state.filterExpressions = scope.options.filterExpressions;
+                scope.getFilterState();
                 var isFilterOn = !!(scope.state.filterExpressions && scope.state.filterExpressions.length);
                 if (isFilterOn) {
                     scope.showFilter();
@@ -2852,19 +2959,12 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                     //var filters = _.map(scope.state.filterExpressions, function (filter) { return filter; });
                     //scope.state.filterCriteria = JSON.stringify(filters);
                 } else {
-                    scope.getFilterState(this);
+                    scope.getFilterState();
                 }
             };
 
-            scope.onHideFilter = function() {
-                var bChanged = false;
-                angular.forEach(scope.state.filterEditors, function(edt) {
-                    if (!edt.hidden && edt.value !== '') {
-                        bChanged = true;
-                        edt.value = '';
-                    }
-                });
-                if (bChanged) {
+            scope.onHideFilter = function(changedFilter) {
+                if (changedFilter) {
                     scope.applyFilter();
                 }
             };
@@ -2874,9 +2974,14 @@ angular.module('ep.datagrid').directive('epDataGrid', [
             };
 
             scope.applyFilter = function() {
-                scope.getFilterState();
-                var prms = scope.state.gridLoadPrms.previousPrms;
-                getDataFromServer(scope, prms.searchTerm, prms.sortColIdx, prms.sortDir, false, true, false);
+                if (scope.state.filterTimeout) {
+                    $timeout.cancel(scope.state.filterTimeout);
+                }
+                scope.state.filterTimeout = $timeout(function() {
+                    scope.getFilterState();
+                    var prms = scope.state.gridLoadPrms.previousPrms;
+                    getDataFromServer(scope, prms.searchTerm, prms.sortColIdx, prms.sortDir, false, true, false);
+                }, 200); // delay 200 ms
             };
 
             if (scope.epDataGridOnInit) {
@@ -3234,6 +3339,62 @@ angular.module('ep.dynamic.directive').service('epDynamicDirectiveService', [
 
 'use strict';
 /**
+    * @ngdoc directive
+    * @name ep.href.directive.directive:epHrefDirective
+    * @restrict A
+    * @description
+    * This directive will allow you to change views withing an EMF application, similar to a normal html <a> tag.
+    * @example
+    * // This will take you to the home view of the currently running app
+    * <a ep-embedded-apps-href="home">Home</a>
+    * // This will take you to the home view of a specified app
+    * <a ep-embedded-apps-href="home" ep-href-app-id="myOther.app">Home</a>
+    * // use on button tags is OK too
+    * <button ep-embedded-apps-href="home">Home</button>
+*/
+angular.module('ep.embedded.apps').directive('epEmbeddedAppsHref', [
+    '$log',
+    'epEmbeddedAppsService',
+    function($log, epEmbeddedAppsService) {
+        return {
+            restrict: 'A',
+            scope: {},
+            link: function(scope, element, attr) {
+                if (element[0].tagName === 'A' || element[0].tagName === 'BUTTON') {
+                    // Make sure that the regular href exists and is blank so that browsers behave as users expect
+                    if (element[0].tagName === 'A') { attr.$set('href', ''); }
+                    if (attr.epHrefAppId) {
+                        // Change view using specified app id
+                        bindClick();
+                    } else {
+                        // Change view using app id of the currently running app
+                        var cfgKeys = Object.keys(epEmbeddedAppsService.configs);
+                        for (var i = 0; i < cfgKeys.length; i++) {
+                            var cfg = epEmbeddedAppsService.configs[cfgKeys[i]];
+                            if (cfg.isRunning) {
+                                attr.$set('epHrefAppId', cfg.id);
+                                bindClick();
+                                break;
+                            }
+                        }
+                    }
+                } else {
+                    $log.warn('ep-embedded-apps-href can only be used on an <a> or <button> tag');
+                }
+                function bindClick() {
+                    scope.clickHandler = element.bind('click', function() {
+                        epEmbeddedAppsService.goToView(attr.epHrefAppId, attr.epHref);
+                    });
+                    scope.$on('$destroy', function() {
+                        element.unbind('click', scope.clickHandler);
+                    });
+                }
+            }
+        };
+    }]);
+
+'use strict';
+/**
      * @ngdoc directive
      * @name ep.modaldialog.directive:epmodaldialog
      * @restrict E
@@ -3273,12 +3434,11 @@ angular.module('ep.embedded.apps').directive('epEmbeddedAppsLoader', [
                     var view;
                     if (!epEmbeddedAppsCacheService.scriptCache.get(resourceId)) {
                         $http.get(url).
-                            success(function(data) {
-                                epEmbeddedAppsCacheService.scriptCache.put(resourceId, data);
-                                deferred.resolve(data);
-                            })
-                            .error(function(data) {
-                                $log.error('Error loading template "' + url + "': " + data);
+                            then(function(result) {
+                                epEmbeddedAppsCacheService.scriptCache.put(resourceId, result.data);
+                                deferred.resolve(result.data);
+                            }, function(data) {
+                                $log.error('Error loading template "' + url + '": ' + data);
                                 deferred.reject(data);
                             });
                     } else {
@@ -3524,6 +3684,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsShellService', [
  * @description
  * Constants for epEmbeddedAppsConstants.
  * ep.embedded.apps constants
+    * <pre>
+    *      CONFIG_LOADED_EVENT - event when app package config has been loaded
+    *      APPLICATION_LOADED_EVENT - event when package application has been loaded
+    *      VIEW_LOADED_EVENT - event when app package view is loaded
+    *      APPLICATION_EXIT_EVENT - event when app package application exits
+    *  </pre>
  */
 angular.module('ep.embedded.apps').constant('epEmbeddedAppsConstants', {
     CONFIG_LOADED_EVENT: 'EMBEDDED_CONFIG_LOADED_EVENT',
@@ -7415,8 +7581,21 @@ angular.module('ep.shell').service('epShellFeedbackService', [
  * @description
  * Constants for epShellConstants.
  * ep.shell constants
+ * Events:
+    * <pre>
+    *   SHELL_SIZE_CHANGE_EVENT - event shell size is changed
+    *   SHELL_STATE_CHANGE_EVENT - event shell state changes
+    *   SHELL_NAV_BUTTONS_CHANGED_EVENT - event when nav buttons change
+    *   SHELL_VIEW_SIZE_CHANGE_EVENT - view container size change
+    * </pre>
  */
 angular.module('ep.shell').constant('epShellConstants', {
+    //EVENT NAMES:
+    SHELL_SIZE_CHANGE_EVENT: 'SHELL_SIZE_CHANGE_EVENT',
+    SHELL_STATE_CHANGE_EVENT: 'SHELL_STATE_CHANGE_EVENT',
+    SHELL_NAV_BUTTONS_CHANGED_EVENT: 'SHELL_NAV_BUTTONS_CHANGED_EVENT',
+    SHELL_VIEW_SIZE_CHANGE_EVENT: 'SHELL_VIEW_SIZE_CHANGE_EVENT',
+    //SIZE CONSTANTS:
     SIDEBARWIDTH: 250,
     NAVBARHEIGHT: 40,
     FOOTERHEIGHT: 25,
@@ -7439,7 +7618,9 @@ angular.module('ep.shell').controller('epShellCtrl', [
     'epShellService',
     'epLocalStorageService',
     'epShellFeedbackService',
-    function($location, $rootScope, $scope, epShellService, epLocalStorageService, epShellFeedbackService) {
+    'epShellConstants',
+    function($location, $rootScope, $scope, epShellService, epLocalStorageService,
+        epShellFeedbackService, epShellConstants) {
 
         // Any logic that requires the immediate use of the emaService or the EmaRestService needs to be executed inside the "init" call in the controller.
         // If the logic is already inside an event handler
@@ -7458,7 +7639,7 @@ angular.module('ep.shell').controller('epShellCtrl', [
 
             $scope.navButtons = epShellService.getNavbarButtons();
 
-            $rootScope.$on('navbarButtonsChanged', function() {
+            $rootScope.$on(epShellConstants.SHELL_NAV_BUTTONS_CHANGED_EVENT, function() {
                 $scope.navButtons = epShellService.getNavbarButtons();
             });
 
@@ -7510,7 +7691,7 @@ angular.module('ep.shell').directive('epShell', [
             restrict: 'E,A',
             replace: true,
             transclude: true,
-            templateUrl: 'src/components/ep.shell/shell.html',
+            templateUrl: 'src/components/ep.shell/shell.html'
         };
     }
 ]);
@@ -7756,13 +7937,6 @@ angular.module('ep.shell').service('epShellService', [
          /**
           * @private
           * @description
-          * Flag if theming was initialized, to avoid second time initialization when toggling
-          */
-         var themingInitialized = false;
-
-         /**
-          * @private
-          * @description
           * Certain things we initialize at the first reference of the service
           */
          function initialize() {
@@ -7792,29 +7966,6 @@ angular.module('ep.shell').service('epShellService', [
 
              if (epShellConfig.options.enableFeedback !== undefined) {
                  shellState.enableFeedback = epShellConfig.options.enableFeedback;
-             }
-
-             initializeTheming();
-         }
-
-         /**
-          * @private
-          * @description
-          * Initialize theming
-          */
-         function initializeTheming() {
-             shellState.disableTheming = epShellConfig.options.disableTheming;
-             if (shellState.disableTheming !== true) {
-                 themingInitialized = true;
-                 if (epShellConfig.options.defaultTheme) {
-                     epThemeService.theme(epShellConfig.options.defaultTheme);
-                 } else {
-                     epThemeService.theme();
-                 }
-                 shellState.currentTheme = epThemeService.getThemeWithFullPath();
-                 $rootScope.$on('epThemeChangedEvent', function() {
-                     shellState.currentTheme = epThemeService.getThemeWithFullPath();
-                 });
              }
          }
 
@@ -7877,10 +8028,11 @@ angular.module('ep.shell').service('epShellService', [
           * Initialization of the shell. To be called by application upon start-up
           */
          function init() {
-
              window.addEventListener('load', function() {
                  FastClick.attach(document.body);
              }, false);
+
+             $timeout(epThemeService.initialize, 200);
 
              var windowWidth = $(window).width();
              shellState.mediaMode = windowWidth >= epShellConstants.MEDIA_SIZE_BREAKPOINT ?
@@ -8020,21 +8172,9 @@ angular.module('ep.shell').service('epShellService', [
           * @description
           * Returns the state of theming flag as set by sysconfig.json. True - if theming is disabled.
           * Can also be used to turn off and on theming in the shell by passing the disabled parameter
-          * @param {boolean} disabled - optional parameter - if true theming is set disabled, if false set as enabled
           * @returns {boolean} current media mode: MEDIA_MODE_LARGE or MEDIA_MODE_SMALL (epShellConstants)
           */
-         function themingDisabled(disabled) {
-             if (disabled !== undefined) {
-                 //if disabled falg is provided, then change the state if needed
-                 shellState.disableTheming = !!disabled;
-                 if (shellState.disableTheming === false) {
-                     if (!themingInitialized) {
-                         initializeTheming();
-                     } else {
-                         shellState.currentTheme = epThemeService.getThemeWithFullPath();
-                     }
-                 }
-             }
+         function themingDisabled() {
              return shellState.disableTheming;
          }
 
@@ -8164,7 +8304,8 @@ angular.module('ep.shell').service('epShellService', [
 
          function notifyShellButtonsChanged(event) {
              navbarButtons = _.sortBy(navbarButtons, function(btn) { return btn.index; });
-             $rootScope.$emit('navbarButtonsChanged', event);
+             $rootScope.$emit(epShellConstants.SHELL_NAV_BUTTONS_CHANGED_EVENT, event);
+
              $timeout(function() { $rootScope.$apply(); });
          }
 
@@ -8231,13 +8372,15 @@ angular.module('ep.shell').service('epShellService', [
          }
 
          function notifyStateChanged(event) {
-             $rootScope.$emit('shellStateChanged', event);
+             $rootScope.$emit('shellStateChanged', event); //ABSOLETE - will remove after P21 rename
+             $rootScope.$emit(epShellConstants.SHELL_STATE_CHANGE_EVENT, event);
          }
 
          function notifySizeChanged(event) {
              // use timeout to wait until the animation is complete before publishing the resize event
              $timeout(function() {
-                 $rootScope.$emit('shellSizeChanged', event);
+                 $rootScope.$emit('shellSizeChanged', event); //ABSOLETE - will remove after P21 rename
+                 $rootScope.$emit(epShellConstants.SHELL_SIZE_CHANGE_EVENT, event);
              }, 310);
          }
 
@@ -9260,8 +9403,8 @@ angular.module('ep.shell').service('epSidebarService', [
      */
 (function() {
     angular.module('ep.shell').directive('epShellViewContainer', [
-        '$rootScope', '$timeout', 'epShellService', 'epSidebarService', 'epViewContainerService',
-        function($rootScope, $timeout, epShellService, epSidebarService, epViewContainerService) {
+        '$rootScope', '$timeout', 'epShellService', 'epSidebarService', 'epViewContainerService', 'epShellConstants',
+        function($rootScope, $timeout, epShellService, epSidebarService, epViewContainerService, epShellConstants) {
 
           function setSidebarSettings(sidebar, scope) {
               if (sidebar.left) {
@@ -9314,7 +9457,8 @@ angular.module('ep.shell').service('epSidebarService', [
                           if (epViewContainerService.state.cleanup) {
                               epViewContainerService.state.cleanup();
                           }
-                          epViewContainerService.state.cleanup = $rootScope.$on('shellStateChanged', function() {
+                          epViewContainerService.state.cleanup =
+                              $rootScope.$on(epShellConstants.SHELL_STATE_CHANGE_EVENT, function() {
                               if (currentMode !== epShellService.getMediaMode()) {
                                   currentMode = epShellService.getMediaMode();
                                   if (viewSettings[currentMode]) {
@@ -9429,11 +9573,12 @@ angular.module('ep.shell').service('epViewContainerService', [
 
              shellState.viewDimensions = dim;
              if (triggerEvent) {
-                 $rootScope.$emit('viewSizeChanged', dim, eventType);
+                 $rootScope.$emit('viewSizeChanged', dim, eventType); //ABSOLETE - will remove after P21 rename
+                 $rootScope.$emit(epShellConstants.SHELL_VIEW_SIZE_CHANGE_EVENT, dim, eventType);
              }
          }
 
-         $rootScope.$on('shellSizeChanged', function() {
+         $rootScope.$on(epShellConstants.SHELL_SIZE_CHANGE_EVENT, function() {
              calculateDimensions('size');
          });
 
@@ -9502,6 +9647,123 @@ angular.module('ep.sysconfig').provider('epSysConfig',
 'use strict';
 
 /**
+ * @ngdoc controller
+ * @name ep.tabbar.controller:epTabbarCtrl
+ * @description
+ * Represents the epTabbar controller for the
+ * ep.tabbar module, or for specific ep-tabbar directive
+ *
+ * @example
+ *
+ */
+angular.module('ep.tabbar').controller('epTabbarCtrl', [
+    '$scope',
+    function($scope) {
+        // do something with $scope property
+        $scope.myProperty = 'emf';
+
+        /**
+         * @ngdoc method
+         * @name myFunction
+         * @methodOf ep.tabbar.controller:epTabbarCtrl
+         * @public
+         * @description
+         * Handles the myFunction request
+         */
+        $scope.myFunction = function() {
+            // do something else with $scope property
+            // $scope.myProperty = 'new property value';
+        };
+    }
+]);
+
+'use strict';
+/**
+* @ngdoc directive
+* @name ep.tabbar.directive:epTabbar
+* @restrict E
+*
+* @description
+* Represents the ep.tabbar directive
+*
+* @example
+*/
+angular.module('ep.tabbar').directive('epTabbar',
+    function(epTabbarService) {
+        return {
+            restrict: 'E',
+            controller: 'epTabbarCtrl',
+            templateUrl: 'src/components/ep.tabbar/ep-tabbar.html',
+            link: link
+        };
+
+        function link($scope) {
+            $scope.state = epTabbarService.state;
+            $scope.executeButton = function(icon) {
+                icon.action();
+            };
+        }
+    });
+
+'use strict';
+/**
+ * @ngdoc service
+ * @name ep.tabbar.service:epTabbarService
+ * @description
+ * Service for the ep.tabbar module
+ * tabbar components
+ *
+ * @example
+ *
+ */
+angular.module('ep.tabbar').service('epTabbarService', [
+    function() {
+
+        var state = {
+            labelAlignment: 'top',
+            tabbarAlignment: 'bottom',
+            iconAlignment: 'top',
+            labelText: 'bottom',
+            tabbarIcons: []
+        };
+
+        function enableTopTabbar() {
+            state.tabbarAlignment = 'top';
+        }
+
+        function enableBottomTabbar() {
+            state.tabbarAlignment = 'bottom';
+        }
+
+        function showIconsOnLeft() {
+            state.labelAlignment = 'left';
+            state.iconAlignment = 'left';
+            state.labelText = 'left';
+        }
+
+        function showIconsOnTop() {
+            state.labelAlignment = 'top';
+            state.iconAlignment = 'top';
+            state.labelText = 'Bottom';
+        }
+
+        function removeIcon(id) {
+            state.tabbarIcons = _.reject(state.tabbarIcons, function(icon) { return icon.id === id; });
+        }
+
+        return {
+            enableTopTabbar: enableTopTabbar,
+            enableBottomTabbar: enableBottomTabbar,
+            showIconsOnLeft: showIconsOnLeft,
+            showIconsOnTop: showIconsOnTop,
+            removeIcon: removeIcon,
+            state: state
+        };
+    }]);
+
+'use strict';
+
+/**
  * @ngdoc object
  * @name ep.theme.object:epThemeConfig
  * @description
@@ -9511,6 +9773,26 @@ angular.module('ep.sysconfig').provider('epSysConfig',
 angular.module('ep.theme').provider('epThemeConfig',
     function() {
         var config = {
+            /**
+            * @ngdoc property
+            * @name id
+            * @propertyOf ep.theme.object:epThemeConfig
+            * @public
+            * @description
+            * Identifier by which selected theme is stored
+            */
+            id: '',
+
+            /**
+            * @ngdoc property
+            * @name disableTheming
+            * @propertyOf ep.theme.object:epThemeConfig
+            * @public
+            * @description
+            * Disable theming
+            */
+            disableTheming: false,
+
             /**
             * @ngdoc property
             * @name themes
@@ -9545,7 +9827,18 @@ angular.module('ep.theme').provider('epThemeConfig',
             theme: {
                 'name': 'bootstrap',
                 'cssFilename': 'bootstrap.min.css'
-            }
+            },
+
+            /**
+            * @ngdoc property
+            * @name provider
+            * @propertyOf ep.theme.object:epThemeConfig
+            * @public
+            * @description
+            * Represents name of provider service - if need to implement custom
+            * provider of themes
+            */
+            provider: ''
         };
 
         //This $get, is kinda confusing - it does not return the provider, but it returns the "service".
@@ -9567,6 +9860,47 @@ angular.module('ep.theme').provider('epThemeConfig',
 
 'use strict';
 /**
+    * @ngdoc directive
+    * @name ep.theme.directive:epThemeHref
+    * @restrict A
+    * @description
+    * This directive is used to set style link for EMF application
+    * @example
+    * <link rel="stylesheet" type="text/css" ep-theme-href="" />
+*/
+angular.module('ep.theme').directive('epThemeHref', [
+    '$log',
+    '$rootScope',
+    'epThemeService',
+    function($log, $rootScope, epThemeService) {
+        function setHref(attr) {
+            if (epThemeService.disableTheming() !== true) {
+                var th = epThemeService.theme();
+                if (th && (attr.href !== th.cssPath)) {
+                    attr.$set('href', th.cssPath);
+                }
+            } else {
+                attr.$set('href', '');
+            }
+        }
+        return {
+            restrict: 'A',
+            scope: {},
+            link: function(scope, element, attr) {
+                if (element[0].tagName === 'LINK') {
+                    setHref(attr);
+                    $rootScope.$on('epThemeChangedEvent', function() {
+                        setHref(attr);
+                    });
+                } else {
+                    $log.warn('ep-theme-href can only be used on an <link> tag');
+                }
+            }
+        };
+    }]);
+
+'use strict';
+/**
  * @ngdoc service
  * @name ep.theme.service:epThemeService
  * @description
@@ -9578,14 +9912,55 @@ angular.module('ep.theme').provider('epThemeConfig',
  *
  */
 angular.module('ep.theme').service('epThemeService', [
+    '$q',
+    '$log',
     '$rootScope',
     'epThemeConfig',
     'epLocalStorageService',
-    function($rootScope, epThemeConfig, epLocalStorageService) {
-        var localStorageId = 'currentTheme';
+    function($q, $log, $rootScope, epThemeConfig, epLocalStorageService) {
+        var _localStorageId;
+        var _theme;
+        var _themes;
 
-        // set the default theme
-        var _theme = epLocalStorageService.getOrAdd(localStorageId, epThemeConfig.theme);
+        /**
+         * @ngdoc method
+         * @name initialize
+         * @methodOf ep.theme.service:epThemeService
+         * @public
+         * @description
+         * Initializes themes reading from provider
+         */
+        function initialize() {
+            if (epThemeConfig.disableTheming !== true) {
+                var provider = epThemeConfig.provider;
+                if (provider && provider !== 'sysconfig') {
+                    try {
+                        var customProvider = angular.element('html').injector().get(provider);
+                        var th = customProvider.getThemes();
+                        if (th.then) {
+                            th.then(function(themes) {
+                                _themes = themes;
+                                setItemsFullPath();
+                            });
+                            return th;
+                        } else {
+                            _themes = th;
+                        }
+                    } catch (e) {
+                        $log.warn('Custom themes provider not found or failed: ' + provider);
+                    }
+                }
+
+                var ts = epLocalStorageService.get(_localStorageId);
+                if (ts) {
+                    theme(ts.name);
+                }
+                setItemsFullPath();
+            }
+            var deferred = $q.defer();
+            deferred.resolve(_themes);
+            return deferred.promise;
+        }
 
         /**
          * @ngdoc method
@@ -9596,8 +9971,9 @@ angular.module('ep.theme').service('epThemeService', [
          * Gets the collection of themes from the epThemeConfig / sysconfig.json
          */
         function getThemes() {
-            return epThemeConfig.themes;
+            return _themes;
         }
+
         /**
         * @ngdoc method
         * @name getTheme
@@ -9607,7 +9983,7 @@ angular.module('ep.theme').service('epThemeService', [
         * Gets the theme by name
         */
         function getTheme(name) {
-            return _.find(getThemes(), function(t) { return t.name === name; });
+            return _.find(_themes, function(t) { return t.name === name; });
         }
 
         /**
@@ -9617,54 +9993,97 @@ angular.module('ep.theme').service('epThemeService', [
         * @public
         * @description
         * sets the theme by name. Upon theme change 'epThemeChangedEvent' is broadcasted
+        * returns current theme
         */
         function theme(newTheme) {
             if (newTheme) {
-                _theme = _.find(getThemes(), function(t) { return t.name === newTheme; });
+                var _old = _theme;
+                _theme = _.find(_themes, function(t) { return t.name.toLowerCase() === newTheme.toLowerCase(); });
 
                 // if the one that is set is not found then default it back
                 if (!_theme) {
-                    _theme = _.find(getThemes(), function(t) { return t.name === 'bootstrap'; });
+                    _theme = _old;
+                    if (!_theme) {
+                        _theme = _.find(_themes, function(t) { return t.name === 'bootstrap'; });
+                    }
                 }
 
-                $rootScope.$emit('epThemeChangedEvent', _theme);
+                if (_theme && (!_old || _old.name !== _theme.name)) {
+                    $rootScope.$emit('epThemeChangedEvent', _theme);
+                }
 
                 // set the current theme back onto the epLocalStorage service
-                epLocalStorageService.update(localStorageId, _theme);
+                epLocalStorageService.update(_localStorageId, _theme);
             }
             return _theme;
         }
 
         /**
         * @ngdoc method
-        * @name getTheme
+        * @name disableTheming
         * @methodOf ep.theme.service:epThemeService
         * @public
         * @description
-        * Gets the theme by name
+        * return true if theming is disabled
+        * can also turn on theming
         */
-        function getThemeWithFullPath(name) {
-            var themeItem = (name) ?
-                _.find(getThemes(), function(t) { return t.name === name; }) : _theme;
-            var p = epThemeConfig.defaultPath;
-            if (themeItem && p && themeItem.cssFilename) {
-                var ret = angular.extend({}, themeItem);
-
-                p = p.trim();
-                if (p.lastIndexOf('/') === p.length - 1) {
-                    p = p.substr(0, p.length - 1);
+        function disableTheming(disable) {
+            if (disable) {
+                if (disable === false && epThemeConfig.disableTheming === true) {
+                    epThemeConfig.disableTheming = false;
+                    initialize();
                 }
-                ret.cssFilename = p + '/' + ret.cssFilename;
-                return ret;
+                epThemeConfig.disableTheming = disable;
             }
-            return themeItem;
+            return epThemeConfig.disableTheming === true;
         }
 
+        /**
+        * @ngdoc method
+        * @name setFullPath
+        * @methodOf ep.theme.service:epThemeService
+        * @private
+        * @description
+        * Sets full path to cssPath property to all theme items
+        */
+        function setItemsFullPath() {
+            angular.forEach(_themes, function(t) {
+                var p = epThemeConfig.defaultPath;
+                if (p && t.cssFilename) {
+                    p = p.trim();
+                    if (p.lastIndexOf('/') === p.length - 1) {
+                        p = p.substr(0, p.length - 1);
+                    }
+                    t.cssPath = p + '/' + t.cssFilename;
+                } else {
+                    t.cssPath = t.cssFilename;
+                }
+            });
+        }
+
+        /**
+        * @ngdoc method
+        * @name init
+        * @methodOf ep.theme.service:epThemeService
+        * @private
+        * @description
+        * Some things to do at startup
+        */
+        function init() {
+            _localStorageId = epThemeConfig.id || 'emf.theme.current';
+            _theme = epLocalStorageService.getOrAdd(_localStorageId, epThemeConfig.theme);
+            _themes = epThemeConfig.themes;
+            setItemsFullPath(); //make sure path is set
+        }
+
+        init();
+
         return {
+            initialize: initialize,
             getThemes: getThemes,
             getTheme: getTheme,
             theme: theme,
-            getThemeWithFullPath: getThemeWithFullPath
+            disableTheming: disableTheming
         };
     }]);
 
@@ -10534,7 +10953,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/shell.html',
-    "<div><section ng-controller=epShellCtrl class=ep-shell><section ng-if=\"state.disableTheming !== true && state.includeThemeFile === true\"><link rel=stylesheet ng-href={{state.currentTheme.cssFilename}}></section><div ng-show=state.showProgressIndicator class=ep-progress-idicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\"></a></li><li><a id=apptitle ng-class=\"{hidden: !state.showBrand}\" class=navbar-brand ng-href=\"#{{(state.brandTarget || '/home')}}\" ng-bind-html=state.brandHTML></a></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in navButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.enabled === false}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button)></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false></a><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\"><a ng-click=opt.action() ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa {{opt.icon}}\"></i><span class=ep-navmenu-item-text>{{opt.title}}</span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div ng-view class=ep-fullscreen></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" href=#/whatsnew><sup>Version {{uiVersion}}</sup></a></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.enableFeedback ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
+    "<div><section ng-controller=epShellCtrl class=ep-shell><div ng-show=state.showProgressIndicator class=ep-progress-idicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\"></a></li><li><a id=apptitle ng-class=\"{hidden: !state.showBrand}\" class=navbar-brand ng-href=\"#{{(state.brandTarget || '/home')}}\" ng-bind-html=state.brandHTML></a></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in navButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.enabled === false}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button)></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false></a><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\"><a ng-click=opt.action() ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa {{opt.icon}}\"></i><span class=ep-navmenu-item-text>{{opt.title}}</span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div ng-view class=ep-fullscreen></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" href=#/whatsnew><sup>Version {{uiVersion}}</sup></a></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.enableFeedback ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
   );
 
 
@@ -10558,6 +10977,11 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
   $templateCache.put('src/components/ep.shell/views/ep-shell-embedded-apps-container.html',
     "<ep-shell-view-container smallmodesettings=\"{ &quot;showNavbar&quot;: true, &quot;showFooter&quot;: false, &quot;enableLeftSidebar&quot;: true, &quot;enableRightSidebar&quot;: false, &quot;showHomeButton&quot;: false, &quot;showBrand&quot;: true,  &quot;animateViewContainer&quot;: false, &quot;allowVerticalScroll&quot;: true }\" largemodesettings=\"{ &quot;showNavbar&quot;: true, &quot;showFooter&quot;: false, &quot;enableLeftSidebar&quot;: true, &quot;enableRightSidebar&quot;: false, &quot;showHomeButton&quot;: false, &quot;showBrand&quot;: true,  &quot;animateViewContainer&quot;: false, &quot;allowVerticalScroll&quot;: true }\"><ep-embedded-apps></ep-embedded-apps></ep-shell-view-container>"
+  );
+
+
+  $templateCache.put('src/components/ep.tabbar/ep-tabbar.html',
+    "<!--Tab Bar Components --><div class=ep-tabbar><ul id=tabbar class=\"navbar nav-pills navbar-default\" ng-class=\"{'navbar-fixed-bottom':state.tabbarAlignment=='bottom', 'navbar-fixed-top':state.tabbarAlignment!='bottom'}\"><li ng-repeat=\"icon in state.tabbarIcons\" class=ep-tabbar-contents ng-class=\"{'ep-tabbar-list':state.iconAlignment=='left'}\"><a ng-click=executeButton(icon) class=ep-tabbar-content-color><i class={{icon.icon}}></i><label ng-hide=\"state.labelAlignment=='top'\" ng-class=\"{'ep-tabbar-label':state.labelText=='left'}\">{{icon.text}}</label><p ng-hide=\"state.labelAlignment!='top'\">{{icon.text}}</p></a></li></ul></div>"
   );
 
 

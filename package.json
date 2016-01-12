@@ -2,7 +2,7 @@
   "name": "emf",
   "description": "Epicor Mobile Framework",
   "author": "Epicor Software Corporation",
-  "version": "0.1601.1",
+  "version": "0.1601.2",
   "publishConfig": {
     "registry": "http://epichub:4873"
   },

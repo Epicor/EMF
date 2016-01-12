@@ -246,6 +246,28 @@
   transform: translate3d(-50%, 0, 0);
   margin-left: 50%;
 }
+.ep-align-hleft {
+  float: left;
+}
+.ep-align-hcenter {
+  margin: 0 auto;
+}
+.ep-align-hright {
+  float: right;
+}
+.ep-align-vtop {
+  position: relative;
+}
+.ep-align-vcenter {
+  position: relative;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.ep-align-vbottom {
+  position: relative;
+  top: 100%;
+  transform: translateY(-100%);
+}
 
 /* Grid Search */
 .ep-data-grid .ep-dg-grid-search {
@@ -301,8 +323,9 @@
 .ep-data-grid .ep-dg-grid-table > thead > tr > th.fixed {
   border-left: none;
   border-right: none;
-  min-width: 36px;
-  width: 36px;
+  min-width: 18px;
+  max-width: 36px !important;
+  width: 18px;
 }
 .ep-data-grid .row-alert {
   max-width: 800px;
@@ -1056,7 +1079,7 @@
  NavBar Buttons / Menu
 ***********************************************************/
 .ep-shell .ep-main-navbar .ep-navbar-button {
-  padding: 10px 0 5px 5px;
+  padding: 10px 5px 5px 5px;
   text-decoration: none;
   cursor: pointer;
   margin-right: 0;
@@ -1346,6 +1369,21 @@ VIEW CONTAINER [ep-view-container]
   -webkit-transform: translate3d(0, 0, 0);
   transform: translate3d(0, 0, 0);
   width: 100%;
+}
+
+.ep-tabbar .ep-tabbar-contents {
+  text-align: center;
+  margin-left: 25px !important;
+  margin-top: 7px;
+}
+.ep-tabbar .ep-tabbar-content-color {
+  color: #ffffff;
+}
+.ep-tabbar .ep-tabbar-list {
+  margin-top: 20px !important;
+}
+.ep-tabbar .ep-tabbar-label {
+  margin-left: 12px !important;
 }
 
 .ep-range-slider-ctr {
