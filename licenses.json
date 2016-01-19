@@ -41,6 +41,11 @@
         ],
         "homepage": "http://fontawesome.io"
     },
+    "jquery@2.1.4": {
+        "licenses": [
+            "MIT"
+        ]
+    },
     "lesshat@3.0.2": {
         "licenses": [
             "MIT*"
@@ -80,17 +85,17 @@
         ],
         "repository": "git+https://github.com/angular/angular.js"
     },
-    "angular-cookies@1.3.20": {
-        "licenses": [
-            "MIT"
-        ],
-        "repository": "git+https://github.com/angular/angular.js"
-    },
     "angular-bootstrap@0.13.4": {
         "licenses": [
             "MIT"
         ],
         "repository": "git+https://github.com/angular-ui/bootstrap"
+    },
+    "angular-cookies@1.3.20": {
+        "licenses": [
+            "MIT"
+        ],
+        "repository": "git+https://github.com/angular/angular.js"
     },
     "angular-mocks@1.3.20": {
         "licenses": [
@@ -116,6 +121,12 @@
         ],
         "repository": "git+https://github.com/angular/angular.js"
     },
+    "angular-touch@1.3.20": {
+        "licenses": [
+            "MIT"
+        ],
+        "repository": "git+https://github.com/angular/angular.js"
+    },
     "bootstrap@undefined": {
         "licenses": [
             "MIT"
@@ -128,16 +139,5 @@
             "MIT"
         ],
         "repository": "https://github.com/WickyNilliams/enquire.js"
-    },
-    "jquery@2.1.4": {
-        "licenses": [
-            "MIT"
-        ]
-    },
-    "angular-touch@1.3.20": {
-        "licenses": [
-            "MIT"
-        ],
-        "repository": "git+https://github.com/angular/angular.js"
     }
 }

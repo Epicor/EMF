@@ -42,7 +42,7 @@ angular.module('ep.animation', [
 'use strict';
 /**
  * @ngdoc overview
- * @name ep.color-tile
+ * @name ep.color.tile
  * @description
  * This is the module for the color tile.
  */
@@ -220,15 +220,11 @@ angular.module('ep.tabbar', [
 
 'use strict';
 /**
-     * @ngdoc directive
-     * @name ep.table.directive:epTable
-     * @restrict E
-     *
-     * @description
-     * Represents the table directive
-     *
-     * @example
-     */
+ * @ngdoc overview
+ * @name ep.table
+ * @description
+ * Module for the ep.table.
+ */
 angular.module('ep.table', []);
 
 'use strict';
