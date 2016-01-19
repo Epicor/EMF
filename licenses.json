@@ -4,14 +4,14 @@
             "MIT*"
         ]
     },
-    "angular-ui-utils@0.2.3": {
-        "licenses": "UNKNOWN"
-    },
     "animate.css@undefined": {
         "licenses": [
             "MIT"
         ],
         "repository": "git+https://github.com/daneden/animate.css"
+    },
+    "angular-ui-utils@0.2.3": {
+        "licenses": "UNKNOWN"
     },
     "bootswatch@undefined": {
         "licenses": [
@@ -67,12 +67,6 @@
             "MIT*"
         ]
     },
-    "angular@1.3.20": {
-        "licenses": [
-            "MIT"
-        ],
-        "repository": "git+https://github.com/angular/angular.js"
-    },
     "angular-animate@1.3.20": {
         "licenses": [
             "MIT"
@@ -91,12 +85,6 @@
         ],
         "repository": "git+https://github.com/angular-ui/bootstrap"
     },
-    "angular-cookies@1.3.20": {
-        "licenses": [
-            "MIT"
-        ],
-        "repository": "git+https://github.com/angular/angular.js"
-    },
     "angular-mocks@1.3.20": {
         "licenses": [
             "MIT"
@@ -110,6 +98,12 @@
         "repository": "git+https://github.com/angular/angular.js"
     },
     "angular-route@1.3.20": {
+        "licenses": [
+            "MIT"
+        ],
+        "repository": "git+https://github.com/angular/angular.js"
+    },
+    "angular-cookies@1.3.20": {
         "licenses": [
             "MIT"
         ],
@@ -139,5 +133,11 @@
             "MIT"
         ],
         "repository": "https://github.com/WickyNilliams/enquire.js"
+    },
+    "angular@1.3.20": {
+        "licenses": [
+            "MIT"
+        ],
+        "repository": "git+https://github.com/angular/angular.js"
     }
 }
