@@ -1,4 +1,9 @@
 {
+    "angular-ui-router@0.2.15": {
+        "licenses": [
+            "MIT*"
+        ]
+    },
     "angular-ui-utils@0.2.3": {
         "licenses": "UNKNOWN"
     },
@@ -7,11 +12,6 @@
             "MIT"
         ],
         "repository": "git+https://github.com/daneden/animate.css"
-    },
-    "angular-ui-router@0.2.15": {
-        "licenses": [
-            "MIT*"
-        ]
     },
     "bootswatch@undefined": {
         "licenses": [
@@ -33,11 +33,6 @@
             "MIT*"
         ]
     },
-    "jquery@2.1.4": {
-        "licenses": [
-            "MIT"
-        ]
-    },
     "font-awesome@undefined": {
         "licenses": [
             "OFL-1.1",
@@ -45,6 +40,11 @@
             "CC-BY-3.0"
         ],
         "homepage": "http://fontawesome.io"
+    },
+    "jquery@2.1.4": {
+        "licenses": [
+            "MIT"
+        ]
     },
     "lesshat@3.0.2": {
         "licenses": [
@@ -103,6 +103,12 @@
         ],
         "repository": "git+https://github.com/angular/angular.js"
     },
+    "angular-route@1.3.20": {
+        "licenses": [
+            "MIT"
+        ],
+        "repository": "git+https://github.com/angular/angular.js"
+    },
     "angular-sanitize@1.3.20": {
         "licenses": [
             "MIT"
@@ -110,12 +116,6 @@
         "repository": "git+https://github.com/angular/angular.js"
     },
     "angular-touch@1.3.20": {
-        "licenses": [
-            "MIT"
-        ],
-        "repository": "git+https://github.com/angular/angular.js"
-    },
-    "angular-route@1.3.20": {
         "licenses": [
             "MIT"
         ],
