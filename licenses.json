@@ -4,14 +4,14 @@
             "MIT*"
         ]
     },
-    "angular-ui-utils@0.2.3": {
-        "licenses": "UNKNOWN"
-    },
     "animate.css@undefined": {
         "licenses": [
             "MIT"
         ],
         "repository": "git+https://github.com/daneden/animate.css"
+    },
+    "angular-ui-utils@0.2.3": {
+        "licenses": "UNKNOWN"
     },
     "bootswatch@undefined": {
         "licenses": [
@@ -41,19 +41,14 @@
         ],
         "homepage": "http://fontawesome.io"
     },
-    "jquery@2.1.4": {
-        "licenses": [
-            "MIT"
-        ]
-    },
     "lesshat@3.0.2": {
         "licenses": [
             "MIT*"
         ]
     },
-    "moment@2.8.4": {
+    "jquery@2.1.4": {
         "licenses": [
-            "MIT*"
+            "MIT"
         ]
     },
     "numeral@1.5.3": {
@@ -61,6 +56,11 @@
             "MIT"
         ],
         "repository": "git+https://github.com/adamwdraper/Numeral-js"
+    },
+    "moment@2.8.4": {
+        "licenses": [
+            "MIT*"
+        ]
     },
     "underscore@1.8.3": {
         "licenses": [
@@ -85,13 +85,13 @@
         ],
         "repository": "git+https://github.com/angular-ui/bootstrap"
     },
-    "angular-mocks@1.3.20": {
+    "angular-cookies@1.3.20": {
         "licenses": [
             "MIT"
         ],
         "repository": "git+https://github.com/angular/angular.js"
     },
-    "angular-cookies@1.3.20": {
+    "angular-mocks@1.3.20": {
         "licenses": [
             "MIT"
         ],
