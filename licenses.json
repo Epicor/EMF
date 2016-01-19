@@ -51,27 +51,21 @@
             "MIT*"
         ]
     },
-    "moment@2.8.4": {
-        "licenses": [
-            "MIT*"
-        ]
-    },
     "numeral@1.5.3": {
         "licenses": [
             "MIT"
         ],
         "repository": "git+https://github.com/adamwdraper/Numeral-js"
     },
-    "underscore@1.8.3": {
+    "moment@2.8.4": {
         "licenses": [
             "MIT*"
         ]
     },
-    "angular-animate@1.3.20": {
+    "underscore@1.8.3": {
         "licenses": [
-            "MIT"
-        ],
-        "repository": "git+https://github.com/angular/angular.js"
+            "MIT*"
+        ]
     },
     "angular-aria@1.3.20": {
         "licenses": [
@@ -79,19 +73,19 @@
         ],
         "repository": "git+https://github.com/angular/angular.js"
     },
-    "angular-bootstrap@0.13.4": {
-        "licenses": [
-            "MIT"
-        ],
-        "repository": "git+https://github.com/angular-ui/bootstrap"
-    },
-    "angular-mocks@1.3.20": {
+    "angular-animate@1.3.20": {
         "licenses": [
             "MIT"
         ],
         "repository": "git+https://github.com/angular/angular.js"
     },
-    "angular-resource@1.3.20": {
+    "angular-cookies@1.3.20": {
+        "licenses": [
+            "MIT"
+        ],
+        "repository": "git+https://github.com/angular/angular.js"
+    },
+    "angular-mocks@1.3.20": {
         "licenses": [
             "MIT"
         ],
@@ -103,7 +97,7 @@
         ],
         "repository": "git+https://github.com/angular/angular.js"
     },
-    "angular-cookies@1.3.20": {
+    "angular-resource@1.3.20": {
         "licenses": [
             "MIT"
         ],
@@ -120,6 +114,12 @@
             "MIT"
         ],
         "repository": "git+https://github.com/angular/angular.js"
+    },
+    "angular-bootstrap@0.13.4": {
+        "licenses": [
+            "MIT"
+        ],
+        "repository": "git+https://github.com/angular-ui/bootstrap"
     },
     "bootstrap@undefined": {
         "licenses": [
