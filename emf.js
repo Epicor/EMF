@@ -9768,21 +9768,7 @@ angular.module('ep.sysconfig').provider('epSysConfig',
 angular.module('ep.tabbar').controller('epTabbarCtrl', [
     '$scope',
     function($scope) {
-        // do something with $scope property
-        $scope.myProperty = 'emf';
 
-        /**
-         * @ngdoc method
-         * @name myFunction
-         * @methodOf ep.tabbar.controller:epTabbarCtrl
-         * @public
-         * @description
-         * Handles the myFunction request
-         */
-        $scope.myFunction = function() {
-            // do something else with $scope property
-            // $scope.myProperty = 'new property value';
-        };
     }
 ]);
 
