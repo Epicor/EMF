@@ -51,6 +51,15 @@ angular.module('ep.color.tile', []);
 'use strict';
 /**
  * @ngdoc overview
+ * @name ep.data.model
+ * @description
+ * Provides transactional data model
+ */
+angular.module('ep.data.model', ['ep.utils']);
+
+'use strict';
+/**
+ * @ngdoc overview
  * @name ep.modaldialog
  * @description
  * Provides epicor modal dialo services
@@ -1013,6 +1022,56 @@ angular.module('ep.color.tile').directive('epColorTile',
                 '</div>'
         };
     });
+
+'use strict';
+(function() {
+    /**
+     * @ngdoc overview
+     * @name epDataModelService
+     * @description
+     * # A simple service to manage a transactional data store
+     *
+     * Main module of the application.
+     */
+    
+    angular.module('ep.data.model')
+        //Application Initialization
+        .factory('epDataModelService', [
+            'epUtilsService',
+            function(epUtilsService) {
+
+                var transactions = {};
+                var models = {};
+
+                function beginTransaction(id) {
+                    transactions[id] = epUtilsService.merge({}, models[id]);
+                }
+
+                function commitTransaction(id) {
+                    delete transactions[id];
+                }
+
+                function rollbackTransaction(id) {
+                    epUtilsService.merge(models[id], transactions[id]);
+                    delete transactions[id];
+                }
+
+                function getModel(id) {
+                    if (!models[id]) {
+                        models[id] = {}
+                    }
+                    return models[id];
+                }
+
+                return {
+                    beginTransaction: beginTransaction,
+                    commitTransaction: commitTransaction,
+                    rollbackTransaction: rollbackTransaction,
+                    getModel: getModel
+                }
+            }
+        ]);
+})();
 
 'use strict';
 /**
@@ -9761,7 +9820,7 @@ angular.module('ep.tabbar').directive('epTabbar',
  * @name ep.tabbar.service:epTabbarService
  * @description
  * Service for the ep.tabbar module
- * tabbar components
+ * tabbar components test
  *
  * @example
  *
@@ -9774,31 +9833,68 @@ angular.module('ep.tabbar').service('epTabbarService', [
             tabbarAlignment: 'bottom',
             iconAlignment: 'top',
             labelText: 'bottom',
-            tabbarIcons: []
+            tabs: []
         };
-
+        /**
+        * @ngdoc method
+        * @name enableTopTabbar
+        * @methodOf ep.tabbar.service:epTabbarService
+        * @public
+        * @description
+        * This enables the tabbar docked at the top of the screen.
+        */
         function enableTopTabbar() {
             state.tabbarAlignment = 'top';
         }
-
+        /**
+        * @ngdoc method
+        * @name enableBottomTabbar
+        * @methodOf ep.tabbar.service:epTabbarService
+        * @public
+        * @description
+        * This enables the tabbar docked at the bottom of the screen.
+        */
         function enableBottomTabbar() {
             state.tabbarAlignment = 'bottom';
         }
-
+        /**
+        * @ngdoc method
+        * @name showIconsOnLeft
+        * @methodOf ep.tabbar.service:epTabbarService
+        * @public
+        * @description
+        * This shows tabbar with the icons on the left and description on the right.
+        */
         function showIconsOnLeft() {
             state.labelAlignment = 'left';
             state.iconAlignment = 'left';
             state.labelText = 'left';
         }
-
+        /**
+        * @ngdoc method
+        * @name showIconsOnTop
+        * @methodOf ep.tabbar.service:epTabbarService
+        * @public
+        * @description
+        * This shows tabbar with the icons on the top and description on the bottom.
+        */
         function showIconsOnTop() {
             state.labelAlignment = 'top';
             state.iconAlignment = 'top';
             state.labelText = 'Bottom';
         }
-
-        function removeIcon(id) {
-            state.tabbarIcons = _.reject(state.tabbarIcons, function(icon) { return icon.id === id; });
+        /**
+         * @ngdoc method
+         * @name removeTab
+         * @methodOf ep.tabbar.service:epTabbarService
+         * @public
+         * @description
+         * This removes the selected tab from the tabbar.
+         *
+         * @param {string} id represents the selected tab id to remove
+         */
+        function removeTab(id) {
+            state.tabs = _.reject(state.tabs, function(icon) { return icon.id === id; });
         }
 
         return {
@@ -9806,7 +9902,7 @@ angular.module('ep.tabbar').service('epTabbarService', [
             enableBottomTabbar: enableBottomTabbar,
             showIconsOnLeft: showIconsOnLeft,
             showIconsOnTop: showIconsOnTop,
-            removeIcon: removeIcon,
+            removeTab: removeTab,
             state: state
         };
     }]);
@@ -11054,16 +11150,66 @@ angular.module('ep.utils').service('epUtilsService', ['$document', '$log', '$q',
                 }
             }
         }
+        function baseMerge(dst, objs, deep) {
+            for (var i = 0, ii = objs.length; i < ii; ++i) {
+                var obj = objs[i];
+                if (!_.isObject(obj) && !_.isFunction(obj)) continue;
+                var keys = Object.keys(obj);
+                for (var j = 0, jj = keys.length; j < jj; j++) {
+                    var key = keys[j];
+                    var src = obj[key];
+
+                    if (deep && _.isObject(src)) {
+                        if (_.isDate(src)) {
+                            dst[key] = new Date(src.valueOf());
+                        } else if (_.isRegExp(src)) {
+                            dst[key] = new RegExp(src);
+                        } else if (src.nodeName) {
+                            dst[key] = src.cloneNode(true);
+                        } else if (_.isElement(src)) {
+                            dst[key] = src.clone();
+                        } else {
+                            if (!_.isObject(dst[key])) dst[key] = _.isArray(src) ? [] : {};
+                            baseMerge(dst[key], [src], true);
+                        }
+                    } else {
+                        dst[key] = src;
+                    }
+                }
+            }
+
+            return dst;
+        }
+
+        /**
+        * @ngdoc method
+        * @name merge
+        * @methodOf ep.utils.service:epUtilsService
+        * @public
+        * @description
+        * Deeply extends the destination object `dst` by copying own enumerable properties from the `src` object(s)
+        * to `dst`. You can specify multiple `src` objects. If you want to preserve original objects, you can do so
+        * by passing an empty object as the target: `var object = epUtilsService.merge({}, object1, object2)`.
+
+        *
+        * @param {Object} dst Destination object.
+        * @param {...Object} src Source object(s).
+        * @returns {Object} Reference to `dst`.
+        */
+        function merge(dst) {
+            return baseMerge(dst, Array.prototype.slice.call(arguments, 1), true);
+        }
 
         return {
-            strFormat: strFormat,
-            mapArray: mapArray,
-            ensureStartsWith: ensureStartsWith,
-            ensureEndsWith: ensureEndsWith,
             copyProperties: copyProperties,
-            makePath: makePath,
-            loadScript: loadScript,
+            ensureEndsWith: ensureEndsWith,
+            ensureStartsWith: ensureStartsWith,
             hasProperty: hasProperty,
+            loadScript: loadScript,
+            makePath: makePath,
+            mapArray: mapArray,
+            merge: merge,
+            strFormat: strFormat,
             wait: wait
         };
     }]);
@@ -11156,7 +11302,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.tabbar/ep-tabbar.html',
-    "<!--Tab Bar Components --><div class=ep-tabbar><ul id=tabbar class=\"navbar nav-pills navbar-default\" ng-class=\"{'navbar-fixed-bottom':state.tabbarAlignment=='bottom', 'navbar-fixed-top':state.tabbarAlignment!='bottom'}\"><li ng-repeat=\"icon in state.tabbarIcons\" class=ep-tabbar-contents ng-class=\"{'ep-tabbar-list':state.iconAlignment=='left'}\"><a ng-click=executeButton(icon) class=ep-tabbar-content-color><i class={{icon.icon}}></i><label ng-hide=\"state.labelAlignment=='top'\" ng-class=\"{'ep-tabbar-label':state.labelText=='left'}\">{{icon.text}}</label><p ng-hide=\"state.labelAlignment!='top'\">{{icon.text}}</p></a></li></ul></div>"
+    "<!--Tab Bar Components --><div class=ep-tabbar><ul id=tabbar class=\"navbar nav-pills navbar-default\" ng-class=\"{'navbar-fixed-bottom':state.tabbarAlignment=='bottom', 'navbar-fixed-top':state.tabbarAlignment!='bottom'}\"><li ng-repeat=\"icon in state.tabs\" class=ep-tabbar-contents ng-class=\"{'ep-tabbar-list':state.iconAlignment=='left'}\"><a ng-click=executeButton(icon) class=ep-tabbar-content-color><i class={{icon.icon}}></i><label ng-hide=\"state.labelAlignment=='top'\" ng-class=\"{'ep-tabbar-label':state.labelText=='left'}\">{{icon.text}}</label><p ng-hide=\"state.labelAlignment!='top'\">{{icon.text}}</p></a></li></ul></div>"
   );
 
 
