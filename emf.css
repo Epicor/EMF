@@ -554,6 +554,7 @@
   text-align: center;
 }
 
+
 .ep-modaldialog .ep-dlg-buttons {
   width: 100%;
   min-height: 30px;
@@ -692,9 +693,9 @@
 .ep-modaldialog.ep-modaldialog-custom .modal-header .close {
   padding: 9px;
 }
-.ep-modaldialog.ep-modaldialog-custom .modal-body form {
-  padding-bottom: 10px;
-}
+/*.ep-modaldialog.ep-modaldialog-custom .modal-body form{
+    padding-bottom: 10px;
+}*/
 .ep-modaldialog.ep-modaldialog-custom .modal-footer .btn {
   min-width: 70px;
   /*so that btn is not too small*/
@@ -715,6 +716,9 @@
   margin-left: 3px;
   font-weight: normal;
 }
+.ep-modaldialog.ep-modaldialog-custom .modal-body {
+  padding-bottom: 0px;
+}
 /* modaldialog-error.html */
 .ep-modaldialog .ep-modaldialog-error .ep-dlg-bodytable {
   background-color: transparent;
@@ -732,6 +736,33 @@
 }
 .ep-modaldialog .ep-modaldialog-error .ep-dlg-icon {
   display: block;
+}
+@media screen and (max-width: 500px), screen and (max-height: 500px) {
+  .ep-modal-window .modal-dialog {
+    width: 100%;
+    height: 100%;
+    padding: 0;
+    margin: 0;
+    margin-left: 0px;
+    margin-top: 0px;
+  }
+  .ep-modal-window .modal-content {
+    height: 100%;
+    border-radius: 0;
+  }
+}
+/* modal dialog size. fullscreen class or responsive to fullscreen */
+.ep-modal-window.ep-fullscreen .modal-dialog {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+  margin: 0;
+  margin-left: 0px;
+  margin-top: 0px;
+}
+.ep-modal-window.ep-fullscreen .modal-content {
+  height: 100%;
+  border-radius: 0;
 }
 
 .ep-mlm-container {
@@ -1133,6 +1164,103 @@ Font Awesome
 */
 .fa {
   font-family: FontAwesome !important;
+}
+/*
+=================================================================
+View Animation
+=================================================================
+*/
+/* Default view */
+.view {
+  position: absolute;
+  width: 100%;
+  transition: 500ms;
+  background-color: white;
+}
+/* First animation
+    */
+.ep-slide-left.view.ng-enter {
+  left: 100%;
+}
+.ep-slide-left.view.ng-enter.ng-enter-active {
+  left: 0;
+}
+.ep-slide-right.view.ng-enter {
+  left: -100;
+}
+.ep-slide-right.view.ng-enter.ng-enter-active {
+  left: 0%;
+}
+/* Layout style.... */
+body {
+  background: #232323;
+  margin: 0;
+  padding: 0;
+  color: #fff;
+  font-family: helvetica, arial;
+}
+.links {
+  margin: 24px;
+  text-align: center;
+}
+a,
+a:visited {
+  color: inherit;
+  text-decoration: none;
+  padding: 8px 14px;
+  margin: 10px 5px;
+  font-size: 12px;
+  border: 1px solid #fff;
+  border-radius: 2px;
+  display: inline-block;
+}
+a:hover {
+  border: 1px solid blue;
+  background-color: blue;
+  text-decoration: none;
+}
+.viewcontainer {
+  width: 100%;
+  position: absolute;
+  height: 700px;
+  line-height: 700px;
+  text-align: center;
+  background-color: lime;
+  font-size: 60px;
+  text-transform: uppercase;
+}
+.viewcontainer.defaultcontent {
+  text-transform: none;
+}
+.content1 {
+  background-color: orange !important;
+}
+.content1.n {
+  text-transform: none;
+}
+.content2 {
+  background-color: magenta !important;
+}
+.content2.n {
+  text-transform: none;
+}
+.content3 {
+  background-color: pink !important;
+}
+.content3.n {
+  text-transform: none;
+}
+.content4 {
+  background-color: aqua !important;
+}
+.content4.n {
+  text-transform: none;
+}
+.content5 {
+  background-color: olive !important;
+}
+.content5.n {
+  text-transform: none;
 }
 
 /*
