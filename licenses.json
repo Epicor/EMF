@@ -1,4 +1,9 @@
 {
+    "angular-ui-router@0.2.15": {
+        "licenses": [
+            "MIT*"
+        ]
+    },
     "angular-ui-utils@0.2.3": {
         "licenses": "UNKNOWN"
     },
@@ -6,7 +11,22 @@
         "licenses": "UNKNOWN",
         "repository": "git+https://github.com/daneden/animate.css"
     },
-    "angular-ui-router@0.2.15": {
+    "bootswatch@undefined": {
+        "licenses": [
+            "MIT"
+        ],
+        "repository": {
+            "type": "git",
+            "url": "git://github.com/thomaspark/bootswatch.git"
+        },
+        "homepage": "http://bootswatch.com"
+    },
+    "datatables@1.10.10": {
+        "licenses": [
+            "MIT"
+        ]
+    },
+    "fastclick@undefined": {
         "licenses": [
             "MIT*"
         ]
@@ -19,16 +39,6 @@
         ],
         "homepage": "http://fontawesome.io"
     },
-    "datatables@1.10.10": {
-        "licenses": [
-            "MIT"
-        ]
-    },
-    "fastclick@undefined": {
-        "licenses": [
-            "MIT*"
-        ]
-    },
     "jquery@2.1.4": {
         "licenses": [
             "MIT"
@@ -37,10 +47,9 @@
     "lesshat@3.0.2": {
         "licenses": [
             "MIT*"
-        ],
-        "homepage": "https://github.com/csshat/lesshat"
+        ]
     },
-    "underscore@1.8.3": {
+    "moment@2.8.4": {
         "licenses": [
             "MIT*"
         ]
@@ -51,38 +60,22 @@
         ],
         "repository": "git+https://github.com/adamwdraper/Numeral-js"
     },
-    "angular-route@1.3.20": {
-        "licenses": [
-            "MIT"
-        ],
-        "repository": "git+https://github.com/angular/angular.js"
-    },
-    "angular-touch@1.3.20": {
-        "licenses": [
-            "MIT"
-        ],
-        "repository": "git+https://github.com/angular/angular.js"
-    },
-    "bootswatch@undefined": {
-        "licenses": [
-            "MIT"
-        ],
-        "repository": {
-            "type": "git",
-            "url": "git://github.com/thomaspark/bootswatch.git"
-        },
-        "homepage": "http://bootswatch.com"
-    },
-    "moment@2.8.4": {
+    "underscore@1.8.3": {
         "licenses": [
             "MIT*"
         ]
     },
-    "angular-bootstrap@0.13.4": {
+    "angular@1.3.20": {
         "licenses": [
             "MIT"
         ],
-        "repository": "git+https://github.com/angular-ui/bootstrap"
+        "repository": "git+https://github.com/angular/angular.js"
+    },
+    "angular-animate@1.3.20": {
+        "licenses": [
+            "MIT"
+        ],
+        "repository": "git+https://github.com/angular/angular.js"
     },
     "angular-aria@1.3.20": {
         "licenses": [
@@ -90,7 +83,13 @@
         ],
         "repository": "git+https://github.com/angular/angular.js"
     },
-    "angular-resource@1.3.20": {
+    "angular-bootstrap@0.13.4": {
+        "licenses": [
+            "MIT"
+        ],
+        "repository": "git+https://github.com/angular-ui/bootstrap"
+    },
+    "angular-cookies@1.3.20": {
         "licenses": [
             "MIT"
         ],
@@ -102,19 +101,25 @@
         ],
         "repository": "git+https://github.com/angular/angular.js"
     },
+    "angular-resource@1.3.20": {
+        "licenses": [
+            "MIT"
+        ],
+        "repository": "git+https://github.com/angular/angular.js"
+    },
+    "angular-route@1.3.20": {
+        "licenses": [
+            "MIT"
+        ],
+        "repository": "git+https://github.com/angular/angular.js"
+    },
     "angular-sanitize@1.3.20": {
         "licenses": [
             "MIT"
         ],
         "repository": "git+https://github.com/angular/angular.js"
     },
-    "angular-cookies@1.3.20": {
-        "licenses": [
-            "MIT"
-        ],
-        "repository": "git+https://github.com/angular/angular.js"
-    },
-    "angular@1.3.20": {
+    "angular-touch@1.3.20": {
         "licenses": [
             "MIT"
         ],
@@ -132,11 +137,5 @@
             "MIT"
         ],
         "repository": "https://github.com/WickyNilliams/enquire.js"
-    },
-    "angular-animate@1.3.20": {
-        "licenses": [
-            "MIT"
-        ],
-        "repository": "git+https://github.com/angular/angular.js"
     }
 }
