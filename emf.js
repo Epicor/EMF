@@ -230,9 +230,10 @@ angular.module('ep.shell', [
     'ep.theme',
     'ep.utils',
     'ep.sysconfig',
-    'ep.console'
-    ]
-    );
+    'ep.console',
+    'ep.multi.level.menu',
+    'ep.embedded.apps'
+    ]);
 
 'use strict';
 /**
@@ -1918,6 +1919,9 @@ angular.module('ep.datagrid').directive('epDataGrid', [
         }
 
         function renderDateFormat(data, row, col) {
+            if (data === undefined) {
+                return null;
+            }
             var format = col.userColumnDef.oFormat.FormatString || 'M/d/yyyy';
             if (format && data) {
                 var wrappedDate = moment(data);
@@ -1971,6 +1975,11 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                     var numDecimalDigits = (colDef.oFormat && colDef.oFormat.NumberFormatInfo) ?
                         colDef.oFormat.NumberFormatInfo.NumberDecimalDigits : 2;
                     data = val.toFixed(numDecimalDigits);
+                }
+
+                if (!isNaN(data) && colDef.oFormat.NumberFormatInfo.RemoveTrailingZeros) {
+                    //Following line removes trailing zeros
+                    data = parseFloat(data);
                 }
 
             }
@@ -3408,8 +3417,6 @@ angular.module('ep.datagrid').
             var datagridOptions = {
                 tableHeight: 300,
                 pageLength: 20,
-                ordering: true,
-                allowSearchInput: true,
                 staticMode: true,
                 fnUpdateRecordsInfo: function(status) {
                     modalDialogOptions.statusBarText = status;
@@ -3937,7 +3944,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsShellService', [
     '$timeout',
     'epEmbeddedAppsConstants',
     'epEmbeddedAppsProvider',
-    function($rootScope, $location, $log, $timeout, epEmbeddedAppsConstants, epEmbeddedAppsProvider) {
+    'epUtilsService',
+    function($rootScope, $location, $log, $timeout, epEmbeddedAppsConstants, epEmbeddedAppsProvider, epUtilsService) {
         var epShellService;
         var fnGotoView;
 
@@ -3952,12 +3960,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsShellService', [
         }
 
         function init() {
-            try {
-                epShellService = angular.element('html').injector().get('epShellService');
-            } catch (e) {
-                $log.warn('epShellService is not found for embedded applications');
-            }
-
+            epShellService = epUtilsService.getService('epShellService');
             if (epShellService) {
                 $rootScope.$on(epEmbeddedAppsConstants.CONFIG_LOADED_EVENT, function(event, data) {
                     fnGotoView = data.goToView;
@@ -4816,12 +4819,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         function getApplications() {
             var provider = epEmbeddedAppsProvider.settings.provider;
             if (provider && provider !== 'sysconfig') {
-                try {
-                    var customProvider = angular.element('html').injector().get(provider);
+                var customProvider = epUtilsService.getService(provider);
+                if (customProvider) {
                     return customProvider.getApps();
-                } catch (e) {
-                    $log.warn('Custom embedded application provider not found or failed: ' + provider);
                 }
+                return [];
             }
             return getAppsFromConfig();
         }
@@ -4862,6 +4864,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
         function loadConfigurationsFromService(deferred) {
             state.loading = true;
+            var svc = epUtilsService.getService('epEmbeddedAppsService');
+
             getApplications('config').then(function(data) {
                 try {
                     if (data && data.Success) {
@@ -4890,6 +4894,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                                         $log.warn('Invalid value in tileSize property: ' + config.tileSize);
                                     }
                                 }
+
+                                //Provide easy access to embedded apps service from app packages
+                                //mostly needed for startup script
+                                config.epEmbeddedAppsService = svc;
 
                                 //Set default menu (unless disabled)
                                 if (!config.menu || config.menu.disabled !== true) {
@@ -5006,6 +5014,15 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             }
         }
 
+        /**
+        * @ngdoc method
+        * @name retrieveAppsMenu
+        * @methodOf ep.embedded.apps.service:epEmbeddedAppsService
+        * @public
+        * @description
+        * Retrieves (collects) menu from all embedded aplications.
+        * @returns {object} a promise of array with menus from all embedded aplications
+        */
         function retrieveAppsMenu() {
             var merge = [];
             var configsMenuStartup = [];
@@ -5061,6 +5078,15 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             return deferred.promise;
         }
 
+        /**
+        * @ngdoc method
+        * @name currentAppsMenu
+        * @methodOf ep.embedded.apps.service:epEmbeddedAppsService
+        * @public
+        * @description
+        * Returns currently loaded menu from all embedded aplications
+        * @returns {array} array of menus from all embedded aplications
+        */
         function currentAppsMenu() {
             var merge = [];
             angular.forEach(configs, function(config) {
@@ -5069,6 +5095,52 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 }
             });
             return merge;
+        }
+
+        /**
+        * @ngdoc method
+        * @name buildAppViewsMenu
+        * @methodOf ep.embedded.apps.service:epEmbeddedAppsService
+        * @public
+        * @description
+        * Build menu with menu items for each view of the specified application
+        * @param {object} config - the config of specifired app
+        * @param {bool} all - add all views (not just the ones with captions)
+        * @returns {array} array of object with Menu
+        */
+        function buildAppViewsMenu(config, all) {
+            // build navigation
+            var ret = [];
+            if (config && config.views) {
+                var menuItems = [];
+                angular.forEach(config.views, function(view) {
+                    if (view.caption || all) {
+                        var c = all ? (view.caption || view.name || view.id) : view.caption;
+                        menuItems.push({
+                            caption: c,
+                            id: view.id,
+                            action: function() {
+                                goToView(config.id, view.id);
+                            }
+                        });
+                    }
+                });
+                var menu = {
+                    caption: 'root',
+                    id: 'root',
+                    menuitems: [
+                        {
+                            caption: config.name,
+                            id: config.id,
+                            menuitems: menuItems
+                        }
+                    ]
+                };
+                ret = {
+                    Menu: menu
+                };
+            }
+            return ret;
         }
 
         return {
@@ -5081,6 +5153,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             setupShellOnStartup: setupShellOnStartup,
             currentAppsMenu: currentAppsMenu,
             retrieveAppsMenu: retrieveAppsMenu,
+            buildAppViewsMenu: buildAppViewsMenu,
             goToView: goToView
         };
     }]);
@@ -8119,6 +8192,91 @@ angular.module('ep.shell').service('epShellFeedbackService', [
         };
     }]);
 
+(function() {
+    'use strict';
+
+    /**
+     * @ngdoc controller
+     * @name ep.shell.controller:epShellMenuCtrl
+     * @description
+     * Represents shell's menu controller.
+     */
+    epShellMenuCtrl.$inject = ['$q', '$scope', 'epEmbeddedAppsService', 'epMultiLevelMenuService'];
+    angular.module('ep.shell').
+        controller('epShellMenuCtrl', epShellMenuCtrl);
+
+    /*@ngInject*/
+    function epShellMenuCtrl($q, $scope, epEmbeddedAppsService, epMultiLevelMenuService) {
+
+        $scope.onMenuOptions = function onMenuOptions() {
+            $scope.menuOptions.onMenuInit = function(factory) {
+                $scope.menuOptions.factory = factory;
+            };
+
+            $scope.menu = {
+                caption: $scope.menuOptions.title || 'Main Menu',
+                menuitems: []
+            };
+
+            $scope.menuGets = [$scope.menuOptions.fnGetMenu];
+            if ($scope.includeEmbeddedMenu) {
+                $scope.menuGets.push(epEmbeddedAppsService.retrieveAppsMenu);
+            }
+            $scope.count = $scope.menuGets.length;
+
+            angular.forEach($scope.menuGets, function(fn) {
+                $q.when(fn()).then(function(m) {
+                    epMultiLevelMenuService.mergeMenus($scope.menu, m);
+                    if (--$scope.count === 0) {
+                        $scope.menuOptions.menu = $scope.menu;
+                    }
+                });
+            });
+        };
+    }
+}());
+
+(function() {
+'use strict';
+/**
+* @ngdoc directive
+* @name ep.shell.directive:epShellMenuDirective
+* @restrict E
+*
+* @description
+* Represents epShellMenuDirective directive
+*
+* @example
+*/
+angular.module('ep.shell').
+    directive('epShellMenu', epShellMenuDirective);
+
+    /*@ngInject*/
+    function epShellMenuDirective() {
+        return {
+            restrict: 'E',
+            controller: 'epShellMenuCtrl',
+            templateUrl: 'src/components/ep.shell/menu/ep-shell-menu.html',
+            scope: {
+                menuOptions: '=',
+                includeEmbeddedMenu: '='
+            },
+            compile: function() {
+                return {
+                    pre: function() { },
+                    post: function($scope) {
+                        $scope.$watch('menuOptions', function(newValue) {
+                            if (newValue !== undefined) {
+                                $scope.onMenuOptions();
+                            }
+                        });
+                    }
+                };
+            }
+        };
+    }
+}());
+
 'use strict';
 
 /**
@@ -8192,12 +8350,13 @@ angular.module('ep.shell').controller('epShellCtrl', [
 
             $rootScope.$on('$routeChangeStart', function(event, currRoute, prevRoute) {
                 var curRouteName = currRoute.$$route.originalPath;
-                var pervRouteName = prevRoute.$$route.originalPath;
-
-                var currentTransitions = $route.routes[curRouteName].transitions[pervRouteName.replace('/', '')];
-                epShellService.clearInfo();
-                epShellService.cleanupViewEvents();
-                epShellService.viewAnimation('ep-' + currentTransitions);
+                var prevRouteName = prevRoute.$$route.originalPath;
+                if ($route.routes[curRouteName].transitions) {
+                    var currentTransitions = $route.routes[curRouteName].transitions[prevRouteName.replace('/', '')];
+                    epShellService.clearInfo();
+                    epShellService.cleanupViewEvents();
+                    epShellService.viewAnimation('ep-' + currentTransitions);
+                }
             });
 
             //launch help event function
@@ -8266,9 +8425,8 @@ angular.module('ep.shell').provider('epShellConfig', [
             options: {
                 pageTitle: 'Epicor Mobile',
                 brandHTML: 'Epicor Mobile Framework <sup>2.0</sup>',
-                defaultTheme: 'flatly',
-                disableTheming: false,
-                enableFeedback: true
+                enableFeedback: true,
+                includeEmbeddedApps: false
             },
 
             /**
@@ -8383,9 +8541,11 @@ angular.module('ep.shell').service('epShellService', [
     'epShellConfig',
     'epShellConstants',
     'epConsoleService',
+    'epUtilsService',
+    'epEmbeddedAppsService',
      function($q, $rootScope, $timeout, $sce, $document,
          epFeatureDetectionService, epSidebarService, epThemeService, epShellConfig,
-         epShellConstants, epConsoleService) {
+         epShellConstants, epConsoleService, epUtilsService, epEmbeddedAppsService) {
 
          epConsoleService.initialize();
 
@@ -8400,6 +8560,7 @@ angular.module('ep.shell').service('epShellService', [
              showProgressIndicator: false,
              progressIndicatorlevel: 0,
              enableFeedback: true,
+             enableEmbeddedApps: true,
              fnOnFeedback: undefined,
              suspend: false,
              showBrand: true,
@@ -8520,6 +8681,18 @@ angular.module('ep.shell').service('epShellService', [
 
              if (epShellConfig.options.enableFeedback !== undefined) {
                  shellState.enableFeedback = epShellConfig.options.enableFeedback;
+             }
+
+             if (epShellConfig.options.includeEmbeddedApps !== undefined) {
+                 shellState.enableEmbeddedApps = epShellConfig.options.includeEmbeddedApps;
+                 if (shellState.enableEmbeddedApps) {
+                     $rootScope.$watch('initComplete', function(complete) {
+                         if (complete) {
+                             //place here whatever needs to be initialized after initComplete
+                             epEmbeddedAppsService.initialize();
+                         }
+                     });
+                 }
              }
          }
 
@@ -9832,14 +10005,13 @@ angular.module('ep.shell').service('epShellService', [
      * Represents the shell sidebar directive. For internal epShell usage only
      */
 angular.module('ep.shell').directive('epShellSidebar', [
-    '$location',
     '$rootScope',
     '$routeParams',
     'epSidebarService',
     'epShellService',
     'epShellConstants',
     'epFeatureDetectionService',
-    function($location, $rootScope, $routeParams,
+    function($rootScope, $routeParams,
         epSidebarService, epShellService, epShellConstants, epFeatureDetectionService) {
         return {
             restrict: 'E',
@@ -9893,20 +10065,16 @@ angular.module('ep.shell').service('epSidebarService', [
          var viewContainerScope = null;
 
          var state = {
-             shouldShowMessage: false,
-             message: null,
              leftTemplate: null,
-             rightTemplate: null,
-             leftTemplateUrl: null,
-             rightTemplateUrl: null
+             rightTemplate: null
          };
 
          function clearLeftSidebar() {
-             angular.element('#leftSidebar').empty();
+             angular.element('.ep-sidebar-nav.ep-sidebar-nav-left').empty();
          }
 
          function clearRightSidebar() {
-             angular.element('#rightSidebar').empty();
+             angular.element('.ep-sidebar-nav.ep-sidebar-nav-right').empty();
          }
 
          function clear() {
@@ -9918,35 +10086,34 @@ angular.module('ep.shell').service('epSidebarService', [
              viewContainerScope = val;
          }
 
-         function setLeftTemplateUrl(val) {
-             setLeftTemplate("<div ng-include='\"" + val + "\"'></div>");
+         function setLeftTemplateUrl(val, updateIfChanged) {
+             setLeftTemplate("<div ng-include='\"" + val + "\"'></div>", updateIfChanged);
          }
 
-         function setRightTemplateUrl(val) {
-             setRightTemplate("<div ng-include='\"" + val + "\"'></div>");
+         function setRightTemplateUrl(val, updateIfChanged) {
+             setRightTemplate("<div ng-include='\"" + val + "\"'></div>", updateIfChanged);
          }
 
-         function setLeftTemplate(val) {
-             state.leftTemplate = val;
-             var target = angular.element('#leftSidebar');
-             target
-                 .empty()
-                 .append($compile(val)(viewContainerScope));
-         }
-
-         function setRightTemplate(val) {
-             state.rightTemplate = val;
-             var target = angular.element('#rightSidebar');
-             target
-                 .empty()
-                 .append($compile(val)(viewContainerScope));
-         }
-
-         function showMessage(val) {
-             if (val) {
-                 state.shouldShowMessage = true;
+         function setLeftTemplate(val, updateIfChanged) {
+             if (updateIfChanged === true && state.leftTemplate === val) {
+                 return;
              }
-             state.message = val;
+             state.leftTemplate = val;
+             var target = angular.element('.ep-sidebar-nav.ep-sidebar-nav-left');
+             target
+                 .empty()
+                 .append($compile(val)(viewContainerScope));
+         }
+
+         function setRightTemplate(val, updateIfChanged) {
+             if (updateIfChanged === true && state.rightTemplate === val) {
+                 return;
+             }
+             state.rightTemplate = val;
+             var target = angular.element('.ep-sidebar-nav.ep-sidebar-nav-right');
+             target
+                 .empty()
+                 .append($compile(val)(viewContainerScope));
          }
 
          return {
@@ -9954,7 +10121,6 @@ angular.module('ep.shell').service('epSidebarService', [
              clearLeftSidebar: clearLeftSidebar,
              clearRightSidebar: clearRightSidebar,
              state: state,
-             showMessage: showMessage,
              setScope: setScope,
              setLeftTemplateUrl: setLeftTemplateUrl,
              setRightTemplateUrl: setRightTemplateUrl,
@@ -9978,19 +10144,19 @@ angular.module('ep.shell').service('epSidebarService', [
         '$rootScope', '$timeout', 'epShellService', 'epSidebarService', 'epViewContainerService', 'epShellConstants',
         function($rootScope, $timeout, epShellService, epSidebarService, epViewContainerService, epShellConstants) {
 
-          function setSidebarSettings(sidebar, scope) {
+          function setSidebarSettings(sidebar, scope, updateIfChanged) {
               if (sidebar.left) {
                   if (sidebar.left.template) {
-                      epSidebarService.setLeftTemplate(sidebar.left.template, scope);
+                      epSidebarService.setLeftTemplate(sidebar.left.template, updateIfChanged);
                   } else if (sidebar.left.templateUrl) {
-                      epSidebarService.setLeftTemplateUrl(sidebar.left.templateUrl, scope);
+                      epSidebarService.setLeftTemplateUrl(sidebar.left.templateUrl, updateIfChanged);
                   }
               }
               if (sidebar.right) {
                   if (sidebar.right.template) {
-                      epSidebarService.setRightTemplate(sidebar.right.template, scope);
+                      epSidebarService.setRightTemplate(sidebar.right.template, updateIfChanged);
                   } else if (sidebar.right.templateUrl) {
-                      epSidebarService.setRightTemplateUrl(sidebar.right.templateUrl, scope);
+                      epSidebarService.setRightTemplateUrl(sidebar.right.templateUrl, updateIfChanged);
                   }
               }
           }
@@ -10037,7 +10203,7 @@ angular.module('ep.shell').service('epSidebarService', [
                                       epShellService.__setCurrentModeFlags();
                                   }
                                   if (viewSettings.sidebar) {
-                                      setSidebarSettings(viewSettings.sidebar, $scope);
+                                      setSidebarSettings(viewSettings.sidebar, $scope, true);
                                   }
                                   $timeout(function() { $scope.$apply(); });
                               }
@@ -10610,7 +10776,8 @@ angular.module('ep.theme').service('epThemeService', [
     'epThemeConfig',
     'epThemeConstants',
     'epLocalStorageService',
-    function($q, $log, $rootScope, epThemeConfig, epThemeConstants, epLocalStorageService) {
+    'epUtilsService',
+    function($q, $log, $rootScope, epThemeConfig, epThemeConstants, epLocalStorageService, epUtilsService) {
         var _localStorageId;
         var _theme;
         var _themes;
@@ -10633,7 +10800,7 @@ angular.module('ep.theme').service('epThemeService', [
                 var provider = epThemeConfig.provider;
                 if (provider && provider !== 'sysconfig' && sysconfig !== true) {
                     try {
-                        var customProvider = angular.element('html').injector().get(provider);
+                        var customProvider = epUtilsService.getService(provider);
                         var th = customProvider.getThemes(refresh);
                         if (th.then) {
                             th.then(function(themes) {
@@ -11613,10 +11780,11 @@ angular.module('ep.utils').service('epUtilsService', ['$document', '$log', '$q',
         * @param {int} attempts - how many max attempts can be performed
         * @param {int} interval - interval in ms between each new attempt
         * @param {object} fnExecute - function that is executed when condition is met
+        * @param {object} fnFail - optional function that is executed when condition is not met after all attempts
         * @example
         *   wait( function(){ return state; }, 10, 250, function(){ alert('complete'); });
         */
-        function wait(fnCondtion, attempts, interval, fnExecute) {
+        function wait(fnCondtion, attempts, interval, fnExecute, fnFail) {
             attempts--;
             if (attempts >= 0) {
                 if (fnCondtion()) {
@@ -11626,6 +11794,8 @@ angular.module('ep.utils').service('epUtilsService', ['$document', '$log', '$q',
                         wait(fnCondtion, attempts, interval, fnExecute);
                     }, interval);
                 }
+            } else if (fnFail) {
+                fnFail();
             }
         }
         function baseMerge(dst, objs, deep) {
@@ -11682,6 +11852,26 @@ angular.module('ep.utils').service('epUtilsService', ['$document', '$log', '$q',
             return baseMerge(dst, Array.prototype.slice.call(arguments, 1), true);
         }
 
+        /**
+        * @ngdoc method
+        * @name getService
+        * @methodOf ep.utils.service:epUtilsService
+        * @public
+        * @description
+        * Retrieve an angular injector for a specified service name
+        * @param {string} name - name of injected service
+        * @returns {Object} Returns requested service injector
+        */
+        function getService(name) {
+            var ret;
+            try {
+                ret = angular.element('html').injector().get(name);
+            } catch (e) {
+                $log.error('Failed to retrieve service for requested name:' + name);
+            }
+            return ret;
+        }
+
         return {
             copyProperties: copyProperties,
             ensureEndsWith: ensureEndsWith,
@@ -11692,7 +11882,8 @@ angular.module('ep.utils').service('epUtilsService', ['$document', '$log', '$q',
             mapArray: mapArray,
             merge: merge,
             strFormat: strFormat,
-            wait: wait
+            wait: wait,
+            getService: getService
         };
     }]);
 
@@ -11765,13 +11956,18 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   );
 
 
+  $templateCache.put('src/components/ep.shell/menu/ep-shell-menu.html',
+    "<div><ep-multi-level-menu ng-controller=epShellMenuCtrl menu=menuOptions.menu menu-id=menuOptions.id on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu></div>"
+  );
+
+
   $templateCache.put('src/components/ep.shell/shell.html',
     "<div><section ng-controller=epShellCtrl class=ep-shell><div ng-show=state.showProgressIndicator class=ep-progress-idicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\"></a></li><li><a id=apptitle ng-class=\"{hidden: !state.showBrand}\" class=navbar-brand ng-href=\"#{{(state.brandTarget || '/home')}}\" ng-bind-html=state.brandHTML></a></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in navButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.enabled === false}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button)></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false></a><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\"><a ng-click=opt.action() ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa {{opt.icon}}\"></i><span class=ep-navmenu-item-text>{{opt.title}}</span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div class=ep-fullscreen><div ng-view class=\"ep-fullscreen view\" ng-class=state.viewAnimation></div></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" href=#/whatsnew><sup>Version {{uiVersion}}</sup></a></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.enableFeedback ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
   );
 
 
   $templateCache.put('src/components/ep.shell/sidebar/sidebar.html',
-    "<div class=ep-shell-container ng-class=\"{ 'nav-padding': shellState.showNavbar, 'footer-padding': shellState.showFooter, 'ep-disable-left-sidebar': !shellState.enableLeftSidebar, 'ep-hide-left-sidebar': (!shellState.showLeftSidebar) || (!shellState.enableLeftSidebar), 'ep-hide-right-sidebar': (!shellState.showRightSidebar) || !(shellState.enableRightSidebar)}\"><!-- Left Sidebar --><div id=leftSidebar class=\"ep-sidebar-nav ep-sidebar-nav-left well ep-ease-animation\" ng-class=\"{'ep-with-navbar': shellState.showNavbar, 'ep-with-footer': shellState.showFooter, 'cordova-ios': platform.app==='Cordova' && platform.os=='mac'}\" ng-click=dismissRightSidebar()></div><div id=viewPlaceholder class=\"ep-view-placeholder ep-fullscreen\" ng-transclude ng-click=dismissSidebars()><!--VIEW CONTENT HERE--></div><!-- Right Sidebar --><div id=rightSidebar class=\"ep-sidebar-nav ep-sidebar-nav-right well ep-ease-animation\"></div></div>"
+    "<div class=ep-shell-container ng-class=\"{ 'nav-padding': shellState.showNavbar, 'footer-padding': shellState.showFooter, 'ep-disable-left-sidebar': !shellState.enableLeftSidebar, 'ep-hide-left-sidebar': (!shellState.showLeftSidebar) || (!shellState.enableLeftSidebar), 'ep-hide-right-sidebar': (!shellState.showRightSidebar) || !(shellState.enableRightSidebar)}\"><!-- Left Sidebar --><div class=\"ep-sidebar-nav ep-sidebar-nav-left well ep-ease-animation\" ng-class=\"{'ep-with-navbar': shellState.showNavbar, 'ep-with-footer': shellState.showFooter, 'cordova-ios': platform.app==='Cordova' && platform.os=='mac'}\" ng-click=dismissRightSidebar()></div><div id=viewPlaceholder class=\"ep-view-placeholder ep-fullscreen\" ng-transclude ng-click=dismissSidebars()><!--VIEW CONTENT HERE--></div><!-- Right Sidebar --><div class=\"ep-sidebar-nav ep-sidebar-nav-right well ep-ease-animation\"></div></div>"
   );
 
 
