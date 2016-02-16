@@ -1,15 +1,15 @@
 {
-    "angular-ui-router@0.2.15": {
-        "licenses": [
-            "MIT*"
-        ]
-    },
     "angular-ui-utils@0.2.3": {
         "licenses": "UNKNOWN"
     },
     "animate.css@undefined": {
         "licenses": "UNKNOWN",
         "repository": "git+https://github.com/daneden/animate.css"
+    },
+    "angular-ui-router@0.2.15": {
+        "licenses": [
+            "MIT*"
+        ]
     },
     "bootswatch@undefined": {
         "licenses": [
