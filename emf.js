@@ -78,7 +78,7 @@ angular.module('ep.data.model', ['ep.utils']);
  * @description
  * Provides epicor modal dialo services
  */
-angular.module('ep.datagrid', ['ep.templates']);
+angular.module('ep.datagrid', ['ep.templates', 'ep.dropdown']);
 
 'use strict';
 /**
@@ -99,6 +99,18 @@ angular.module('ep.datagrid', ['ep.templates']);
  *  of some property of serializing object.
  */
 angular.module('ep.drag.drop', [
+]);
+
+'use strict';
+/**
+ * @ngdoc overview
+ * @name ep.dropdown
+ * @description
+ * Implements various dropdowns
+ */
+angular.module('ep.dropdown', [
+    'ep.templates',
+    'ep.sysconfig'
 ]);
 
 'use strict';
@@ -1736,6 +1748,7 @@ The controller code must provide the options in active scope or set them using f
         gridFactory: null,               //after directive initialization will expose directive's factory of methods
         metadata: undefined,             //metadata for columns and combos
         allowSearchInput: true,          //do we allow search input
+        allowFiltering: true,            //do we allow filtering
         retrieveDataOnCreate: true,      //should we call fnGetServerData upon creation
         startRowIndex: null,             //activate row with this index upon start (0 - first row, etc)
         startSearchValue: null           //some starting search value
@@ -1799,12 +1812,13 @@ Column = {
 angular.module('ep.datagrid').directive('epDataGrid', [
     '$timeout',
     '$compile',
+    '$sce',
     '$log',
     '$window',
     'epUtilsService',
     'epFeatureDetectionService',
     'epDataGridDirectiveFactory',
-    function($timeout, $compile, $log, $window,
+    function($timeout, $compile, $sce, $log, $window,
         epUtilsService, epFeatureDetectionService, epDataGridDirectiveFactory) {
         var rowIndicator = 'fa fa-play';
         var editIndicator = 'fa fa-square';
@@ -1838,7 +1852,9 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                 tableHeight: null,
                 staticMode: false,
                 dataSource: null,
-                isChildGrid: false
+                isChildGrid: false,
+                headerSection: '',
+                footerSection: ''
             };
             return state;
         }
@@ -2764,6 +2780,10 @@ angular.module('ep.datagrid').directive('epDataGrid', [
             }
         }
 
+        function getBoolOption(opt, dflt) {
+            return (opt === undefined || (opt !== true && opt !== false)) ? dflt : opt;
+        }
+
         function linkDirective(scope, element) {
             scope.state = getNewState();
             scope.state.gridFactory = new epDataGridDirectiveFactory(scope);
@@ -2784,13 +2804,18 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                 scope.options.gridFactory = scope.state.gridFactory;
                 scope.state.userGridId = options.dataTableId || scope.state.userGridId;
                 scope.state.isChildGrid = (options.isChildGrid === true);
-                scope.state.allowSearchInput = scope.options.allowSearchInput;
                 scope.state.ordering = (scope.options.ordering === undefined) ?
                     scope.state.ordering : scope.options.ordering;
 
-                if (options.filterExpressions) {
-                    scope.state.filterExpressions = options.filterExpressions;
+                scope.state.allowSearchInput = (scope.options.allowSearchInput === undefined) ?
+                    scope.state.allowSearchInput : scope.options.allowSearchInput;
+
+                if (options.allowFiltering !== false) {
+                    if (options.filterExpressions) {
+                        scope.state.filterExpressions = options.filterExpressions;
+                    }
                 }
+
                 scope.state.staticMode = (scope.options.staticMode === true);
                 scope.state.dataSource = scope.options.dataSource;
 
@@ -2806,6 +2831,50 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                         createGrid(scope);
                     }
                 }
+                if (options.showHeaderSection) {
+                    if (options.headerSectionTemplate) {
+                        var tx1 = options.headerSectionTemplate;
+                        scope.state.headerSectionTemplate = angular.isString(tx1) ? $sce.trustAsHtml(tx1) : tx1;
+                    } else if (options.headerSectionTemplateUrl) {
+                        scope.state.headerSectionTemplateUrl = options.headerSectionTemplateUrl;
+                    }
+                }
+                if (options.showFooterSection) {
+                    if (options.footerSectionTemplate) {
+                        var tx2 = options.footerSectionTemplate;
+                        scope.state.footerSectionTemplate = angular.isString(tx2) ? $sce.trustAsHtml(tx2) : tx2;
+                    } else if (options.footerSectionTemplateUrl) {
+                        scope.state.footerSectionTemplateUrl = options.footerSectionTemplateUrl;
+                    }
+                }
+
+                var initSH = getBoolOption(options.showHeaderSection, false);
+                var initSF = getBoolOption(options.showFooterSection, false);
+                scope.configmenu = [
+                {
+                    caption: 'Filter',
+                    checked: false,
+                    enabled: scope.options.allowFiltering,
+                    action: function() {
+                        scope.toggleFilter();
+                    }
+                }, {
+                    caption: 'Header',
+                    checked: options.showHeaderSection,
+                    visible: initSH,
+                    action: function() {
+                        scope.options.showHeaderSection = !scope.options.showHeaderSection;
+                        scope.resizeTable(false);
+                    }
+                }, {
+                    caption: 'Footer',
+                    checked: options.showFooterSection,
+                    visible: initSF,
+                    action: function() {
+                        scope.options.showFooterSection = !scope.options.showFooterSection;
+                        scope.resizeTable(false);
+                    }
+                }];
             };
 
             scope.createGrid = function() {
@@ -2940,6 +3009,12 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                         ret = scope.options.fnOnCalcTableHeight(ret, tableBodyOffset);
                     } else if (scope.state.tableHeight && angular.isNumber(scope.state.tableHeight)) {
                         ret = scope.state.tableHeight;
+                    }
+                    if (scope.options.showFooterSection) {
+                        var ft = scope.findElement('.ep-datagrid-footer-section');
+                        if (ft.length) {
+                            ret -= $(ft).height();
+                        }
                     }
                 }
                 return ret;
@@ -3322,6 +3397,7 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                     scope.state.filterShowFlag = (scope.state.filterShowFlag === undefined) ?
                         true : !scope.state.filterShowFlag;
                 }
+                scope.configmenu[0].checked = scope.state.filterShowFlag;
             };
 
             scope.getFilterState = function() {
@@ -3653,6 +3729,71 @@ angular.module('ep.drag.drop').directive('epDropArea', [
         };
     }]);
 
+(function() {
+'use strict';
+
+/**
+ * @ngdoc controller
+ * @name ep.dropdown.controller:epDropdownBtnCtrl
+ * @description
+ * Represents the epDropdown controller for the
+ * ep.dropdown module, or for specific ep-dropdownbtn directive
+ *
+ * @example
+ *
+ */
+    epDropdownBtnCtrl.$inject = ['$scope', '$timeout'];
+    angular.module('ep.dropdown')
+        .controller('epDropdownBtnCtrl', epDropdownBtnCtrl);
+
+    /*@ngInject*/
+    function epDropdownBtnCtrl($scope, $timeout) {
+        $scope.menuClick = function(item, evt) {
+            if (evt.target.checked === undefined) {
+                item.checked = !item.checked;
+            } else {
+                $timeout(function() {
+                    $(evt.target).prop('checked', item.checked);
+                });
+            }
+            if (item.action) {
+                item.action(item);
+            }
+            evt.preventDefault();
+            evt.stopPropagation();
+        };
+    }
+}());
+
+(function() {
+'use strict';
+/**
+* @ngdoc directive
+* @name ep.dropdown.directive:epDropdownBtn
+* @restrict E
+*
+* @description
+* Represents the dropdown button directive
+*
+* @example
+*/
+angular.module('ep.dropdown').
+    directive('epDropdownBtn', epDropdownBtn);
+
+    /*@ngInject*/
+function epDropdownBtn() {
+        return {
+            restrict: 'E',
+            controller: 'epDropdownBtnCtrl',
+            scope: {
+                menu: '=',
+                icon: '='
+            },
+            templateUrl: 'src/components/ep.dropdown/ep-dropdown-btn/ep-dropdown-btn.html',
+        };
+    }
+}());
+
 'use strict';
 
 /**
@@ -3964,7 +4105,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsShellService', [
             if (epShellService) {
                 $rootScope.$on(epEmbeddedAppsConstants.CONFIG_LOADED_EVENT, function(event, data) {
                     fnGotoView = data.goToView;
-                    setupShellConfigs(data.configs);
+                    //setupShellConfigs(data.configs);
                 });
 
                 $rootScope.$on(epEmbeddedAppsConstants.APPLICATION_LOADED_EVENT, function(event, data) {
@@ -8458,6 +8599,7 @@ angular.module('ep.shell').provider('epShellConfig', [
             if (section) {
                 angular.extend(config, section);
             }
+            config.options.enableFeedback = epSysConfig.optionBool(config.options.enableFeedback, false);
 
             angular.forEach(config.routes, function(r) {
                 routeProviderReference.when(r.route, {
@@ -8559,7 +8701,7 @@ angular.module('ep.shell').service('epShellService', [
          var shellState = {
              showProgressIndicator: false,
              progressIndicatorlevel: 0,
-             enableFeedback: true,
+             enableFeedback: false,
              enableEmbeddedApps: true,
              fnOnFeedback: undefined,
              suspend: false,
@@ -8679,13 +8821,8 @@ angular.module('ep.shell').service('epShellService', [
              setPageTitle(epShellConfig.options.pageTitle);
              setBrandHTML(epShellConfig.options.brandHTML);
 
-             if (epShellConfig.options.enableFeedback !== undefined) {
-                 shellState.enableFeedback = epShellConfig.options.enableFeedback;
-             }
-
              if (epShellConfig.options.includeEmbeddedApps !== undefined) {
-                 shellState.enableEmbeddedApps = epShellConfig.options.includeEmbeddedApps;
-                 if (shellState.enableEmbeddedApps) {
+                 if (epShellConfig.options.includeEmbeddedApps) {
                      $rootScope.$watch('initComplete', function(complete) {
                          if (complete) {
                              //place here whatever needs to be initialized after initComplete
@@ -8709,11 +8846,12 @@ angular.module('ep.shell').service('epShellService', [
              shellState.enableLeftSidebar = mode.enableLeftSidebar;
              shellState.showRightToggleButton = mode.enableRightSidebar;
              shellState.enableRightSidebar = mode.enableRightSidebar;
-             shellState.enableFeedback = mode.enableFeedback;
              shellState.showNavbar = mode.showNavbar;
              shellState.showFooter = mode.showFooter;
              shellState.showHomeButton = mode.showHomeButton;
              shellState.showBrand = mode.showBrand;
+             shellState.enableFeedback = (epShellConfig.options.enableFeedback && mode.enableFeedback === true);
+
              if (shellState.showBrand && mode.brandHTML) {
                  setBrandHTML(mode.brandHTML);
              }
@@ -9071,32 +9209,37 @@ angular.module('ep.shell').service('epShellService', [
           * @public
           * @description
           * Enable the feedback button functionality (by default on, can be overriden by sysconfig)
+          * @param {bool} onOff - turn feature on / off
           */
-         function enableFeedback() {
-             shellState.enableFeedback = true;
-         }
-
-         /**
-          * @ngdoc method
-          * @name disableFeedback
-          * @methodOf ep.shell.service:epShellService
-          * @public
-          * @description
-          * Disable the feedback button functionality (by default on, can be overriden by sysconfig)
-          */
-         function disableFeedback() {
-             shellState.enableFeedback = false;
+         function enableFeedback(onOff) {
+             epShellConfig.options.enableFeedback = onOff;
          }
          /**
           * @ngdoc method
-          * @name toggleFeedback
+          * @name enableViewFeedback
           * @methodOf ep.shell.service:epShellService
           * @public
           * @description
-          * Toggle the feedback button functionality (by default on, can be overriden by sysconfig)
+          * Enable the feedback button on current view
+          * @param {bool} onOff - turn feedback on / off on current view
           */
-         function toggleFeedback() {
-             shellState.enableFeedback = !shellState.enableFeedback;
+         function enableViewFeedback(onOff) {
+             if (epShellConfig.options.enableFeedback) {
+                 shellState.enableFeedback = onOff;
+             }
+         }
+         /**
+          * @ngdoc method
+          * @name toggleViewFeedback
+          * @methodOf ep.shell.service:epShellService
+          * @public
+          * @description
+          * Toggle the feedback button on current view
+          */
+         function toggleViewFeedback() {
+             if (epShellConfig.options.enableFeedback) {
+                 shellState.enableFeedback = !shellState.enableFeedback;
+             }
          }
 
          function notifyStateChanged(event) {
@@ -9939,9 +10082,9 @@ angular.module('ep.shell').service('epShellService', [
              allowVerticalScroll: allowVerticalScroll,
              themingDisabled: themingDisabled,
              enableFeedback: enableFeedback,
-             disableFeedback: disableFeedback,
+             enableViewFeedback: enableViewFeedback,
+             toggleViewFeedback: toggleViewFeedback,
              feedbackCallback: feedbackCallback,
-             toggleFeedback: toggleFeedback,
              showHomeButton: showHomeButton,
              hideHomeButton: hideHomeButton,
              //Sidebar functions
@@ -10176,6 +10319,7 @@ angular.module('ep.shell').service('epSidebarService', [
                       pre: function($scope) {
                           var shellState = epShellService.__state;
                           $scope.state = shellState;
+                          epShellService.clearInfo();
                           currentMode = epShellService.getMediaMode();
                           epSidebarService.setScope($scope);
                           var viewSettings = {
@@ -10331,7 +10475,7 @@ angular.module('ep.shell').service('epViewContainerService', [
 
 /**
  * @ngdoc object
- * @name ep.sysconfig.object:epSysConfig
+ * @name ep.sysconfig.config:epSysConfig
  * @description
  * Provider for epSysConfig.
  * Gets configuration options from sysconfig.json
@@ -10368,6 +10512,15 @@ angular.module('ep.sysconfig').provider('epSysConfig',
                 }
             }
 
+            /**
+            * @ngdoc method
+            * @name optionBool
+            * @methodOf ep.sysconfig.config:epSysConfig
+            * @public
+            * @description
+            * Return section of sysconfig requested by id
+            * @param {string} id - section id/name
+            */
             function section(id) {
                 if (sysconfig.hasOwnProperty(id)) {
                     return sysconfig[id];
@@ -10375,9 +10528,27 @@ angular.module('ep.sysconfig').provider('epSysConfig',
                 return undefined;
             }
 
+            /**
+            * @ngdoc method
+            * @name optionBool
+            * @methodOf ep.sysconfig.config:epSysConfig
+            * @public
+            * @description
+            * Get boolean value of an option
+            * @param {bool} optionValue - raw option value
+            * @param {bool} defaultValue - default value if option is undefined
+            */
+            function optionBool(optionValue, defaultValue) {
+                if (optionValue === true || optionValue === false) {
+                    return optionValue;
+                }
+                return defaultValue;
+            }
+
             return {
                 sysconfig: sysconfig,
-                section: section
+                section: section,
+                optionBool: optionBool
             };
         }];
     });
@@ -11907,7 +12078,12 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.datagrid/datagrid.html',
-    "<div class=ep-data-grid id={{state.dataGridId}} ng-class=\"{'ep-data-grid-child' : state.isChildGrid}\"><div class=\"ep-dg-grid-search navbar-inverse clearfix\" ng-show=state.allowSearchInput><!-- This needs to be a form or the \"search\" input type doesn't work on iOS --><input class=\"ep-dg-search-input form-control input-sm pull-left\" name=search type=search placeholder=Search ng-class=searchInputClass ng-model=state.searchValue ng-init=fnOnSearchBlur() ng-blur=fnOnSearchBlur($event) ng-focus=fnOnSearchFocus($event) ng-keyup=fnOnSearchKeyUp($event) ng-change=\"fnOnSearchChange($event)\"> <span class=\"ep-dg-search-icon-overlay pull-right\" ng-class=\"{'invisible': state.searchValue + '' === ''}\" ng-click=clearSearch()><i class=\"fa fa-lg fa-times\"></i></span></div><div id=tblArea_{{state.dataGridId}} class=ep-dg-grid-table-area><table id=tbl_{{state.dataGridId}} cellpadding=0 cellspacing=0 border=0 class=\"ep-dg-grid-table table table-bordered table-hover\" fixed-header></table><div class=ep-dg-progressIndicator ng-show=showProgress><span class=\"fa fa-spinner fa-pulse fa-5x\"></span></div></div></div>"
+    "<div class=ep-data-grid id={{state.dataGridId}} ng-class=\"{'ep-data-grid-child' : state.isChildGrid}\"><div class=\"ep-dg-grid-search navbar-inverse clearfix\" ng-show=state.allowSearchInput ng-class=\"(options.showConfigButton === true) ? 'input-group' : ''\"><span ng-show=\"options.showConfigButton === true\" class=\"ep-dg-config input-group-addon\"><ep-dropdown-btn menu=configmenu icon=\"\"></ep-dropdown-btn></span> <input class=\"ep-dg-search-input form-control input-sm pull-left\" name=search type=search placeholder=Search ng-class=searchInputClass ng-model=state.searchValue ng-init=fnOnSearchBlur() ng-blur=fnOnSearchBlur($event) ng-focus=fnOnSearchFocus($event) ng-keyup=fnOnSearchKeyUp($event) ng-change=\"fnOnSearchChange($event)\"> <span class=\"ep-dg-search-icon-overlay pull-right\" ng-class=\"{'invisible': state.searchValue + '' === ''}\" ng-click=clearSearch()><i class=\"fa fa-lg fa-times\"></i></span></div><div ng-if=options.showHeaderSection class=\"panel-footer ep-datagrid-header-section\"><div ng-if=state.headerSectionTemplate ng-bind-html=state.headerSectionTemplate></div><div ng-if=state.headerSectionTemplateUrl ng-include=state.headerSectionTemplateUrl></div></div><div id=tblArea_{{state.dataGridId}} class=ep-dg-grid-table-area><table id=tbl_{{state.dataGridId}} cellpadding=0 cellspacing=0 border=0 class=\"ep-dg-grid-table table table-bordered table-hover\" fixed-header></table><div class=ep-dg-progressIndicator ng-show=showProgress><span class=\"fa fa-spinner fa-pulse fa-5x\"></span></div></div><div ng-if=options.showFooterSection class=\"panel-footer ep-datagrid-footer-section\"><div ng-if=state.footerSectionTemplate ng-bind-html=state.footerSectionTemplate></div><div ng-if=state.footerSectionTemplateUrl ng-include=state.footerSectionTemplateUrl></div></div></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.dropdown/ep-dropdown-btn/ep-dropdown-btn.html',
+    "<!--This is a partial for the ep-dropdown directive --><div class=ep-dropdown-btn><div class=row><div class=col-lg-12><div class=button-group><button type=button class=\"btn btn-default btn-sm dropdown-toggle\" data-toggle=dropdown><span ng-class=\"icon ? icon : 'glyphicon glyphicon-cog'\"></span> <span class=caret></span></button><ul class=dropdown-menu><li ng-repeat=\"item in menu\"><a href=# ng-click=\"menuClick(item, $event)\" class=small tabindex=-1><input type=checkbox class=ep-dropdown-btn-chk ng-model=\"item.checked\">&nbsp;{{item.caption}}</a></li></ul></div></div></div></div>"
   );
 
 

@@ -321,6 +321,8 @@
 }
 .ep-data-grid > .ep-dg-grid-search > .ep-dg-search-input {
   padding-right: 30px;
+  margin-top: 1px;
+  /* to align with config button */
 }
 .ep-data-grid > .ep-dg-grid-search > .ep-dg-search-input::-ms-clear {
   display: none;
@@ -546,6 +548,26 @@
 /* to enable grid row rules must overwrite setting of dataTables.jqueryui.css */
 .ep-data-grid table.dataTable {
   border-collapse: collapse;
+}
+.ep-data-grid .ep-datagrid-header-section {
+  min-height: 20px;
+  text-align: center;
+  margin: 2px;
+}
+.ep-data-grid .ep-datagrid-footer-section {
+  min-height: 20px;
+  text-align: center;
+  margin: 2px;
+}
+.ep-dg-config {
+  padding: 0px;
+  padding-right: 3px;
+  background-color: transparent;
+  margin: 0px;
+}
+
+.ep-dropdown-btn .ep-dropdown-btn-chk {
+  margin-right: 2px;
 }
 
 #appHost {
@@ -1201,7 +1223,6 @@ View Animation
   width: 100%;
   position: absolute;
   transition: all 500ms ease-in-out;
-  background-color: white;
 }
 /* Slide animations */
 .ep-slide-left.view.ng-enter {
