@@ -49,6 +49,14 @@
             "MIT*"
         ]
     },
+    "metrojs@0.9.77": {
+        "licenses": "UNKNOWN",
+        "repository": {
+            "type": "git",
+            "url": "git://github.com/drewgreenwell/MetroJS.git"
+        },
+        "homepage": "http://www.drewgreenwell.com/projects/metrojs"
+    },
     "moment@2.8.4": {
         "licenses": [
             "MIT*"

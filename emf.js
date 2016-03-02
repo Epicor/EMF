@@ -199,6 +199,7 @@ angular.module('ep.modaldialog', ['ep.templates']);
  * Represents the Multi level menu
  */
 angular.module('ep.multi.level.menu', [
+    'ngAnimate',
     'ep.templates',
     'ep.local.storage'
 ]);
@@ -235,6 +236,7 @@ angular.module('ep.search', [
  */
 angular.module('ep.shell', [
     'ngRoute',
+    'ngAnimate',
     'ui.bootstrap',
     'ep.templates',
     'ep.feature.detection',
@@ -244,7 +246,8 @@ angular.module('ep.shell', [
     'ep.sysconfig',
     'ep.console',
     'ep.multi.level.menu',
-    'ep.embedded.apps'
+    'ep.embedded.apps',
+    'ep.tiles.panel'
     ]);
 
 'use strict';
@@ -299,6 +302,32 @@ angular.module('ep.theme', [
     'ep.templates',
     'ep.local.storage',
     'ep.sysconfig'
+]);
+
+'use strict';
+/**
+ * @ngdoc overview
+ * @name ep.tile
+ * @description
+ * standard tile for favorites, etc
+ */
+angular.module('ep.tile', [
+    'ep.templates',
+    'ep.sysconfig',
+    'ep.utils'
+]);
+
+'use strict';
+/**
+ * @ngdoc overview
+ * @name ep.tiles.panel
+ * @description
+ * A panel with display of tiles (favorites, etc)
+ */
+angular.module('ep.tiles.panel', [
+    'ep.templates',
+    'ep.sysconfig',
+    'ep.tile'
 ]);
 
 'use strict';
@@ -1771,6 +1800,18 @@ The controller code must provide the options in active scope or set them using f
         //hierarchy child grid options:
         isChildGrid: false              //is it a child grid (by default false)
         childGridOptions:               //datagrid options for the child table
+
+        //header and footer options:
+        showConfigButton                //show the config button (by default false)
+        showHeaderSection               //show the header section (by default false)
+        showFooterSection               //show the footer section (by default false)
+        headerSectionTemplate           //header section html template
+        headerSectionTemplateUrl        //header section html template url
+        headerSectionController         //header section controller function
+        footerSectionTemplate           //footer section html template
+        footerSectionTemplateUrl        //footer section html template url
+        footerSectionController         //footer section controller function
+
     };
 
 Through gridFactory the controller will have access to functions exposed by the directive (running in isolated scope).
@@ -2848,8 +2889,8 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                     }
                 }
 
-                var initSH = getBoolOption(options.showHeaderSection, false);
-                var initSF = getBoolOption(options.showFooterSection, false);
+                var showHeaderSection = getBoolOption(options.showHeaderSection, false);
+                var showFooterSection = getBoolOption(options.showFooterSection, false);
                 scope.configmenu = [
                 {
                     caption: 'Filter',
@@ -2861,7 +2902,7 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                 }, {
                     caption: 'Header',
                     checked: options.showHeaderSection,
-                    visible: initSH,
+                    visible: showHeaderSection,
                     action: function() {
                         scope.options.showHeaderSection = !scope.options.showHeaderSection;
                         scope.resizeTable(false);
@@ -2869,12 +2910,27 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                 }, {
                     caption: 'Footer',
                     checked: options.showFooterSection,
-                    visible: initSF,
+                    visible: showFooterSection,
                     action: function() {
                         scope.options.showFooterSection = !scope.options.showFooterSection;
                         scope.resizeTable(false);
                     }
                 }];
+
+                if (showHeaderSection) {
+                    if (options.headerSectionController) {
+                        scope.headerSectionController = options.headerSectionController;
+                    } else {
+                        scope.headerSectionController = function() { };
+                    }
+                }
+                if (showFooterSection) {
+                    if (options.footerSectionController) {
+                        scope.footerSectionController = options.footerSectionController;
+                    } else {
+                        scope.footerSectionController = function() { };
+                    }
+                }
             };
 
             scope.createGrid = function() {
@@ -4552,7 +4608,12 @@ angular.module('ep.embedded.apps')
                             } else {
                                 return $log.error('unsupported provider ' + invokeArgs[0]);
                             }
-                            provider[invokeArgs[1]].apply(provider, invokeArgs[2]);
+                            var entityProvider = provider[invokeArgs[1]];
+                            var entityArgs = invokeArgs[2];
+
+                            if (!$injector.has(entityArgs[0]) && !($injector.has(entityArgs[0] + 'Directive'))) {
+                                entityProvider.apply(provider, entityArgs);
+                            }
                         }
                     } catch (e) {
                         if (e.message) {
@@ -6946,7 +7007,10 @@ angular.module('ep.modaldialog').controller('epModalDialogErrorCtrl', [
  * ep.embedded.apps constants
  */
 angular.module('ep.multi.level.menu').constant('epMultiLevelMenuConstants', {
-    MLM_INITIALIZED_EVENT: 'MLM_INITIALIZED_EVENT'
+    MLM_INITIALIZED_EVENT: 'MLM_INITIALIZED_EVENT',
+    MLM_MENU_DATA_CHANGED: 'MLM_MENU_DATA_CHANGED',
+    MLM_FAVORITES_CHANGED: 'MLM_FAVORITES_CHANGED',
+    MLM_ITEM_CLICKED: 'MLM_ITEM_CLICKED'
 });
 
 'use strict';
@@ -6967,7 +7031,9 @@ angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl', [
     '$timeout',
     'epMultiLevelMenuFactory',
     'epMultiLevelMenuConstants',
-    function($rootScope, $scope, $timeout, epMultiLevelMenuFactory, epMultiLevelMenuConstants) {
+    'epMultiLevelMenuService',
+    function($rootScope, $scope, $timeout, epMultiLevelMenuFactory,
+        epMultiLevelMenuConstants, epMultiLevelMenuService) {
         // init the scope properties
         $scope.state = {
             searchTerm: '',
@@ -7083,6 +7149,8 @@ angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl', [
                 });
             }
             if (mi._type === 'item' && mi.action && typeof mi.action === 'function') {
+                $scope.multiLevelMenuHelper.stampLastAccess(mi);
+                emitMenuEvent(epMultiLevelMenuConstants.MLM_ITEM_CLICKED, mi);
                 mi.action(mi);
             }
         }
@@ -7099,6 +7167,16 @@ angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl', [
          */
         function toggleFavorite(mi) {
             $scope.multiLevelMenuHelper.toggleFavorite(mi);
+        }
+
+        function emitMenuEvent(eventId, menuItem) {
+            $rootScope.$emit(eventId, {
+                eventId: eventId,
+                menuId: $scope.menuId,
+                factory: $scope.multiLevelMenuHelper,
+                scope: $scope,
+                menuItem: menuItem
+            });
         }
 
         // initialize the menus using the directive properties
@@ -7124,11 +7202,7 @@ angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl', [
                 $scope.onMenuInit({ factory: $scope.multiLevelMenuHelper });
             }
 
-            $rootScope.$emit(epMultiLevelMenuConstants.MLM_INITIALIZED_EVENT, {
-                menuId: $scope.menuId,
-                factory: $scope.multiLevelMenuHelper,
-                scope: $scope
-            });
+            emitMenuEvent(epMultiLevelMenuConstants.MLM_INITIALIZED_EVENT);
 
             $scope.$watch('menu', function(newValue, oldValue) {
                 if (newValue && (!angular.equals(newValue, oldValue) || !$scope.data || !$scope.data.menu)) {
@@ -7136,8 +7210,12 @@ angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl', [
                     $scope.data = $scope.multiLevelMenuHelper.data;
                     $scope.data.next = $scope.multiLevelMenuHelper.data.menu;
                     setCurrentItems();
+                    emitMenuEvent(epMultiLevelMenuConstants.MLM_MENU_DATA_CHANGED);
                 }
             });
+
+            epMultiLevelMenuService.registerMenuFactory($scope.multiLevelMenuHelper);
+            //TO DO: on scope destroy unregister
         }
 
         $scope.clear = clear;
@@ -7146,6 +7224,7 @@ angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl', [
         $scope.toggleFavorite = toggleFavorite;
         $scope.search = search;
         $scope.initializeMenus = initializeMenus;
+        $scope.emitMenuEvent = emitMenuEvent;
     }
 ]);
 
@@ -7203,7 +7282,8 @@ angular.module('ep.multi.level.menu').directive('epMultiLevelMenu', [
 angular.module('ep.multi.level.menu').factory('epMultiLevelMenuFactory', [
     'epLocalStorageService',
     'epMultiLevelMenuService',
-    function(epLocalStorageService, epMultiLevelMenuService) {
+    'epMultiLevelMenuConstants',
+    function(epLocalStorageService, epMultiLevelMenuService, epMultiLevelMenuConstants) {
         function getMultiLevelMenuHelper(scope) {
             return new multiLevelMenuHelper(scope);
         }
@@ -7235,6 +7315,9 @@ angular.module('ep.multi.level.menu').factory('epMultiLevelMenuFactory', [
                 }
                 if (!menu._type) {
                     menu._type = menu.menuitems === null || menu.menuitems.length <= 0 ? 'item' : 'menu';
+                    if (menu._type === 'item' && !menu._lastAccessed) {
+                        menu._lastAccessed = getItemLastAccess(menu);
+                    }
                 }
 
                 menu._depth = depth;
@@ -7414,16 +7497,19 @@ angular.module('ep.multi.level.menu').factory('epMultiLevelMenuFactory', [
              * @description
              * Handles the toggleFavorite request
              *
-             * @param {object} mi the menu item
+             * @param {object} mi the menu item or menu id
             */
             function toggleFavorite(mi) {
-                mi.favorite = !mi.favorite;
+                var item = getMenuItemFromObj(mi);
+                if (!item) {
+                    return;
+                }
 
-                var userKey = 'emf.multi-level-menu.' + scope.menuId + '.favorite';
-                var mId = mi._id ? mi._id : mi.id;
-                var menuKey = userKey + '.' + mId;
-                if (mi.favorite) {
-                    epLocalStorageService.update(menuKey, mId);
+                item.favorite = !item.favorite;
+
+                var menuKey = getStoreKey(item);
+                if (item.favorite) {
+                    epLocalStorageService.update(menuKey, (mi._id || mi.id));
                 } else {
                     epLocalStorageService.clear(menuKey);
                 }
@@ -7433,6 +7519,96 @@ angular.module('ep.multi.level.menu').factory('epMultiLevelMenuFactory', [
                 if (scope.onFavoriteChange) {
                     scope.onFavoriteChange({ menuItem: mi, favorites: data.favorites });
                 }
+                scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_FAVORITES_CHANGED);
+            }
+            /**
+             * @ngdoc method
+             * @name triggerAction
+             * @methodOf ep.multi.level.menu.factory:epMultiLevelMenuFactory
+             * @public
+             * @description
+             * Trigger menu item's action
+             *
+             * @param {object} mi the menu item or menu id
+            */
+            function triggerAction(mi) {
+                var item = getMenuItemFromObj(mi);
+                if (!item) {
+                    return;
+                }
+                if (item.action && typeof item.action === 'function') {
+                    stampLastAccess(item);
+                    scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_ITEM_CLICKED, item);
+                    item.action(item);
+                }
+            }
+            /**
+             * @ngdoc method
+             * @name stampLastAccess
+             * @methodOf ep.multi.level.menu.factory:epMultiLevelMenuFactory
+             * @public
+             * @description
+             * Stamp the last access for menu item
+             *
+             * @param {object} mi the menu item or menu id
+            */
+            function stampLastAccess(mi) {
+                var item = getMenuItemFromObj(mi);
+                if (!item) {
+                    return;
+                }
+                var menuKey = getStoreKey(item, true);
+                mi._lastAccessed = moment().toISOString();
+                epLocalStorageService.update(menuKey, mi._lastAccessed);
+            }
+            /**
+             * @ngdoc method
+             * @name getItemLastAccess
+             * @methodOf ep.multi.level.menu.factory:epMultiLevelMenuFactory
+             * @public
+             * @description
+             * Retrieve the last access for menu item
+             *
+             * @param {object} mi the menu item or menu id
+            */
+            function getItemLastAccess(mi, forceRetrieve) {
+                var ret;
+                var item = getMenuItemFromObj(mi);
+                if (!item) {
+                    return;
+                }
+
+                if (forceRetrieve !== true && item._lastAccessed) {
+                    return item._lastAccessed;
+                }
+
+                var menuKey = getStoreKey(item, true);
+                var date = epLocalStorageService.get(menuKey);
+                if (date) {
+                    var m = moment(date);
+                    if (m.isValid()) {
+                        ret = m.toDate();
+                    }
+                }
+                return ret;
+            }
+
+            /**
+             * @ngdoc method
+             * @name getMenuItemFromObj
+             * @methodOf ep.multi.level.menu.factory:epMultiLevelMenuFactory
+             * @private
+             * @description
+             * Get menu item from object or menu id
+             *
+             * @param {object} mi the menu item or menu id
+            */
+            function getMenuItemFromObj(mi) {
+                var item = mi;
+                if (angular.isString(mi)) {
+                    item = findMenuItemById(mi);
+                }
+                return item;
             }
 
             /**
@@ -7461,7 +7637,7 @@ angular.module('ep.multi.level.menu').factory('epMultiLevelMenuFactory', [
             function getFavorites() {
                 var favList = epMultiLevelMenuService.findAllMenuItems(data.menu, function(i) { return !!i.favorite; });
 
-                var userKey = 'emf.multi-level-menu.' + scope.menuId + '.favorite';
+                var userKey = getStoreKey();
                 var savedItems = epLocalStorageService.get(userKey) || {};
 
                 angular.forEach(savedItems, function(itemId) {
@@ -7487,11 +7663,44 @@ angular.module('ep.multi.level.menu').factory('epMultiLevelMenuFactory', [
             */
             function clearFavorites() {
                 data.favorites = null;
-                var userKey = 'emf.multi-level-menu.' + scope.menuId + '.favorite';
+                var userKey = getStoreKey();
                 epLocalStorageService.clear(userKey);
+                scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_FAVORITES_CHANGED);
+            }
+
+            /**
+             * @ngdoc method
+             * @name getStoreKey
+             * @methodOf ep.multi.level.menu.factory:epMultiLevelMenuFactory
+             * @private
+             * @description
+             * Get storage key for the whole menu or menu item
+            */
+            function getStoreKey(item, lastAccess) {
+                //we have to replace '.' in menuId or itemId for local storage
+                var userKey = 'emf.multi-level-menu.' + (scope.menuId || '').replace(/\./g, '-');
+                userKey += lastAccess ? '.lastaccess' : '.favorite';
+                if (item) {
+                    var mId = ((item._id ? item._id : item.id) || '').replace(/\./g, '-');
+                    userKey = userKey + '.' + mId;
+                }
+                return userKey;
+            }
+
+            /**
+             * @ngdoc method
+             * @name getMenuId
+             * @methodOf ep.multi.level.menu.factory:epMultiLevelMenuFactory
+             * @public
+             * @description
+             * Get menu ID of the menu list
+            */
+            function getMenuId() {
+                return scope.menuId;
             }
 
             return {
+                getMenuId: getMenuId,
                 data: data,
                 populate: populate,
                 resetCache: resetCache,
@@ -7500,6 +7709,9 @@ angular.module('ep.multi.level.menu').factory('epMultiLevelMenuFactory', [
                 setCurrentMenuParentById: setCurrentMenuParentById,
                 findMenuItemById: findMenuItemById,
                 toggleFavorite: toggleFavorite,
+                stampLastAccess: stampLastAccess,
+                getItemLastAccess: getItemLastAccess,
+                triggerAction: triggerAction,
                 clear: clear,
                 mergeMenu: mergeMenu,
                 mergeMenuItems: mergeMenuItems
@@ -7518,6 +7730,8 @@ angular.module('ep.multi.level.menu').factory('epMultiLevelMenuFactory', [
  */
 angular.module('ep.multi.level.menu').service('epMultiLevelMenuService', [
     function() {
+
+        var factories = {};  //Currently registered MLM factories
 
         /* ------------- Public Methods ----------------------> */
         /**
@@ -7635,8 +7849,41 @@ angular.module('ep.multi.level.menu').service('epMultiLevelMenuService', [
                 });
             }
         }
+
+        /**
+         * @ngdoc method
+         * @name registerMenuFactory
+         * @methodOf ep.multi.level.menu.service:epMultiLevelMenuService
+         * @public
+         * @description
+         * Internal usage only. Register MLM factory when it is created
+         *
+         * @param {object} factory - the factory to register
+       */
+        function registerMenuFactory(factory) {
+            if (factory && factory.getMenuId()) {
+                factories[factory.getMenuId()] = factory;
+            }
+        }
+
+        /**
+         * @ngdoc method
+         * @name getMenuFactory
+         * @methodOf ep.multi.level.menu.service:epMultiLevelMenuService
+         * @public
+         * @description
+         * Find registerd MLM factory by ID
+         *
+         * @param {string} menuId - menu id
+       */
+        function getMenuFactory(menuId) {
+            return factories[menuId];
+        }
+
         //TO DO: add iterateMenuItems()
         return {
+            registerMenuFactory: registerMenuFactory,
+            getMenuFactory: getMenuFactory,
             mergeMenuItems: mergeMenuItems,
             mergeMenus: mergeMenus,
             findMenuItemById: findMenuItemById,
@@ -8399,6 +8646,7 @@ angular.module('ep.shell').
             controller: 'epShellMenuCtrl',
             templateUrl: 'src/components/ep.shell/menu/ep-shell-menu.html',
             scope: {
+                menuId: '=',
                 menuOptions: '=',
                 includeEmbeddedMenu: '='
             },
@@ -8491,7 +8739,7 @@ angular.module('ep.shell').controller('epShellCtrl', [
 
             $rootScope.$on('$routeChangeStart', function(event, currRoute, prevRoute) {
                 var curRouteName = currRoute.$$route.originalPath;
-                var prevRouteName = prevRoute.$$route.originalPath;
+                var prevRouteName = prevRoute && prevRoute.$$route ? prevRoute.$$route.originalPath : '';
                 if ($route.routes[curRouteName].transitions) {
                     var currentTransitions = $route.routes[curRouteName].transitions[prevRouteName.replace('/', '')];
                     epShellService.clearInfo();
@@ -10545,10 +10793,65 @@ angular.module('ep.sysconfig').provider('epSysConfig',
                 return defaultValue;
             }
 
+            /**
+            * @ngdoc method
+            * @name mergeSectionTo
+            * @methodOf ep.sysconfig.config:epSysConfig
+            * @public
+            * @description
+            * Merge section of sysconfig requested by id into passed section
+            * Return sysconfig section
+            * @param {string} id - section id/name
+            */
+            function mergeSectionTo(id, config) {
+                var ret;
+                if (sysconfig.hasOwnProperty(id)) {
+                    ret = sysconfig[id];
+                    if (config) {
+                        copyProperties(sysconfig[id], config);
+                    }
+                }
+                return ret;
+            }
+
+            /**
+            * @ngdoc method
+            * @name copyProperties
+            * @methodOf ep.sysconfig.config:epSysConfig
+            * @public
+            * @description
+            * Copies properties from source to dest
+            * The property is copied only if source property is not null
+            * This is useful to copy new properties values over default object
+            * but only when new property is provided.
+            * @returns {object} copied object
+            */
+            function copyProperties(source, dest) {
+                if (!source || !dest) {
+                    return;
+                }
+                angular.forEach(source, function(value, propName) {
+                    if (source[propName] !== null) {
+                        if (angular.isArray(source[propName])) {
+                            dest[propName] = source[propName];
+                        } else if (angular.isObject(source[propName])) {
+                            if (!angular.isObject(dest[propName])) {
+                                dest[propName] = {};
+                            }
+                            copyProperties(source[propName], dest[propName]);
+                        } else {
+                            dest[propName] = source[propName];
+                        }
+                    }
+                });
+            }
+
             return {
                 sysconfig: sysconfig,
                 section: section,
-                optionBool: optionBool
+                mergeSectionTo: mergeSectionTo,
+                optionBool: optionBool,
+                copyProperties: copyProperties
             };
         }];
     });
@@ -11173,6 +11476,662 @@ angular.module('ep.theme').service('epThemeService', [
             disableTheming: disableTheming
         };
     }]);
+
+'use strict';
+
+/**
+ * @ngdoc object
+ * @name ep.tile.object:epTileConfig
+ * @description
+ * Provider for epTileConfig.
+ * Gets configuration options from sysconfig.json or default
+ */
+angular.module('ep.tile').provider('epTileConfig',
+    function() {
+        var config = {
+            bingTile: {
+                bingImageArchiveUrl: 'http://www.bing.com/HPImageArchive.aspx?format=rss&idx=0&mkt=en-US',
+                bingProxyUrl: '//ajax.googleapis.com/ajax/services/feed/load?v=1.0&num=50&callback=JSON_CALLBACK&q=',
+                bingNumberOfImages: 5,
+                liveSettings: {
+                    dataDelay: 7000,
+                    dataDirection: 'horizontal',
+                    dataMode: 'carousel'
+                }
+            },
+            imageTile: {
+                liveSettings: {
+                    dataDelay: 5000,
+                    dataDirection: 'vertical',
+                    dataMode: 'carousel'
+                }
+            }
+        };
+
+        this.$get = ['epSysConfig', function(epSysConfig) {
+            epSysConfig.mergeSectionTo('epTileConfig', config);
+            return config;
+        }];
+    });
+
+(function() {
+'use strict';
+
+/**
+ * @ngdoc controller
+ * @name ep.tile.controller:epTileCtrl
+ * @description
+ * Represents the epTile controller for the
+ * ep.tile module, or for specific ep-tile directive
+ *
+ * @example
+ *
+ */
+    epTileCtrl.$inject = ['$scope', '$timeout', '$http', '$q', '$log', 'epTileConfig', 'epUtilsService'];
+    angular.module('ep.tile')
+        .controller('epTileCtrl', epTileCtrl);
+
+    /*@ngInject*/
+    function epTileCtrl($scope, $timeout, $http, $q, $log, epTileConfig, epUtilsService) {
+
+        /**
+            * @ngdoc method
+            * @name retrieveBing
+            * @methodOf ep.tile.controller:epTileCtrl
+            * @public
+            * @description
+            * Retrieves the image of the day information from Bing
+            *
+            * @param {int} numImages - number of images to retrieve
+            */
+        /**
+            * @ngdoc method
+            * @name retrieveBing
+            * @methodOf ep.tile.controller:epTileCtrl
+            * @public
+            * @description
+            * Retrieves the image of the day information from Bing
+            *
+            * @param {int} numImages - number of images to retrieve
+            */
+        function retrieveBing(numImages) {
+            var deferred = $q.defer();
+
+            var fnError = function onError(message) {
+                $log.error('Error parsing retrieving bing images: ' + message);
+                var imgs = { images: [] };
+                for (var i = 1; i < 6; i++) {
+                    imgs.images.push({
+                        src: '../lib/bower/emf/assets/ep.tile/bing' + i + '.jpg',
+                        title: 'Bing Image of the day (offline)'
+                    });
+                }
+                deferred.resolve(imgs);
+            };
+
+            try {
+                var url = epTileConfig.bingTile.bingImageArchiveUrl + '&n=' + numImages;
+                $http.jsonp(epTileConfig.bingTile.bingProxyUrl + encodeURIComponent(url))
+                .success(function(data) {
+                    if (data && data.responseData && data.responseData.feed && data.responseData.feed.entries &&
+                        data.responseData.feed.entries.length) {
+                        var ret = { images: [] };
+                        angular.forEach(data.responseData.feed.entries, function(p) {
+                            ret.images.push({
+                                src: 'http://www.bing.com' + p.link,
+                                title: p.title
+                            });
+                        });
+                        deferred.resolve(ret);
+                    } else {
+                        var msg = 'unknown response failure';
+                        if (data && data.responseStatus) {
+                            msg = 'status - ' + data.responseStatus;
+                        }
+                        if (data && data.responseDetails) {
+                            msg += ' ' + data.responseDetails;
+                        }
+                        fnError(msg);
+                    }
+                }).error(function(data, status) {
+                    fnError('$http status - ' + status);
+                });
+            } catch (err) {
+                fnError(err.message);
+            }
+            return deferred.promise;
+        }
+
+        function getSize(val, suffix) {
+            var ret = '';
+            var sizes = ['half', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten'];
+            if (angular.isNumber(val)) {
+                var idx = -1;
+                if (val >= 0 && val < 1) {
+                    idx = 0;
+                } else if (val >= 1 && val <= 10) {
+                    idx = Math.round(val);
+                }
+                if (idx !== -1) {
+                    ret = ' ' + sizes[idx] + suffix;
+                }
+            }
+            return ret;
+        }
+
+        function setImages(images) {
+            if (images) {
+                var idx = 0;
+                angular.forEach(images, function(img) {
+                    $scope.state.images.push({
+                        src: img.src,
+                        title: img.title || $scope.tile.footer,
+                        index: idx
+                    });
+                    idx++;
+                });
+            }
+        }
+
+        $scope.initializeTile = function() {
+            var isLive = false;
+            var tile = $scope.tile;
+            if (!tile) {
+                $log.error('tile object must be defined for ep.tile directive');
+                return;
+            }
+
+            var width = tile.width !== undefined ? tile.width : $scope.width;
+            var height = tile.height !== undefined ? tile.height : $scope.height;
+
+            $scope.state.tileClass = '';
+            $scope.state.images = [];
+
+            if (tile.templateUrl) {
+                $scope.state.templateUrl = tile.templateUrl;
+            } else if (tile.type === 'image' || tile.type === 'bing') {
+                isLive = true; //by default images are live
+                if (width === undefined) {
+                    width = (tile.type === 'image') ? 2 : 3;
+                }
+                if (height === undefined) {
+                    height = 2;
+                }
+                $scope.state.templateUrl = 'src/components/ep.tile/ep-tile-templates/ep-tile-image.html';
+                $scope.state.liveSettings = (tile.type === 'bing') ? epTileConfig.bingTile.liveSettings :
+                    epTileConfig.imageTile.liveSettings;
+                if (tile.liveSettings) {
+                    epUtilsService.copyProperties(tile.liveSettings, $scope.state.liveSettings);
+                }
+
+                if (tile.type === 'bing') {
+                    retrieveBing(epTileConfig.bingTile.bingNumberOfImages).then(function(bing) {
+                        setImages(bing.images);
+                    });
+                } else {
+                    if (tile.liveSettings) {
+                        epUtilsService.copyProperties();
+                    }
+                    setImages(tile.images);
+                }
+            } else {
+                if (width === undefined) {
+                    width = 2;
+                }
+                $scope.state.templateUrl = 'src/components/ep.tile/ep-tile-templates/ep-tile-menu.html';
+            }
+
+            if (isLive && tile.isLive !== false) {
+                $scope.state.optionsClass += 'ep-live-tile';
+            }
+
+            if (tile.tileClass) {
+                $scope.state.tileClass += ' ' + tile.tileClass;
+            }
+
+            $scope.state.tileClass += getSize(width, '-wide');
+            $scope.state.tileClass += getSize(height, '-tall');
+
+            var len;
+            if (tile.caption) {
+                len = tile.caption.length;
+                if (len > 30) {
+                    $scope.state.optionsClass += ' ep-tile-opt-cap-30';
+                } else if (len > 15) {
+                    $scope.state.optionsClass += ' ep-tile-opt-cap-15';
+                }
+            }
+            if (tile.description) {
+                len = tile.description.length;
+                if (len > 40) {
+                    $scope.state.optionsClass += ' ep-tile-opt-desc-40';
+                } else if (len > 20) {
+                    $scope.state.optionsClass += ' ep-tile-opt-desc-20';
+                }
+            }
+            if (tile.icon) {
+                $scope.state.optionsClass += ' ep-tile-opt-icon';
+            }
+            if (tile.closeButton !== false) {
+                $scope.state.optionsClass += ' ep-tile-opt-close-btn';
+            }
+
+            $scope.state.color = tile.color || $scope.color || '';
+
+            $scope.state.closeAction = function(tile, $event) {
+                $event.stopPropagation();
+                if (tile.closeAction) {
+                    tile.closeAction(tile, $event);
+                }
+            };
+
+            $scope.state.action = function(tile, $event) {
+                if (tile.action) {
+                    var imageIndex;
+                    if (tile.type === 'image') {
+                        var img = angular.element($scope.state.tileElement).find('.ha .active img');
+                        if (img && img.length) {
+                            var idx = angular.element(img).attr('image-index');
+                            if (idx !== '') {
+                                imageIndex = parseInt(idx);
+                            }
+                        }
+                    }
+                    tile.action(tile, $event, imageIndex);
+                }
+            };
+
+            $timeout(function() {
+                angular.element($scope.state.tileElement).find('.ep-live-tile .live-tile').liveTile();
+            }, 1000);
+        };
+
+        $scope.$watch('sizeMode', function(newValue) {
+            $scope.state.sizeMode = (newValue === 'container') ? 'ep-tile-size-container' : 'ep-tile-size-responsive';
+        });
+
+        $scope.$watch('color', function(newValue) {
+            if (newValue) {
+                if (!($scope.tile && $scope.tile.color)) {
+                    $scope.state.color = (newValue || '');
+                }
+            }
+        });
+    }
+}());
+
+(function() {
+'use strict';
+/**
+* @ngdoc directive
+* @name ep.tile.directive:epTile
+* @restrict E
+*
+* @description
+* Represents the ep.tile directive
+* Tiles are based on metroJS tile library.
+*
+*   The following are attributes (parameters) for the directive:
+*   # tile {string} (required) - the object containing most tile settings
+*       type : 'menu'|'image'|'bing'
+*       caption
+*       description
+*       footer
+*       images
+*
+*   # color {string} - any standard metrojs color ('blue', 'yellow', 'mango', 'violet', etc)
+*   # size-mode {string} - 'container' tiles will be as wide as container
+*   # width {int} - width in tiles 0.5, 1, 2,...10
+*   # height {int} - height in tiles 0.5, 1, 2,...10
+*   # liveSettings {object} -
+*       dataMode: 'carousel',
+*       dataDirection: 'horizontal',
+*       dataDelay: '7000'
+*
+* @example
+*/
+    epTileDirective.$inject = ['$timeout'];
+angular.module('ep.tile').
+    directive('epTile', epTileDirective);
+
+    /*@ngInject*/
+    function epTileDirective($timeout) {
+        return {
+            restrict: 'E',
+            controller: 'epTileCtrl',
+            templateUrl: 'src/components/ep.tile/ep-tile.html',
+            scope: {
+                tile: '=',
+                color: '=',
+                sizeMode: '=',
+                width: '=',  //0.5 - 10
+                height: '=', //0.5 - 10
+                liveSettings: '='
+            },
+            link: function(scope, element) {
+                scope.state = {
+                    optionsClass: '',
+                    tileElement: element,
+                    templateUrl: '',
+                    images: [],
+                    closeAction: undefined,
+                    sizeMode: 'ep-tile-size-responsive',
+                    color: '',
+                    liveSettings: {
+                        dataMode: 'carousel',
+                        dataDirection: 'horizontal',
+                        dataDelay: '7000'
+                    }
+                };
+                $timeout(function() {
+                    scope.initializeTile();
+                });
+            }
+        };
+    }
+}());
+
+(function() {
+'use strict';
+
+/**
+ * @ngdoc controller
+ * @name ep.tiles.panel.controller:epTilesMenuFavoritesCtrl
+ * @description
+ * Represents the epTilesMenuFavoritesCtrl controller for the
+ * epTilesMenuFavorites directive
+ */
+    epTilesMenuFavoritesCtrl.$inject = ['$rootScope', '$scope', '$timeout', 'epMultiLevelMenuConstants', 'epMultiLevelMenuService'];
+    angular.module('ep.tiles.panel')
+        .controller('epTilesMenuFavoritesCtrl', epTilesMenuFavoritesCtrl);
+
+    /*@ngInject*/
+    function epTilesMenuFavoritesCtrl($rootScope, $scope, $timeout,
+        epMultiLevelMenuConstants, epMultiLevelMenuService) {
+
+        $scope.getFooter = function(menuFactory, menuItem) {
+            var footer = 'Last Accessed: ';
+            var lastAccess = menuFactory.getItemLastAccess(menuItem);
+            if (lastAccess) {
+                footer += moment(lastAccess).calendar();
+            } else {
+                footer += 'never';
+            }
+            return footer;
+        };
+
+        $scope.createItem = function(menuFactory, menu) {
+            $scope.fnCloseAction = function(tile) {
+                var m = menuFactory.findMenuItemById(tile.id);
+                if (m) { menuFactory.toggleFavorite(m); }
+            };
+
+            var footer = $scope.getFooter(menuFactory, menu);
+            return {
+                id: menu.id,
+                action: function() {
+                    menuFactory.triggerAction(menu);
+                },
+                closeAction: $scope.fnCloseAction,
+                icon: $scope.menuIcon || 'fa fa-dashboard',
+                caption: menu.caption,
+                description: menu.description,
+                type: 'menu',
+                footer: footer,
+                menuItem: menu,
+                sort: menu.caption
+            };
+        };
+
+        $scope.onMenuChange = function(event, data) {
+            if ($scope.menuId !== data.menuId) {
+                return;
+            }
+            var menuFactory = data.factory;
+            var items = [];
+            angular.forEach(menuFactory.data.favorites, function(menu) {
+                items.push($scope.createItem(menuFactory, menu));
+            });
+            $scope.state.list = items;
+        };
+
+        $scope.onFavoritesChange = function(event, data) {
+            //remove or add items to the list
+            if ($scope.menuId !== data.menuId) {
+                return;
+            }
+
+            if (!$scope.state.list) {
+                $scope.state.list = [];
+            }
+
+            var menuFactory = data.factory;
+            var favs = menuFactory.data.favorites;
+            var removeItems = [];
+            angular.forEach($scope.state.list, function(item) {
+                var itemInFavs = _.find(favs, function(menu) {
+                    return menu === item.menuItem;
+                });
+                if (!itemInFavs) {
+                    removeItems.push(item);
+                }
+            });
+            angular.forEach(removeItems, function(rem) {
+                var idx = _.findIndex($scope.state.list, function(item) {
+                    return item === rem;
+                });
+                if (idx !== -1) {
+                    $scope.state.list.splice(idx, 1);
+                }
+            });
+            angular.forEach(favs, function(menu) {
+                var menuInList = _.find($scope.state.list, function(item) {
+                    return menu === item.menuItem;
+                });
+                if (!menuInList) {
+                    $scope.state.list.push($scope.createItem(menuFactory, menu));
+                }
+            });
+        };
+
+        $scope.onMenuItemClicked = function(event, data) {
+            if ($scope.menuId !== data.menuId) {
+                return;
+            }
+
+            if ($scope.state.list && data.menuItem) {
+                var menuFactory = data.factory;
+                var item = _.find($scope.state.list, function(m) {
+                    return m.id === data.menuItem.id;
+                });
+                if (item) {
+                    item.footer = $scope.getFooter(menuFactory, data.menuItem);
+                }
+            }
+        };
+        $rootScope.$on(epMultiLevelMenuConstants.MLM_INITIALIZED_EVENT, $scope.onMenuChange);
+        $rootScope.$on(epMultiLevelMenuConstants.MLM_MENU_DATA_CHANGED, $scope.onMenuChange);
+        $rootScope.$on(epMultiLevelMenuConstants.MLM_FAVORITES_CHANGED, $scope.onFavoritesChange);
+        $rootScope.$on(epMultiLevelMenuConstants.MLM_ITEM_CLICKED, $scope.onMenuItemClicked);
+
+        $scope.$watch('menuId', function(newValue) {
+            if (newValue) {
+                $scope.menuFactory = epMultiLevelMenuService.getMenuFactory(newValue);
+                if ($scope.menuFactory) {
+                    $scope.$watch($scope.menuFactory.data, function() {
+                        var event = {
+                            eventId: epMultiLevelMenuConstants.MLM_MENU_DATA_CHANGED,
+                            menuId: $scope.menuId,
+                            factory: $scope.menuFactory,
+                        };
+                        $scope.onMenuChange(epMultiLevelMenuConstants.MLM_MENU_DATA_CHANGED, event);
+                    });
+                }
+            }
+        });
+
+        function prepareBeforeList(list) {
+            var beforeList = [];
+            if ($scope.bing) {
+                beforeList.push({
+                    id: 'bing-image-of-the-day',
+                    sort: '',
+                    type: 'bing'
+                });
+            }
+            if (list) {
+                angular.forEach(list, function(item) {
+                    beforeList.push(item);
+                });
+            }
+            $scope.state.beforeList = beforeList;
+        }
+
+        $scope.$watch('bing', function(newValue) {
+            if (newValue === true || newValue === false) {
+                prepareBeforeList(null);
+            }
+        });
+
+        $scope.$watch('beforeList', function(newValue) {
+            if (newValue) {
+                prepareBeforeList(newValue);
+            }
+        });
+
+        $scope.$watch('afterList', function(newValue) {
+            if (newValue) {
+                var afterList = [];
+                angular.forEach(newValue, function(item) {
+                    afterList.push(item);
+                });
+                $scope.state.afterList = afterList;
+            }
+        });
+    }
+}());
+
+(function() {
+'use strict';
+/**
+* @ngdoc directive
+* @name ep.tiles.panel.directive:epTilesMenuFavorites
+* @restrict E
+*
+* @description
+* Represents the menu favorites tiles panel directive. Links to them menu favorites by means
+* of unique menu-id
+*
+*   The following are attributes (parameters) for the directive:
+*   # menu-id {string} (required) - the unique menu identifier
+*   # before-items {array} - array of tiles to be placed in front of menu list
+*   # after-items {array} - array of tiles to be placed after the menu list
+*   # size-mode {string} - 'container' tiles will be as wide as container
+*   # color {string} - any standard metrojs color ('blue', 'yellow', 'mango', 'violet', etc)
+*   # bing {bool} - include built-in bing tile (with bing image of the day)
+*
+* @example
+*
+*     <ep-tiles-menu-favorites menu-id="'ep.test-tiles'"></ep-tiles-menu-favorites>
+*
+*/
+angular.module('ep.tiles.panel').
+    directive('epTilesMenuFavorites', epTilesMenuFavoritesDirective);
+
+    /*@ngInject*/
+function epTilesMenuFavoritesDirective() {
+        return {
+            restrict: 'E',
+            controller: 'epTilesMenuFavoritesCtrl',
+            template: '<ep-tiles-panel list=state.list before-list=state.beforeList after-list=state.afterList ' +
+                'color=color size-mode=sizeMode></ep-tiles-panel>',
+            scope: {
+                menuId: '=',
+                beforeList: '=',
+                afterList: '=',
+                sizeMode: '=',
+                color: '=',
+                bing: '=',
+                menuIcon: '='
+            },
+            link: function(scope, element) {
+                scope.state = {
+                    theElement: element,
+                    list: [],
+                    beforeList: [],
+                    afterList: []
+                };
+            }
+        };
+    }
+}());
+
+(function() {
+'use strict';
+
+/**
+ * @ngdoc controller
+ * @name ep.tiles.panel.controller:epTilesPanelCtrl
+ * @description
+ * Represents the epTilesPanel controller for the
+ * ep.tiles.panel module, or for specific ep-tiles-panel directive
+ *
+ * @example
+ *
+ */
+    epTilesPanelCtrl.$inject = ['$scope'];
+    angular.module('ep.tiles.panel')
+        .controller('epTilesPanelCtrl', epTilesPanelCtrl);
+
+    /*@ngInject*/
+    function epTilesPanelCtrl($scope) {
+        $scope.sortList = function(tile) {
+            return tile.sort || tile.caption;
+        };
+    }
+}());
+
+(function() {
+'use strict';
+/**
+* @ngdoc directive
+* @name ep.tiles.panel.directive:epTilesPanel
+* @restrict E
+*
+* @description
+* Represents the ep.tiles.panel directive
+*
+* @example
+*/
+angular.module('ep.tiles.panel').
+    directive('epTilesPanel', epTilesPanelDirective);
+
+    /*@ngInject*/
+    function epTilesPanelDirective() {
+        return {
+            restrict: 'E',
+            controller: 'epTilesPanelCtrl',
+            templateUrl: 'src/components/ep.tiles.panel/ep-tiles-panel.html',
+            scope: {
+                list: '=',
+                beforeList: '=',
+                afterList: '=',
+                color: '=',
+                sizeMode: '=',
+                width: '=',
+                height: '='
+            },
+            link: function(scope, element) {
+                scope.state = {
+                    tilePanelElement: element,
+                    list: [],
+                    beforeList: [],
+                    afterList: [],
+                };
+            }
+        };
+    }
+}());
 
 'use strict';
 
@@ -12078,7 +13037,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.datagrid/datagrid.html',
-    "<div class=ep-data-grid id={{state.dataGridId}} ng-class=\"{'ep-data-grid-child' : state.isChildGrid}\"><div class=\"ep-dg-grid-search navbar-inverse clearfix\" ng-show=state.allowSearchInput ng-class=\"(options.showConfigButton === true) ? 'input-group' : ''\"><span ng-show=\"options.showConfigButton === true\" class=\"ep-dg-config input-group-addon\"><ep-dropdown-btn menu=configmenu icon=\"\"></ep-dropdown-btn></span> <input class=\"ep-dg-search-input form-control input-sm pull-left\" name=search type=search placeholder=Search ng-class=searchInputClass ng-model=state.searchValue ng-init=fnOnSearchBlur() ng-blur=fnOnSearchBlur($event) ng-focus=fnOnSearchFocus($event) ng-keyup=fnOnSearchKeyUp($event) ng-change=\"fnOnSearchChange($event)\"> <span class=\"ep-dg-search-icon-overlay pull-right\" ng-class=\"{'invisible': state.searchValue + '' === ''}\" ng-click=clearSearch()><i class=\"fa fa-lg fa-times\"></i></span></div><div ng-if=options.showHeaderSection class=\"panel-footer ep-datagrid-header-section\"><div ng-if=state.headerSectionTemplate ng-bind-html=state.headerSectionTemplate></div><div ng-if=state.headerSectionTemplateUrl ng-include=state.headerSectionTemplateUrl></div></div><div id=tblArea_{{state.dataGridId}} class=ep-dg-grid-table-area><table id=tbl_{{state.dataGridId}} cellpadding=0 cellspacing=0 border=0 class=\"ep-dg-grid-table table table-bordered table-hover\" fixed-header></table><div class=ep-dg-progressIndicator ng-show=showProgress><span class=\"fa fa-spinner fa-pulse fa-5x\"></span></div></div><div ng-if=options.showFooterSection class=\"panel-footer ep-datagrid-footer-section\"><div ng-if=state.footerSectionTemplate ng-bind-html=state.footerSectionTemplate></div><div ng-if=state.footerSectionTemplateUrl ng-include=state.footerSectionTemplateUrl></div></div></div>"
+    "<div class=ep-data-grid id={{state.dataGridId}} ng-class=\"{'ep-data-grid-child' : state.isChildGrid}\"><div class=\"ep-dg-grid-search navbar-inverse clearfix\" ng-show=state.allowSearchInput ng-class=\"(options.showConfigButton === true) ? 'input-group' : ''\"><span ng-show=\"options.showConfigButton === true\" class=\"ep-dg-config input-group-addon\"><ep-dropdown-btn menu=configmenu icon=\"\"></ep-dropdown-btn></span> <input class=\"ep-dg-search-input form-control input-sm pull-left\" name=search type=search placeholder=Search ng-class=searchInputClass ng-model=state.searchValue ng-init=fnOnSearchBlur() ng-blur=fnOnSearchBlur($event) ng-focus=fnOnSearchFocus($event) ng-keyup=fnOnSearchKeyUp($event) ng-change=\"fnOnSearchChange($event)\"> <span class=\"ep-dg-search-icon-overlay pull-right\" ng-class=\"{'invisible': state.searchValue + '' === ''}\" ng-click=clearSearch()><i class=\"fa fa-lg fa-times\"></i></span></div><div ng-if=options.showHeaderSection class=\"panel-footer ep-datagrid-header-section\" ng-controller=headerSectionController><div ng-if=state.headerSectionTemplate ng-bind-html=state.headerSectionTemplate></div><div ng-if=state.headerSectionTemplateUrl ng-include=state.headerSectionTemplateUrl></div></div><div id=tblArea_{{state.dataGridId}} class=ep-dg-grid-table-area><table id=tbl_{{state.dataGridId}} cellpadding=0 cellspacing=0 border=0 class=\"ep-dg-grid-table table table-bordered table-hover\" fixed-header></table><div class=ep-dg-progressIndicator ng-show=showProgress><span class=\"fa fa-spinner fa-pulse fa-5x\"></span></div></div><div ng-if=options.showFooterSection class=\"panel-footer ep-datagrid-footer-section\" ng-controller=footerSectionController><div ng-if=state.footerSectionTemplate ng-bind-html=state.footerSectionTemplate></div><div ng-if=state.footerSectionTemplateUrl ng-include=state.footerSectionTemplateUrl></div></div></div>"
   );
 
 
@@ -12133,12 +13092,12 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/menu/ep-shell-menu.html',
-    "<div><ep-multi-level-menu ng-controller=epShellMenuCtrl menu=menuOptions.menu menu-id=menuOptions.id on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu></div>"
+    "<div><ep-multi-level-menu ng-controller=epShellMenuCtrl menu=menuOptions.menu menu-id=menuId on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu></div>"
   );
 
 
   $templateCache.put('src/components/ep.shell/shell.html',
-    "<div><section ng-controller=epShellCtrl class=ep-shell><div ng-show=state.showProgressIndicator class=ep-progress-idicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\"></a></li><li><a id=apptitle ng-class=\"{hidden: !state.showBrand}\" class=navbar-brand ng-href=\"#{{(state.brandTarget || '/home')}}\" ng-bind-html=state.brandHTML></a></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in navButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.enabled === false}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button)></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false></a><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\"><a ng-click=opt.action() ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa {{opt.icon}}\"></i><span class=ep-navmenu-item-text>{{opt.title}}</span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div class=ep-fullscreen><div ng-view class=\"ep-fullscreen view\" ng-class=state.viewAnimation></div></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" href=#/whatsnew><sup>Version {{uiVersion}}</sup></a></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.enableFeedback ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
+    "<div><section ng-controller=epShellCtrl class=ep-shell><div ng-show=state.showProgressIndicator class=ep-progress-idicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\"></a></li><li><a id=apptitle ng-class=\"{hidden: !state.showBrand}\" class=navbar-brand ng-href=\"#{{(state.brandTarget || '/home')}}\" ng-bind-html=state.brandHTML></a></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in navButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.enabled === false}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button)></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false></a><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\"><a ng-click=opt.action() ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa {{opt.icon}}\"></i><span class=ep-navmenu-item-text>{{opt.title}}</span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div class=ep-fullscreen><div ng-view class=ep-fullscreen></div></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" href=#/whatsnew><sup>Version {{uiVersion}}</sup></a></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.enableFeedback ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
   );
 
 
@@ -12166,12 +13125,32 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.tabbar/ep-tabbar.html',
-    "<!--Tab Bar Components --><div class=ep-tabbar><ul id=tabbar class=\"navbar nav-pills navbar-default\" ng-class=\"{'navbar-fixed-bottom':state.tabbarAlignment=='bottom', 'navbar-fixed-top':state.tabbarAlignment!='bottom'}\"><li ng-repeat=\"icon in state.tabs\" class=ep-tabbar-contents ng-class=\"{'ep-tabbar-list':state.iconAlignment=='left'}\"><a ng-click=executeButton(icon) class=ep-tabbar-content-color><i class={{icon.icon}}></i><label ng-hide=\"state.labelAlignment=='top'\" ng-class=\"{'ep-tabbar-label':state.labelText=='left'}\">{{icon.text}}</label><p ng-hide=\"state.labelAlignment!='top'\">{{icon.text}}</p></a></li></ul></div>"
+    "<!--Tab Bar Components --><div class=ep-tabbar><ul id=tabbar class=\"navbar nav-pills navbar-default\" ng-class=\"{'navbar-fixed-bottom':state.tabbarAlignment=='bottom', 'navbar-fixed-top':state.tabbarAlignment!='bottom'}\"><li ng-repeat=\"icon in state.tabs\" class=ep-tabbar-contents ng-class=\"{'ep-tabbar-list':state.iconAlignment=='left'}\"><a ng-click=executeButton(icon) class=ep-tabbar-content-color><i class={{icon.icon}}></i><label id=testing2 class=testLabel ng-hide=\"state.labelAlignment=='top'\" ng-class=\"{'ep-tabbar-label':state.labelText=='left'}\">{{icon.text}}</label><p id=testing1 class=testP ng-hide=\"state.labelAlignment!='top'\">{{icon.text}}</p></a></li></ul></div>"
   );
 
 
   $templateCache.put('src/components/ep.table/table.html',
     "<table class=table ng-class=\"{'table-striped' : isStriped}\"><tr><th ng-repeat=\"oneTh in headers track by $index\">{{oneTh}}</th></tr><tr ng-show=isLoading><td colspan={{colCount}}><div class=\"progress progress-striped active\"><div class=progress-bar role=progressbar aria-valuenow=1 aria-valuemin=0 aria-valuemax=1 style=\"width: 100%\"></div></div></td></tr><tr ng-show=loadError><td colspan={{colCount}}><p class=\"text-danger text-center\"><i class=\"fa fa-exclamation-triangle\"></i> {{loadError}}</p></td></tr><tr ng-repeat=\"row in data\" class=ep-table-row ng-class=\"{ 'info': row.$isSelected }\" ng-click=selectRow(row)><td ng-repeat=\"cell in props track by $index\" class=ep-table-cell>{{row[cell]}}</td></tr></table>"
+  );
+
+
+  $templateCache.put('src/components/ep.tile/ep-tile-templates/ep-tile-image.html',
+    "<!--This is a partial for the ep-tile-image --><div data-mode={{state.liveSettings.dataMode}} data-direction={{state.liveSettings.dataDirection}} data-delay={{state.liveSettings.dataDelay}} class=\"accent live-tile\" ng-class=state.tileClass><div ng-repeat=\"img in state.images\"><img class=full ng-src={{img.src}} alt=\"\" image-index=\"{{img.index}}\"> <span ng-if=\"tile.hideFooter !== false\" class=\"tile-title accent\" style=\"padding: 4px; background-color: gray\">{{img.title}}</span></div></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.tile/ep-tile-templates/ep-tile-menu.html',
+    "<!--This is a partial for the ep-tile-menu --><div class=\"live-tile accent\" ng-class=state.tileClass><div class=\"well ep-tile-container\"><span class=ep-tile-close-button><i class=\"fa fa-times\" ng-click=\"state.closeAction(tile, $event)\"></i></span><h5 ng-if=\"tile.caption !== undefined\" class=\"ep-tile-caption-panel btn-primary clearfix\"><span ng-if=tile.icon class=\"ep-tile-icon fa-lg {{tile.icon}}\"></span> <span class=\"ep-tile-caption tile-caption\">{{tile.caption}}</span></h5><p class=\"ep-tile-description text-primary\">{{tile.description}}</p></div><span ng-if=\"tile.footer !== undefined\" class=\"tile-title accent\">{{tile.footer}}</span></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.tile/ep-tile.html',
+    "<!--This is a partial for the ep-tile directive --><div class=\"ep-tile {{state.sizeMode}} {{state.color}}\" ng-class=state.optionsClass><div ng-click=\"state.action(tile, $event)\" class=ep-tile-container ng-include=state.templateUrl></div></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.tiles.panel/ep-tiles-panel.html',
+    "<!--This is a partial for the ep-tiles-panel directive --><div class=\"ep-tiles-panel tiles tile-group {{color}}\" style=\"margin: 0px\"><ep-tile ng-if=\"beforeList && beforeList.length\" class=\"ep-tiles-before-list ep-repeat-animation\" tile=item ng-repeat=\"item in beforeList | orderBy:sortList\" size-mode=sizeMode width=width height=height></ep-tile><ep-tile class=\"ep-tiles-list ep-repeat-animation\" tile=item ng-repeat=\"item in list | orderBy:sortList\" size-mode=sizeMode width=width height=height></ep-tile><ep-tile ng-if=\"afterList && afterList.length\" class=\"ep-tiles-after-list ep-repeat-animation\" tile=item ng-repeat=\"item in afterList | orderBy:sortList\" size-mode=sizeMode width=width height=height></ep-tile></div>"
   );
 
 

@@ -1452,6 +1452,121 @@ VIEW CONTAINER [ep-view-container]
 }
 
 
+/* ===== Styles for the ep-tile component ====== */
+.ep-tile .live-tile {
+  float: left;
+  overflow: hidden;
+  position: relative;
+}
+.ep-tile .live-tile:hover {
+  border: 3px solid #fff;
+  cursor: pointer;
+}
+.ep-tile .ep-tile-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  margin: 0px;
+  padding: 0px;
+}
+.ep-tile .ep-tile-close-button {
+  width: 18px;
+  margin: 2px;
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+.ep-tile .ep-tile-caption-panel {
+  width: 100%;
+  min-height: 30px;
+  max-height: 45px;
+  overflow: hidden;
+  margin: 0px;
+  padding: 5px 0px 0px 0px;
+}
+.ep-tile .ep-tile-icon {
+  padding-left: 5px;
+  padding-right: 3px;
+}
+.ep-tile.ep-tile-opt-close-btn .ep-tile-caption-panel {
+  padding-right: 10px;
+}
+.ep-tile.ep-tile-opt-cap-30 .live-tile.two-wide .tile-caption {
+  font-size: small;
+}
+.ep-tile.ep-tile-opt-cap-30 .live-tile.one-wide .tile-caption {
+  font-size: smaller;
+}
+.ep-tile .ep-tile-caption {
+  padding-left: 3px;
+}
+/*tile-title is actually tile footer*/
+.ep-tile .tile-title {
+  padding: 4px;
+  background-color: gray;
+}
+@media only screen and (max-width: 400px) {
+  .tile-caption {
+    background-color: palevioletred;
+  }
+  .ep-tile .live-tile.two-wide,
+  .ep-tile .live-tile.three-wide {
+    width: 100%;
+  }
+}
+/* in container mode tile springs to container width less the margins */
+.ep-tile-size-container .live-tile {
+  width: 95%;
+  /* for browsers not supporting calc */
+  width: -moz-calc(100% - 10px);
+  width: -webkit-calc(100% - 10px);
+  width: -o-calc(100% - 10px);
+  width: calc(100% - 10px);
+}
+/* Fade-in the menu */
+/*.ep-tile.ep-fadein-animation.ng-enter,
+.ep-tile.ep-fadein-animation.ng-leave
+{
+  -webkit-transition: 0.5s linear all;
+  transition: 0.5s linear all;
+  position: relative;
+}
+.ep-tile.ep-fadein-animation.ng-enter,
+.ep-tile.ep-fadein-animation.ng-leave.ng-leave-active {
+  opacity: 0;
+}
+
+.ep-tile.ep-fadein-animation.ng-enter.ng-enter-active,
+.ep-tile.ep-fadein-animation.ng-leave {
+  opacity: 1;
+}*/
+
+.ep-tiles-panel .ep-repeat-animation.ng-enter,
+.ep-tiles-panel .ep-repeat-animation.ng-leave,
+.ep-tiles-panel .ep-repeat-animation.ng-move {
+  -webkit-transition: 0.5s linear all;
+  transition: 0.5s linear all;
+  position: relative;
+}
+.ep-tiles-panel .ep-repeat-animation.ng-enter {
+  opacity: 0;
+}
+.ep-tiles-panel .ep-repeat-animation.ng-enter.ng-enter-active {
+  opacity: 1;
+}
+.ep-tiles-panel .ep-repeat-animation.ng-leave.ng-leave-active {
+  opacity: 0;
+}
+.ep-tiles-panel .ep-repeat-animation.ng-leave {
+  opacity: 1;
+}
+.ep-tiles-panel .ep-repeat-animation.ng-move {
+  opacity: 0.5;
+}
+.ep-tiles-panel .ep-repeat-animation.ng-move.ng-move-active {
+  opacity: 1;
+}
+
 .ep-range-slider-ctr {
   /* padding: 0 15px; */
   box-sizing: border-box;
