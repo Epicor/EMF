@@ -1209,6 +1209,39 @@ angular.module('ep.signature', [
 })();
 
 'use strict';
+
+/**
+ * @ngdoc controller
+ * @name ep.card.controller:epCardCtrl
+ * @description
+ * Represents the epCard controller for the
+ * ep.card module, or for specific ep-card directive
+ *
+ * @example
+ *
+ */
+angular.module('ep.card').controller('epCardCtrl', [
+    '$scope',
+    function($scope) {
+        // do something with $scope property
+        $scope.myProperty = 'emf';
+
+        /**
+         * @ngdoc method
+         * @name myFunction
+         * @methodOf ep.card.controller:epCardCtrl
+         * @public
+         * @description
+         * Handles the myFunction request
+         */
+        $scope.myFunction = function() {
+            // do something else with $scope property
+            // $scope.myProperty = 'new property value';
+        };
+    }
+]);
+
+'use strict';
 /**
 * @ngdoc directive
 * @name ep.card.directive:epCard
@@ -1276,6 +1309,64 @@ app.directive('epCardTitle',
             templateUrl: 'src/components/ep.card/ep-card-title-template.html'
         };
 	});
+
+'use strict';
+/**
+ * @ngdoc service
+ * @name ep.card.factory:epCardFactory
+ * @description
+ * Factory service for the ep.card module
+ * card component
+ *
+ * @example
+ *
+ */
+angular.module('ep.card').factory('epCardFactory', [
+    function() {
+        /**
+         * @ngdoc method
+         * @name publicMethod
+         * @methodOf ep.card.factory:epCardFactory
+         * @public
+         * @description
+         * sample public method stub
+         */
+        function publicMethod() {
+            // do something
+            return true;
+        }
+
+        return {
+            publicMethod: publicMethod
+        };
+    }]);
+
+'use strict';
+/**
+ * @ngdoc service
+ * @name ep.card.service:epCardService
+ * @description
+ * Service for the ep.card module
+ * card component
+ *
+ * @example
+ *
+ */
+angular.module('ep.card').service('epCardService', [
+    function() {
+        /**
+         * @ngdoc method
+         * @name publicFunction
+         * @methodOf ep.card.service:epCardService
+         * @public
+         * @description
+         * sample public service function stub
+         */
+        this.publicFunction = function() {
+            // do something
+            return true;
+        };
+    }]);
 
 /**
 * @ngdoc directive
