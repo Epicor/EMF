@@ -202,17 +202,52 @@
   color: red;
 }
 
+.card {
+  position: relative;
+  display: block;
+  margin-bottom: .75rem;
+  background-color: #000000;
+  border: 1px solid #808080;
+  border-radius: .8rem;
+  padding: 10px;
+}
+.card-inverse {
+  color: #ffffff;
+}
+.card-primary {
+  background-color: #808080;
+  border-color: #808080;
+}
+.card-title {
+  margin-bottom: .75rem;
+}
+.card-block {
+  color: #000000;
+  margin-bottom: .75rem;
+  padding: 5px;
+}
+.card-block-contrast {
+  background-color: #909090;
+}
+.card-responsive {
+  max-width: 100%;
+  max-height: 100%;
+}
+
 .ep-color-tile {
+  position: relative;
   overflow: hidden;
   padding: 20px;
-  margin-bottom: 20px;
   color: #fff;
+  margin-bottom: 20px;
+}
+.ep-color-tile h3 {
+  margin-top: 0;
 }
 .ep-color-tile-icon {
-  position: absolute;
-  top: 20px;
-  right: 10px;
-  padding-right: 20px;
+  position: absolute !important;
+  top: 10px;
+  right: 15px;
   font-size: 30px;
   opacity: 0.3;
 }
@@ -298,6 +333,28 @@
   top: 100%;
   transform: translateY(-100%);
 }
+.ep-padding {
+  padding: 10px;
+}
+.ep-padding-large {
+  padding: 20px;
+}
+.ep-padding-top,
+.ep-padding-vertical {
+  padding-top: 10px;
+}
+.ep-padding-right,
+.ep-padding-horizontal {
+  padding-right: 10px;
+}
+.ep-padding-bottom,
+.ep-padding-vertical {
+  padding-bottom: 10px;
+}
+.ep-padding-left,
+.ep-padding-horizontal {
+  padding-left: 10px;
+}
 
 .ep-console-warning {
   color: orange;
@@ -321,6 +378,8 @@
 }
 .ep-data-grid > .ep-dg-grid-search > .ep-dg-search-input {
   padding-right: 30px;
+  margin-top: 1px;
+  /* to align with config button */
 }
 .ep-data-grid > .ep-dg-grid-search > .ep-dg-search-input::-ms-clear {
   display: none;
@@ -508,6 +567,60 @@
 .ep-data-grid .tt-suggestion p {
   margin: 0;
 }
+/*------------------- DRILL THROUGH ------------------------------- -->>>>>>*/
+.drill-header::before {
+  font-family: FontAwesome;
+  font-style: normal;
+  font-size: 12px;
+  font-weight: normal;
+  content: "\f08e";
+  margin-left: 5px;
+  margin-right: 5px;
+}
+.drill-cell > .drill-icon + .right-align {
+  display: inline;
+  float: right;
+}
+.drill-cell > .drill-icon + a {
+  display: inline;
+}
+.drill-cell > .drill-icon {
+  padding-right: 0px;
+  -webkit-transition: all 0.6s ease;
+  -moz-transition: all 0.6s ease;
+  transition: all 0.6s ease;
+}
+.drill-cell:hover > .drill-icon {
+  padding-right: 20px;
+  -webkit-transition: all 0.4s ease;
+  -moz-transition: all 0.4s ease;
+  transition: all 0.4s ease;
+}
+.drill-cell > .drill-icon::before {
+  font-family: FontAwesome;
+  font-style: normal;
+  font-size: 5px;
+  content: "\f08e";
+  cursor: pointer;
+  position: absolute;
+  margin-left: 0px;
+  margin-top: 7px;
+  visibility: hidden;
+  opacity: 0;
+  -webkit-transition: all 0.4s ease;
+  -moz-transition: all 0.4s ease;
+  transition: all 0.4s ease;
+}
+.drill-cell:hover > .drill-icon::before {
+  font-size: 15px;
+  margin-left: 0px;
+  margin-top: 0px;
+  visibility: visible;
+  opacity: 1;
+  -webkit-transition: all 0.6s ease;
+  -moz-transition: all 0.6s ease;
+  transition: all 0.6s ease;
+}
 /*------------------- NEW GRID ------------------------------- -->>>>>>*/
 .ep-data-grid .ep-datagrid-filter-row .ep-hide-filter-col {
   width: 0;
@@ -546,6 +659,26 @@
 /* to enable grid row rules must overwrite setting of dataTables.jqueryui.css */
 .ep-data-grid table.dataTable {
   border-collapse: collapse;
+}
+.ep-data-grid .ep-datagrid-header-section {
+  min-height: 20px;
+  text-align: center;
+  margin: 2px;
+}
+.ep-data-grid .ep-datagrid-footer-section {
+  min-height: 20px;
+  text-align: center;
+  margin: 2px;
+}
+.ep-dg-config {
+  padding: 0px;
+  padding-right: 3px;
+  background-color: transparent;
+  margin: 0px;
+}
+
+.ep-dropdown-btn .ep-dropdown-btn-chk {
+  margin-right: 2px;
 }
 
 #appHost {
@@ -1030,6 +1163,17 @@
 .ep-shell .ep-main-navbar .right-button.open .dropdown-menu {
   display: block;
 }
+.navbar-nav > li.ep-center-brand {
+  float: none;
+}
+a.ep-center-brand,
+span.ep-center-brand {
+  position: relative;
+  width: 100%;
+  left: 0;
+  text-align: center;
+  margin: auto;
+}
 #apptitle {
   white-space: nowrap;
   text-overflow: ellipsis;
@@ -1099,7 +1243,7 @@
 }
 /*
 =================================================================
-SHELL CONTAINER 
+SHELL CONTAINER
 =================================================================
 */
 .ep-shell .ep-shell-container {
@@ -1120,7 +1264,7 @@ SHELL CONTAINER
 .ep-shell .ep-shell-container .ep-view-placeholder {
   overflow: hidden;
 }
-/* These rules are necessary because the container sizes defined in bootstrap 
+/* These rules are necessary because the container sizes defined in bootstrap
    needs to take into account the width of the sidebar when in large mode. */
 @media (min-width: 768px) {
   .ep-shell-container #viewContainer .container {
@@ -1197,21 +1341,22 @@ View Animation
 =================================================================
 */
 /* Default view */
-.view {
+.ep-view {
   width: 100%;
   position: absolute;
-  transition: all 500ms ease-in-out;
-  background-color: white;
+}
+.ep-view-transition {
+  transition: all 200ms ease-out;
 }
 /* Slide animations */
 .ep-slide-left.view.ng-enter {
-  left: -100%;
+  left: 100%;
 }
 .ep-slide-left.view.ng-enter.ng-enter-active {
   left: 0;
 }
 .ep-slide-right.view.ng-enter {
-  left: 100%;
+  left: -100%;
 }
 .ep-slide-right.view.ng-enter.ng-enter-active {
   left: 0;
@@ -1415,6 +1560,7 @@ VIEW CONTAINER [ep-view-container]
   width: 100%;
 }
 
+
 .ep-tabbar .ep-tabbar-contents {
   text-align: center;
   margin-left: 25px !important;
@@ -1430,6 +1576,118 @@ VIEW CONTAINER [ep-view-container]
   margin-left: 12px !important;
 }
 
+
+/* ===== Styles for the ep-tile component ====== */
+.ep-tile .live-tile {
+  float: left;
+  overflow: hidden;
+  position: relative;
+}
+.ep-tile .live-tile:hover {
+  border: 3px solid #fff;
+  cursor: pointer;
+}
+.ep-tile .ep-tile-container {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  margin: 0px;
+  padding: 0px;
+}
+.ep-tile .ep-tile-close-button {
+  width: 18px;
+  margin: 2px;
+  position: absolute;
+  top: 0;
+  right: 0;
+}
+.ep-tile .ep-tile-caption-panel {
+  width: 100%;
+  min-height: 30px;
+  max-height: 45px;
+  overflow: hidden;
+  margin: 0px;
+  padding: 5px 0px 0px 0px;
+}
+.ep-tile .ep-tile-icon {
+  padding-left: 5px;
+  padding-right: 3px;
+}
+.ep-tile.ep-tile-opt-close-btn .ep-tile-caption-panel {
+  padding-right: 10px;
+}
+.ep-tile.ep-tile-opt-cap-30 .live-tile.two-wide .tile-caption {
+  font-size: small;
+}
+.ep-tile.ep-tile-opt-cap-30 .live-tile.one-wide .tile-caption {
+  font-size: smaller;
+}
+.ep-tile .ep-tile-caption {
+  padding-left: 3px;
+}
+/*tile-title is actually tile footer*/
+.ep-tile .tile-title {
+  padding: 4px;
+  background-color: gray;
+}
+@media only screen and (max-width: 400px) {
+  .ep-tile .live-tile.two-wide,
+  .ep-tile .live-tile.three-wide {
+    width: 100%;
+  }
+}
+/* in container mode tile springs to container width less the margins */
+.ep-tile-size-container .live-tile {
+  width: 95%;
+  /* for browsers not supporting calc */
+  width: -moz-calc(100% - 10px);
+  width: -webkit-calc(100% - 10px);
+  width: -o-calc(100% - 10px);
+  width: calc(100% - 10px);
+}
+/* Fade-in the menu */
+/*.ep-tile.ep-fadein-animation.ng-enter,
+.ep-tile.ep-fadein-animation.ng-leave
+{
+  -webkit-transition: 0.5s linear all;
+  transition: 0.5s linear all;
+  position: relative;
+}
+.ep-tile.ep-fadein-animation.ng-enter,
+.ep-tile.ep-fadein-animation.ng-leave.ng-leave-active {
+  opacity: 0;
+}
+
+.ep-tile.ep-fadein-animation.ng-enter.ng-enter-active,
+.ep-tile.ep-fadein-animation.ng-leave {
+  opacity: 1;
+}*/
+
+.ep-tiles-panel .ep-repeat-animation.ng-enter,
+.ep-tiles-panel .ep-repeat-animation.ng-leave,
+.ep-tiles-panel .ep-repeat-animation.ng-move {
+  -webkit-transition: 0.5s linear all;
+  transition: 0.5s linear all;
+  position: relative;
+}
+.ep-tiles-panel .ep-repeat-animation.ng-enter {
+  opacity: 0;
+}
+.ep-tiles-panel .ep-repeat-animation.ng-enter.ng-enter-active {
+  opacity: 1;
+}
+.ep-tiles-panel .ep-repeat-animation.ng-leave.ng-leave-active {
+  opacity: 0;
+}
+.ep-tiles-panel .ep-repeat-animation.ng-leave {
+  opacity: 1;
+}
+.ep-tiles-panel .ep-repeat-animation.ng-move {
+  opacity: 0.5;
+}
+.ep-tiles-panel .ep-repeat-animation.ng-move.ng-move-active {
+  opacity: 1;
+}
 
 .ep-range-slider-ctr {
   /* padding: 0 15px; */
