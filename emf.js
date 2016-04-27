@@ -11364,7 +11364,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      */
      function viewAnimation(animation) {
        if (animation !== undefined) {
-         shellState.viewAnimation = epShellConfig.options.enableViewAnimations ? (animation + ' ep-view-transition') : '';
+           shellState.viewAnimation = epShellConfig.options.enableViewAnimations ?
+               (animation + ' ep-view-transition') : '';
        }
        return shellState.viewAnimation;
      }
@@ -14179,34 +14180,6 @@ function epTilesMenuFavoritesDirective() {
     function($document, $log, $q, $timeout) {
 
         /**
-         * @ngdoc method
-         * @name getStackTrace
-         * @methodOf ep.utils.service:epUtilsService
-         * @description
-         * A helper method to generate a stack trace
-         */
-        function getStackTrace(maxStackSize) {
-            var stack = [];
-
-            maxStackSize = maxStackSize || 15;
-            var currentFrame = arguments.callee;
-            while (currentFrame && stack.length < maxStackSize) {
-                var groups = currentFrame.toString().replace('function', '').split('(');
-                if (groups && groups.length) {
-                    stack.push(groups[0]);
-                } else {
-                    stack.push('unknown');
-                }
-                try {
-                    currentFrame = currentFrame.caller;
-                } catch (e) {
-                    break;
-                }
-            }
-            return stack;
-        }
-
-        /**
         * @ngdoc method
         * @name strFormat
         * @methodOf ep.utils.service:epUtilsService
@@ -14560,8 +14533,7 @@ function epTilesMenuFavoritesDirective() {
             merge: merge,
             strFormat: strFormat,
             wait: wait,
-            getService: getService,
-            getStackTrace: getStackTrace
+            getService: getService
         };
     }]);
 })();
