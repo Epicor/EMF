@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8 built: 10-06-2016
+ * version:1.0.8-dev.1 built: 13-06-2016
 */
 /**
  * @ngdoc overview
@@ -6998,6 +6998,268 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
     }
 
 })();
+
+/**
+ *
+ */
+(function() {
+  'use strict';
+    angular.module('ep.hybrid.calendar', []);
+})();
+
+/**
+ * @ngdoc service
+ * @name ep.hybrid.calendar:epHybridCalendarService
+ * @description
+ * Service for accessing Cordova Calendar plugin
+ *
+ * @example
+   <example module="TestApp">
+     <file name="index.html">
+	     <div ng-controller="SampleCtrl">
+            <div class="panel-body">
+            </div>
+	      </div>
+     </file>
+     <file name="script.js">
+     	angular.module("TestApp", ["ep.hybrid.calendar"])
+     		.controller("SampleCtrl",["$scope", "$log", "epHybridCalendarService",
+	     		function($scope, epHybridCalendarService){
+                    //create an event
+                    epHybridCalendarService.createEvent(
+                        {
+                            title: 'Event Title',
+                            location: 'Home',
+                            notes: 'notes about this event',
+                            startDate: new Date(2016, 0, 15, 18, 30, 0, 0, 0),
+                            endDate: new Date(2016, 1, 17, 12, 0, 0, 0, 0)
+                        },
+                        onSuccess,
+                        onFail
+                    );
+
+                    //find an event
+                    epHybridCalendarService.findEvent(
+                        {
+                            title: 'Event Title',
+                            location: 'Home',
+                            notes: 'notes about this event',
+                            startDate: new Date(2016, 0, 15, 18, 30, 0, 0, 0),
+                            endDate: new Date(2016, 1, 17, 12, 0, 0, 0, 0)
+                        },
+                        onSuccess,
+                        onFail
+                    );
+
+                    //delete an event
+                    epHybridCalendarService.deleteEvent(
+                        {
+                            title: 'Event Title',
+                            location: 'Home',
+                            notes: 'notes about this event',
+                            startDate: new Date(2016, 0, 15, 18, 30, 0, 0, 0),
+                            endDate: new Date(2016, 1, 17, 12, 0, 0, 0, 0)
+                        },
+                        onSuccess,
+                        onFail
+                    );
+
+                    //open calendar
+                    epHybridCalendarService.openCalendar();
+
+                    function onSuccess(message) {
+                        $log.debug("Success: " + message);
+                    }
+
+                    function onFail(message) {
+                        $log.debug("Failed: " + message);
+                    }
+            }]);
+     </file>
+   </example>
+ */
+(function() {
+    'use strict';
+
+    epHybridCalendarService.$inject = ['$rootScope'];
+    angular.module('ep.hybrid.calendar')
+        .service('epHybridCalendarService', /*@ngInject*/ epHybridCalendarService);
+
+    function epHybridCalendarService($rootScope) {
+
+        /**
+         * @ngdoc method
+         * @name openCalendar
+         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @public
+         * @description
+         * To open calendar
+         */
+        function openCalendar() {
+            window.plugins.calendar.openCalendar();
+        }
+
+        /**
+         * @ngdoc method
+         * @name createEvent
+         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @public
+         * @param {function} successCallback - function called on success of API call
+         * @param {function} errorCallback - function called on error of API call
+         * @param {object} details - details to create event
+         * @param {string} details.title - Title of the event
+         * @param {string} details.location - Location of the event
+         * @param {string} details.notes - Notes of the event
+         * @param {date} details.startDate - Event start date
+         * @param {date} details.endDate - Event end date
+         * @description
+         * To create a calendar event silently
+         */
+        function createEvent(successCallback, errorCallback, details) {
+            window.plugins.calendar.createEvent(
+                details.title, details.location, details.notes, details.startDate, details.endDate,
+                function(message) {
+                    $rootScope.$apply(successCallback(message));
+                },
+                function(message) {
+                    $rootScope.$apply(errorCallback(message));
+                }
+			);
+        }
+
+        /**
+         * @ngdoc method
+         * @name createEventWithOptions
+         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @public
+         * @param {function} successCallback - function called on success of API call
+         * @param {function} errorCallback - function called on error of API call
+         * @param {object} details - details object of the event. properties same as createEvent's details param.
+         * @param {object} options - options to create event
+         * @param {integer} options.firstReminderMinutes - first reminder minutes
+         * @param {integer} options.secondReminderMinutes - second reminder minutes
+         * @param {string} options.recurrence - recurrence. supported are: daily, weekly, monthly, yearly
+         * @param {date} options.recurrenceEndDate - recurrence end date, leave null to add events into infinity and beyond
+         * @param {integer} options.recurrenceInterval - recurrence interval
+         * @param {url} options.url - url
+         * @description
+         * To create a calendar event with options
+         */
+        function createEventWithOptions(successCallback, errorCallback, details, options) {
+            var calOptions = window.plugins.calendar.getCalendarOptions();
+
+            if (options.firstReminderMinutes != null) {
+                calOptions.firstReminderMinutes = options.firstReminderMinutes
+            }
+            if (options.secondReminderMinutes != null) {
+                calOptions.secondReminderMinutes = options.secondReminderMinutes
+            }
+            if (options.recurrence != null) {
+                calOptions.recurrence = options.recurrence
+            }
+            if (options.recurrenceEndDate != null) {
+                calOptions.recurrenceEndDate = options.recurrenceEndDate
+            }
+            if (options.recurrenceInterval != null) {
+                calOptions.recurrenceInterval = options.recurrenceInterval
+            }
+            if (options.url != null) {
+                calOptions.url = options.url
+            }
+            window.plugins.calendar.createEventWithOptions(
+                details.title, details.location, details.notes, details.startDate, details.endDate,
+                calOptions,
+                function(message) {
+                    $rootScope.$apply(successCallback(message));
+                },
+                function(message) {
+                    $rootScope.$apply(errorCallback(message));
+                }
+			);
+        }
+
+        /**
+         * @ngdoc method
+         * @name modifyEvent
+         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @public
+         * @param {function} successCallback - function called on success of API call
+         * @param {function} errorCallback - function called on error of API call
+         * @param {object} details - details object of the event. properties same as createEvent's details param.
+         * @description
+         * To modify calendar event
+         */
+        function modifyEvent(successCallback, errorCallback, details) {
+            window.plugins.calendar.modifyEvent(
+                details.title, details.location, details.notes, details.startDate, details.endDate,
+                details.newTitle, details.newLocation, details.newNotes, details.newStartDate, details.newEndDate,
+                function(message) {
+                    $rootScope.$apply(successCallback(message));
+                },
+                function(message) {
+                    $rootScope.$apply(errorCallback(message));
+                }
+			);
+        }
+
+        /**
+         * @ngdoc method
+         * @name findEvent
+         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @public
+         * @param {function} successCallback - function called on success of API call
+         * @param {function} errorCallback - function called on error of API call
+         * @param {object} details - details object of the event. properties same as createEvent's details param.
+         * @description
+         * To find calendar event
+         */
+        function findEvent(successCallback, errorCallback, details) {
+            window.plugins.calendar.findEvent(
+                details.title, details.location, details.notes, details.startDate, details.endDate,
+                function(message) {
+                    $rootScope.$apply(successCallback(message));
+                },
+                function(message) {
+                    $rootScope.$apply(errorCallback(message));
+                }
+			);
+        }
+
+        /**
+         * @ngdoc method
+         * @name deleteEvent
+         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @public
+         * @param {function} successCallback - function called on success of API call
+         * @param {function} errorCallback - function called on error of API call
+         * @param {object} details - details object of the event. properties same as createEvent's details param.
+         * @description
+         * To delete calendar events
+         */
+        function deleteEvent(successCallback, errorCallback, details) {
+            window.plugins.calendar.deleteEvent(
+                details.title, details.location, details.notes, details.startDate, details.endDate,
+                function(message) {
+                    $rootScope.$apply(successCallback(message));
+                },
+                function(message) {
+                    $rootScope.$apply(errorCallback(message));
+                }
+			);
+        }
+
+        return {
+            openCalendar: openCalendar,
+            createEvent: createEvent,
+            createEventWithOptions: createEventWithOptions,
+            modifyEvent: modifyEvent,
+            findEvent: findEvent,
+            deleteEvent: deleteEvent
+        };
+    }
+
+})();
+
 
 /**
  *
