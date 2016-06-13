@@ -1,30 +1,7 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.1 built: 13-06-2016
+ * version:1.0.8-dev.3 built: 13-06-2016
 */
-/**
- * @ngdoc overview
- * @name ep.action.set
- * @description
- * #ep.action.set
- * This is a complex component that provides action-menu/context-menu behavior.
- *
- * In order to make use of the action menu fuctionality, there needs to be one
- * instance of the `<ep-action-menu></ep-action-menu>` directive on the page.
- * This directive will render the menu; for desktop, it will provide regular popup,
- * on mobile device, it will consume full width on the bottom of the device.
- *
- * Each action menu will be described for an action owner using the the nesting
- * <pre>
- *      <ep-action-set>
- *          <ep-action-item title="myTitle" handler="myHandler"></ep-action-item>
- *          <ep-action-separator"></ep-action-separator>
- *          <ep-action-item title="myTitle2" handler="myHandler"></ep-action-item>
- *          <ep-action-item title="myTitle3" handler="myHandler"></ep-action-item>
- *      </ep-action-set>
- * </pre>
- *
- */
 (function() {
     'use strict';
 
@@ -15663,7 +15640,7 @@ function epTilesMenuFavoritesDirective() {
          * removes the current token from cookie store
          */
         function logout() {
-            $cookies.remove(state.options.tokenId);
+            $cookies.remove(epTokenConfig.tokenId);
             if (state.tokenTimeoutPromise) {
                 $timeout.cancel(state.tokenTimeoutPromise);
             }
@@ -15705,7 +15682,7 @@ function epTilesMenuFavoritesDirective() {
          * @returns {object} object that represents current token
          */
         function getToken() {
-            return $cookies.getObject(state.options.tokenId);
+            return $cookies.getObject(epTokenConfig.tokenId);
         }
 
         /**
@@ -15813,7 +15790,7 @@ function epTilesMenuFavoritesDirective() {
             var dateExp = new Date(dateNow);
             dateExp.setTime(dateExp.getTime() + expiresInSecs * 1000);
             var options = expiresInSecs ? { expires: dateExp } : {};
-            $cookies.putObject(state.options.tokenId, {
+            $cookies.putObject(epTokenConfig.tokenId, {
                 uri: uri,
                 user: user,
                 token: tkn,
