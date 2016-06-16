@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.5 built: 16-06-2016
+ * version:1.0.8-dev.6 built: 16-06-2016
 */
 (function() {
     'use strict';
@@ -3610,8 +3610,8 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                     if (ret === 0 && scope.state.linkElement[0].parentNode) {
                         ret = $(scope.state.linkElement[0].parentNode).height();
                     }
+                    var tableBodyOffset = scope.findElement('.dataTables_scrollBody').offset();
                     if (scope.options.fnOnCalcTableHeight) {
-                        var tableBodyOffset = scope.findElement('.dataTables_scrollBody').offset();
                         ret = scope.options.fnOnCalcTableHeight(ret, tableBodyOffset);
                     } else if (scope.state.tableHeight && angular.isNumber(scope.state.tableHeight)) {
                         ret = scope.state.tableHeight;
@@ -3624,10 +3624,9 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                                     scope.resizeTable(true);
                                 });
                             }
-                            var tableBodyOffset1 = scope.findElement('.dataTables_scrollBody').offset();
-                            ret = vc.height() - (tableBodyOffset1 || { top: 130 }).top - 40;
+                            ret = vc.height() - (tableBodyOffset || { top: 130 }).top - 40;
                             if (scope.options.fnOnCalcTableHeight) {
-                                ret = scope.options.fnOnCalcTableHeight(ret, tableBodyOffset1);
+                                ret = scope.options.fnOnCalcTableHeight(ret, tableBodyOffset);
                             }
                         }
                     }
@@ -4164,7 +4163,7 @@ angular.module('ep.datagrid').
                 staticMode: true,
                 fnUpdateRecordsInfo: function(status) {
                     modalDialogOptions.statusBarText = status;
-                },
+                }
             };
             epUtilsService.copyProperties(gridOptions, datagridOptions);
 
@@ -6293,7 +6292,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     }
                     var res = false;
                     // http://detectmobilebrowsers.com way to check browser
-                    if (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i.test(a) || /1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(a.substr(0, 4))) {
+                    if (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|iPhone|iPad|iPod|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i.test(a) || /1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(a.substr(0, 4))) {
                         res = true;
                     }
                     browserIsMobile.result = res;
@@ -6876,13 +6875,13 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 } else {
                     deferred.resolve(!!epLocalStorageService.get(epFileConstants.namespace + '.' + filename));
                 }
-            }catch (e) {
+            } catch (e) {
                 deferred.reject(e);
             }
             return deferred.promise;
         }
 
-        function getFullFilePath(filename){
+        function getFullFilePath(filename) {
             if (fileSystem === storageSystems.fileStorage) {
                 return $window.cordova.file.dataDirectory + filename;
             } else {
@@ -6910,6 +6909,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             }
             return deferred.promise;
         }
+
         if (epFeatureDetectionService.getFeatures().platform.app !== 'Cordova') {
             fileSystem = storageSystems.localStorage;
             $log.debug('LocalStorage system selected.');
@@ -6933,7 +6933,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 /**
  *
  */
-(function () {
+(function() {
     'use strict';
     angular.module('ep.hybrid.barcode', []);
 })();
@@ -6956,8 +6956,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 	      </div>
      </file>
      <file name="script.js">
-     	angular.module("TestApp", ["ep.hybrid.barcode"])
-     		.controller("SampleCtrl",["$scope", "$log", "epHybridBarcodeService",
+     	angular.module('TestApp', ['ep.hybrid.barcode'])
+     		.controller('SampleCtrl',['$scope', '$log', 'epHybridBarcodeService',
 	     		function($scope, epHybridBarcodeService){
                     $scope.scanBarcode = function () {
                         epHybridBarcodeService.scan(
@@ -6968,14 +6968,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
                     function onSuccess(result) {
                         if (!result.cancelled) {
-                            $scope.barCodeNumber = "Number: " + result.text;
-                            $scope.barCodeFormat = "Format: " + result.format;
+                            $scope.barCodeNumber = 'Number: ' + result.text;
+                            $scope.barCodeFormat = 'Format: ' + result.format;
                             $scope.$apply();
                         }
                     }
 
                     function onFail(message) {
-                        $log.debug("Failed: " + message);
+                        $log.debug('Failed: ' + message);
                     }
             }]);
      </file>
@@ -7167,23 +7167,23 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         function createEventWithOptions(successCallback, errorCallback, details, options) {
             var calOptions = window.plugins.calendar.getCalendarOptions();
 
-            if (options.firstReminderMinutes != null) {
-                calOptions.firstReminderMinutes = options.firstReminderMinutes
+            if (options.firstReminderMinutes) {
+                calOptions.firstReminderMinutes = options.firstReminderMinutes;
             }
-            if (options.secondReminderMinutes != null) {
-                calOptions.secondReminderMinutes = options.secondReminderMinutes
+            if (options.secondReminderMinutes !== null) {
+                calOptions.secondReminderMinutes = options.secondReminderMinutes;
             }
-            if (options.recurrence != null) {
-                calOptions.recurrence = options.recurrence
+            if (options.recurrence) {
+                calOptions.recurrence = options.recurrence;
             }
-            if (options.recurrenceEndDate != null) {
-                calOptions.recurrenceEndDate = options.recurrenceEndDate
+            if (options.recurrenceEndDate) {
+                calOptions.recurrenceEndDate = options.recurrenceEndDate;
             }
-            if (options.recurrenceInterval != null) {
-                calOptions.recurrenceInterval = options.recurrenceInterval
+            if (options.recurrenceInterval) {
+                calOptions.recurrenceInterval = options.recurrenceInterval;
             }
-            if (options.url != null) {
-                calOptions.url = options.url
+            if (options.url) {
+                calOptions.url = options.url;
             }
             window.plugins.calendar.createEventWithOptions(
                 details.title, details.location, details.notes, details.startDate, details.endDate,
@@ -7967,10 +7967,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 	      </div>
      </file>
      <file name="script.js">
-     	angular.module("TestApp", ["ep.hybrid.media"])
-     		.controller("SampleCtrl",["$scope", "$log", "epHybridMediaService",
+     	angular.module('TestApp', ['ep.hybrid.media'])
+     		.controller('SampleCtrl',['$scope', '$log', 'epHybridMediaService',
                 function($scope, epHybridMediaService){
-                    var audioUrl = "http://www.sounddogs.com/sound-effects/2217/mp3/410647_SOUNDDOGS__wo.mp3";
+                    var audioUrl = 'http://www.sounddogs.com/sound-effects/2217/mp3/410647_SOUNDDOGS__wo.mp3';
 
                     $scope.playMusic = function() {
                         epHybridMediaService.playAudio(audioUrl);
@@ -7990,13 +7990,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         .service('epHybridNetworkService', /*@ngInject*/ epHybridNetworkService);
 
     function epHybridNetworkService() {
-        var networkStatus;
         /**
          * @ngdoc method
          * @name checkConnection
          * @methodOf ep.hybrid.media:epHybridNetworkService
          * @public
-         * @param 
          * @description
          * To check the internet connection and status
          */
@@ -8013,8 +8011,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             states[Connection.CELL] = 'Cell generic connection';
             states[Connection.NONE] = 'No network connection';
 
-            var networkStatus = states[networkState];
-            return networkStatus;
+            return states[networkState];
 
         }
         return {
@@ -8688,12 +8685,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      *
      */
     epModalDialogService.$inject = ['$sce', '$uibModal', '$compile', '$rootScope', '$timeout', '$interval', '$injector', 'epLocalStorageService'];
-    angular.module('ep.modaldialog').
-        service('epModalDialogService', epModalDialogService);
+    angular.module('ep.modaldialog').service('epModalDialogService', epModalDialogService);
 
     /*@ngInject*/
     function epModalDialogService($sce, $uibModal, $compile, $rootScope, $timeout, $interval, $injector,
-        epLocalStorageService) {
+                                  epLocalStorageService) {
 
         /**
          * @private
@@ -8713,7 +8709,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             fnDefaultAction: null,
             fnCancelAction: null,
             fnButtonAction: null,
-            buttons: [{ text: 'Ok', isDefault: true }],
+            buttons: [{text: 'Ok', isDefault: true}],
             btnBlock: false
         };
 
@@ -8795,10 +8791,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     text: 'Yes', isDefault: true,
                     action: (options ? options.fnDefaultAction : null)
                 },
-                {
-                    text: 'No', isCancel: true,
-                    action: (options ? options.fnCancelAction : null),
-                }]
+                    {
+                        text: 'No', isCancel: true,
+                        action: (options ? options.fnCancelAction : null),
+                    }]
             };
 
             setPaneStatus(options, cfg);
@@ -8892,7 +8888,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         cfg.statusClass = 'alert-danger';
                         cfg.statusIcon = 'fa fa-3x fa-warning';
                         break;
-                    case 'information': case 'info':
+                    case 'information':
+                    case 'info':
                         cfg.statusClass = 'alert-info';
                         cfg.statusIcon = 'fa fa-3x fa-info';
                         break;
@@ -8953,7 +8950,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         cfg.statusClass = 'alert-danger';
                         cfg.statusIcon = 'fa fa-3x fa-warning';
                         break;
-                    case 'information': case 'info':
+                    case 'information':
+                    case 'info':
                         cfg.statusClass = 'alert-info';
                         cfg.statusIcon = 'fa fa-3x fa-info';
                         break;
@@ -9039,20 +9037,25 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             };
                         }
 
-                        if(cfg.helpTemplateUrl || cfg.helpTemplate){
+                        // for compatibility with the "helpTemplateUrl" form without helpTemplateOptions
+                        if ((cfg.helpTemplateUrl || cfg.helpTemplate) && !cfg.helpTemplateOptions) {
                             cfg.helpTemplateOptions = {
                                 templateUrl: cfg.helpTemplateUrl,
                                 template: cfg.helpTemplate
                             };
-                            $scope.helpButtonClick = function(){
+                        }
+
+                        if (cfg.helpTemplateOptions) {
+                            if (!cfg.helpTemplateOptions.templateScope) {
+                                cfg.helpTemplateOptions.templateScope = $scope;
+                            }
+                            $scope.helpButtonClick = function() {
                                 $scope.showHelp = !$scope.showHelp;
                             };
-                            $scope.closeHelp = function(){
+                            $scope.closeHelp = function() {
                                 $scope.showHelp = false;
                             }
                         }
-
-
 
                         if (cfg.templateOptions && !cfg.templateOptions.templateScope) {
                             cfg.templateOptions.templateScope = $scope;
@@ -9060,7 +9063,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
                         if (cfg.controller) {
                             $injector.invoke(cfg.controller, currentModalInstance,
-                                { '$scope': $scope, '$uibModalInstance': $uibModalInstance });
+                                {'$scope': $scope, '$uibModalInstance': $uibModalInstance});
                         }
 
                         $scope.btnclick = function(btn, action) {
@@ -9106,6 +9109,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                                 }
                             }
                         }
+
                         $document.on('keydown', onKeydown);
 
                         $scope.$on('$destroy', function() {
@@ -9158,7 +9162,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * Copies properties from source to dest.
          */
         function copyProperties(source, dest) {
-            if (!source || !dest) { return; }
+            if (!source || !dest) {
+                return;
+            }
             angular.forEach(source, function(value, propName) {
                 if (source[propName] !== null) {
                     if (angular.isArray(source[propName])) {
@@ -9301,11 +9307,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         }
 
         /*
-        * @name onButtonClick
-        * @private
-        * @description
-        * when button is clicked processing
-        */
+         * @name onButtonClick
+         * @private
+         * @description
+         * when button is clicked processing
+         */
         function onButtonClick(cfg, btn, action) {
             var result = 0;
             var btnRemId = '';
@@ -9343,11 +9349,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         }
 
         /*
-        * @name checkRememberMe
-        * @private
-        * @description
-        * checks if rememeberMe action is to be invoked
-        */
+         * @name checkRememberMe
+         * @private
+         * @description
+         * checks if rememeberMe action is to be invoked
+         */
         function checkRememberMe(cfg) {
             cfg.rememberMeValue = false;
             if (cfg.rememberMe && !cfg.dialogId) {
@@ -10798,7 +10804,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         break;
                     case 'contains':            // handle the contains function
                         arg0 = 'indexof(' + arg0 + ',\'' + arg1 + '\')';
-                        compareOp = (params && 'not' in params && params.not) ? 'lt ' : 'ge';
+                        compareOp = (params && 'not' in params && params.not) ? 'lt ' : 'gt';
                         arg1 = '0';
                         tickMark = '';
                         break;
@@ -13315,7 +13321,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     // this event is bound programmatically so that it doesn't
                     // participate in the ng-click lifecycle (which causes sporadic
                     // problems with click events on child elements)
-                    $("#viewPlaceholder").bind('click', dismissSidebars);
+                    $('#viewPlaceholder').bind('click', dismissSidebars);
                 }
 
                 $rootScope.$watch('initComplete', function(initComplete) {
@@ -13685,7 +13691,8 @@ angular.module('ep.shell').service('epSidebarService', [
  </doc:example>
  */
 angular.module('ep.signature').directive('epSignature',
-    ['$timeout', function($timeout) {
+    /*@ngInject*/
+    ['$timeout', '$document', '$q', function($timeout, $document, $q) {
 
         function drawText(ctx, text, x, y) {
             if (text) {
@@ -13693,6 +13700,7 @@ angular.module('ep.signature').directive('epSignature',
             }
         }
 
+        // Adds the text ($scope.ulText, $scope.llText, etc) to the corners of the canvas
         function stampText($scope) {
             var canvas = $('canvas');
             var ctx = canvas[0].getContext('2d');
@@ -13717,11 +13725,120 @@ angular.module('ep.signature').directive('epSignature',
             var lry = canvasHeight - 5;
 
             ctx.font = '8pt Courier New';
-            ctx.fillStyle = "#000";
+            ctx.fillStyle = '#000';
             drawText(ctx, ulTxt, ulx, uly);
             drawText(ctx, llTxt, llx, lly);
             drawText(ctx, urTxt, urx, ury);
             drawText(ctx, lrTxt, lrx, lry);
+        }
+
+        function resizeCanvasToDataUrl($canvas, width, height) {
+            var deferred = $q.defer();
+
+            var workingImg = new Image();
+            workingImg.onload = function() {
+                var workingCanvas = $document[0].createElement('canvas');
+                workingCanvas.width = width;
+                workingCanvas.height = height;
+                var workingCtx = workingCanvas.getContext('2d');
+                workingCtx.drawImage(workingImg, 0, 0, width, height);
+                deferred.resolve(workingCanvas.toDataURL('image/jpeg', 1.0));
+            };
+            workingImg.onerror = function(err) {
+                deferred.reject(err);
+            };
+            workingImg.src = $canvas[0].toDataURL();
+
+            return deferred.promise;
+        }
+
+        function link($scope, $element) {
+            $scope.initialized = false;
+            $scope.isEnabled = false;
+            $scope.drawText = false;
+            $scope.initialize = function() {
+                if (!$scope.initialized) {
+                    var sigOptions = {
+                        'background-color': '#fffff',
+                        'color': '#000'
+                    };
+                    var sigcomp = $element.find('#signature').jSignature(sigOptions);
+                    $timeout(function() {
+                        sigcomp.resize();
+                    }, 200);
+                    var canvas = $('canvas');
+                    canvas.css('border-bottom', '1px solid black');
+                    var ctx = canvas[0].getContext('2d');
+                    ctx.fillStyle = '#fff';
+                    ctx.fillRect(0, 0, canvas.attr('width'), canvas.attr('height'));
+                    ctx.fillStyle = '#000';
+
+                    $(window).on('resize', $scope.resizeCanvas);
+                    $element.find('#signature').bind('change', function() {
+                        // This needs to go to the end of the event stack, hence the timeout
+                        $timeout(function() {
+                            $scope.sig = $element.find('#signature').jSignature('getData');
+                            $scope.isEnabled = !!$scope.sig;
+                        }, 0);
+                    });
+                    $scope.initialized = true;
+                }
+            };
+
+            $scope.accept = function() {
+                if (angular.isDefined($scope.sig) && (!$scope.onBeforeAccept ||
+                    $scope.onBeforeAccept($scope) !== false)) {
+                    $(window).off('resize', $scope.resizeCanvas);
+                    $scope.isEnabled = false;
+                    $scope.drawText = true;
+                    $timeout(function() {
+                        stampText($scope);
+                        var $canvas = $('canvas.jSignature');
+                        var canvas = $canvas[0];
+                        if ($scope.imageSizeWidth || $scope.imageSizeHeight) {
+                            if (angular.isString($scope.imageSizeWidth)) {
+                                $scope.imageSizeWidth =
+                                    $scope.imageSizeWidth ? parseInt($scope.imageSizeWidth) : 0;
+                            }
+                            if (angular.isString($scope.imageSizeHeight)) {
+                                $scope.imageSizeHeight = $scope.imageSizeHeight ? parseInt($scope.imageSizeHeight) : 0;
+                            }
+                            var currentAspect = parseInt($canvas.attr('width')) / parseInt($canvas.attr('height'));
+                            if ($scope.imageSizeWidth && !$scope.imageSizeHeight) {
+                                $scope.imageSizeHeight = Math.floor($scope.imageSizeWidth / currentAspect);
+                            } else if ($scope.imageSizeHeight && !$scope.imageSizeWidth) {
+                                $scope.imageSizeWidth = Math.floor($scope.imageSizeHeight * currentAspect);
+                            }
+                            resizeCanvasToDataUrl($canvas, $scope.imageSizeWidth, $scope.imageSizeHeight).then(
+                                function(dataUrl) {
+                                    $scope.onAccept(dataUrl.replace('data:image/jpeg;base64,', ''));
+                                });
+                        } else {
+                            $scope.onAccept(canvas.toDataURL('image/jpeg').replace('data:image/jpeg;base64,', ''));
+                        }
+
+                    });
+                }
+            };
+
+            //Resizing the canvas
+            $scope.resizeCanvas = function() {
+                if ($scope.drawText) {
+                    stampText($scope);
+                }
+            };
+
+            $scope.reset = function() {
+                $scope.setButton = false;
+                $scope.isEnabled = true;
+                $element.find('#signature').jSignature('reset');
+            };
+
+            $scope.signatureControls = {
+                reset: $scope.reset
+            };
+
+            $scope.initialize();
         }
 
         return {
@@ -13739,78 +13856,13 @@ angular.module('ep.signature').directive('epSignature',
                 urText: '@',
                 llText: '@',
                 lrText: '@',
-                height: '@'
+                height: '@',
+                imageSizeWidth: '@',
+                imageSizeHeight: '@'
                 // create property for label here and fetch from API
             },
-
             templateUrl: 'src/components/ep.signature/ep-signature.html',
-            link: function($scope, $element) {
-                $scope.initialized = false;
-                $scope.isEnabled = false;
-                $scope.drawText = false;
-                $scope.initialize = function() {
-                    if (!$scope.initialized) {
-                        var sigOptions = {
-                            'background-color': '#fffff',
-                            'color': '#000'
-                        };
-                        var sigcomp = $element.find('#signature').jSignature(sigOptions);
-                        $timeout(function() {
-                            sigcomp.resize();
-                        }, 200);
-                        var canvas = $('canvas');
-                        canvas.css('border-bottom', '1px solid black');
-                        var ctx = canvas[0].getContext('2d');
-                        ctx.fillStyle = '#fff';
-                        ctx.fillRect(0, 0, canvas.attr('width'), canvas.attr('height'));
-                        ctx.fillStyle = "#000";
-
-                        //var canvas = $element.find('canvas');
-                        //var ctx = canvas[0].getContext('2d');
-                        $(window).on('resize', $scope.resizeCanvas);
-                        $element.find('#signature').bind('change', function() {
-                            $timeout(function() {
-                                $scope.sig = $element.find('#signature').jSignature('getData');
-                                $scope.isEnabled = !!$scope.sig;
-                            }, 0); // This needs to go to the end of the event stack
-                        });
-                        $scope.initialized = true;
-                    }
-                };
-
-                $scope.accept = function() {
-                    if (angular.isDefined($scope.sig) && (!$scope.onBeforeAccept ||
-                        $scope.onBeforeAccept($scope) !== false)) {
-                        $(window).off('resize', $scope.resizeCanvas);
-                        $scope.isEnabled = false;
-                        $scope.drawText = true;
-                        $timeout(function() {
-                            stampText($scope);
-                            var canvas = $('canvas')[0];
-                            $scope.onAccept(canvas.toDataURL("image/jpeg").replace('data:image/jpeg;base64,', ''));
-                        });
-                    }
-                };
-
-                //Resizing the canvas
-                $scope.resizeCanvas = function() {
-                    if ($scope.drawText) {
-                        stampText($scope);
-                    }
-                };
-
-                $scope.reset = function() {
-                    $scope.setButton = false;
-                    $scope.isEnabled = true;
-                    $element.find('#signature').jSignature('reset');
-                };
-
-                $scope.signatureControls = {
-                    reset: $scope.reset
-                };
-
-                $scope.initialize();
-            }
+            link: link
         };
     }]);
 
@@ -16448,369 +16500,370 @@ function epTilesMenuFavoritesDirective() {
 (function() {
     'use strict';
     angular.module('ep.utils').service('epUtilsService', ['$document', '$log', '$q', '$timeout',
-    function($document, $log, $q, $timeout) {
+        function($document, $log, $q, $timeout) {
 
-        /**
-        * @ngdoc method
-        * @name strFormat
-        * @methodOf ep.utils.service:epUtilsService
-        * @public
-        * @description
-        * Formats the string in the same way as .NET strFormat('first argument is {0}, second is {1}', 'arg1', 'arg2')
-        * will result in 'first argument is arg1, second is arg2'
-        * @example
-        *   var str = epUtilsService.strFormat('The first name is: {0} and the last name {1}','Michael','Jackson');
-        * @returns {string} string with combined arguments
-         */
-        function strFormat(str) {
-            if (!str || arguments.length < 1) {
-                return '';
+            /**
+             * @ngdoc method
+             * @name strFormat
+             * @methodOf ep.utils.service:epUtilsService
+             * @public
+             * @description
+             * Formats the string in the same way as .NET strFormat('first argument is {0}, second is {1}', 'arg1', 'arg2')
+             * will result in 'first argument is arg1, second is arg2'
+             * @example
+             *   var str = epUtilsService.strFormat('The first name is: {0} and the last name {1}','Michael','Jackson');
+             * @returns {string} string with combined arguments
+             */
+            function strFormat(str) {
+                if (!str || arguments.length < 1) {
+                    return '';
+                }
+                var ret = str;
+                if (arguments.length > 1) {
+                    var tempArgs = arguments;
+                    ret = ret.replace(/\{\d+\}/g, function(match) {
+                        var index = +match.slice(1, -1);
+                        var arg = null;
+
+                        if (index + 1 < tempArgs.length) {
+                            arg = tempArgs[index + 1];
+                        }
+                        return arg;
+                    });
+                }
+                return ret;
             }
-            var ret = str;
-            if (arguments.length > 1) {
-                var tempArgs = arguments;
-                ret = ret.replace(/\{\d+\}/g, function(match) {
-                    var index = +match.slice(1, -1);
-                    var arg = null;
 
-                    if (index + 1 < tempArgs.length) {
-                        arg = tempArgs[index + 1];
+            /**
+             * @ngdoc method
+             * @name supportsDragAndDrop
+             * @methodOf ep.utils.service:epUtilsService
+             * @public
+             * @description
+             * Constructs an object out of an array by using
+             * the idAccessor to map each item to a property name.
+             * The idAccessor can be either a string or a function.
+             * If it's a string then it must refer to a property name
+             * that exists on each item of the array.
+             * If it's a function then the function must exist on each
+             * item of the array. The result of the property/function
+             * must yield either a unique string value or a function that yields
+             * a unique string value for each item of the array.
+             * @returns {object} return a map object
+             */
+            function mapArray(arr, idAccessor) {
+                var result = {};
+                arr.forEach(function(obj) {
+                    var id;
+                    var idVal;
+
+                    if (angular.isString(idAccessor)) {
+                        idVal = obj[idAccessor];
+                    } else if (angular.isFunction(idAccessor)) {
+                        idVal = idAccessor(obj);
+                    } else {
+                        throw new Error('mapArray called with an invalid idAccessor.');
                     }
-                    return arg;
+                    if (angular.isFunction(idVal)) {
+                        id = idVal();
+                    } else {
+                        id = idVal;
+                    }
+                    result[id] = obj;
+                });
+                return result;
+            }
+
+            /**
+             * @ngdoc method
+             * @name copyProperties
+             * @methodOf ep.utils.service:epUtilsService
+             * @public
+             * @description
+             * Copies properties from source to dest
+             * The property is copied only if source property is not null
+             * This is useful to copy new properties values over default object
+             * but only when new property is provided.
+             * @returns {object} copied object
+             */
+            function copyProperties(source, dest) {
+                if (!source || !dest) {
+                    return;
+                }
+                angular.forEach(source, function(value, propName) {
+                    if (source[propName] !== null) {
+                        if (angular.isArray(source[propName])) {
+                            dest[propName] = source[propName];
+                        } else if (angular.isObject(source[propName])) {
+                            if (!angular.isObject(dest[propName])) {
+                                dest[propName] = {};
+                            }
+                            copyProperties(source[propName], dest[propName]);
+                        } else {
+                            dest[propName] = source[propName];
+                        }
+                    }
                 });
             }
-            return ret;
-        }
 
-        /**
-        * @ngdoc method
-        * @name supportsDragAndDrop
-        * @methodOf ep.utils.service:epUtilsService
-        * @public
-        * @description
-        * Constructs an object out of an array by using
-        * the idAccessor to map each item to a property name.
-        * The idAccessor can be either a string or a function.
-        * If it's a string then it must refer to a property name
-        * that exists on each item of the array.
-        * If it's a function then the function must exist on each
-        * item of the array. The result of the property/function
-        * must yield either a unique string value or a function that yields
-        * a unique string value for each item of the array.
-        * @returns {object} return a map object
-        */
-        function mapArray(arr, idAccessor) {
-            var result = {};
-            arr.forEach(function(obj) {
-                var id;
-                var idVal;
+            /**
+             * @ngdoc method
+             * @name ensureStartsWith
+             * @methodOf ep.utils.service:epUtilsService
+             * @public
+             * @description
+             * Ensures that a string starts with a given beginning
+             * @returns {string} result
+             * @example
+             *       var str = epUtilsService.ensureStartsWith('root','/');
+             *       //results in '/root'
 
-                if (angular.isString(idAccessor)) {
-                    idVal = obj[idAccessor];
-                } else if (angular.isFunction(idAccessor)) {
-                    idVal = idAccessor(obj);
-                } else {
-                    throw new Error('mapArray called with an invalid idAccessor.');
+             */
+            function ensureStartsWith(beginning, str) {
+                if (str && str.indexOf(beginning) !== 0) {
+                    return beginning + str;
                 }
-                if (angular.isFunction(idVal)) {
-                    id = idVal();
-                } else {
-                    id = idVal;
-                }
-                result[id] = obj;
-            });
-            return result;
-        }
-
-        /**
-        * @ngdoc method
-        * @name copyProperties
-        * @methodOf ep.utils.service:epUtilsService
-        * @public
-        * @description
-        * Copies properties from source to dest
-        * The property is copied only if source property is not null
-        * This is useful to copy new properties values over default object
-        * but only when new property is provided.
-        * @returns {object} copied object
-        */
-        function copyProperties(source, dest) {
-            if (!source || !dest) {
-                return;
+                return str || '';
             }
-            angular.forEach(source, function(value, propName) {
-                if (source[propName] !== null) {
-                    if (angular.isArray(source[propName])) {
-                        dest[propName] = source[propName];
-                    } else if (angular.isObject(source[propName])) {
-                        if (!angular.isObject(dest[propName])) {
-                            dest[propName] = {};
-                        }
-                        copyProperties(source[propName], dest[propName]);
-                    } else {
-                        dest[propName] = source[propName];
+
+            /**
+             * @ngdoc method
+             * @name ensureEndsWith
+             * @methodOf ep.utils.service:epUtilsService
+             * @public
+             * @description
+             * Ensures that a string ends with a given ending
+             * @returns {string} result
+             * @example
+             *       var str = epUtilsService.ensureEndsWith('root','/');
+             *       //results in 'root/'
+
+             */
+            function ensureEndsWith(str, ending) {
+                if (str && str.lastIndexOf(ending) !== str.length - ending.length) {
+                    return str + ending;
+                }
+                return str || '';
+            }
+
+            /**
+             * @ngdoc method
+             * @name makePath
+             * @methodOf ep.utils.service:epUtilsService
+             * @public
+             * @description
+             * Creates path by concatination of input arguments which can be strings, array of
+             * strings or arguments object passed from another function
+             * @returns {string} path
+             * @example
+             *   var str = epUtilsService.makePath('root','dir1','dir2');
+             *   //result: '/root/dir1/dir2'
+             *
+             *   var str = utilsService.makePath('root', ['dir1', 'dir2'], ['dir3', 'dir4'], 'dir5');
+             *   //result: '/root/dir1/dir2/dir3/dir4/dir5';
+             *
+             */
+            function makePath() {
+                var path = '';
+                var _args = _.flatten(arguments, true);
+                if (_args && _args.length === 1 && angular.isObject(_args[0]) && _args[0].length === 0) {
+                    return path; //special case when caller passed arguments and arguments were empty
+                }
+                angular.forEach(_args, function(arg) {
+                    path += '/' + arg;
+                });
+                return path;
+            }
+
+            /**
+             * @ngdoc method
+             * @name loadScript
+             * @methodOf ep.utils.service:epUtilsService
+             * @public
+             * @description
+             * Adds a new script element to the page with the given url,
+             * optionally checking/adding the script to a given cache
+             * @returns {Promise} a promise that resolves or rejects depending on the result
+             * of adding the script to the page.
+             */
+            function loadScript(url, cache) {
+                var deferred = $q.defer();
+                var scriptId = 'script:' + url;
+                var scriptElement;
+                if (url && cache.get(scriptId)) {
+                    deferred.resolve(scriptId + ' from cache');
+                } else {
+                    scriptElement = $document[0].createElement('script');
+                    scriptElement.src = url;
+                    scriptElement.onload = function() {
+                        deferred.resolve(scriptId);
+                    };
+                    scriptElement.onerror = function(e) {
+                        $log.error('Error loading url: [' + url + ']');
+                        deferred.reject(e, scriptId);
+                    };
+                    $document[0].documentElement.appendChild(scriptElement);
+                    cache.put(scriptId, 1);
+                }
+
+                return deferred.promise;
+            }
+
+            /**
+             * @ngdoc method
+             * @name hasProperty
+             * @methodOf ep.utils.service:epUtilsService
+             * @public
+             * @description
+             * Check if an object has a nested property. For
+             * @param {object} obj - object whose nested property we want to check
+             * @param {string} property - nested property. Nesting through dot. Eg. 'propA.propAA'
+             * @returns {boolean} true if object has a nested property
+             * @example
+             *   var obj = { propA: { propAA: { propAAA: 'something' }}};
+             *   var result = epUtilsService.hasProperty(obj,'propA.propAA.propAAA');
+             *   //result: true
+             */
+            function hasProperty(obj, property) {
+                var o = obj;
+                if (!angular.isObject(obj)) {
+                    return false;
+                }
+                if (!angular.isString(property) || !property) {
+                    return false;
+                }
+                return !_.find(property.split('.'), function(prop) {
+                    var ret = o.hasOwnProperty(prop);
+                    if (ret) {
+                        o = o[prop];
                     }
+                    return !ret;
+                });
+            }
+
+            /**
+             * @ngdoc method
+             * @name wait
+             * @methodOf ep.utils.service:epUtilsService
+             * @public
+             * @description
+             * Wait for a condition to be accomplished by performing iterative calls at
+             * given interval. Alternative to deferred results.
+             * @param {object} fnCondtion - function that represents condition. Must return true/false
+             * @param {int} attempts - how many max attempts can be performed
+             * @param {int} interval - interval in ms between each new attempt
+             * @param {object} fnExecute - function that is executed when condition is met
+             * @param {object} fnFail - optional function that is executed when condition is not met after all attempts
+             * @example
+             *   wait( function() { return state; }, 10, 250, function() { alert('complete'); });
+             */
+            function wait(fnCondtion, attempts, interval, fnExecute, fnFail) {
+                attempts--;
+                if (attempts >= 0) {
+                    if (fnCondtion()) {
+                        fnExecute();
+                    } else {
+                        $timeout(function() {
+                            wait(fnCondtion, attempts, interval, fnExecute);
+                        }, interval);
+                    }
+                } else if (fnFail) {
+                    fnFail();
                 }
-            });
-        }
-
-        /**
-        * @ngdoc method
-        * @name ensureStartsWith
-        * @methodOf ep.utils.service:epUtilsService
-        * @public
-        * @description
-        * Ensures that a string starts with a given beginning
-        * @returns {string} result
-        * @example
-        *       var str = epUtilsService.ensureStartsWith('root','/');
-        *       //results in '/root'
-
-        */
-        function ensureStartsWith(beginning, str) {
-            if (str && str.indexOf(beginning) !== 0) {
-                return beginning + str;
-            }
-            return str || '';
-        }
-
-        /**
-        * @ngdoc method
-        * @name ensureEndsWith
-        * @methodOf ep.utils.service:epUtilsService
-        * @public
-        * @description
-        * Ensures that a string ends with a given ending
-        * @returns {string} result
-        * @example
-        *       var str = epUtilsService.ensureEndsWith('root','/');
-        *       //results in 'root/'
-
-        */
-        function ensureEndsWith(str, ending) {
-            if (str && str.lastIndexOf(ending) !== str.length - ending.length) {
-                return str + ending;
-            }
-            return str || '';
-        }
-
-        /**
-        * @ngdoc method
-        * @name makePath
-        * @methodOf ep.utils.service:epUtilsService
-        * @public
-        * @description
-        * Creates path by concatination of input arguments which can be strings, array of
-        * strings or arguments object passed from another function
-        * @returns {string} path
-        * @example
-        *   var str = epUtilsService.makePath('root','dir1','dir2');
-        *   //result: '/root/dir1/dir2'
-        *
-        *   var str = utilsService.makePath('root', ['dir1', 'dir2'], ['dir3', 'dir4'], 'dir5');
-        *   //result: '/root/dir1/dir2/dir3/dir4/dir5';
-        *
-        */
-        function makePath() {
-            var path = '';
-            var _args = _.flatten(arguments, true);
-            if (_args && _args.length === 1 && angular.isObject(_args[0]) && _args[0].length === 0) {
-                return path; //special case when caller passed arguments and arguments were empty
-            }
-            angular.forEach(_args, function(arg) {
-                path += '/' + arg;
-            });
-            return path;
-        }
-
-        /**
-        * @ngdoc method
-        * @name loadScript
-        * @methodOf ep.utils.service:epUtilsService
-        * @public
-        * @description
-        * Adds a new script element to the page with the given url,
-        * optionally checking/adding the script to a given cache
-        * @returns {Promise} a promise that resolves or rejects depending on the result
-        * of adding the script to the page.
-        */
-        function loadScript(url, cache) {
-            var deferred = $q.defer();
-            var scriptId = 'script:' + url;
-            var scriptElement;
-            if (url && cache.get(scriptId)) {
-                deferred.resolve(scriptId + ' from cache');
-            } else {
-                scriptElement = $document[0].createElement('script');
-                scriptElement.src = url;
-                scriptElement.onload = function() {
-                    deferred.resolve(scriptId);
-                };
-                scriptElement.onerror = function(e) {
-                    $log.error('Error loading url: [' + url + ']');
-                    deferred.reject(e, scriptId);
-                };
-                $document[0].documentElement.appendChild(scriptElement);
-                cache.put(scriptId, 1);
             }
 
-            return deferred.promise;
-        }
+            function baseMerge(dst, objs, deep) {
+                for (var i = 0, ii = objs.length; i < ii; ++i) {
+                    var obj = objs[i];
+                    if (!_.isObject(obj) && !_.isFunction(obj)) {
+                        continue;
+                    }
+                    var keys = Object.keys(obj).concat(Object.keys(dst));
+                    for (var j = 0, jj = keys.length; j < jj; j++) {
+                        var key = keys[j];
+                        var src = obj[key];
 
-        /**
-        * @ngdoc method
-        * @name hasProperty
-        * @methodOf ep.utils.service:epUtilsService
-        * @public
-        * @description
-        * Check if an object has a nested property. For
-        * @param {object} obj - object whose nested property we want to check
-        * @param {string} property - nested property. Nesting through dot. Eg. 'propA.propAA'
-        * @returns {boolean} true if object has a nested property
-        * @example
-        *   var obj = { propA: { propAA: { propAAA: 'something' }}};
-        *   var result = epUtilsService.hasProperty(obj,'propA.propAA.propAAA');
-        *   //result: true
-        */
-        function hasProperty(obj, property) {
-            var o = obj;
-            if (!angular.isObject(obj)) {
-                return false;
-            }
-            if (!angular.isString(property) || !property) {
-                return false;
-            }
-            return !_.find(property.split('.'), function(prop) {
-                var ret = o.hasOwnProperty(prop);
-                if (ret) {
-                    o = o[prop];
-                }
-                return !ret;
-            });
-        }
-
-        /**
-        * @ngdoc method
-        * @name wait
-        * @methodOf ep.utils.service:epUtilsService
-        * @public
-        * @description
-        * Wait for a condition to be accomplished by performing iterative calls at
-        * given interval. Alternative to deferred results.
-        * @param {object} fnCondtion - function that represents condition. Must return true/false
-        * @param {int} attempts - how many max attempts can be performed
-        * @param {int} interval - interval in ms between each new attempt
-        * @param {object} fnExecute - function that is executed when condition is met
-        * @param {object} fnFail - optional function that is executed when condition is not met after all attempts
-        * @example
-        *   wait( function() { return state; }, 10, 250, function() { alert('complete'); });
-        */
-        function wait(fnCondtion, attempts, interval, fnExecute, fnFail) {
-            attempts--;
-            if (attempts >= 0) {
-                if (fnCondtion()) {
-                    fnExecute();
-                } else {
-                    $timeout(function() {
-                        wait(fnCondtion, attempts, interval, fnExecute);
-                    }, interval);
-                }
-            } else if (fnFail) {
-                fnFail();
-            }
-        }
-        function baseMerge(dst, objs, deep) {
-            for (var i = 0, ii = objs.length; i < ii; ++i) {
-                var obj = objs[i];
-                if (!_.isObject(obj) && !_.isFunction(obj)) {
-                    continue;
-                }
-                var keys = Object.keys(obj).concat(Object.keys(dst));
-                for (var j = 0, jj = keys.length; j < jj; j++) {
-                    var key = keys[j];
-                    var src = obj[key];
-
-                    if (deep && _.isObject(src)) {
-                        if (_.isDate(src)) {
-                            dst[key] = new Date(src.valueOf());
-                        } else if (_.isRegExp(src)) {
-                            dst[key] = new RegExp(src);
-                        } else if (src.nodeName) {
-                            dst[key] = src.cloneNode(true);
-                        } else if (_.isElement(src)) {
-                            dst[key] = src.clone();
-                        } else if(_.isNull(src)){
-                            dst[key] = null;
-                        } else if(_.isUndefined(src)){
-                            dst[key] = undefined;
-                        }else {
-                            if (!_.isObject(dst[key])) {
-                                dst[key] = _.isArray(src) ? [] : {};
+                        if (deep && _.isObject(src)) {
+                            if (_.isDate(src)) {
+                                dst[key] = new Date(src.valueOf());
+                            } else if (_.isRegExp(src)) {
+                                dst[key] = new RegExp(src);
+                            } else if (src.nodeName) {
+                                dst[key] = src.cloneNode(true);
+                            } else if (_.isElement(src)) {
+                                dst[key] = src.clone();
+                            } else if (_.isNull(src)) {
+                                dst[key] = null;
+                            } else if (_.isUndefined(src)) {
+                                dst[key] = undefined;
+                            } else {
+                                if (!_.isObject(dst[key])) {
+                                    dst[key] = _.isArray(src) ? [] : {};
+                                }
+                                baseMerge(dst[key], [src], true);
                             }
-                            baseMerge(dst[key], [src], true);
+                        } else {
+                            dst[key] = src;
                         }
-                    } else {
-                        dst[key] = src;
                     }
                 }
+
+                return dst;
             }
 
-            return dst;
-        }
+            /**
+             * @ngdoc method
+             * @name merge
+             * @methodOf ep.utils.service:epUtilsService
+             * @public
+             * @description
+             * Deeply extends the destination object `dst` by copying own enumerable properties from the `src` object(s)
+             * to `dst`. You can specify multiple `src` objects. If you want to preserve original objects, you can do so
+             * by passing an empty object as the target: `var object = epUtilsService.merge({}, object1, object2)`.
 
-        /**
-        * @ngdoc method
-        * @name merge
-        * @methodOf ep.utils.service:epUtilsService
-        * @public
-        * @description
-        * Deeply extends the destination object `dst` by copying own enumerable properties from the `src` object(s)
-        * to `dst`. You can specify multiple `src` objects. If you want to preserve original objects, you can do so
-        * by passing an empty object as the target: `var object = epUtilsService.merge({}, object1, object2)`.
-
-        *
-        * @param {Object} dst Destination object.
-        * @param {...Object} src Source object(s).
-        * @returns {Object} Reference to `dst`.
-        */
-        function merge(dst) {
-            return baseMerge(dst, Array.prototype.slice.call(arguments, 1), true);
-        }
-
-        /**
-        * @ngdoc method
-        * @name getService
-        * @methodOf ep.utils.service:epUtilsService
-        * @public
-        * @description
-        * Retrieve an angular injector for a specified service name
-        * @param {string} name - name of injected service
-        * @returns {Object} Returns requested service injector
-        */
-        function getService(name) {
-            var ret;
-            try {
-                ret = angular.element('html').injector().get(name);
-            } catch (e) {
-                $log.error('Failed to retrieve service for requested name:' + name);
+             *
+             * @param {Object} dst Destination object.
+             * @param {...Object} src Source object(s).
+             * @returns {Object} Reference to `dst`.
+             */
+            function merge(dst) {
+                return baseMerge(dst, Array.prototype.slice.call(arguments, 1), true);
             }
-            return ret;
-        }
 
-        return {
-            copyProperties: copyProperties,
-            ensureEndsWith: ensureEndsWith,
-            ensureStartsWith: ensureStartsWith,
-            hasProperty: hasProperty,
-            loadScript: loadScript,
-            makePath: makePath,
-            mapArray: mapArray,
-            merge: merge,
-            strFormat: strFormat,
-            wait: wait,
-            getService: getService
-        };
-    }]);
+            /**
+             * @ngdoc method
+             * @name getService
+             * @methodOf ep.utils.service:epUtilsService
+             * @public
+             * @description
+             * Retrieve an angular injector for a specified service name
+             * @param {string} name - name of injected service
+             * @returns {Object} Returns requested service injector
+             */
+            function getService(name) {
+                var ret;
+                try {
+                    ret = angular.element('html').injector().get(name);
+                } catch (e) {
+                    $log.error('Failed to retrieve service for requested name:' + name);
+                }
+                return ret;
+            }
+
+            return {
+                copyProperties: copyProperties,
+                ensureEndsWith: ensureEndsWith,
+                ensureStartsWith: ensureStartsWith,
+                hasProperty: hasProperty,
+                loadScript: loadScript,
+                makePath: makePath,
+                mapArray: mapArray,
+                merge: merge,
+                strFormat: strFormat,
+                wait: wait,
+                getService: getService
+            };
+        }]);
 })();
 
 //# sourceMappingURL=app.min.js.map
