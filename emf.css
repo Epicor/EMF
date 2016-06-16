@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.3 built: 13-06-2016
+ * version:1.0.8-dev.5 built: 16-06-2016
 */
 .ep-relative {
   position: relative;
@@ -363,6 +363,7 @@
 .ep-padding-horizontal {
   padding-left: 10px;
 }
+/* Custom Icon font */
 @font-face {
   font-family: 'ep-custom-icon';
   src: url('assets/custom-fonts/ep-custom-icon.eot');
@@ -385,8 +386,38 @@
 .ep-ci-updownarrow:before {
   content: "\e900";
 }
-.ep-ci-hazard:before {
+.ep-ci-camera:before {
   content: "\e901";
+}
+.ep-ci-contact:before {
+  content: "\e903";
+}
+.ep-ci-flashlight:before {
+  content: "\e907";
+}
+.ep-ci-device-info:before {
+  content: "\e908";
+}
+.ep-ci-internet-status:before {
+  content: "\e909";
+}
+.ep-ci-location:before {
+  content: "\e904";
+}
+.ep-ci-audio-media:before {
+  content: "\e902";
+}
+.ep-ci-barcode:before {
+  content: "\e905";
+}
+.ep-ci-vibrate:before {
+  content: "\e906";
+}
+.ep-ci-network-status:before {
+  content: "\e90b";
+}
+.ep-ci-calendar:before {
+  content: "\e90a";
 }
 
 .ep-console-warning {

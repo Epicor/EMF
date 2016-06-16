@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.3 built: 13-06-2016
+ * version:1.0.8-dev.5 built: 16-06-2016
 */
 (function() {
     'use strict';
@@ -3624,10 +3624,10 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                                     scope.resizeTable(true);
                                 });
                             }
-                            var tableBodyOffset = scope.findElement('.dataTables_scrollBody').offset();
-                            ret = vc.height() - (tableBodyOffset || { top: 130 }).top - 40;
+                            var tableBodyOffset1 = scope.findElement('.dataTables_scrollBody').offset();
+                            ret = vc.height() - (tableBodyOffset1 || { top: 130 }).top - 40;
                             if (scope.options.fnOnCalcTableHeight) {
-                                ret = scope.options.fnOnCalcTableHeight(ret, tableBodyOffset);
+                                ret = scope.options.fnOnCalcTableHeight(ret, tableBodyOffset1);
                             }
                         }
                     }
@@ -4404,6 +4404,7 @@ angular.module('ep.datagrid').
             //save drag parameters for use from dropArea
             var dragOperation = {};
             dragOperation.dropCallback = scope.dropCallback;
+            dragOperation.dragStart = scope.dragStart;
             dragOperation.dropCallbackParams = scope.dropCallbackParams;
             dragOperation.dragItem = scope.dragItem;
             dragOperation.dragItemType = scope.dragItemType;
@@ -4434,52 +4435,63 @@ angular.module('ep.datagrid').
      * >    dropCallback and dropCallbackParams attributes are just helper attributes. see drop-area directive.
      */
 (function() {
-
     'use strict';
 
     angular.module('ep.drag.drop').directive('epDraggable', [
-    'dragOperationFactory',
-    function(dragOperationFactory) {
-        return {
-            restrict: 'A',
-            scope: {
-                //There might be cases when we want to handle drop not at the epDropArea side
-                //In this case we pass dropCallback that will be called from drop handler function in epDropArea.
-                //It also helpful when we have generic drop handler for multiple epDropAreas, that expects some parameter
-                //In this case the drop area as just a proxy for us to call dropCallback with required parameter
-                dropCallback: '=dropCallback',
-                dropCallbackParams: '=dropCallbackParams',
-                //dragged item's base object. For example OLAPEntity
-                dragItem: '=dragItem',
-                //used for deciding whether the dropArea should handle drop with this kind of dragged item
-                dragItemType: '=dragItemType'
-            },
-            compile: function(elem, attrs) {
-                if (!attrs.draggable) {
-                    elem.attr('draggable', 'true');
-                }
-                return function(scope, ele) {
-                    if (!scope.dragItemType) {
-                        throw new Error('Dragged item type is not specified!');
+        'dragOperationFactory',
+        function(dragOperationFactory) {
+            return {
+                restrict: 'A',
+                scope: {
+                    //There might be cases when we want to handle drop not at the epDropArea side
+                    //In this case we pass dropCallback that will be called from drop handler function in epDropArea.
+                    //It also helpful when we have generic drop handler for multiple epDropAreas, that expects some parameter
+                    //In this case the drop area as just a proxy for us to call dropCallback with required parameter
+                    dropCallback: '=dropCallback',
+                    dragStart: '=dragStart',
+                    dropCallbackParams: '=dropCallbackParams',
+                    //dragged item's base object. For example OLAPEntity
+                    dragItem: '=dragItem',
+                    //used for deciding whether the dropArea should handle drop with this kind of dragged item
+                    dragItemType: '=dragItemType'
+                },
+                compile: function(elem, attrs) {
+                    if (!attrs.draggable) {
+                        elem.attr('draggable', 'true');
                     }
-                    ele.on('dragstart', function(evt) {
-                        //save drag parameters for use from dropArea
-                        var dragOperation = dragOperationFactory.getDragOperation(scope);
-                        var getDragOperation = function() {
-                            return dragOperation;
-                        };
-                        scope.$root.$broadcast('startDraging', getDragOperation);
-                        evt.stopPropagation();
-                    });
-                };
-            }
-        };
-    }]);
+                    return function(scope, ele) {
+                        if (!scope.dragItemType) {
+                            throw new Error('Dragged item type is not specified!');
+                        }
+                        ele.on('dragstart', function(evt) {
+                            evt.stopPropagation();
+                            evt.originalEvent.dataTransfer.setData('Text', evt.target.textContent);
+                            evt.originalEvent.dataTransfer.dropEffect = 'move';
+                            var dragOperation = dragOperationFactory.getDragOperation(scope);
+                            var getDragOperation = function() {
+                                return dragOperation;
+                            };
+                            if (angular.isFunction(dragOperation.dragStart)) {
+                                dragOperation.dragStart(evt, dragOperation.dragItem);
+                            }
+                            scope.$root.$broadcast('startDraging', getDragOperation);
+                        });
+
+                        ele.on('dragend', function(evt) {
+                            evt.stopPropagation();
+                            evt.preventDefault();
+                            var dragOperation = dragOperationFactory.getDragOperation(scope);
+                            if (angular.isFunction(dragOperation.dropCallback)) {
+                                dragOperation.dropCallback();
+                            }
+                        });
+                    };
+                }
+            };
+        }]);
 })();
 
-
 'use strict';
-
 /**
  * @ngdoc controller
  * @name ep.drag.drop.controller:epDropAreaCtrl
@@ -4490,67 +4502,84 @@ angular.module('ep.datagrid').
  *
  */
 angular.module('ep.drag.drop').controller('epDropAreaCtrl', [
-    '$scope',
-    function($scope) {
-        var vm = this;
-        vm.onDragStart = onDragStart;
-        vm.onDrop = onDrop;
-        vm.onDragOver = onDragOver;
-        var getDragOperationFnc;
+'$scope',
+function($scope) {
+	var vm = this;
+	vm.onDragStart = onDragStart;
+	vm.onDrop = onDrop;
+	vm.onDragOver = onDragOver;
+	var getDragOperationFnc;
+	vm.onDragLeave = onDragLeave;
 
-        /**
-         * @ngdoc method
-         * @name onDragStart
-         * @methodOf ep.drag.drop.controller:epDropAreaCtrl
-         * @public
-         * @description
-         * handles the onDragStart event
-         */
-        function onDragStart(scope, dragOperationGetter) {
-            getDragOperationFnc = dragOperationGetter;
-        }
+	/**
+	 * @ngdoc method
+	 * @name onDragStart
+	 * @methodOf ep.drag.drop.controller:epDropAreaCtrl
+	 * @public
+	 * @description
+	 * handles the onDragStart event
+	 */
+	function onDragStart(scope, dragOperationGetter) {
+		getDragOperationFnc = dragOperationGetter;
+	}
 
-        /**
-         * @ngdoc method
-         * @name onDrop
-         * @methodOf ep.drag.drop.controller:epDropAreaCtrl
-         * @public
-         * @description
-         * handles the onDrop event
-         */
-        function onDrop(evt) {
-            var dragOperation = getDragOperationFnc();
-            var droppables = vm.dropItemTypes.split(',');
-            if (Array.isArray(droppables) && droppables.length > 1) {
-                if (droppables.indexOf(dragOperation.dragItemType) === -1) {
-                    return;
-                }
-            } else {
-                if (vm.dropItemTypes !== dragOperation.dragItemType) {
-                    return;
-                }
-            }
-            if ($scope[vm.dropHandler]) {
-                /*jshint validthis:true */
-                $scope[vm.dropHandler].call(dragOperation.dragItem || this, dragOperation);
-            }
-            evt.stopPropagation();
-        }
+	/**
+	 * @ngdoc method
+	 * @name onDrop
+	 * @methodOf ep.drag.drop.controller:epDropAreaCtrl
+	 * @public
+	 * @description
+	 * handles the onDrop event
+	 */
+	function onDrop(evt) {
+		evt.stopPropagation();
+		evt.preventDefault();
+		var dragOperation = getDragOperationFnc();
+		var droppables = vm.dropItemTypes.split(',');
+		if (Array.isArray(droppables) && droppables.length > 1) {
+			if (droppables.indexOf(dragOperation.dragItemType) === -1) {
+				return;
+			}
+		} else {
+			if (vm.dropItemTypes !== dragOperation.dragItemType) {
+				return;
+			}
+		}
+		if ($scope[vm.dropHandler]) {
+			/*jshint validthis:true */
+			$scope[vm.dropHandler].call(dragOperation.dragItem || this, dragOperation);
+		}
+	}
 
-        /**
-         * @ngdoc method
-         * @name onDragOver
-         * @methodOf ep.drag.drop.controller:epDropAreaCtrl
-         * @public
-         * @description
-         * handles the onDragOver event
-         */
-        function onDragOver(evt) {
-            // TODO Add visual feedback on drag to show whether this area support this kind of drop
-            evt.preventDefault();
-            return false;
-        }
-    }]);
+	/**
+	 * @ngdoc method
+	 * @name onDragOver
+	 * @methodOf ep.drag.drop.controller:epDropAreaCtrl
+	 * @public
+	 * @description
+	 * handles the onDragOver event
+	 */
+	function onDragOver(evt) {
+		// TODO Add visual feedback on drag to show whether this area support this kind of drop
+		evt.stopPropagation();
+		evt.preventDefault();
+		if ($scope[vm.overHandler]) {
+			var dragOperation = getDragOperationFnc();
+			/*jshint validthis:true */
+			$scope[vm.overHandler].call(dragOperation.dragItem || this, dragOperation, evt);
+		}
+	}
+
+	function onDragLeave(evt) {
+		evt.stopPropagation();
+		evt.preventDefault();
+		if ($scope[vm.leaveHandler]) {
+			var dragOperation = getDragOperationFnc();
+			/*jshint validthis:true */
+			$scope[vm.leaveHandler].call(dragOperation.dragItem || this, dragOperation, evt);
+		}
+	}
+}]);
 
 'use strict';
 /**
@@ -4570,25 +4599,29 @@ angular.module('ep.drag.drop').controller('epDropAreaCtrl', [
      *
      * @example
      */
+
 angular.module('ep.drag.drop').directive('epDropArea', [
-    function() {
-        return {
-            restrict: 'A',
-            controller: 'epDropAreaCtrl',
-            controllerAs: 'dropCtrl',
-            compile: function() {
-                return function(scope, ele, attrs) {
-                    // set controller vm props
-                    scope.dropCtrl.dropItemTypes = attrs.dropItemTypes;
-                    scope.dropCtrl.dropHandler = attrs.dropHandler;
-                    // register the event handlers
-                    scope.$on('startDraging', scope.dropCtrl.onDragStart);
-                    ele.on('drop', scope.dropCtrl.onDrop);
-                    ele.on('dragover', scope.dropCtrl.onDragOver);
-                };
-            }
-        };
-    }]);
+function() {
+	return {
+		restrict: 'A',
+		controller: 'epDropAreaCtrl',
+		controllerAs: 'dropCtrl',
+		compile: function() {
+			return function(scope, ele, attrs) {
+				// set controller vm props
+				scope.dropCtrl.dropItemTypes = attrs.dropItemTypes;
+				scope.dropCtrl.dropHandler = attrs.dropHandler;
+				scope.dropCtrl.overHandler = attrs.overHandler;
+				scope.dropCtrl.leaveHandler = attrs.leaveHandler;
+				// register the event handlers
+				scope.$on('startDraging', scope.dropCtrl.onDragStart);
+				ele.on('drop', scope.dropCtrl.onDrop);
+				ele.on('dragover', scope.dropCtrl.onDragOver);
+				ele.on('dragleave', scope.dropCtrl.onDragLeave);
+			};
+		}
+	};
+}]);
 
 /**
  * @ngdoc controller
@@ -6849,6 +6882,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             return deferred.promise;
         }
 
+        function getFullFilePath(filename){
+            if (fileSystem === storageSystems.fileStorage) {
+                return $window.cordova.file.dataDirectory + filename;
+            } else {
+                return epFileConstants.namespace + '.' + filename;
+            }
+        }
+
         function remove(filename) {
             var deferred = $q.defer();
             try {
@@ -6880,6 +6921,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         return {
             load: load,
             save: save,
+            getFullFilePath: getFullFilePath,
             fileExists: fileExists,
             remove: remove
         };
@@ -7896,6 +7938,87 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         return {
             playAudio: playAudio,
             stopAudio: stopAudio
+        };
+    }
+})();
+
+/**
+ *
+ */
+(function() {
+  'use strict';
+    angular.module('ep.hybrid.network', []);
+})();
+
+/**
+ * @ngdoc service
+ * @name ep.hybrid.network:epHybridNetworkService
+ * @description
+ * Service for accessing Cordova Network-Information plugin
+ *
+ * @example
+   <example module="TestApp">
+     <file name="index.html">
+	     <div ng-controller="SampleCtrl">
+            <div class="panel-body">
+                <div><button class="btn btn-primary" style="width:100%" ng-click="playMusic()">Let's Jam!</button></div> &nbsp
+                <div><button class="btn btn-primary" style="width:100%" ng-click="stopMusic()">Stop</button></div>
+            </div>
+	      </div>
+     </file>
+     <file name="script.js">
+     	angular.module("TestApp", ["ep.hybrid.media"])
+     		.controller("SampleCtrl",["$scope", "$log", "epHybridMediaService",
+                function($scope, epHybridMediaService){
+                    var audioUrl = "http://www.sounddogs.com/sound-effects/2217/mp3/410647_SOUNDDOGS__wo.mp3";
+
+                    $scope.playMusic = function() {
+                        epHybridMediaService.playAudio(audioUrl);
+                    }
+
+                    $scope.stopMusic = function() {
+                        epHybridMediaService.stopAudio(audioUrl);
+                    }
+            }]);
+     </file>
+   </example>
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.hybrid.network')
+        .service('epHybridNetworkService', /*@ngInject*/ epHybridNetworkService);
+
+    function epHybridNetworkService() {
+        var networkStatus;
+        /**
+         * @ngdoc method
+         * @name checkConnection
+         * @methodOf ep.hybrid.media:epHybridNetworkService
+         * @public
+         * @param 
+         * @description
+         * To check the internet connection and status
+         */
+        function checkConnection() {
+            var networkState = navigator.connection.type;
+            var states = {};
+
+            states[Connection.UNKNOWN] = 'Unknown connection';
+            states[Connection.ETHERNET] = 'Ethernet connection';
+            states[Connection.WIFI] = 'WiFi connection';
+            states[Connection.CELL_2G] = 'Cell 2G connection';
+            states[Connection.CELL_3G] = 'Cell 3G connection';
+            states[Connection.CELL_4G] = 'Cell 4G connection';
+            states[Connection.CELL] = 'Cell generic connection';
+            states[Connection.NONE] = 'No network connection';
+
+            var networkStatus = states[networkState];
+            return networkStatus;
+
+        }
+        return {
+            checkConnection: checkConnection
         };
     }
 })();
@@ -9666,7 +9789,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         function doOrderByMenu(menu) {
             var sortFnValue = $scope.fnSort ? $scope.fnSort(menu) : undefined;
             return sortFnValue || menu.sort || menu.caption;
-        };
+        }
 
         $scope.$watch('sortDisabled', function(newValue, oldValue) {
             if ((newValue === true || newValue === false) && !angular.equals(newValue, oldValue)) {
@@ -13170,10 +13293,6 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     $scope.platform = epFeatureDetectionService.getFeatures().platform;
                     $scope.shellState = epShellService.__state;
                     $scope.sidebarState = epSidebarService.state;
-                    $('body').removeClass('cordova-padding');
-                    if ($scope.platform.app === 'Cordova' && $scope.platform.os === 'mac') {
-                        $('body').addClass('cordova-padding');
-                    }
 
                     $scope.menuId = $routeParams.menuId;
                     $scope.dismissRightSidebar = function() {
@@ -13189,10 +13308,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         }
                     };
 
-                    $scope.dismissSidebars = function() {
+                    var dismissSidebars = function() {
                         $scope.dismissRightSidebar();
                         $scope.dismissLeftSidebar();
                     };
+                    // this event is bound programmatically so that it doesn't
+                    // participate in the ng-click lifecycle (which causes sporadic
+                    // problems with click events on child elements)
+                    $("#viewPlaceholder").bind('click', dismissSidebars);
                 }
 
                 $rootScope.$watch('initComplete', function(initComplete) {
@@ -15586,15 +15709,19 @@ function epTilesMenuFavoritesDirective() {
      * request needs to be different, one can provide a callback that will do its own request.
      * Most options are configurable either from local sysconfig.json or through the login() function
      *
+     * TO DO: currently storing token in the local storage because android issues with $cookies.
+     * we want to make it configurable or read a setting from sysconfig whether it is hybrid or not.
+     *
      * @example
      *
      */
-    epTokenService.$inject = ['$cookies', '$http', '$q', '$timeout', 'epTokenConfig', 'epUtilsService', 'epModalDialogService'];
+    epTokenService.$inject = ['$cookies', '$http', '$q', '$timeout', 'epTokenConfig', 'epUtilsService', 'epModalDialogService', 'epLocalStorageService'];
     angular.module('ep.token').
         service('epTokenService', epTokenService);
 
     /*@ngInject*/
-    function epTokenService($cookies, $http, $q, $timeout, epTokenConfig, epUtilsService, epModalDialogService) {
+    function epTokenService($cookies, $http, $q, $timeout,
+        epTokenConfig, epUtilsService, epModalDialogService, epLocalStorageService) {
         var state = {
             tokenTimeoutPromise: undefined,
             options: {}
@@ -15640,7 +15767,8 @@ function epTilesMenuFavoritesDirective() {
          * removes the current token from cookie store
          */
         function logout() {
-            $cookies.remove(epTokenConfig.tokenId);
+            epLocalStorageService.update(epTokenConfig.tokenId, undefined);
+            //$cookies.remove(epTokenConfig.tokenId);
             if (state.tokenTimeoutPromise) {
                 $timeout.cancel(state.tokenTimeoutPromise);
             }
@@ -15682,7 +15810,8 @@ function epTilesMenuFavoritesDirective() {
          * @returns {object} object that represents current token
          */
         function getToken() {
-            return $cookies.getObject(epTokenConfig.tokenId);
+            return epLocalStorageService.get(epTokenConfig.tokenId);
+            //return $cookies.getObject(epTokenConfig.tokenId);
         }
 
         /**
@@ -15789,16 +15918,25 @@ function epTilesMenuFavoritesDirective() {
             var dateNow = new Date();
             var dateExp = new Date(dateNow);
             dateExp.setTime(dateExp.getTime() + expiresInSecs * 1000);
-            var options = expiresInSecs ? { expires: dateExp } : {};
-            $cookies.putObject(epTokenConfig.tokenId, {
+            //var options = expiresInSecs ? { expires: dateExp } : {};
+            //$cookies.putObject(epTokenConfig.tokenId, {
+            //    uri: uri,
+            //    user: user,
+            //    token: tkn,
+            //    createdUTC: dateNow.getTime(),
+            //    expiresUTC: dateExp.getTime(),
+            //    expiresInSecs: expiresInSecs
+            //}, options);
+            epLocalStorageService.update(epTokenConfig.tokenId, {
                 uri: uri,
                 user: user,
                 token: tkn,
                 createdUTC: dateNow.getTime(),
                 expiresUTC: dateExp.getTime(),
                 expiresInSecs: expiresInSecs
-            }, options);
-            setTimeout(expiresInSecs);
+            });
+
+            doSetTimeout(expiresInSecs);
         }
 
         // private function upon service initialization
@@ -15808,7 +15946,7 @@ function epTilesMenuFavoritesDirective() {
             }
             var exp = getExpiresIn();
             if (exp) {
-                setTimeout(exp);
+                doSetTimeout(exp);
             }
         }
 
@@ -15836,7 +15974,15 @@ function epTilesMenuFavoritesDirective() {
             }
         }
 
-        function setTimeout(expiresInSecs) {
+        /**
+         * @ngdoc method
+         * @name doSetTimeout
+         * @methodOf ep.token.factory:epTokenService
+         * @private
+         * @description
+         * Set timeout when to bring up expiration warning or auto renewal
+         */
+        function doSetTimeout(expiresInSecs) {
             if (state.tokenTimeoutPromise) {
                 $timeout.cancel(state.tokenTimeoutPromise);
             }
@@ -15893,6 +16039,7 @@ function epTilesMenuFavoritesDirective() {
             getToken: getToken,
             hasToken: hasToken,
             getExpiresIn: getExpiresIn,
+            renewToken: renewToken,
             showLoginDialog: showLoginDialog
         };
     }
@@ -16578,7 +16725,7 @@ function epTilesMenuFavoritesDirective() {
                 if (!_.isObject(obj) && !_.isFunction(obj)) {
                     continue;
                 }
-                var keys = Object.keys(obj);
+                var keys = Object.keys(obj).concat(Object.keys(dst));
                 for (var j = 0, jj = keys.length; j < jj; j++) {
                     var key = keys[j];
                     var src = obj[key];
@@ -16592,7 +16739,11 @@ function epTilesMenuFavoritesDirective() {
                             dst[key] = src.cloneNode(true);
                         } else if (_.isElement(src)) {
                             dst[key] = src.clone();
-                        } else {
+                        } else if(_.isNull(src)){
+                            dst[key] = null;
+                        } else if(_.isUndefined(src)){
+                            dst[key] = undefined;
+                        }else {
                             if (!_.isObject(dst[key])) {
                                 dst[key] = _.isArray(src) ? [] : {};
                             }
@@ -16777,7 +16928,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/sidebar/sidebar.html',
-    "<div class=ep-shell-container ng-class=\"{ 'nav-padding': shellState.showNavbar, 'footer-padding': shellState.showFooter, 'ep-disable-left-sidebar': !shellState.enableLeftSidebar, 'ep-hide-left-sidebar': (!shellState.showLeftSidebar) || (!shellState.enableLeftSidebar), 'ep-hide-right-sidebar': (!shellState.showRightSidebar) || !(shellState.enableRightSidebar)}\"><!-- Left Sidebar --><div class=\"ep-sidebar-nav ep-sidebar-nav-left well ep-ease-animation\" ng-class=\"{'ep-with-navbar': shellState.showNavbar, 'ep-with-footer': shellState.showFooter, 'cordova-ios': platform.app==='Cordova' && platform.os=='mac'}\" ng-click=dismissRightSidebar()></div><div id=viewPlaceholder class=\"ep-view-placeholder ep-fullscreen\" ng-transclude ng-click=dismissSidebars()><!--VIEW CONTENT HERE--></div><!-- Right Sidebar --><div class=\"ep-sidebar-nav ep-sidebar-nav-right well ep-ease-animation\"></div></div>"
+    "<div class=ep-shell-container ng-class=\"{ 'nav-padding': shellState.showNavbar, 'footer-padding': shellState.showFooter, 'ep-disable-left-sidebar': !shellState.enableLeftSidebar, 'ep-hide-left-sidebar': (!shellState.showLeftSidebar) || (!shellState.enableLeftSidebar), 'ep-hide-right-sidebar': (!shellState.showRightSidebar) || !(shellState.enableRightSidebar)}\"><!-- Left Sidebar --><div id=leftSidebar class=\"ep-sidebar-nav ep-sidebar-nav-left well ep-ease-animation\" ng-class=\"{'ep-with-navbar': shellState.showNavbar, 'ep-with-footer': shellState.showFooter, 'cordova-ios': platform.app==='Cordova' && platform.os=='mac'}\" ng-click=dismissRightSidebar()></div><div id=viewPlaceholder class=\"ep-view-placeholder ep-fullscreen\" ng-transclude><!--VIEW CONTENT HERE--></div><!-- Right Sidebar --><div class=\"ep-sidebar-nav ep-sidebar-nav-right well ep-ease-animation\"></div></div>"
   );
 
 
