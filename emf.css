@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.7 built: 16-06-2016
+ * version:1.0.8-dev.8 built: 21-06-2016
 */
 .ep-relative {
   position: relative;
@@ -945,7 +945,7 @@
   font-size: 24px;
   font-weight: 300;
 }
-.ep-modaldialog.ep-modaldialog-pane .ep-dlg-center ep-dlg-message {
+.ep-modaldialog.ep-modaldialog-pane .ep-dlg-center .ep-dlg-message {
   font-size: 18px;
 }
 .ep-modaldialog.ep-modaldialog-pane .ep-dlg-rememberMe label {
@@ -977,23 +977,21 @@
   padding-left: 8px;
   display: inline-block;
 }
-.ep-modaldialog.ep-modaldialog-custom .modal-header .close,
-.ep-modaldialog.ep-modaldialog-custom .modal-header .help {
+.ep-modaldialog.ep-modaldialog-custom .modal-header .close {
   padding: 4px 4px 0 0;
 }
-.help {
+span.help {
   float: right;
   font-size: 21px;
   font-weight: bold;
   line-height: 1;
-  color: #000;
-  text-shadow: 0 1px 0 #fff;
-  opacity: .2;
-  filter: alpha(opacity=20);
 }
-/*.ep-modaldialog.ep-modaldialog-custom .modal-body form{
-    padding-bottom: 10px;
-}*/
+span.help a {
+  color: #fff;
+  text-decoration: none;
+  cursor: pointer;
+  padding: 10px 10px 5px 5px;
+}
 .ep-modaldialog.ep-modaldialog-custom .modal-footer .btn {
   min-width: 70px;
   /*so that btn is not too small*/
@@ -1162,12 +1160,20 @@
   border-bottom: 1px solid rgba(0, 0, 0, 0.25);
 }
 .ep-mlm-container .ep-mlm-item .ep-mlm-item-div {
-  width: 75%;
+  width: 80%;
   /* for browsers not supporting calc */
-  width: -moz-calc(100% - 55px);
-  width: -webkit-calc(100% - 55px);
-  width: -o-calc(100% - 55px);
-  width: calc(100% - 55px);
+  width: -moz-calc(100% - 65px);
+  width: -webkit-calc(100% - 65px);
+  width: -o-calc(100% - 65px);
+  width: calc(100% - 65px);
+}
+.ep-mlm-container .ep-mlm-item .ep-mlm-item-div.ep-mlm-item-div-icon {
+  width: 70%;
+  /* for browsers not supporting calc */
+  width: -moz-calc(100% - 75px);
+  width: -webkit-calc(100% - 75px);
+  width: -o-calc(100% - 75px);
+  width: calc(100% - 75px);
 }
 .ep-mlm-container .ep-mlm-item-text {
   width: 100%;
@@ -1178,7 +1184,7 @@
 }
 .ep-mlm-container .ep-mlm-favorite {
   line-height: 40px;
-  padding-right: 20px;
+  padding-right: 10px;
 }
 .ep-mlm-container .ep-mlm-favorite.gold {
   color: gold;
@@ -1187,6 +1193,10 @@
   width: 100%;
   min-height: 5px;
   background-color: dimgray;
+}
+.ep-mlm-container .ep-mlm-icon {
+  line-height: 40px;
+  padding-right: 0px;
 }
 .ep-mlm-container .ep-mlm-separator-text {
   font-weight: bold;

@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.7 built: 16-06-2016
+ * version:1.0.8-dev.8 built: 21-06-2016
 */
 (function() {
     'use strict';
@@ -1665,6 +1665,10 @@ angular.module('ep.card').service('epCardService', [
                  * This will rollback a transaction on a specific model based on the model ID passed in.
                  */
                 function rollbackTransaction(id) {
+                    // We need to merge the original data back into the active model.
+                    // We can't simply assign the model to the data in the transaction because
+                    // there might be references to internal portions of the model in use elsewhere
+                    // and changes to those references wouldn't get rolled back.
                     epUtilsService.merge(models[id], transactions[id]);
                     delete transactions[id];
                 }
@@ -6076,14 +6080,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             }
         }
 
-        function afterSvcMenu(config, menu, merge, deferred, menuToComplete) {
+        function afterSvcMenu(config, menu, merge, deferred, process) {
             config.state.menu = menu;
             if (menu) {
                 traverseMenu(config.state.menu, 'pkg_' + config.id + '_');
                 merge.push(config.state.menu);
             }
-            menuToComplete--;
-            if (menuToComplete < 1) {
+            process.menuToComplete--;
+            if (process.menuToComplete < 1) {
                 deferred.resolve(merge);
             }
         }
@@ -6126,14 +6130,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 }
             });
 
-            var menuToComplete = configsMenuStartup.length;
             if (configsMenuStartup && configsMenuStartup.length) {
+                var process = { menuToComplete: configsMenuStartup.length };
                 angular.forEach(configsMenuStartup, function(config) {
                     var menu = config.state.startupService.getMenu(config);
                     if (menu) {
                         if (menu.then) {
                             menu.then(function(result) {
-                                afterSvcMenu(config, result, merge, deferred, menuToComplete);
+                                afterSvcMenu(config, result, merge, deferred, process);
                                 $log.debug('Retrieved menu from app package: ' + config.id);
                                 var menuCount = (
                                     result &&
@@ -6142,7 +6146,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                                 $log.debug('Found ' + menuCount + ' root menu items');
                             });
                         } else {
-                            afterSvcMenu(config, menu, merge, deferred, menuToComplete);
+                            afterSvcMenu(config, menu, merge, deferred, process);
                         }
                     }
                 });
@@ -7044,6 +7048,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      	angular.module("TestApp", ["ep.hybrid.calendar"])
      		.controller("SampleCtrl",["$scope", "$log", "epHybridCalendarService",
 	     		function($scope, epHybridCalendarService){
+                    // create a calendar (iOS only for now)
+                    epHybridCalendarService.createCalendar('calendar name',onSuccess,onFail);
+
+                    // delete a calendar (iOS only for now)
+                    epHybridCalendarService.deleteCalendar('calendar name',onSuccess,onFail);
+
                     //create an event
                     epHybridCalendarService.createEvent(
                         {
@@ -7086,6 +7096,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     //open calendar
                     epHybridCalendarService.openCalendar();
 
+                    // list all events in a date range (only supported on Android for now)
+                    epHybridCalendarService.listEvents(startDate,endDate,onSuccess,onFail);
+
+                    // list all calendar names - returns this JS Object to the success callback: [{"id":"1", "name":"first"}, ..]
+                    epHybridCalendarService.listCalendars(onSuccess,onFail);
+
                     function onSuccess(message) {
                         $log.debug("Success: " + message);
                     }
@@ -7116,6 +7132,52 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          */
         function openCalendar() {
             window.plugins.calendar.openCalendar();
+        }
+
+        /**
+         * @ngdoc method
+         * @name createCalendar
+         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @public
+         * @param {function} successCallback - function called on success of API call
+         * @param {function} errorCallback - function called on error of API call
+         * @param {string} name - name of the calendar
+         * @description
+         * To create a calendar. Only works on iOS devices.
+         */
+        function createCalendar(successCallback, errorCallback, name) {
+            window.plugins.calendar.createCalendar(
+                name,
+                function(message) {
+                    $rootScope.$apply(successCallback(message));
+                },
+                function(message) {
+                    $rootScope.$apply(errorCallback(message));
+                }
+			);
+        }
+
+        /**
+         * @ngdoc method
+         * @name deleteCalendar
+         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @public
+         * @param {function} successCallback - function called on success of API call
+         * @param {function} errorCallback - function called on error of API call
+         * @param {string} name - name of the calendar
+         * @description
+         * To delete a calendar. Only works on iOS devices.
+         */
+        function deleteCalendar(successCallback, errorCallback, name) {
+            window.plugins.calendar.deleteCalendar(
+                name,
+                function(message) {
+                    $rootScope.$apply(successCallback(message));
+                },
+                function(message) {
+                    $rootScope.$apply(errorCallback(message));
+                }
+			);
         }
 
         /**
@@ -7206,7 +7268,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @param {function} errorCallback - function called on error of API call
          * @param {object} details - details object of the event. properties same as createEvent's details param.
          * @description
-         * To modify calendar event
+         * To modify calendar event. Works only on iOS.
          */
         function modifyEvent(successCallback, errorCallback, details) {
             window.plugins.calendar.modifyEvent(
@@ -7267,13 +7329,63 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 			);
         }
 
+        /**
+         * @ngdoc method
+         * @name listEvents
+         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @public
+         * @param {function} successCallback - function called on success of API call
+         * @param {function} errorCallback - function called on error of API call
+         * @param {date} startDate - start date
+         * @param {date} endDate - end date
+         * @description
+         * To list events in a range. Only works in Android devices
+         */
+        function listEvents(successCallback, errorCallback, startDate, endDate) {
+            window.plugins.calendar.listEventsInRange(
+                startDate,
+                endDate,
+                function(message) {
+                    $rootScope.$apply(successCallback(message));
+                },
+                function(message) {
+                    $rootScope.$apply(errorCallback(message));
+                }
+			);
+        }
+
+        /**
+         * @ngdoc method
+         * @name listCalendars
+         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @public
+         * @param {function} successCallback - function called on success of API call
+         * @param {function} errorCallback - function called on error of API call
+         * @description
+         * To list calendars
+         */
+        function listCalendars(successCallback, errorCallback) {
+            window.plugins.calendar.listCalendars(
+                function(message) {
+                    $rootScope.$apply(successCallback(message));
+                },
+                function(message) {
+                    $rootScope.$apply(errorCallback(message));
+                }
+			);
+        }
+
         return {
             openCalendar: openCalendar,
+            createCalendar: createCalendar,
+            deleteCalendar: deleteCalendar,
             createEvent: createEvent,
             createEventWithOptions: createEventWithOptions,
             modifyEvent: modifyEvent,
             findEvent: findEvent,
-            deleteEvent: deleteEvent
+            deleteEvent: deleteEvent,
+            listCalendars: listCalendars,
+            listEvents: listEvents
         };
     }
 
@@ -8277,10 +8389,15 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         } else {
                             //when options are set though direct attributes we allow watching over template changes
                             $scope.$watchGroup(['template', 'templateUrl', 'templateCtrl', 'templateScope'],
-                                function() {
-                                    configure($scope, $scope);
-                               });
-                        }
+                                function(newValues, oldValues) {
+                                    for (var i = 0; i < newValues.length; i++) {
+                                        if (newValues[i] !== oldValues[i]) {
+                                            configure($scope, $scope);
+                                            break;
+                                        }
+                                    }
+                                });
+                            }
                         $scope.$watch('userData', function(newValue, oldValue) {
                             if (newValue && newValue !== oldValue) {
                                 $scope.state.templateScope.userData = $scope.userData;
@@ -9030,7 +9147,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         currentModalInstance = $uibModalInstance;
                         $scope.config = cfg;
 
-                        //For compatability of just templateUrl (without templateOptions)
+                        //For compatibility of just templateUrl (without templateOptions)
                         if (cfg.templateUrl && !cfg.templateOptions) {
                             cfg.templateOptions = {
                                 templateUrl: cfg.templateUrl
@@ -9038,11 +9155,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         }
 
                         // for compatibility with the "helpTemplateUrl" form without helpTemplateOptions
-                        if ((cfg.helpTemplateUrl || cfg.helpTemplate) && !cfg.helpTemplateOptions) {
-                            cfg.helpTemplateOptions = {
-                                templateUrl: cfg.helpTemplateUrl,
-                                template: cfg.helpTemplate
-                            };
+                        if (cfg.helpTemplateUrl || cfg.helpTemplate) {
+                            cfg.helpTemplateOptions = cfg.helpTemplateOptions || {};
+                            cfg.helpTemplateOptions.templateUrl =
+                                cfg.helpTemplateOptions.templateUrl || cfg.helpTemplateUrl;
+                            cfg.helpTemplateOptions.template =
+                                cfg.helpTemplateOptions.template || cfg.helpTemplate;
                         }
 
                         if (cfg.helpTemplateOptions) {
@@ -9704,8 +9822,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         * Handles the navigate request.
         *
         * @param {object} mi the menu item
+        * @param {bool} isHeader - is header clicked (backwards or top menu, otherwise triggered from item)
+        * @param {object} ev - event object from UI
         */
-        function navigate(mi, isBackwards) {
+        function navigate(mi, isHeader, ev) {
             if (!mi) {
                 return;
             }
@@ -9715,7 +9835,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 }
                 //going to back to parent set 'left-to-right' animation,
                 //otherwise 'right-to-left'
-                $scope.isRightToLeft = (isBackwards !== true);
+                $scope.isRightToLeft = (isHeader !== true);
                 $scope.data.next = mi;
                 $timeout(function() {
                     setCurrentItems();
@@ -9726,6 +9846,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 $scope.multiLevelMenuHelper.stampLastAccess(mi);
                 emitMenuEvent(epMultiLevelMenuConstants.MLM_ITEM_CLICKED, mi);
                 mi.action(mi);
+            }
+            if (mi.isTop && isHeader && ev && $scope.onTopMenuClick) {
+                $scope.onTopMenuClick();
             }
         }
 
@@ -9854,9 +9977,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                  searchType: '=',
                  searchDisabled: '=',   // disable search input
                  sortDisabled: '=',     // disable sorting
+                 initFavorites: '=',    // initialize all favorites on very first time only
                  menu: '=',             // we take the menu as input parameter on the directive
                  onMenuInit: '&',       // this get fired upon menu initialization to provide factory
-                 onFavoriteChange: '&', // this get fired upon menu initialization to provide factory
+                 onFavoriteChange: '&', // fired upon favorite menu change
+                 onTopMenuClick: '='    // event for topmost menu item click
              },
              compile: function() {
                  return {
@@ -9950,13 +10075,21 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     data.menu = angular.extend({}, menu);
                 }
                 if (data.menu) {
-                    // mock up a "_parent" for the top most menu so our html can
-                    // set the proper pointers.
-                    data.menu._parent = { _id: 'topmenu' };
+                    // mock up a "_parent" for the top most menu so our html can set the proper pointers.
+                    data.menu._parent = { _id: 'topmenu', isTop: true };
                     // walk up and down the menu.menuitems and set _depth/_parent properties
                     buildTree(data.menu);
                     data.favorites = getFavorites();
                     data.next = data.menu;
+
+                    if (!epLocalStorageService.get(getStoreKey())) {
+                        //set initial favorites if this is the very first time running menu
+                        epMultiLevelMenuService.findAllMenuItems(data.menu, function(m) {
+                            if (!m.hideFavorite && (m.initFavorite || scope.initFavorites)) {
+                                toggleFavorite(m);
+                            }
+                        });
+                    }
 
                     if (refresh) {
                         scope.navigate(data.menu);
@@ -10821,6 +10954,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         compareOp = 'eq';
                         break;
                 }
+                if (arg1 === '') {
+                    arg1 = "''";
+                }
                 // now lets append all this good stuff onto the current $filter property
                 odataObject.$filter = ((odataObject && odataObject.$filter) ? (odataObject.$filter + logicalOp) : '') +
                     notOp + arg0 + ' ' + compareOp + ' ' + tickMark + arg1 + tickMark;
@@ -11237,6 +11373,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         $scope.onMenuOptions = function onMenuOptions() {
             $scope.menuOptions.onMenuInit = function(factory) {
                 $scope.menuOptions.factory = factory;
+            };
+            $scope.onTopMenuClick = function(factory) {
+                if ($scope.menuOptions.onTopMenuClick) {
+                    $scope.menuOptions.onTopMenuClick();
+                }
             };
 
             $scope.menu = {
@@ -15345,7 +15486,7 @@ function epTilesMenuFavoritesDirective() {
             restrict: 'E',
             controller: 'epTilesMenuFavoritesCtrl',
             template: '<ep-tiles-panel list=state.list before-list=state.beforeList after-list=state.afterList ' +
-                'color=color size-mode=sizeMode width=width height=height></ep-tiles-panel>',
+                'color=color size-mode=sizeMode width=width height=height disable-sort=disableSort></ep-tiles-panel>',
             scope: {
                 menuId: '=',
                 beforeList: '=',
@@ -15357,7 +15498,8 @@ function epTilesMenuFavoritesDirective() {
                 width: '=',
                 height: '=',
                 bingHeight: '=',
-                bingWidth: '='
+                bingWidth: '=',
+                disableSort: '='
             },
             link: function(scope, element) {
                 scope.state = {
@@ -15398,9 +15540,11 @@ function epTilesMenuFavoritesDirective() {
              'sienna', 'steel', 'teal', 'violet', 'yellow'
         ];
 
-        $scope.sortList = function(tile) {
+        function doSort(tile) {
             return tile.sort || tile.caption;
-        };
+        }
+
+        $scope.sortList = $scope.disableSort !== true ? doSort : undefined;
 
         $scope.initColors = function() {
             $scope.state.tileColor = '';
@@ -15449,6 +15593,11 @@ function epTilesMenuFavoritesDirective() {
         $scope.$watch('afterList', function(newValue, oldValue) {
             if (newValue && newValue !== oldValue) {
                 $scope.initColors();
+            }
+        });
+        $scope.$watch('disableSort', function(newValue, oldValue) {
+            if ((newValue === true || newValue === false) && newValue !== oldValue) {
+                $scope.sortList = $scope.disableSort !== true ? doSort : undefined;
             }
         });
     }
@@ -15500,7 +15649,8 @@ function epTilesMenuFavoritesDirective() {
                 color: '=',
                 sizeMode: '=',
                 width: '=',
-                height: '='
+                height: '=',
+                disableSort: '='
             },
             link: function(scope, element) {
                 scope.state = {
@@ -16941,7 +17091,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.modaldialog/modals/modaldialog-custom.html',
-    "<div class=\"ep-modaldialog ep-modaldialog-custom\"><div class=\"modal-header ep-padding-none\"><span class=close ng-show=config.closeButton><button class=\"btn btn-default\" type=button data-dismiss=modal aria-label=Close ng-click=\"btnclick({isCancel: true})\"><span aria-hidden=true>&times;</span></button></span> <span class=help ng-show=\"config.helpTemplate || config.helpTemplateUrl\"><button class=\"btn btn-default\" type=button aria-label=Help ng-click=helpButtonClick()><i class=\"fa fa-question-circle fa-2x\"></i></button></span><h4 id=dialogTitle class=\"bg-primary modal-title ep-margin-none clearfix\"><span class=\"ep-dlg-title-icon {{config.icon}}\"></span> <span class=ep-dlg-title ng-bind=config.fnGetTitle()></span></h4></div><div class=modal-body><form id=dialogForm name=dialogForm><uib-alert ng-show=showHelp type=info close=closeHelp()><ep-include options=config.helpTemplateOptions></ep-include></uib-alert><!--<div ng-include=\"config.templateUrl\"></div>--><ep-include options=config.templateOptions></ep-include><div class=\"ep-dlg-rememberMe col-md-10\" ng-show=config.rememberMe><div class=form-group><div class=\"row col-md-1\"><input tabindex=1 id=cbxRemember class=form-control type=checkbox ng-model=config.rememberMeValue></div><label class=\"col-md-10 control-label\">Do not show this message again</label></div></div></form></div><div class=modal-footer ng-show=\"config.buttons && config.buttons.length\"><div class=ep-dlg-buttons><button ng-repeat=\"btn in config.buttons\" id={{btn.id}} tabindex=\"$index + 100\" data-dismiss=modal ng-hide=btn.hidden ng-disabled=\"btn.isPrimary && !dialogForm.$valid\" class=\"btn btn-{{btn.type}} {{config.btnBlock == true ? 'btn-block':''}}\" ng-click=btnclick(btn)><i ng-if=btn.icon ng-class=btn.icon></i> &nbsp;{{btn.text}}</button></div></div><div class=ep-dlg-status ng-show=config.statusBar><h4 class=\"bg-primary modal-title\"><span ng-if=!config.statusBarTextHTML ng-bind=config.statusBarText></span> <span ng-if=config.statusBarTextHTML ng-bind-html=config.statusBarTextHTML></span></h4></div></div>"
+    "<div class=\"ep-modaldialog ep-modaldialog-custom\"><div class=\"modal-header ep-padding-none\"><span class=close ng-show=config.closeButton><button class=\"btn btn-default\" type=button data-dismiss=modal aria-label=Close ng-click=\"btnclick({isCancel: true})\"><span aria-hidden=true>&times;</span></button></span> <span class=help ng-show=config.helpTemplateOptions><a class=\"fa fa-question-circle fa-lg ep-navbar-button\" ng-click=helpButtonClick()></a></span><h4 id=dialogTitle class=\"bg-primary modal-title ep-margin-none clearfix\"><span class=\"ep-dlg-title-icon {{config.icon}}\"></span> <span class=ep-dlg-title ng-bind=config.fnGetTitle()></span></h4></div><div class=modal-body><form id=dialogForm name=dialogForm><uib-alert ng-show=showHelp type=info close=closeHelp()><ep-include options=config.helpTemplateOptions></ep-include></uib-alert><!--<div ng-include=\"config.templateUrl\"></div>--><ep-include options=config.templateOptions></ep-include><div class=\"ep-dlg-rememberMe col-md-10\" ng-show=config.rememberMe><div class=form-group><div class=\"row col-md-1\"><input tabindex=1 id=cbxRemember class=form-control type=checkbox ng-model=config.rememberMeValue></div><label class=\"col-md-10 control-label\">Do not show this message again</label></div></div></form></div><div class=modal-footer ng-show=\"config.buttons && config.buttons.length\"><div class=ep-dlg-buttons><button ng-repeat=\"btn in config.buttons\" id={{btn.id}} tabindex=\"$index + 100\" data-dismiss=modal ng-hide=btn.hidden ng-disabled=\"btn.isPrimary && !dialogForm.$valid\" class=\"btn btn-{{btn.type}} {{config.btnBlock == true ? 'btn-block':''}}\" ng-click=btnclick(btn)><i ng-if=btn.icon ng-class=btn.icon></i> &nbsp;{{btn.text}}</button></div></div><div class=ep-dlg-status ng-show=config.statusBar><h4 class=\"bg-primary modal-title\"><span ng-if=!config.statusBarTextHTML ng-bind=config.statusBarText></span> <span ng-if=config.statusBarTextHTML ng-bind-html=config.statusBarTextHTML></span></h4></div></div>"
   );
 
 
@@ -16956,7 +17106,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.multi.level.menu/multi-level-menu.html',
-    "<div class=ep-mlm-container ng-class=\"{'ep-left-to-right': !isRightToLeft, 'ep-right-to-left': isRightToLeft}\"><form class=ep-mlm-search ng-hide=searchDisabled><input class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-focus=\"isRightToLeft = false\"></form><div ng-if=data.next class=\"ep-mlm-content ep-fadein-animation\"><div ng-hide=state.searchTerm class=ep-mlm-header ng-class=\"{ 'pointer': data.next._parent._id !== 'topmenu'}\" ng-click=\"navigate(data.next._parent, true, $event)\"><span ng-if=\"data.next._parent._id !== 'topmenu'\" class=\"ep-mlm-back-button pull-left fa fa-lg fa-caret-left\"></span> <span>{{data.next.caption}}</span></div><div ng-show=state.searchTerm class=ep-mlm-header><span>Search Results</span></div><ul><li ng-repeat=\"mi in currentItems | orderBy:orderByMenu\" class=\"ep-mlm-item clearfix ep-repeat-animation\"><div ng-if=mi.separator class=\"ep-mlm-separator ep-mlm-separator-top {{mi.separator.class}}\"><i ng-if=mi.separator.icon class=\"ep-mlm-separator-icon fa fa-lg pull-left {{mi.separator.icon}}\"></i><div ng-if=mi.separator.text class=ep-mlm-separator-text>{{mi.separator.text}}</div></div><div class=\"pull-left clearfix ep-mlm-item-div\" ng-click=navigate(mi)><div class=\"ep-mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=mi.icon class=\"ep-mlm-favorite fa fa-lg pull-right {{mi.icon}}\"></i> <i ng-if=\"(mi._type === 'item' && mi.hideFavorite !== true)\" class=\"ep-mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star text-warning': mi.favorite}\"></i> <i ng-if=\"mi._type === 'menu'\" class=\"ep-mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul><uib-alert class=\"ep-mlm-alert ep-fadein-animation\" ng-show=\"state.searchTerm && (!currentItems || currentItems.length === 0)\" type=warning>The term \"{{state.searchTerm}}\" did not match any menu items.</uib-alert></div></div>"
+    "<div class=ep-mlm-container ng-class=\"{'ep-left-to-right': !isRightToLeft, 'ep-right-to-left': isRightToLeft}\"><form class=ep-mlm-search ng-hide=searchDisabled><input class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-focus=\"isRightToLeft = false\"></form><div ng-if=data.next class=\"ep-mlm-content ep-fadein-animation\"><div ng-hide=state.searchTerm class=ep-mlm-header ng-class=\"{ 'pointer': data.next._parent._id !== 'topmenu'}\" ng-click=\"navigate(data.next._parent, true, $event)\"><span ng-if=\"data.next._parent._id !== 'topmenu'\" class=\"ep-mlm-back-button pull-left fa fa-lg fa-caret-left\"></span> <span>{{data.next.caption}}</span></div><div ng-show=state.searchTerm class=ep-mlm-header><span>Search Results</span></div><ul><li ng-repeat=\"mi in currentItems | orderBy:orderByMenu\" class=\"ep-mlm-item clearfix ep-repeat-animation\"><div ng-if=mi.separator class=\"ep-mlm-separator ep-mlm-separator-top {{mi.separator.class}}\"><i ng-if=mi.separator.icon class=\"ep-mlm-separator-icon fa fa-lg pull-left {{mi.separator.icon}}\"></i><div ng-if=mi.separator.text class=ep-mlm-separator-text>{{mi.separator.text}}</div></div><i ng-if=mi.icon class=\"ep-mlm-icon fa fa-lg pull-left {{mi.icon}}\"></i><div class=\"pull-left clearfix ep-mlm-item-div\" ng-class=\"{ 'ep-mlm-item-div-icon': mi.icon }\" ng-click=\"navigate(mi, false, $event)\"><div class=\"ep-mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"(mi._type === 'item' && mi.hideFavorite !== true)\" class=\"ep-mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star text-warning': mi.favorite}\"></i> <i ng-if=\"mi._type === 'menu'\" class=\"ep-mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=\"navigate(mi, false, $event)\"></i></li></ul><uib-alert class=\"ep-mlm-alert ep-fadein-animation\" ng-show=\"state.searchTerm && (!currentItems || currentItems.length === 0)\" type=warning>The term \"{{state.searchTerm}}\" did not match any menu items.</uib-alert></div></div>"
   );
 
 
@@ -16971,7 +17121,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/menu/ep-shell-menu.html',
-    "<div ng-controller=epShellMenuCtrl><ep-multi-level-menu menu=menuOptions.menu menu-id=menuId search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu></div>"
+    "<div ng-controller=epShellMenuCtrl><ep-multi-level-menu menu=menuOptions.menu menu-id=menuId search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu></div>"
   );
 
 
