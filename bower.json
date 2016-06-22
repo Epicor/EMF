@@ -1,7 +1,8 @@
 {
   "name": "emf",
-  "description": "The Epicor Mobile Framework (EMF) provides components and tools for developing responsive web applications which can scale and adapt to devices from phones to desktops.",
-  "version": "1.0.8-dev.0",
+  "description": "Epicor Mobile Framework",
+  "comment": "The Epicor Mobile Framework (EMF) provides components and tools for developing responsive web applications which can scale and adapt to devices from phones to desktops.",
+  "version": "1.0.8-dev.11",
   "main": [
     "emf.js",
     "emf.min.js"
@@ -12,33 +13,37 @@
     "lib"
   ],
   "dependencies": {
-    "angular": "~1.3.20",
-    "angular-animate": "~1.3.20",
-    "angular-aria": "~1.3",
-    "angular-bootstrap": "~0.14.3",
-    "angular-cookies": "~1.3",
-    "angular-mocks": "~1.3",
-    "angular-route": "~1.3",
-    "angular-resource": "~1.3",
-    "angular-sanitize": "~1.3",
-    "angular-touch": "~1.3",
-    "angular-ui-router": "~0.2.13",
-    "angular-ui-utils": "~0.2.2",
-    "bootstrap": "~3.3.0",
+    "angular": "~1.5.5",
+    "angular-animate": "~1.5.5",
+    "angular-aria": "~1.5.5",
+    "angular-bootstrap": "~1.3.2",
+    "angular-cookies": "~1.5.5",
+    "angular-mocks": "~1.5.5",
+    "angular-resource": "~1.5.5",
+    "angular-route": "~1.5.5",
+    "angular-sanitize": "~1.5.5",
+    "angular-touch": "~1.5.5",
+    "angular-ui-router": "~0.3.0",
+    "angular-ui-utils": "~3.0.0",
+    "animate.css": "~3.5.1",
+    "bootstrap": "~3.3.6",
+    "bootswatch": "~3.3",
+    "datatables": "~1.10.11",
     "enquire": "~2.1.2",
     "fastclick": "~1.0.6",
-    "font-awesome": "~4.*",
-    "jquery": "~2.1.3",
-    "underscore": "~1.8.3",
-    "bootswatch": "~3.3",
-    "animate.css": "*",
-    "moment": "~2.8.3",
-    "datatables": "~1.10.7",
-    "numeraljs": "~1.5.3",
+    "font-awesome": "~4.6.3",
+    "jquery": "~2.2.3",
+    "jSignature": "~2.0.2",
     "metrojs": "~0.9.77",
-    "jSignature":"~2"
+    "moment": "~2.13.0",
+    "numeral": "numeraljs#~1.5.3",
+    "underscore": "~1.8.3",
+    "api-check": "~7.5.5",
+    "angular-formly": "~8.2.1",
+    "angular-formly-templates-bootstrap": "~6.3.2"
   },
   "devDependencies": {
     "lesshat": "~3.0.2"
   }
 }
+	

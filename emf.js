@@ -1,26 +1,7 @@
-/**
- * @ngdoc overview
- * @name ep.action.set
- * @description
- * #ep.action.set
- * This is a complex component that provides action-menu/context-menu behavior.
- *
- * In order to make use of the action menu fuctionality, there needs to be one
- * instance of the `<ep-action-menu></ep-action-menu>` directive on the page.
- * This directive will render the menu; for desktop, it will provide regular popup,
- * on mobile device, it will consume full width on the bottom of the device.
- *
- * Each action menu will be described for an action owner using the the nesting
- * <pre>
- *      <ep-action-set>
- *          <ep-action-item title="myTitle" handler="myHandler"></ep-action-item>
- *          <ep-action-separator"></ep-action-separator>
- *          <ep-action-item title="myTitle2" handler="myHandler"></ep-action-item>
- *          <ep-action-item title="myTitle3" handler="myHandler"></ep-action-item>
- *      </ep-action-set>
- * </pre>
- *
- */
+/*
+ * emf (Epicor Mobile Framework) 
+ * version:1.0.8-dev.11 built: 22-06-2016
+*/
 (function() {
     'use strict';
 
@@ -230,22 +211,6 @@ angular.module('ep.include', [
 
 /**
  * @ngdoc overview
- * @name ep.login
- * @description
- * Provides simple login/logout directive. This module depends on ep.token, ep.templates.
- */
-(function() {
-    'use strict';
-
-    angular.module('ep.login', [
-    'ui.router',
-    'ep.token',
-    'ep.templates'
-    ]);
-})();
-
-/**
- * @ngdoc overview
  * @name ep.modaldialog
  * @description
  * This module provides access to all the modal dialog services.
@@ -449,8 +414,8 @@ angular.module('ep.signature', [
     'use strict';
 
     angular.module('ep.token', [
-    'ep.utils',
-    'ngCookies'
+        'ep.utils',
+        'ngCookies'
     ]);
 })();
 
@@ -1599,6 +1564,18 @@ angular.module('ep.card').service('epCardService', [
         function messages() {
             return logMessages;
         }
+        /**
+         * @ngdoc method
+         * @name restoreLog
+         * @methodOf ep.console.service:epConsoleService
+         * @public
+         * @description
+         * This method will assign the log messages to the given values.
+         * This is useful for apps that persist their log messages
+         */
+        function restoreLog(messages) {
+            logMessages = messages;
+        }
 
         /**
          * @ngdoc method
@@ -1629,6 +1606,7 @@ angular.module('ep.card').service('epCardService', [
         return {
             initialize: initialize,
             messages: messages,
+            restoreLog: restoreLog,
             hasLog: hasLog,
             clearLog: clearLog,
             showLog: showLog
@@ -1687,6 +1665,10 @@ angular.module('ep.card').service('epCardService', [
                  * This will rollback a transaction on a specific model based on the model ID passed in.
                  */
                 function rollbackTransaction(id) {
+                    // We need to merge the original data back into the active model.
+                    // We can't simply assign the model to the data in the transaction because
+                    // there might be references to internal portions of the model in use elsewhere
+                    // and changes to those references wouldn't get rolled back.
                     epUtilsService.merge(models[id], transactions[id]);
                     delete transactions[id];
                 }
@@ -2267,11 +2249,12 @@ angular.module('ep.datagrid').directive('epDataGrid', [
     '$sce',
     '$log',
     '$window',
+    '$rootScope',
     'epUtilsService',
     'epFeatureDetectionService',
     'epDataGridDirectiveFactory',
     'epDataGridService',
-    function($timeout, $compile, $sce, $log, $window,
+    function($timeout, $compile, $sce, $log, $window, $rootScope,
         epUtilsService, epFeatureDetectionService, epDataGridDirectiveFactory, epDataGridService) {
         var rowIndicator = 'fa fa-play';
         var editIndicator = 'fa fa-square';
@@ -2655,7 +2638,9 @@ angular.module('ep.datagrid').directive('epDataGrid', [
         }
 
         function destroyGrid(scope) {
-            scope.state.$table.off('click').off('dblclick');
+            if (scope.state && scope.state.$table) {
+                scope.state.$table.off('click').off('dblclick');
+            }
 
             var dt = scope.grApi();
             if (dt) {
@@ -2665,7 +2650,7 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                     $log.error(e, 'failed to destroy the grid - exception from DataTables');
                 }
             }
-            if (scope.state.tableElement.length) {
+            if (scope.state && scope.state.tableElement.length) {
                 scope.state.tableElement.empty();
             }
         }
@@ -3363,6 +3348,8 @@ angular.module('ep.datagrid').directive('epDataGrid', [
             scope.state.$table = angular.element(scope.state.tableElement);
             scope.viewState = scope.state;
 
+            scope.$on('$destroy', scope.onScopeDestroy);
+
             scope.setGridOptions = function(options) {
                 scope.options = options;
                 scope.options.gridFactory = scope.state.gridFactory;
@@ -3470,6 +3457,12 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                     } else {
                         scope.footerSectionController = function() { };
                     }
+                }
+            };
+
+            scope.onScopeDestroy = function() {
+                if (scope.shellSizeChangeEvent) {
+                    scope.shellSizeChangeEvent();
                 }
             };
 
@@ -3621,12 +3614,27 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                     if (ret === 0 && scope.state.linkElement[0].parentNode) {
                         ret = $(scope.state.linkElement[0].parentNode).height();
                     }
+                    var tableBodyOffset = scope.findElement('.dataTables_scrollBody').offset();
                     if (scope.options.fnOnCalcTableHeight) {
-                        var tableBodyOffset = scope.findElement('.dataTables_scrollBody').offset();
                         ret = scope.options.fnOnCalcTableHeight(ret, tableBodyOffset);
                     } else if (scope.state.tableHeight && angular.isNumber(scope.state.tableHeight)) {
                         ret = scope.state.tableHeight;
+                    } else if (scope.options.tableHeight === 'view') {
+                        //special processing for shell views - on shell view resize
+                        var vc = angular.element('#viewContainer');
+                        if (vc.length) {
+                            if (!scope.shellSizeChangeEvent) {
+                                scope.shellSizeChangeEvent = $rootScope.$on('SHELL_SIZE_CHANGE_EVENT', function() {
+                                    scope.resizeTable(true);
+                                });
+                            }
+                            ret = vc.height() - (tableBodyOffset || { top: 130 }).top - 40;
+                            if (scope.options.fnOnCalcTableHeight) {
+                                ret = scope.options.fnOnCalcTableHeight(ret, tableBodyOffset);
+                            }
+                        }
                     }
+
                     if (scope.options.showFooterSection) {
                         var ft = scope.findElement('.ep-datagrid-footer-section');
                         if (ft.length) {
@@ -4159,7 +4167,7 @@ angular.module('ep.datagrid').
                 staticMode: true,
                 fnUpdateRecordsInfo: function(status) {
                     modalDialogOptions.statusBarText = status;
-                },
+                }
             };
             epUtilsService.copyProperties(gridOptions, datagridOptions);
 
@@ -4264,7 +4272,8 @@ angular.module('ep.datagrid').
                 options: '=',
                 columnNames: '=',
                 columnProps: '=',
-                data: '='
+                data: '=',
+                onGridInit: '&'
             },
             compile: function() { return {
                 pre: function($scope) {
@@ -4338,6 +4347,12 @@ angular.module('ep.datagrid').
                         $scope.setMeta();
                         $scope.state.factory.setGridOptions($scope.state.datagridOptions);
                         $scope.state.factory.setDataSource($scope.data, true);
+                        if ($scope.options) {
+                            $scope.options.factory = factory;
+                        }
+                        if ($scope.onGridInit) {
+                            $scope.onGridInit(factory);
+                        }
                     };
 
                     $scope.$watch('columnNames', function(newValue, oldValue) {
@@ -4392,6 +4407,7 @@ angular.module('ep.datagrid').
             //save drag parameters for use from dropArea
             var dragOperation = {};
             dragOperation.dropCallback = scope.dropCallback;
+            dragOperation.dragStart = scope.dragStart;
             dragOperation.dropCallbackParams = scope.dropCallbackParams;
             dragOperation.dragItem = scope.dragItem;
             dragOperation.dragItemType = scope.dragItemType;
@@ -4422,52 +4438,63 @@ angular.module('ep.datagrid').
      * >    dropCallback and dropCallbackParams attributes are just helper attributes. see drop-area directive.
      */
 (function() {
-
     'use strict';
 
     angular.module('ep.drag.drop').directive('epDraggable', [
-    'dragOperationFactory',
-    function(dragOperationFactory) {
-        return {
-            restrict: 'A',
-            scope: {
-                //There might be cases when we want to handle drop not at the epDropArea side
-                //In this case we pass dropCallback that will be called from drop handler function in epDropArea.
-                //It also helpful when we have generic drop handler for multiple epDropAreas, that expects some parameter
-                //In this case the drop area as just a proxy for us to call dropCallback with required parameter
-                dropCallback: '=dropCallback',
-                dropCallbackParams: '=dropCallbackParams',
-                //dragged item's base object. For example OLAPEntity
-                dragItem: '=dragItem',
-                //used for deciding whether the dropArea should handle drop with this kind of dragged item
-                dragItemType: '=dragItemType'
-            },
-            compile: function(elem, attrs) {
-                if (!attrs.draggable) {
-                    elem.attr('draggable', 'true');
-                }
-                return function(scope, ele) {
-                    if (!scope.dragItemType) {
-                        throw new Error('Dragged item type is not specified!');
+        'dragOperationFactory',
+        function(dragOperationFactory) {
+            return {
+                restrict: 'A',
+                scope: {
+                    //There might be cases when we want to handle drop not at the epDropArea side
+                    //In this case we pass dropCallback that will be called from drop handler function in epDropArea.
+                    //It also helpful when we have generic drop handler for multiple epDropAreas, that expects some parameter
+                    //In this case the drop area as just a proxy for us to call dropCallback with required parameter
+                    dropCallback: '=dropCallback',
+                    dragStart: '=dragStart',
+                    dropCallbackParams: '=dropCallbackParams',
+                    //dragged item's base object. For example OLAPEntity
+                    dragItem: '=dragItem',
+                    //used for deciding whether the dropArea should handle drop with this kind of dragged item
+                    dragItemType: '=dragItemType'
+                },
+                compile: function(elem, attrs) {
+                    if (!attrs.draggable) {
+                        elem.attr('draggable', 'true');
                     }
-                    ele.on('dragstart', function(evt) {
-                        //save drag parameters for use from dropArea
-                        var dragOperation = dragOperationFactory.getDragOperation(scope);
-                        var getDragOperation = function() {
-                            return dragOperation;
-                        };
-                        scope.$root.$broadcast('startDraging', getDragOperation);
-                        evt.stopPropagation();
-                    });
-                };
-            }
-        };
-    }]);
+                    return function(scope, ele) {
+                        if (!scope.dragItemType) {
+                            throw new Error('Dragged item type is not specified!');
+                        }
+                        ele.on('dragstart', function(evt) {
+                            evt.stopPropagation();
+                            evt.originalEvent.dataTransfer.setData('Text', evt.target.textContent);
+                            evt.originalEvent.dataTransfer.dropEffect = 'move';
+                            var dragOperation = dragOperationFactory.getDragOperation(scope);
+                            var getDragOperation = function() {
+                                return dragOperation;
+                            };
+                            if (angular.isFunction(dragOperation.dragStart)) {
+                                dragOperation.dragStart(evt, dragOperation.dragItem);
+                            }
+                            scope.$root.$broadcast('startDraging', getDragOperation);
+                        });
+
+                        ele.on('dragend', function(evt) {
+                            evt.stopPropagation();
+                            evt.preventDefault();
+                            var dragOperation = dragOperationFactory.getDragOperation(scope);
+                            if (angular.isFunction(dragOperation.dropCallback)) {
+                                dragOperation.dropCallback();
+                            }
+                        });
+                    };
+                }
+            };
+        }]);
 })();
 
-
 'use strict';
-
 /**
  * @ngdoc controller
  * @name ep.drag.drop.controller:epDropAreaCtrl
@@ -4478,67 +4505,84 @@ angular.module('ep.datagrid').
  *
  */
 angular.module('ep.drag.drop').controller('epDropAreaCtrl', [
-    '$scope',
-    function($scope) {
-        var vm = this;
-        vm.onDragStart = onDragStart;
-        vm.onDrop = onDrop;
-        vm.onDragOver = onDragOver;
-        var getDragOperationFnc;
+'$scope',
+function($scope) {
+	var vm = this;
+	vm.onDragStart = onDragStart;
+	vm.onDrop = onDrop;
+	vm.onDragOver = onDragOver;
+	var getDragOperationFnc;
+	vm.onDragLeave = onDragLeave;
 
-        /**
-         * @ngdoc method
-         * @name onDragStart
-         * @methodOf ep.drag.drop.controller:epDropAreaCtrl
-         * @public
-         * @description
-         * handles the onDragStart event
-         */
-        function onDragStart(scope, dragOperationGetter) {
-            getDragOperationFnc = dragOperationGetter;
-        }
+	/**
+	 * @ngdoc method
+	 * @name onDragStart
+	 * @methodOf ep.drag.drop.controller:epDropAreaCtrl
+	 * @public
+	 * @description
+	 * handles the onDragStart event
+	 */
+	function onDragStart(scope, dragOperationGetter) {
+		getDragOperationFnc = dragOperationGetter;
+	}
 
-        /**
-         * @ngdoc method
-         * @name onDrop
-         * @methodOf ep.drag.drop.controller:epDropAreaCtrl
-         * @public
-         * @description
-         * handles the onDrop event
-         */
-        function onDrop(evt) {
-            var dragOperation = getDragOperationFnc();
-            var droppables = vm.dropItemTypes.split(',');
-            if (Array.isArray(droppables) && droppables.length > 1) {
-                if (droppables.indexOf(dragOperation.dragItemType) === -1) {
-                    return;
-                }
-            } else {
-                if (vm.dropItemTypes !== dragOperation.dragItemType) {
-                    return;
-                }
-            }
-            if ($scope[vm.dropHandler]) {
-                /*jshint validthis:true */
-                $scope[vm.dropHandler].call(dragOperation.dragItem || this, dragOperation);
-            }
-            evt.stopPropagation();
-        }
+	/**
+	 * @ngdoc method
+	 * @name onDrop
+	 * @methodOf ep.drag.drop.controller:epDropAreaCtrl
+	 * @public
+	 * @description
+	 * handles the onDrop event
+	 */
+	function onDrop(evt) {
+		evt.stopPropagation();
+		evt.preventDefault();
+		var dragOperation = getDragOperationFnc();
+		var droppables = vm.dropItemTypes.split(',');
+		if (Array.isArray(droppables) && droppables.length > 1) {
+			if (droppables.indexOf(dragOperation.dragItemType) === -1) {
+				return;
+			}
+		} else {
+			if (vm.dropItemTypes !== dragOperation.dragItemType) {
+				return;
+			}
+		}
+		if ($scope[vm.dropHandler]) {
+			/*jshint validthis:true */
+			$scope[vm.dropHandler].call(dragOperation.dragItem || this, dragOperation);
+		}
+	}
 
-        /**
-         * @ngdoc method
-         * @name onDragOver
-         * @methodOf ep.drag.drop.controller:epDropAreaCtrl
-         * @public
-         * @description
-         * handles the onDragOver event
-         */
-        function onDragOver(evt) {
-            // TODO Add visual feedback on drag to show whether this area support this kind of drop
-            evt.preventDefault();
-            return false;
-        }
-    }]);
+	/**
+	 * @ngdoc method
+	 * @name onDragOver
+	 * @methodOf ep.drag.drop.controller:epDropAreaCtrl
+	 * @public
+	 * @description
+	 * handles the onDragOver event
+	 */
+	function onDragOver(evt) {
+		// TODO Add visual feedback on drag to show whether this area support this kind of drop
+		evt.stopPropagation();
+		evt.preventDefault();
+		if ($scope[vm.overHandler]) {
+			var dragOperation = getDragOperationFnc();
+			/*jshint validthis:true */
+			$scope[vm.overHandler].call(dragOperation.dragItem || this, dragOperation, evt);
+		}
+	}
+
+	function onDragLeave(evt) {
+		evt.stopPropagation();
+		evt.preventDefault();
+		if ($scope[vm.leaveHandler]) {
+			var dragOperation = getDragOperationFnc();
+			/*jshint validthis:true */
+			$scope[vm.leaveHandler].call(dragOperation.dragItem || this, dragOperation, evt);
+		}
+	}
+}]);
 
 'use strict';
 /**
@@ -4558,25 +4602,29 @@ angular.module('ep.drag.drop').controller('epDropAreaCtrl', [
      *
      * @example
      */
+
 angular.module('ep.drag.drop').directive('epDropArea', [
-    function() {
-        return {
-            restrict: 'A',
-            controller: 'epDropAreaCtrl',
-            controllerAs: 'dropCtrl',
-            compile: function() {
-                return function(scope, ele, attrs) {
-                    // set controller vm props
-                    scope.dropCtrl.dropItemTypes = attrs.dropItemTypes;
-                    scope.dropCtrl.dropHandler = attrs.dropHandler;
-                    // register the event handlers
-                    scope.$on('startDraging', scope.dropCtrl.onDragStart);
-                    ele.on('drop', scope.dropCtrl.onDrop);
-                    ele.on('dragover', scope.dropCtrl.onDragOver);
-                };
-            }
-        };
-    }]);
+function() {
+	return {
+		restrict: 'A',
+		controller: 'epDropAreaCtrl',
+		controllerAs: 'dropCtrl',
+		compile: function() {
+			return function(scope, ele, attrs) {
+				// set controller vm props
+				scope.dropCtrl.dropItemTypes = attrs.dropItemTypes;
+				scope.dropCtrl.dropHandler = attrs.dropHandler;
+				scope.dropCtrl.overHandler = attrs.overHandler;
+				scope.dropCtrl.leaveHandler = attrs.leaveHandler;
+				// register the event handlers
+				scope.$on('startDraging', scope.dropCtrl.onDragStart);
+				ele.on('drop', scope.dropCtrl.onDrop);
+				ele.on('dragover', scope.dropCtrl.onDragOver);
+				ele.on('dragleave', scope.dropCtrl.onDragLeave);
+			};
+		}
+	};
+}]);
 
 /**
  * @ngdoc controller
@@ -6032,14 +6080,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             }
         }
 
-        function afterSvcMenu(config, menu, merge, deferred, menuToComplete) {
+        function afterSvcMenu(config, menu, merge, deferred, process) {
             config.state.menu = menu;
             if (menu) {
                 traverseMenu(config.state.menu, 'pkg_' + config.id + '_');
                 merge.push(config.state.menu);
             }
-            menuToComplete--;
-            if (menuToComplete < 1) {
+            process.menuToComplete--;
+            if (process.menuToComplete < 1) {
                 deferred.resolve(merge);
             }
         }
@@ -6082,14 +6130,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 }
             });
 
-            var menuToComplete = configsMenuStartup.length;
             if (configsMenuStartup && configsMenuStartup.length) {
+                var process = { menuToComplete: configsMenuStartup.length };
                 angular.forEach(configsMenuStartup, function(config) {
                     var menu = config.state.startupService.getMenu(config);
                     if (menu) {
                         if (menu.then) {
                             menu.then(function(result) {
-                                afterSvcMenu(config, result, merge, deferred, menuToComplete);
+                                afterSvcMenu(config, result, merge, deferred, process);
                                 $log.debug('Retrieved menu from app package: ' + config.id);
                                 var menuCount = (
                                     result &&
@@ -6098,7 +6146,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                                 $log.debug('Found ' + menuCount + ' root menu items');
                             });
                         } else {
-                            afterSvcMenu(config, menu, merge, deferred, menuToComplete);
+                            afterSvcMenu(config, menu, merge, deferred, process);
                         }
                     }
                 });
@@ -6248,7 +6296,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     }
                     var res = false;
                     // http://detectmobilebrowsers.com way to check browser
-                    if (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i.test(a) || /1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(a.substr(0, 4))) {
+                    if (/(android|bb\d+|meego).+mobile|avantgo|bada\/|blackberry|iPhone|iPad|iPod|blazer|compal|elaine|fennec|hiptop|iemobile|ip(hone|od)|iris|kindle|lge |maemo|midp|mmp|mobile.+firefox|netfront|opera m(ob|in)i|palm( os)?|phone|p(ixi|re)\/|plucker|pocket|psp|series(4|6)0|symbian|treo|up\.(browser|link)|vodafone|wap|windows ce|xda|xiino/i.test(a) || /1207|6310|6590|3gso|4thp|50[1-6]i|770s|802s|a wa|abac|ac(er|oo|s\-)|ai(ko|rn)|al(av|ca|co)|amoi|an(ex|ny|yw)|aptu|ar(ch|go)|as(te|us)|attw|au(di|\-m|r |s )|avan|be(ck|ll|nq)|bi(lb|rd)|bl(ac|az)|br(e|v)w|bumb|bw\-(n|u)|c55\/|capi|ccwa|cdm\-|cell|chtm|cldc|cmd\-|co(mp|nd)|craw|da(it|ll|ng)|dbte|dc\-s|devi|dica|dmob|do(c|p)o|ds(12|\-d)|el(49|ai)|em(l2|ul)|er(ic|k0)|esl8|ez([4-7]0|os|wa|ze)|fetc|fly(\-|_)|g1 u|g560|gene|gf\-5|g\-mo|go(\.w|od)|gr(ad|un)|haie|hcit|hd\-(m|p|t)|hei\-|hi(pt|ta)|hp( i|ip)|hs\-c|ht(c(\-| |_|a|g|p|s|t)|tp)|hu(aw|tc)|i\-(20|go|ma)|i230|iac( |\-|\/)|ibro|idea|ig01|ikom|im1k|inno|ipaq|iris|ja(t|v)a|jbro|jemu|jigs|kddi|keji|kgt( |\/)|klon|kpt |kwc\-|kyo(c|k)|le(no|xi)|lg( g|\/(k|l|u)|50|54|\-[a-w])|libw|lynx|m1\-w|m3ga|m50\/|ma(te|ui|xo)|mc(01|21|ca)|m\-cr|me(rc|ri)|mi(o8|oa|ts)|mmef|mo(01|02|bi|de|do|t(\-| |o|v)|zz)|mt(50|p1|v )|mwbp|mywa|n10[0-2]|n20[2-3]|n30(0|2)|n50(0|2|5)|n7(0(0|1)|10)|ne((c|m)\-|on|tf|wf|wg|wt)|nok(6|i)|nzph|o2im|op(ti|wv)|oran|owg1|p800|pan(a|d|t)|pdxg|pg(13|\-([1-8]|c))|phil|pire|pl(ay|uc)|pn\-2|po(ck|rt|se)|prox|psio|pt\-g|qa\-a|qc(07|12|21|32|60|\-[2-7]|i\-)|qtek|r380|r600|raks|rim9|ro(ve|zo)|s55\/|sa(ge|ma|mm|ms|ny|va)|sc(01|h\-|oo|p\-)|sdk\/|se(c(\-|0|1)|47|mc|nd|ri)|sgh\-|shar|sie(\-|m)|sk\-0|sl(45|id)|sm(al|ar|b3|it|t5)|so(ft|ny)|sp(01|h\-|v\-|v )|sy(01|mb)|t2(18|50)|t6(00|10|18)|ta(gt|lk)|tcl\-|tdg\-|tel(i|m)|tim\-|t\-mo|to(pl|sh)|ts(70|m\-|m3|m5)|tx\-9|up(\.b|g1|si)|utst|v400|v750|veri|vi(rg|te)|vk(40|5[0-3]|\-v)|vm40|voda|vulc|vx(52|53|60|61|70|80|81|83|85|98)|w3c(\-| )|webc|whit|wi(g |nc|nw)|wmlb|wonu|x700|yas\-|your|zeto|zte\-/i.test(a.substr(0, 4))) {
                         res = true;
                     }
                     browserIsMobile.result = res;
@@ -6831,12 +6879,35 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 } else {
                     deferred.resolve(!!epLocalStorageService.get(epFileConstants.namespace + '.' + filename));
                 }
-            }catch (e) {
+            } catch (e) {
                 deferred.reject(e);
             }
             return deferred.promise;
         }
-
+        /**
+         * @ngdoc method
+         * @name getFilePath
+         * @methodOf ep.file:epFileService
+         * @public
+         * @description
+         * This function returns a string that indicates the full path
+         * to the given file.
+         */
+        function getFilePath(filename) {
+            if (fileSystem === storageSystems.fileStorage) {
+                return $window.cordova.file.dataDirectory + filename;
+            } else {
+                return epFileConstants.namespace + '.' + filename;
+            }
+        }
+        /**
+         * @ngdoc method
+         * @name remove
+         * @methodOf ep.file:epFileService
+         * @public
+         * @description
+         * This function returns a promise that resolves if the file was successfully deleted.
+         */
         function remove(filename) {
             var deferred = $q.defer();
             try {
@@ -6857,6 +6928,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             }
             return deferred.promise;
         }
+
         if (epFeatureDetectionService.getFeatures().platform.app !== 'Cordova') {
             fileSystem = storageSystems.localStorage;
             $log.debug('LocalStorage system selected.');
@@ -6868,19 +6940,18 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         return {
             load: load,
             save: save,
+            getFilePath: getFilePath,
             fileExists: fileExists,
             remove: remove
         };
-
     }
-
 })();
 
 /**
  *
  */
 (function() {
-  'use strict';
+    'use strict';
     angular.module('ep.hybrid.barcode', []);
 })();
 
@@ -6891,6 +6962,41 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * Service for accessing Cordova Barcode plugin
  *
  * @example
+    <example module="TestApp">
+     <file name="index.html">
+	     <div ng-controller="SampleCtrl">
+            <div class="panel-body">
+                <p>{{barCodeNumber}}</p>
+                <p>{{barCodeFormat}}</p>
+                <button class="btn btn-primary" style="width:100%" ng-click="scanBarcode()">Scan</button>
+            </div>
+	      </div>
+     </file>
+     <file name="script.js">
+     	angular.module('TestApp', ['ep.hybrid.barcode'])
+     		.controller('SampleCtrl',['$scope', '$log', 'epHybridBarcodeService',
+	     		function($scope, epHybridBarcodeService){
+                    $scope.scanBarcode = function () {
+                        epHybridBarcodeService.scan(
+				            onSuccess,
+                            onFail
+			            );
+                    };
+
+                    function onSuccess(result) {
+                        if (!result.cancelled) {
+                            $scope.barCodeNumber = 'Number: ' + result.text;
+                            $scope.barCodeFormat = 'Format: ' + result.format;
+                            $scope.$apply();
+                        }
+                    }
+
+                    function onFail(message) {
+                        $log.debug('Failed: ' + message);
+                    }
+            }]);
+     </file>
+   </example>
  */
 (function() {
     'use strict';
@@ -6906,6 +7012,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @name scan
          * @methodOf ep.hybrid.barcode:epHybridBarcodeService
          * @public
+         * @param {function} successCallback - function called on success of API call
+         * @param {function} errorCallback - function called on error of API call
          * @description
          * To scan the barcode
          */
@@ -6932,6 +7040,376 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  */
 (function() {
   'use strict';
+    angular.module('ep.hybrid.calendar', []);
+})();
+
+/**
+ * @ngdoc service
+ * @name ep.hybrid.calendar:epHybridCalendarService
+ * @description
+ * Service for accessing Cordova Calendar plugin
+ *
+ * @example
+   <example module="TestApp">
+     <file name="index.html">
+	     <div ng-controller="SampleCtrl">
+            <div class="panel-body">
+            </div>
+	      </div>
+     </file>
+     <file name="script.js">
+     	angular.module("TestApp", ["ep.hybrid.calendar"])
+     		.controller("SampleCtrl",["$scope", "$log", "epHybridCalendarService",
+	     		function($scope, epHybridCalendarService){
+                    // create a calendar (iOS only for now)
+                    epHybridCalendarService.createCalendar('calendar name',onSuccess,onFail);
+
+                    // delete a calendar (iOS only for now)
+                    epHybridCalendarService.deleteCalendar('calendar name',onSuccess,onFail);
+
+                    //create an event
+                    epHybridCalendarService.createEvent(
+                        {
+                            title: 'Event Title',
+                            location: 'Home',
+                            notes: 'notes about this event',
+                            startDate: new Date(2016, 0, 15, 18, 30, 0, 0, 0),
+                            endDate: new Date(2016, 1, 17, 12, 0, 0, 0, 0)
+                        },
+                        onSuccess,
+                        onFail
+                    );
+
+                    //find an event
+                    epHybridCalendarService.findEvent(
+                        {
+                            title: 'Event Title',
+                            location: 'Home',
+                            notes: 'notes about this event',
+                            startDate: new Date(2016, 0, 15, 18, 30, 0, 0, 0),
+                            endDate: new Date(2016, 1, 17, 12, 0, 0, 0, 0)
+                        },
+                        onSuccess,
+                        onFail
+                    );
+
+                    //delete an event
+                    epHybridCalendarService.deleteEvent(
+                        {
+                            title: 'Event Title',
+                            location: 'Home',
+                            notes: 'notes about this event',
+                            startDate: new Date(2016, 0, 15, 18, 30, 0, 0, 0),
+                            endDate: new Date(2016, 1, 17, 12, 0, 0, 0, 0)
+                        },
+                        onSuccess,
+                        onFail
+                    );
+
+                    //open calendar
+                    epHybridCalendarService.openCalendar();
+
+                    // list all events in a date range (only supported on Android for now)
+                    epHybridCalendarService.listEvents(startDate,endDate,onSuccess,onFail);
+
+                    // list all calendar names - returns this JS Object to the success callback: [{"id":"1", "name":"first"}, ..]
+                    epHybridCalendarService.listCalendars(onSuccess,onFail);
+
+                    function onSuccess(message) {
+                        $log.debug("Success: " + message);
+                    }
+
+                    function onFail(message) {
+                        $log.debug("Failed: " + message);
+                    }
+            }]);
+     </file>
+   </example>
+ */
+(function() {
+    'use strict';
+
+    epHybridCalendarService.$inject = ['$rootScope'];
+    angular.module('ep.hybrid.calendar')
+        .service('epHybridCalendarService', /*@ngInject*/ epHybridCalendarService);
+
+    function epHybridCalendarService($rootScope) {
+
+        /**
+         * @ngdoc method
+         * @name openCalendar
+         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @public
+         * @description
+         * To open calendar
+         */
+        function openCalendar() {
+            window.plugins.calendar.openCalendar();
+        }
+
+        /**
+         * @ngdoc method
+         * @name createCalendar
+         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @public
+         * @param {function} successCallback - function called on success of API call
+         * @param {function} errorCallback - function called on error of API call
+         * @param {string} name - name of the calendar
+         * @description
+         * To create a calendar. Only works on iOS devices.
+         */
+        function createCalendar(successCallback, errorCallback, name) {
+            window.plugins.calendar.createCalendar(
+                name,
+                function(message) {
+                    $rootScope.$apply(successCallback(message));
+                },
+                function(message) {
+                    $rootScope.$apply(errorCallback(message));
+                }
+			);
+        }
+
+        /**
+         * @ngdoc method
+         * @name deleteCalendar
+         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @public
+         * @param {function} successCallback - function called on success of API call
+         * @param {function} errorCallback - function called on error of API call
+         * @param {string} name - name of the calendar
+         * @description
+         * To delete a calendar. Only works on iOS devices.
+         */
+        function deleteCalendar(successCallback, errorCallback, name) {
+            window.plugins.calendar.deleteCalendar(
+                name,
+                function(message) {
+                    $rootScope.$apply(successCallback(message));
+                },
+                function(message) {
+                    $rootScope.$apply(errorCallback(message));
+                }
+			);
+        }
+
+        /**
+         * @ngdoc method
+         * @name createEvent
+         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @public
+         * @param {function} successCallback - function called on success of API call
+         * @param {function} errorCallback - function called on error of API call
+         * @param {object} details - details to create event
+         * @param {string} details.title - Title of the event
+         * @param {string} details.location - Location of the event
+         * @param {string} details.notes - Notes of the event
+         * @param {date} details.startDate - Event start date
+         * @param {date} details.endDate - Event end date
+         * @description
+         * To create a calendar event silently
+         */
+        function createEvent(successCallback, errorCallback, details) {
+            window.plugins.calendar.createEvent(
+                details.title, details.location, details.notes, details.startDate, details.endDate,
+                function(message) {
+                    $rootScope.$apply(successCallback(message));
+                },
+                function(message) {
+                    $rootScope.$apply(errorCallback(message));
+                }
+			);
+        }
+
+        /**
+         * @ngdoc method
+         * @name createEventWithOptions
+         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @public
+         * @param {function} successCallback - function called on success of API call
+         * @param {function} errorCallback - function called on error of API call
+         * @param {object} details - details object of the event. properties same as createEvent's details param.
+         * @param {object} options - options to create event
+         * @param {integer} options.firstReminderMinutes - first reminder minutes
+         * @param {integer} options.secondReminderMinutes - second reminder minutes
+         * @param {string} options.recurrence - recurrence. supported are: daily, weekly, monthly, yearly
+         * @param {date} options.recurrenceEndDate - recurrence end date, leave null to add events into infinity and beyond
+         * @param {integer} options.recurrenceInterval - recurrence interval
+         * @param {url} options.url - url
+         * @description
+         * To create a calendar event with options
+         */
+        function createEventWithOptions(successCallback, errorCallback, details, options) {
+            var calOptions = window.plugins.calendar.getCalendarOptions();
+
+            if (options.firstReminderMinutes) {
+                calOptions.firstReminderMinutes = options.firstReminderMinutes;
+            }
+            if (options.secondReminderMinutes !== null) {
+                calOptions.secondReminderMinutes = options.secondReminderMinutes;
+            }
+            if (options.recurrence) {
+                calOptions.recurrence = options.recurrence;
+            }
+            if (options.recurrenceEndDate) {
+                calOptions.recurrenceEndDate = options.recurrenceEndDate;
+            }
+            if (options.recurrenceInterval) {
+                calOptions.recurrenceInterval = options.recurrenceInterval;
+            }
+            if (options.url) {
+                calOptions.url = options.url;
+            }
+            window.plugins.calendar.createEventWithOptions(
+                details.title, details.location, details.notes, details.startDate, details.endDate,
+                calOptions,
+                function(message) {
+                    $rootScope.$apply(successCallback(message));
+                },
+                function(message) {
+                    $rootScope.$apply(errorCallback(message));
+                }
+			);
+        }
+
+        /**
+         * @ngdoc method
+         * @name modifyEvent
+         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @public
+         * @param {function} successCallback - function called on success of API call
+         * @param {function} errorCallback - function called on error of API call
+         * @param {object} details - details object of the event. properties same as createEvent's details param.
+         * @description
+         * To modify calendar event. Works only on iOS.
+         */
+        function modifyEvent(successCallback, errorCallback, details) {
+            window.plugins.calendar.modifyEvent(
+                details.title, details.location, details.notes, details.startDate, details.endDate,
+                details.newTitle, details.newLocation, details.newNotes, details.newStartDate, details.newEndDate,
+                function(message) {
+                    $rootScope.$apply(successCallback(message));
+                },
+                function(message) {
+                    $rootScope.$apply(errorCallback(message));
+                }
+			);
+        }
+
+        /**
+         * @ngdoc method
+         * @name findEvent
+         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @public
+         * @param {function} successCallback - function called on success of API call
+         * @param {function} errorCallback - function called on error of API call
+         * @param {object} details - details object of the event. properties same as createEvent's details param.
+         * @description
+         * To find calendar event
+         */
+        function findEvent(successCallback, errorCallback, details) {
+            window.plugins.calendar.findEvent(
+                details.title, details.location, details.notes, details.startDate, details.endDate,
+                function(message) {
+                    $rootScope.$apply(successCallback(message));
+                },
+                function(message) {
+                    $rootScope.$apply(errorCallback(message));
+                }
+			);
+        }
+
+        /**
+         * @ngdoc method
+         * @name deleteEvent
+         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @public
+         * @param {function} successCallback - function called on success of API call
+         * @param {function} errorCallback - function called on error of API call
+         * @param {object} details - details object of the event. properties same as createEvent's details param.
+         * @description
+         * To delete calendar events
+         */
+        function deleteEvent(successCallback, errorCallback, details) {
+            window.plugins.calendar.deleteEvent(
+                details.title, details.location, details.notes, details.startDate, details.endDate,
+                function(message) {
+                    $rootScope.$apply(successCallback(message));
+                },
+                function(message) {
+                    $rootScope.$apply(errorCallback(message));
+                }
+			);
+        }
+
+        /**
+         * @ngdoc method
+         * @name listEvents
+         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @public
+         * @param {function} successCallback - function called on success of API call
+         * @param {function} errorCallback - function called on error of API call
+         * @param {date} startDate - start date
+         * @param {date} endDate - end date
+         * @description
+         * To list events in a range. Only works in Android devices
+         */
+        function listEvents(successCallback, errorCallback, startDate, endDate) {
+            window.plugins.calendar.listEventsInRange(
+                startDate,
+                endDate,
+                function(message) {
+                    $rootScope.$apply(successCallback(message));
+                },
+                function(message) {
+                    $rootScope.$apply(errorCallback(message));
+                }
+			);
+        }
+
+        /**
+         * @ngdoc method
+         * @name listCalendars
+         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @public
+         * @param {function} successCallback - function called on success of API call
+         * @param {function} errorCallback - function called on error of API call
+         * @description
+         * To list calendars
+         */
+        function listCalendars(successCallback, errorCallback) {
+            window.plugins.calendar.listCalendars(
+                function(message) {
+                    $rootScope.$apply(successCallback(message));
+                },
+                function(message) {
+                    $rootScope.$apply(errorCallback(message));
+                }
+			);
+        }
+
+        return {
+            openCalendar: openCalendar,
+            createCalendar: createCalendar,
+            deleteCalendar: deleteCalendar,
+            createEvent: createEvent,
+            createEventWithOptions: createEventWithOptions,
+            modifyEvent: modifyEvent,
+            findEvent: findEvent,
+            deleteEvent: deleteEvent,
+            listCalendars: listCalendars,
+            listEvents: listEvents
+        };
+    }
+
+})();
+
+
+/**
+ *
+ */
+(function() {
+  'use strict';
     angular.module('ep.hybrid.contacts', []);
 })();
 
@@ -6942,6 +7420,44 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * Service for accessing Cordova contacts plugin
  *
  * @example
+    <example module="TestApp">
+     <file name="index.html">
+	     <div ng-controller="SampleCtrl">
+            <div class="panel-body">
+                <button class="button button-block button-balanced" ng-click="pickContact()">
+                Pick a Contact from Phone
+                </button>
+                <div class="card" ng-if="selectedContact != undefined">
+                    <div>Name: {{selectedContact.name.formatted}}</div>
+                    <div>Phone: {{selectedContact.phoneNumbers[0].value}}</div>
+                    <div>Email: {{selectedContact.emails[0].value}}</div>
+                </div>
+            </div>
+	      </div>
+     </file>
+     <file name="script.js">
+     	angular.module("TestApp", ["ep.hybrid.contacts"])
+     		.controller("SampleCtrl",["$scope", "$log", "epHybridContactsService",
+                function($scope, epHybridContactsService){
+                    $scope.pickContact = function () {
+                        epHybridContactsService.pickContact(
+                            onSuccess,
+                            onFail
+                        );
+                    }
+
+                    function onSuccess(result) {
+                        $scope.selectedContact = result;
+                        $scope.$apply();
+                    }
+
+                    function onFail(message) {
+                        $log.debug("Pick contacts failed: " + message);
+                    }
+            }]);
+     </file>
+   </example>
+
  */
 (function() {
     'use strict';
@@ -6957,6 +7473,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @name pickContact
          * @methodOf ep.hybrid.contacts:epHybridContactsService
          * @public
+         * @param {function} successCallback - function called on success of API call
+         * @param {function} errorCallback - function called on error of API call
          * @description
          * To select a contact from the contacts list
          */
@@ -6998,6 +7516,28 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * Service for accessing Cordova device plugin
  *
  * @example
+    <example module="TestApp">
+     <file name="index.html">
+	     <div ng-controller="SampleCtrl">
+	     	  <div class="panel-body">
+                    Model: {{ deviceModel }}<br>
+                    Platform: {{ devicePlatform }}<br>
+                    Device ID: {{ deviceId }}<br>
+                    Version: {{ deviceVersion }}<br>
+              </div>
+	      </div>
+     </file>
+     <file name="script.js">
+     	angular.module("TestApp", ["ep.hybrid.device"])
+     		.controller("SampleCtrl",["$scope", "epHybridDeviceService",
+	     		function($scope, epHybridDeviceService){
+                    $scope.deviceModel = epHybridDeviceService.getModel();
+                    $scope.devicePlatform = epHybridDeviceService.getPlatform();
+                    $scope.deviceId = epHybridDeviceService.getUUID();
+                    $scope.deviceVersion = epHybridDeviceService.getVersion();
+	     		}]);
+     </file>
+   </example>
  */
 (function() {
     'use strict';
@@ -7017,7 +7557,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * To get the OS of the device
          */
         function getPlatform() {
-            if (!this.isDevicePluginAvailable()) {
+            if (!isDevicePluginAvailable()) {
                 return;
             }
             return $window.device.platform;
@@ -7032,7 +7572,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * To get the model of the device
          */
         function getModel() {
-            if (!this.isDevicePluginAvailable()) { return; }
+            if (!isDevicePluginAvailable()) { return; }
             return $window.device.model;
         }
 
@@ -7045,7 +7585,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * To get the UUID of the device
          */
         function getUUID() {
-            if (!this.isDevicePluginAvailable()) { return; }
+            if (!isDevicePluginAvailable()) { return; }
             return $window.device.uuid;
         }
 
@@ -7058,7 +7598,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * To get OS version of the device
          */
         function getVersion() {
-            if (!this.isDevicePluginAvailable()) { return; }
+            if (!isDevicePluginAvailable()) { return; }
             return $window.device.version;
         }
 
@@ -7094,6 +7634,98 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  */
 (function() {
   'use strict';
+    angular.module('ep.hybrid.flashlight', []);
+})();
+
+/**
+ * @ngdoc service
+ * @name ep.hybrid.flashlight:epHybridFlashlightService
+ * @description
+ * Service for accessing Cordova flashlight plugin
+ *
+ * @example
+     <example module="TestApp">
+     <file name="index.html">
+	     <div ng-controller="SampleCtrl">
+            <div class="panel-body">
+                <button class="btn btn-primary btn-block" ng-click="on()">On</button>
+            </div>
+	      </div>
+     </file>
+     <file name="script.js">
+     	angular.module("TestApp", ["ep.hybrid.flashlight"])
+     		.controller("SampleCtrl",["$scope", "epHybridFlashlightService",
+                function($scope, epHybridFlashlightService){
+                        $scope.on = function() {
+                        epHybridFlashlightService.flashOn();
+                    }
+            }]);
+     </file>
+   </example>
+ */
+(function() {
+    'use strict';
+
+    epHybridFlashlightService.$inject = ['$log'];
+    angular.module('ep.hybrid.flashlight')
+        .service('epHybridFlashlightService', /*@ngInject*/ epHybridFlashlightService);
+
+    function epHybridFlashlightService($log) {
+
+        /**
+         * @ngdoc method
+         * @name flashOn
+         * @methodOf ep.hybrid.flashlight:epHybridFlashlightService
+         * @public
+         * @description
+         * Allows you to switch the flashlight / torch of the device on and off.
+         */
+        function flashOn() {
+            window.plugins.flashlight.available(function(isAvailable) {
+                if (isAvailable) {
+                    // switch on
+                    window.plugins.flashlight.switchOn();
+
+                    //// switch off after 3 seconds
+                    //setTimeout(function() {
+                    //    window.plugins.flashlight.switchOff();
+                    //}, 3000);
+
+                } else {
+                    $log.debug('Flashlight not available on this device');
+                }
+            });
+
+            document.addEventListener('backbutton', function() {
+                // pass exitApp as callbacks to the switchOff method
+                window.plugins.flashlight.switchOff(exitApp, exitApp);
+            }, false);
+        }
+
+        function flashOff() {
+            //if (window.plugins.flashlight.isSwitchedOn == true)
+            //{
+                window.plugins.flashlight.switchOff();
+            //}
+        }
+
+        function exitApp() {
+            navigator.app.exitApp();
+        }
+
+        return {
+            flashOn: flashOn,
+            flashOff: flashOff
+        };
+    }
+
+})();
+
+/**
+ *
+ */
+(function() {
+  'use strict';
     angular.module('ep.hybrid.geolocation', []);
 })();
 
@@ -7104,17 +7736,60 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * Service for accessing Cordova Geolocation plugin
  *
  * @example
+   <example module="TestApp">
+     <file name="index.html">
+	     <div ng-controller="SampleCtrl">
+            <div class="panel-body">
+                <div id="map"></div>
+                <div id="panel"></div>
+            </div>
+	      </div>
+     </file>
+     <file name="script.js">
+     	angular.module("TestApp", ["ep.hybrid.geolocation"])
+     		.controller("SampleCtrl",["$scope", "epHybridGeolocationService",
+                function($scope, epHybridGeolocationService){
+                    epHybridGeolocationService.getGeolocation(
+                        onSucess,
+                        onError,
+                        { timeout: 10000, enableHighAccuracy: true }
+                     );
+
+                function onSucess(position) {
+                        var latLng = new google.maps.LatLng(position.coords.latitude, position.coords.longitude);
+
+                        //Elements assigned to variables
+                        var element = document.getElementById('map');
+                        var start = document.getElementById('start');
+                        var end = document.getElementById('end');
+
+                        //To get/show map
+                        var map = epHybridGeolocationService.showMap(latLng, element);
+
+                        //Adds marker on map
+                        epHybridGeolocationService.addMarker(latLng, map);
+
+                        //Get the from and to autocomplete inputs and show directions
+                        epHybridGeolocationService.autocompleteAndAssociatedActions(map, start, end);
+                }
+
+                function onError(error) {
+                    console.log("Showing map failed: " + error);
+                }
+            }]);
+     </file>
+   </example>
  */
 (function() {
     'use strict';
 
-    epHybridGeolocationService.$inject = ['$rootScope'];
+    epHybridGeolocationService.$inject = ['$rootScope', '$log'];
     angular.module('ep.hybrid.geolocation')
         .service('epHybridGeolocationService', /*@ngInject*/ epHybridGeolocationService);
 
-    function epHybridGeolocationService($rootScope) {
+    function epHybridGeolocationService($rootScope, $log) {
 
-        var directionsDisplay = new google.maps.DirectionsRenderer();
+        var directionsDisplay;
         var marker;
 
         /**
@@ -7122,6 +7797,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @name getGeolocation
          * @methodOf ep.hybrid.geolocation:epHybridGeolocationService
          * @public
+         * @param {function} successCallback - function called on success of API call
+         * @param {function} errorCallback - function called on error of API call
+         * @param {object} options - Cordova Geolocation Plugin options
          * @description
          * To get geolocation
          */
@@ -7142,6 +7820,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @name showMap
          * @methodOf ep.hybrid.geolocation:epHybridGeolocationService
          * @public
+         * @param {object} latLng - Includes latitude and longitude
+         * @param {object} element - Element to display map on
          * @description
          * To show map
          */
@@ -7157,7 +7837,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 return map;
             }
             catch (error) {
-                console.log('Error: ' + error);
+                $log.debug('Error: ' + error);
             }
         }
 
@@ -7166,6 +7846,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @name addMarker
          * @methodOf ep.hybrid.geolocation:epHybridGeolocationService
          * @public
+         * @param {object} latLng - Includes latitude and longitude
+         * @param {object} map - Map on which the marker need to be placed
          * @description
          * To show marker/pin on map
          */
@@ -7193,6 +7875,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @name calculateAndDisplayRoute
          * @methodOf ep.hybrid.geolocation:epHybridGeolocationService
          * @public
+         * @param {string} start - Place Id of origin
+         * @param {string} end - Place Id of destination
          * @description
          * To calculate the route/direction from the inputs
          */
@@ -7206,14 +7890,15 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             var directionsService = new google.maps.DirectionsService();
             marker.setMap(null);
             directionsService.route({
-                origin: start,
-                destination: end,
+                origin: { 'placeId': start },
+                destination: { 'placeId': end },
                 travelMode: google.maps.TravelMode.DRIVING
             }, function(response, status) {
                 if (status === google.maps.DirectionsStatus.OK) {
                     directionsDisplay.setDirections(response);
                 } else {
-                    window.alert('Directions request failed : Not a valid location for driving');
+                    $log.error('Directions request failed : Not a valid location for driving');
+                    return;
                 }
             });
         }
@@ -7223,35 +7908,50 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @name autocompleteAndAssociatedActions
          * @methodOf ep.hybrid.geolocation:epHybridGeolocationService
          * @public
+         * @param {object} map - Map on which the marker need to be placed
+         * @param {object} originInput - Origin element to enable autocomplete
+         * @param {object} destinationInput - Destination element to enable autocomplete
          * @description
          * To autocomplete inputs returning place predictions and performing required actions
          */
-        function autocompleteAndAssociatedActions(map, panel, fromInput, toInput) {
+        function autocompleteAndAssociatedActions(map, originInput, destinationInput) {
             var start;
             var end;
 
+            if (directionsDisplay !== undefined) {
+                directionsDisplay.setMap(null);
+            }
+
+            directionsDisplay = new google.maps.DirectionsRenderer();
+
             directionsDisplay.setMap(map);//Set Map
-            directionsDisplay.setPanel(panel);//Set panel
 
             //Autocomplete and actions on Origin textbox
-            var origin = new google.maps.places.Autocomplete(fromInput);
+            var origin = new google.maps.places.Autocomplete(originInput);
             google.maps.event.addListener(origin, 'place_changed', function() {
                 var from = origin.getPlace();
-                start = from.formatted_address;
+                // because palce_id does not conform with jscs rules - turn them off here
+                // jscs:disable
+                start = from.place_id;
+                // jscs:enable
 
                 $rootScope.$watch('start', function() {
                     console.log('origin:' + start);
                 });
-                addMarker(from.geometry.location, map);
 
+                addMarker(from.geometry.location, map);
                 calculateAndDisplayRoute(start, end);
             });
 
             //Autocomplete and actions on destination textbox
-            var destination = new google.maps.places.Autocomplete(toInput);
+            var destination = new google.maps.places.Autocomplete(destinationInput);
             google.maps.event.addListener(destination, 'place_changed', function() {
                 var to = destination.getPlace();
-                end = to.formatted_address;
+                // because palce_id does not conform with jscs rules - turn them off here
+                // jscs:disable
+                end = to.place_id;
+                // jscs:enable
+
                 $rootScope.$watch('end', function() {
                     console.log('destination:' + end);
                 });
@@ -7259,10 +7959,6 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 addMarker(to.geometry.location, map);
                 calculateAndDisplayRoute(start, end);
             });
-
-            //$rootScope.$watch('origin + destination', function () {
-            //    console.log('origin:' + origin + ', destination:' + destination);
-            //});
         }
 
         return {
@@ -7286,11 +7982,36 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
 /**
  * @ngdoc service
- * @name ep.hybrid.barcode:epHybridMediaService
+ * @name ep.hybrid.media:epHybridMediaService
  * @description
  * Service for accessing Cordova Media plugin
  *
  * @example
+   <example module="TestApp">
+     <file name="index.html">
+	     <div ng-controller="SampleCtrl">
+            <div class="panel-body">
+                <div><button class="btn btn-primary" style="width:100%" ng-click="playMusic()">Let's Jam!</button></div> &nbsp
+                <div><button class="btn btn-primary" style="width:100%" ng-click="stopMusic()">Stop</button></div>
+            </div>
+	      </div>
+     </file>
+     <file name="script.js">
+     	angular.module("TestApp", ["ep.hybrid.media"])
+     		.controller("SampleCtrl",["$scope", "$log", "epHybridMediaService",
+                function($scope, epHybridMediaService){
+                    var audioUrl = "http://www.sounddogs.com/sound-effects/2217/mp3/410647_SOUNDDOGS__wo.mp3";
+
+                    $scope.playMusic = function() {
+                        epHybridMediaService.playAudio(audioUrl);
+                    }
+
+                    $scope.stopMusic = function() {
+                        epHybridMediaService.stopAudio(audioUrl);
+                    }
+            }]);
+     </file>
+   </example>
  */
 (function() {
     'use strict';
@@ -7300,16 +8021,16 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
     function epHybridMediaService() {
 
+        var myMedia = null;
         /**
          * @ngdoc method
-         * @name scan
+         * @name playAudio
          * @methodOf ep.hybrid.media:epHybridMediaService
          * @public
+         * @param {url} url - url to media file
          * @description
          * To play the media music
          */
-        var myMedia = null;
-
         function playAudio(url) {
            myMedia = new Media(url,
                // success callback
@@ -7325,6 +8046,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             myMedia.play();
         }
 
+        /**
+         * @ngdoc method
+         * @name stopAudio
+         * @methodOf ep.hybrid.media:epHybridMediaService
+         * @public
+         * @description
+         * To stop the media music
+         */
         function stopAudio() {
             //stop the audio
             if (myMedia !== null) {
@@ -7334,6 +8063,84 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         return {
             playAudio: playAudio,
             stopAudio: stopAudio
+        };
+    }
+})();
+
+/**
+ *
+ */
+(function() {
+  'use strict';
+    angular.module('ep.hybrid.network', []);
+})();
+
+/**
+ * @ngdoc service
+ * @name ep.hybrid.network:epHybridNetworkService
+ * @description
+ * Service for accessing Cordova Network-Information plugin
+ *
+ * @example
+   <example module="TestApp">
+     <file name="index.html">
+	     <div ng-controller="SampleCtrl">
+            <div class="panel-body">
+                <div><button class="btn btn-primary" style="width:100%" ng-click="playMusic()">Let's Jam!</button></div> &nbsp
+                <div><button class="btn btn-primary" style="width:100%" ng-click="stopMusic()">Stop</button></div>
+            </div>
+	      </div>
+     </file>
+     <file name="script.js">
+     	angular.module('TestApp', ['ep.hybrid.media'])
+     		.controller('SampleCtrl',['$scope', '$log', 'epHybridMediaService',
+                function($scope, epHybridMediaService){
+                    var audioUrl = 'http://www.sounddogs.com/sound-effects/2217/mp3/410647_SOUNDDOGS__wo.mp3';
+
+                    $scope.playMusic = function() {
+                        epHybridMediaService.playAudio(audioUrl);
+                    }
+
+                    $scope.stopMusic = function() {
+                        epHybridMediaService.stopAudio(audioUrl);
+                    }
+            }]);
+     </file>
+   </example>
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.hybrid.network')
+        .service('epHybridNetworkService', /*@ngInject*/ epHybridNetworkService);
+
+    function epHybridNetworkService() {
+        /**
+         * @ngdoc method
+         * @name checkConnection
+         * @methodOf ep.hybrid.media:epHybridNetworkService
+         * @public
+         * @description
+         * To check the internet connection and status
+         */
+        function checkConnection() {
+            var networkState = navigator.connection.type;
+            var states = {};
+
+            states[Connection.UNKNOWN] = 'Unknown connection';
+            states[Connection.ETHERNET] = 'Ethernet connection';
+            states[Connection.WIFI] = 'WiFi connection';
+            states[Connection.CELL_2G] = 'Cell 2G connection';
+            states[Connection.CELL_3G] = 'Cell 3G connection';
+            states[Connection.CELL_4G] = 'Cell 4G connection';
+            states[Connection.CELL] = 'Cell generic connection';
+            states[Connection.NONE] = 'No network connection';
+
+            return states[networkState];
+
+        }
+        return {
+            checkConnection: checkConnection
         };
     }
 })();
@@ -7353,6 +8160,52 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * Service for accessing Cordova camera plugin
  *
  * @example
+   <example module="TestApp">
+     <file name="index.html">
+	     <div ng-controller="SampleCtrl">
+            <div class="panel-body">
+                <img id="pictureImage" class="full-image" src="">
+                <div><button class="btn btn-primary" style="width:100%" ng-click="takePicture()">Take Picture</button></div> &nbsp
+                <div><button class="btn btn-primary" style="width:100%" ng-click="loadPicture()">Load from Photo Library</button></div>
+            </div>
+	      </div>
+     </file>
+     <file name="script.js">
+     	angular.module("TestApp", ["ep.hybrid.photo"])
+     		.controller("SampleCtrl",["$scope", "$log", "epHybridPhotoService",
+	     		function($scope, epHybridPhotoService){
+                    $scope.takePicture = function () {
+                        epHybridPhotoService.getPicture(
+                            onSuccess,
+                            onFail,
+                            { quality: 50, destinationType: Camera.DestinationType.DATA_URL, correctOrientation: true }
+                        );
+                    };
+
+                    $scope.loadPicture = function () {
+                        epHybridPhotoService.getPicture(
+                            onSuccess,
+                            onFail,
+                            {
+                                quality: 50,
+                                destinationType: Camera.DestinationType.DATA_URL, sourceType: Camera.PictureSourceType.PHOTOLIBRARY,
+                                correctOrientation: true
+                            }
+                        );
+                    };
+
+                    function onSuccess(imageData) {
+                        var image = document.getElementById("pictureImage");
+                        image.src = "data:image/jpeg;base64," + imageData;
+                    }
+
+                    function onFail(message) {
+                        $log.debug("Failed because: " + message);
+                    }
+            }]);
+     </file>
+   </example>
+
  */
 (function() {
     'use strict';
@@ -7368,8 +8221,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @name getPicture
          * @methodOf ep.hybrid.photo:epHybridPhotoService
          * @public
+         * @param {function} successCallback - function called on success of API call
+         * @param {function} errorCallback - function called on error of API call
+         * @param {object} options - Cordova Camera Plugin options
          * @description
-         * To get the picture using camera
+         * To take picture using camera or load photos from gallery
          */
         function getPicture(successCallback, errorCallback, options) {
             navigator.camera.getPicture(
@@ -7402,9 +8258,29 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @ngdoc service
  * @name ep.hybrid.barcode:epHybridVibrationService
  * @description
- * Service for accessing Cordova vibration plugin
+ * Service for accessing Cordova vibration plugin <br />
+ * <b>Note</b>:vibrate length only works on Android and Windows
  *
  * @example
+   <example module="TestApp">
+     <file name="index.html">
+	     <div ng-controller="SampleCtrl">
+            <div class="panel-body">
+                <div><button class="btn btn-primary" style="width:100%" ng-click="vibration()">Vibrate me!</button></div> &nbsp
+            </div>
+	      </div>
+     </file>
+     <file name="script.js">
+     	angular.module("TestApp", ["ep.hybrid.vibration"])
+     		.controller("SampleCtrl",["$scope", "$log", "epHybridVibrationService",
+                function($scope, epHybridVibrationService){
+                    var sec = 3000;
+                    $scope.vibration = function() {
+                        epHybridVibrationService.vibrateDevice(sec);
+                    }
+            }]);
+     </file>
+   </example>
  */
 (function() {
     'use strict';
@@ -7439,6 +8315,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
     *   # templateUrl {string} - file link to HTML that is to be included
     *   # templateCtrl {function} - controller function
     *   # templateScope {object} - scope to be applied for the template
+    *   # userData {object} - pass anything you want here to consume by the template. Will be set as userData on the template scope
     *   # options {object} - an object containing all of the above properties. Note: if options are used then
     *       the other attributes are not applied.
     *
@@ -7466,6 +8343,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 templateUrl: '=',
                 templateCtrl: '=',
                 templateScope: '=',
+                userData: '='
             },
             compile: function() {
 
@@ -7497,6 +8375,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
                 function configure($scope, options) {
                     $scope.state.templateScope = options.templateScope || $scope;
+                    if (options.userData || $scope.userData) {
+                        $scope.state.templateScope.userData = $scope.userData ? $scope.userData : options.userData;
+                    }
                     setWithScope($scope, options);
                 }
 
@@ -7521,10 +8402,21 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         } else {
                             //when options are set though direct attributes we allow watching over template changes
                             $scope.$watchGroup(['template', 'templateUrl', 'templateCtrl', 'templateScope'],
-                                function() {
-                                    configure($scope, $scope);
+                                function(newValues, oldValues) {
+                                    for (var i = 0; i < newValues.length; i++) {
+                                        if (newValues[i] !== oldValues[i]) {
+                                            configure($scope, $scope);
+                                            break;
+                                        }
+                                    }
                                 });
-                        }
+                            }
+                        $scope.$watch('userData', function(newValue, oldValue) {
+                            if (newValue && newValue !== oldValue) {
+                                $scope.state.templateScope.userData = $scope.userData;
+                            }
+                        });
+
                     }
                 };
             }
@@ -7835,115 +8727,6 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 })();
 
 /**
- * @ngdoc controller
- * @name ep.login.controller:epLoginCtrl
- * @description
- * Represents the login controller.
- * This controller negotiates the login/logout requests with the token factory.
- *
- * @example
- *
- */
-(function() {
-    'use strict';
-
-    angular.module('ep.login').controller('epLoginCtrl', [
-    '$scope',
-    '$stateParams',
-    '$state',
-    'tokenFactory',
-    function($scope, $stateParams, $state, tokenFactory) {
-        $scope.cancelPath = $stateParams.cancelPath || 'home';
-        $scope.user = tokenFactory.getToken();
-        $scope.status = '';
-        $scope.$watch(function($scope) {
-            $scope.hasToken = tokenFactory.hasToken();
-            return (tokenFactory.hasToken());
-        });
-
-        /**
-         * @ngdoc method
-         * @name login
-         * @methodOf ep.login.controller:epLoginCtrl
-         * @public
-         * @description
-         * Handles the login request using the current user object from $scope
-         * the tokenFactory returns a promise, so the controller will
-         * need to handle success or error
-         */
-        $scope.login = function() {
-            $scope.hasError = false;
-            $scope.status = '';
-
-            // verify input prompts are populated
-            if (!$scope.user ||
-                !$scope.user.hasOwnProperty('username') ||
-                !$scope.user.hasOwnProperty('password') ||
-                !$scope.user.username ||
-                !$scope.user.password) {
-                $scope.hasError = true;
-                $scope.status = 'Please fill required fields.';
-                return;
-            }
-
-            // ask the token factory to provide success/error promise
-            tokenFactory.login($scope.user)
-              .success(function() {
-                  //this callback will be called asynchronously
-                  //when the response is available
-                  $scope.hasToken = true;
-                  $state.go('home');
-              }).
-              error(function(data, status, headers, config) {
-                  //called asynchronously if an error occurs
-                  //or server returns response with an error status.
-                  var restServer = (config !== undefined && config !== null) ? config.url : '';
-                  $scope.status = 'Login Failure at: ' + restServer;
-                  $scope.hasError = true;
-              });
-        };
-
-        /**
-         * @ngdoc method
-         * @name logout
-         * @methodOf ep.login.controller:epLoginCtrl
-         * @public
-         * @description
-         * Handles the logout request using the tokenFactory
-         */
-        $scope.logout = function() {
-            tokenFactory.logout();
-            $scope.user = {};
-            $scope.hasToken = false;
-        };
-    }
-    ]);
-})();
-
-/**
-     * @ngdoc directive
-     * @name ep.login.directive:epLogin
-     * @restrict E
-     *
-     * @description
-     * Represents the login dialog directive
-     *
-     * @example
-     */
-(function() {
-    'use strict';
-
-    angular.module('ep.login').directive('epLogin',
-    function() {
-        return {
-            restrict: 'E',
-            controller: 'epLoginCtrl',
-            templateUrl: 'src/components/ep.login/login.html',
-        };
-    });
-})();
-
-/**
      * @ngdoc directive
      * @name ep.modaldialog.directive:epmodaldialog
      * @restrict E
@@ -8032,12 +8815,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      *
      */
     epModalDialogService.$inject = ['$sce', '$uibModal', '$compile', '$rootScope', '$timeout', '$interval', '$injector', 'epLocalStorageService'];
-    angular.module('ep.modaldialog').
-        service('epModalDialogService', epModalDialogService);
+    angular.module('ep.modaldialog').service('epModalDialogService', epModalDialogService);
 
     /*@ngInject*/
     function epModalDialogService($sce, $uibModal, $compile, $rootScope, $timeout, $interval, $injector,
-        epLocalStorageService) {
+                                  epLocalStorageService) {
 
         /**
          * @private
@@ -8057,7 +8839,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             fnDefaultAction: null,
             fnCancelAction: null,
             fnButtonAction: null,
-            buttons: [{ text: 'Ok', isDefault: true }],
+            buttons: [{text: 'Ok', isDefault: true}],
             btnBlock: false
         };
 
@@ -8101,7 +8883,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         function showMessage(options) {
             var cfg = {
                 showProgress: false,
-                icon: 'fa fa-info-circle fa-4x',
+                icon: 'fa fa-info-circle fa-4x'
             };
 
             setPaneStatus(options, cfg);
@@ -8139,10 +8921,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     text: 'Yes', isDefault: true,
                     action: (options ? options.fnDefaultAction : null)
                 },
-                {
-                    text: 'No', isCancel: true,
-                    action: (options ? options.fnCancelAction : null),
-                }]
+                    {
+                        text: 'No', isCancel: true,
+                        action: (options ? options.fnCancelAction : null)
+                    }]
             };
 
             setPaneStatus(options, cfg);
@@ -8236,7 +9018,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         cfg.statusClass = 'alert-danger';
                         cfg.statusIcon = 'fa fa-3x fa-warning';
                         break;
-                    case 'information': case 'info':
+                    case 'information':
+                    case 'info':
                         cfg.statusClass = 'alert-info';
                         cfg.statusIcon = 'fa fa-3x fa-info';
                         break;
@@ -8297,7 +9080,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         cfg.statusClass = 'alert-danger';
                         cfg.statusIcon = 'fa fa-3x fa-warning';
                         break;
-                    case 'information': case 'info':
+                    case 'information':
+                    case 'info':
                         cfg.statusClass = 'alert-info';
                         cfg.statusIcon = 'fa fa-3x fa-info';
                         break;
@@ -8324,6 +9108,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          *          # templateScope - the template scope
          *          # templateCtrl - the template controller
          *      templateUrl - the url template html for custom dialog's container (for compatability - should use templateOptions)
+         *      helpTemplateOptions - (optional)
+         *          # helpTemplateUrl - url to template html for custom dialog's help content
+         *          # template - the template html for custom dialog's help content
+         *          # templateScope - the template scope for the custom dialog's help content
+         *          # templateCtrl - the help template controller
          *      controller- the controller to execute when showing the dialog (default null)
          *      size - 'small'/'large'/'fullscreen'/'' (default)
          *      icon - font awesome icon class (icon in the header)
@@ -8376,11 +9165,32 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         currentModalInstance = $uibModalInstance;
                         $scope.config = cfg;
 
-                        //For compatability of just templateUrl (without templateOptions)
+                        //For compatibility of just templateUrl (without templateOptions)
                         if (cfg.templateUrl && !cfg.templateOptions) {
                             cfg.templateOptions = {
                                 templateUrl: cfg.templateUrl
                             };
+                        }
+
+                        // for compatibility with the "helpTemplateUrl" form without helpTemplateOptions
+                        if (cfg.helpTemplateUrl || cfg.helpTemplate) {
+                            cfg.helpTemplateOptions = cfg.helpTemplateOptions || {};
+                            cfg.helpTemplateOptions.templateUrl =
+                                cfg.helpTemplateOptions.templateUrl || cfg.helpTemplateUrl;
+                            cfg.helpTemplateOptions.template =
+                                cfg.helpTemplateOptions.template || cfg.helpTemplate;
+                        }
+
+                        if (cfg.helpTemplateOptions) {
+                            if (!cfg.helpTemplateOptions.templateScope) {
+                                cfg.helpTemplateOptions.templateScope = $scope;
+                            }
+                            $scope.helpButtonClick = function() {
+                                $scope.showHelp = !$scope.showHelp;
+                            };
+                            $scope.closeHelp = function() {
+                                $scope.showHelp = false;
+                            }
                         }
 
                         if (cfg.templateOptions && !cfg.templateOptions.templateScope) {
@@ -8389,8 +9199,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
                         if (cfg.controller) {
                             $injector.invoke(cfg.controller, currentModalInstance,
-                                { '$scope': $scope, '$uibModalInstance': $uibModalInstance });
+                                {'$scope': $scope, '$uibModalInstance': $uibModalInstance});
                         }
+
                         $scope.btnclick = function(btn, action) {
                             var prevCfg = {};
                             copyProperties(dialogState.config, prevCfg);
@@ -8434,6 +9245,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                                 }
                             }
                         }
+
                         $document.on('keydown', onKeydown);
 
                         $scope.$on('$destroy', function() {
@@ -8486,7 +9298,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * Copies properties from source to dest.
          */
         function copyProperties(source, dest) {
-            if (!source || !dest) { return; }
+            if (!source || !dest) {
+                return;
+            }
             angular.forEach(source, function(value, propName) {
                 if (source[propName] !== null) {
                     if (angular.isArray(source[propName])) {
@@ -8629,11 +9443,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         }
 
         /*
-        * @name onButtonClick
-        * @private
-        * @description
-        * when button is clicked processing
-        */
+         * @name onButtonClick
+         * @private
+         * @description
+         * when button is clicked processing
+         */
         function onButtonClick(cfg, btn, action) {
             var result = 0;
             var btnRemId = '';
@@ -8671,11 +9485,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         }
 
         /*
-        * @name checkRememberMe
-        * @private
-        * @description
-        * checks if rememeberMe action is to be invoked
-        */
+         * @name checkRememberMe
+         * @private
+         * @description
+         * checks if rememeberMe action is to be invoked
+         */
         function checkRememberMe(cfg) {
             cfg.rememberMeValue = false;
             if (cfg.rememberMe && !cfg.dialogId) {
@@ -9026,8 +9840,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         * Handles the navigate request.
         *
         * @param {object} mi the menu item
+        * @param {bool} isHeader - is header clicked (backwards or top menu, otherwise triggered from item)
+        * @param {object} ev - event object from UI
         */
-        function navigate(mi, isBackwards) {
+        function navigate(mi, isHeader, ev) {
             if (!mi) {
                 return;
             }
@@ -9037,7 +9853,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 }
                 //going to back to parent set 'left-to-right' animation,
                 //otherwise 'right-to-left'
-                $scope.isRightToLeft = (isBackwards !== true);
+                $scope.isRightToLeft = (isHeader !== true);
                 $scope.data.next = mi;
                 $timeout(function() {
                     setCurrentItems();
@@ -9048,6 +9864,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 $scope.multiLevelMenuHelper.stampLastAccess(mi);
                 emitMenuEvent(epMultiLevelMenuConstants.MLM_ITEM_CLICKED, mi);
                 mi.action(mi);
+            }
+            if (mi.isTop && isHeader && ev && $scope.onTopMenuClick) {
+                $scope.onTopMenuClick();
             }
         }
 
@@ -9114,6 +9933,18 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             //TO DO: on scope destroy unregister
         }
 
+        function doOrderByMenu(menu) {
+            var sortFnValue = $scope.fnSort ? $scope.fnSort(menu) : undefined;
+            return sortFnValue || menu.sort || menu.caption;
+        }
+
+        $scope.$watch('sortDisabled', function(newValue, oldValue) {
+            if ((newValue === true || newValue === false) && !angular.equals(newValue, oldValue)) {
+                $scope.orderByMenu = (newValue === true) ? undefined : doOrderByMenu;
+            }
+        });
+
+        $scope.orderByMenu = ($scope.sortDisabled === true) ? undefined : doOrderByMenu;
         $scope.clear = clear;
         $scope.setCurrentItems = setCurrentItems;
         $scope.navigate = navigate;
@@ -9133,6 +9964,19 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 * @description
 * Represents the ep.multi.level.menu directive
 *
+* Multi-level menu directive.
+*
+*   # menu {object} (required) - the object containing menu item properties.
+*       menuitems {array} - array of menu items (nested sub menu items
+*       caption {string} - menu caption (for menu tile)
+*       hideFavorite {bool} - hide the favorite turning on/off (favorite star)
+*       icon {string} - the icon next to menu (favorite must be off)
+*       action {function} - function called when menu is pressed
+*       tile {object} - settings for ep.tile when working with <ep-tiles-menu-favorites>
+*       separator {object} - add separator on top of th menu item
+*           # text {string} - (optional) separator text
+*           # icon {string} - (optional) the icon next separator text
+*
 * @example
 */
 (function() {
@@ -9150,9 +9994,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                  menuId: '=',           // menuId used to save favorites to local storage
                  searchType: '=',
                  searchDisabled: '=',   // disable search input
+                 sortDisabled: '=',     // disable sorting
+                 initFavorites: '=',    // initialize all favorites on very first time only
                  menu: '=',             // we take the menu as input parameter on the directive
                  onMenuInit: '&',       // this get fired upon menu initialization to provide factory
-                 onFavoriteChange: '&', // this get fired upon menu initialization to provide factory
+                 onFavoriteChange: '&', // fired upon favorite menu change
+                 onTopMenuClick: '='    // event for topmost menu item click
              },
              compile: function() {
                  return {
@@ -9246,13 +10093,21 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     data.menu = angular.extend({}, menu);
                 }
                 if (data.menu) {
-                    // mock up a "_parent" for the top most menu so our html can
-                    // set the proper pointers.
-                    data.menu._parent = { _id: 'topmenu' };
+                    // mock up a "_parent" for the top most menu so our html can set the proper pointers.
+                    data.menu._parent = { _id: 'topmenu', isTop: true };
                     // walk up and down the menu.menuitems and set _depth/_parent properties
                     buildTree(data.menu);
                     data.favorites = getFavorites();
                     data.next = data.menu;
+
+                    if (!epLocalStorageService.get(getStoreKey())) {
+                        //set initial favorites if this is the very first time running menu
+                        epMultiLevelMenuService.findAllMenuItems(data.menu, function(m) {
+                            if (!m.hideFavorite && (m.initFavorite || scope.initFavorites)) {
+                                toggleFavorite(m);
+                            }
+                        });
+                    }
 
                     if (refresh) {
                         scope.navigate(data.menu);
@@ -9601,6 +10456,20 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 return scope.menuId;
             }
 
+            /**
+             * @ngdoc method
+             * @name setSortFunction
+             * @methodOf ep.multi.level.menu.factory:epMultiLevelMenuFactory
+             * @public
+             * @description
+             * Set sort function to do custom sorting
+             *
+             * @param {object} function to be called for sorting. Menu object passed to this function.
+           */
+            function setSortFunction(fnSort) {
+                scope.fnSort = fnSort;
+            }
+
             return {
                 getMenuId: getMenuId,
                 data: data,
@@ -9616,7 +10485,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 triggerAction: triggerAction,
                 clear: clear,
                 mergeMenu: mergeMenu,
-                mergeMenuItems: mergeMenuItems
+                mergeMenuItems: mergeMenuItems,
+                setSortFunction: setSortFunction
             };
         }
     }]);
@@ -10085,7 +10955,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         break;
                     case 'contains':            // handle the contains function
                         arg0 = 'indexof(' + arg0 + ',\'' + arg1 + '\')';
-                        compareOp = (params && 'not' in params && params.not) ? 'lt ' : 'ge';
+                        compareOp = (params && 'not' in params && params.not) ? 'lt ' : 'gt';
                         arg1 = '0';
                         tickMark = '';
                         break;
@@ -10101,6 +10971,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         arg0 = compareOp + '(' + arg0 + ')';
                         compareOp = 'eq';
                         break;
+                }
+                if (arg1 === '') {
+                    arg1 = "''";
                 }
                 // now lets append all this good stuff onto the current $filter property
                 odataObject.$filter = ((odataObject && odataObject.$filter) ? (odataObject.$filter + logicalOp) : '') +
@@ -10209,7 +11082,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         * @public
         * @description
         * Handles the search request using the current user object from $scope
-        * the tokenFactory returns a promise, so the controller will
+        * the epTokenService returns a promise, so the controller will
         * need to handle success or error
         */
         $scope.enterpriseSearch.changeSearch = function() {
@@ -10227,7 +11100,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         * @public
         * @description
         * Handles the search request using the current user object from $scope
-        * the tokenFactory returns a promise, so the controller will
+        * the epTokenService returns a promise, so the controller will
         * need to handle success or error
         */
         $scope.enterpriseSearch.runSearch = function(searchText) {
@@ -10518,6 +11391,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         $scope.onMenuOptions = function onMenuOptions() {
             $scope.menuOptions.onMenuInit = function(factory) {
                 $scope.menuOptions.factory = factory;
+            };
+            $scope.onTopMenuClick = function(factory) {
+                if ($scope.menuOptions.onTopMenuClick) {
+                    $scope.menuOptions.onTopMenuClick();
+                }
             };
 
             $scope.menu = {
@@ -11620,14 +12498,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      }
 
      function notifyStateChanged(event) {
-       $rootScope.$emit('shellStateChanged', event); //ABSOLETE - will remove after P21 rename
        $rootScope.$emit(epShellConstants.SHELL_STATE_CHANGE_EVENT, event);
      }
 
      function notifySizeChanged(event) {
        // use timeout to wait until the animation is complete before publishing the resize event
        $timeout(function() {
-         $rootScope.$emit('shellSizeChanged', event); //ABSOLETE - will remove after P21 rename
          $rootScope.$emit(epShellConstants.SHELL_SIZE_CHANGE_EVENT, event);
        }, 310);
      }
@@ -12582,10 +13458,6 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     $scope.platform = epFeatureDetectionService.getFeatures().platform;
                     $scope.shellState = epShellService.__state;
                     $scope.sidebarState = epSidebarService.state;
-                    $('body').removeClass('cordova-padding');
-                    if ($scope.platform.app === 'Cordova' && $scope.platform.os === 'mac') {
-                        $('body').addClass('cordova-padding');
-                    }
 
                     $scope.menuId = $routeParams.menuId;
                     $scope.dismissRightSidebar = function() {
@@ -12601,10 +13473,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         }
                     };
 
-                    $scope.dismissSidebars = function() {
+                    var dismissSidebars = function() {
                         $scope.dismissRightSidebar();
                         $scope.dismissLeftSidebar();
                     };
+                    // this event is bound programmatically so that it doesn't
+                    // participate in the ng-click lifecycle (which causes sporadic
+                    // problems with click events on child elements)
+                    $('#viewPlaceholder').bind('click', dismissSidebars);
                 }
 
                 $rootScope.$watch('initComplete', function(initComplete) {
@@ -12941,7 +13817,6 @@ angular.module('ep.shell').service('epSidebarService', [
 
              shellState.viewDimensions = dim;
              if (triggerEvent) {
-                 $rootScope.$emit('viewSizeChanged', dim, eventType); //OBSOLETE - will remove after P21 rename
                  $rootScope.$emit(epShellConstants.SHELL_VIEW_SIZE_CHANGE_EVENT, dim, eventType);
              }
          }
@@ -12975,7 +13850,8 @@ angular.module('ep.shell').service('epSidebarService', [
  </doc:example>
  */
 angular.module('ep.signature').directive('epSignature',
-    ['$timeout', function($timeout) {
+    /*@ngInject*/
+    ['$timeout', '$document', '$q', function($timeout, $document, $q) {
 
         function drawText(ctx, text, x, y) {
             if (text) {
@@ -12983,6 +13859,7 @@ angular.module('ep.signature').directive('epSignature',
             }
         }
 
+        // Adds the text ($scope.ulText, $scope.llText, etc) to the corners of the canvas
         function stampText($scope) {
             var canvas = $('canvas');
             var ctx = canvas[0].getContext('2d');
@@ -13007,11 +13884,120 @@ angular.module('ep.signature').directive('epSignature',
             var lry = canvasHeight - 5;
 
             ctx.font = '8pt Courier New';
-
+            ctx.fillStyle = '#000';
             drawText(ctx, ulTxt, ulx, uly);
             drawText(ctx, llTxt, llx, lly);
             drawText(ctx, urTxt, urx, ury);
             drawText(ctx, lrTxt, lrx, lry);
+        }
+
+        function resizeCanvasToDataUrl($canvas, width, height) {
+            var deferred = $q.defer();
+
+            var workingImg = new Image();
+            workingImg.onload = function() {
+                var workingCanvas = $document[0].createElement('canvas');
+                workingCanvas.width = width;
+                workingCanvas.height = height;
+                var workingCtx = workingCanvas.getContext('2d');
+                workingCtx.drawImage(workingImg, 0, 0, width, height);
+                deferred.resolve(workingCanvas.toDataURL('image/jpeg', 1.0));
+            };
+            workingImg.onerror = function(err) {
+                deferred.reject(err);
+            };
+            workingImg.src = $canvas[0].toDataURL();
+
+            return deferred.promise;
+        }
+
+        function link($scope, $element) {
+            $scope.initialized = false;
+            $scope.isEnabled = false;
+            $scope.drawText = false;
+            $scope.initialize = function() {
+                if (!$scope.initialized) {
+                    var sigOptions = {
+                        'background-color': '#fffff',
+                        'color': '#000'
+                    };
+                    var sigcomp = $element.find('#signature').jSignature(sigOptions);
+                    $timeout(function() {
+                        sigcomp.resize();
+                    }, 200);
+                    var canvas = $('canvas');
+                    canvas.css('border-bottom', '1px solid black');
+                    var ctx = canvas[0].getContext('2d');
+                    ctx.fillStyle = '#fff';
+                    ctx.fillRect(0, 0, canvas.attr('width'), canvas.attr('height'));
+                    ctx.fillStyle = '#000';
+
+                    $(window).on('resize', $scope.resizeCanvas);
+                    $element.find('#signature').bind('change', function() {
+                        // This needs to go to the end of the event stack, hence the timeout
+                        $timeout(function() {
+                            $scope.sig = $element.find('#signature').jSignature('getData');
+                            $scope.isEnabled = !!$scope.sig;
+                        }, 0);
+                    });
+                    $scope.initialized = true;
+                }
+            };
+
+            $scope.accept = function() {
+                if (angular.isDefined($scope.sig) && (!$scope.onBeforeAccept ||
+                    $scope.onBeforeAccept($scope) !== false)) {
+                    $(window).off('resize', $scope.resizeCanvas);
+                    $scope.isEnabled = false;
+                    $scope.drawText = true;
+                    $timeout(function() {
+                        stampText($scope);
+                        var $canvas = $('canvas.jSignature');
+                        var canvas = $canvas[0];
+                        if ($scope.imageSizeWidth || $scope.imageSizeHeight) {
+                            if (angular.isString($scope.imageSizeWidth)) {
+                                $scope.imageSizeWidth =
+                                    $scope.imageSizeWidth ? parseInt($scope.imageSizeWidth) : 0;
+                            }
+                            if (angular.isString($scope.imageSizeHeight)) {
+                                $scope.imageSizeHeight = $scope.imageSizeHeight ? parseInt($scope.imageSizeHeight) : 0;
+                            }
+                            var currentAspect = parseInt($canvas.attr('width')) / parseInt($canvas.attr('height'));
+                            if ($scope.imageSizeWidth && !$scope.imageSizeHeight) {
+                                $scope.imageSizeHeight = Math.floor($scope.imageSizeWidth / currentAspect);
+                            } else if ($scope.imageSizeHeight && !$scope.imageSizeWidth) {
+                                $scope.imageSizeWidth = Math.floor($scope.imageSizeHeight * currentAspect);
+                            }
+                            resizeCanvasToDataUrl($canvas, $scope.imageSizeWidth, $scope.imageSizeHeight).then(
+                                function(dataUrl) {
+                                    $scope.onAccept(dataUrl.replace('data:image/jpeg;base64,', ''));
+                                });
+                        } else {
+                            $scope.onAccept(canvas.toDataURL('image/jpeg').replace('data:image/jpeg;base64,', ''));
+                        }
+
+                    });
+                }
+            };
+
+            //Resizing the canvas
+            $scope.resizeCanvas = function() {
+                if ($scope.drawText) {
+                    stampText($scope);
+                }
+            };
+
+            $scope.reset = function() {
+                $scope.setButton = false;
+                $scope.isEnabled = true;
+                $element.find('#signature').jSignature('reset');
+            };
+
+            $scope.signatureControls = {
+                reset: $scope.reset
+            };
+
+            $scope.initialize();
         }
 
         return {
@@ -13030,70 +14016,12 @@ angular.module('ep.signature').directive('epSignature',
                 llText: '@',
                 lrText: '@',
                 height: '@',
+                imageSizeWidth: '@',
+                imageSizeHeight: '@'
                 // create property for label here and fetch from API
             },
-
             templateUrl: 'src/components/ep.signature/ep-signature.html',
-            link: function($scope, $element) {
-                $scope.initialized = false;
-                $scope.isEnabled = false;
-                $scope.drawText = false;
-                $scope.initialize = function() {
-                    if (!$scope.initialized) {
-                        var sigOptions = {
-                            'background-color': '#fffff',
-                            'color': '#000'
-                        };
-                        var sigcomp = $element.find('#signature').jSignature(sigOptions);
-                        $timeout(function() {
-                            sigcomp.resize();
-                        }, 200);
-
-                        //var canvas = $element.find('canvas');
-                        //var ctx = canvas[0].getContext('2d');
-                        $(window).on('resize', $scope.resizeCanvas);
-                        $element.find('#signature').bind('change', function() {
-                            $timeout(function() {
-                                $scope.sig = $element.find('#signature').jSignature('getData');
-                                $scope.isEnabled = !!$scope.sig;
-                            }, 0); // This needs to go to the end of the event stack
-                        });
-                        $scope.initialized = true;
-                    }
-                };
-
-                $scope.accept = function() {
-                    if (angular.isDefined($scope.sig) && (!$scope.onBeforeAccept ||
-                        $scope.onBeforeAccept($scope) !== false)) {
-                        $(window).off('resize', $scope.resizeCanvas);
-                        $scope.isEnabled = false;
-                        $scope.drawText = true;
-                        $timeout(function() {
-                            stampText($scope);
-                            $scope.onAccept($element.find('#signature').jSignature('getData'));
-                        });
-                    }
-                };
-
-                //Resizing the canvas
-                $scope.resizeCanvas = function() {
-                    if ($scope.drawText) {
-                        stampText($scope);
-                    }
-                };
-
-                $scope.reset = function() {
-                    $scope.setButton = false;
-                    $scope.isEnabled = true;
-                    $element.find('#signature').jSignature('reset');
-                };
-
-                $scope.signatureControls = {
-                    reset: $scope.reset
-                };
-
-                $scope.initialize();
-            }
+            link: link
         };
     }]);
 
@@ -14283,8 +15211,10 @@ angular.module('ep.signature').directive('epSignature',
 *       description {string} - menu description (for menu tile)
 *       footer {string} - footer text
 *       action {function} - function to be called when clicked
-*       closeButton {bool} - menu close action (by default close button is shown)
+*       closeButton {bool} close action (by default close button is shown)
 *       images {array} - array of image objects [{ src, title }]
+*       icon {string} - icon set in the menu tile caption area
+*       contentIcon {string} - icon set in the content area
 *       templateOptions - template options for custom tile (type must be 'custom')
 *           # template - plain HTML
 *           # templateUrl - template url
@@ -14574,7 +15504,7 @@ function epTilesMenuFavoritesDirective() {
             restrict: 'E',
             controller: 'epTilesMenuFavoritesCtrl',
             template: '<ep-tiles-panel list=state.list before-list=state.beforeList after-list=state.afterList ' +
-                'color=color size-mode=sizeMode width=width height=height></ep-tiles-panel>',
+                'color=color size-mode=sizeMode width=width height=height disable-sort=disableSort></ep-tiles-panel>',
             scope: {
                 menuId: '=',
                 beforeList: '=',
@@ -14586,7 +15516,8 @@ function epTilesMenuFavoritesDirective() {
                 width: '=',
                 height: '=',
                 bingHeight: '=',
-                bingWidth: '='
+                bingWidth: '=',
+                disableSort: '='
             },
             link: function(scope, element) {
                 scope.state = {
@@ -14627,9 +15558,11 @@ function epTilesMenuFavoritesDirective() {
              'sienna', 'steel', 'teal', 'violet', 'yellow'
         ];
 
-        $scope.sortList = function(tile) {
+        function doSort(tile) {
             return tile.sort || tile.caption;
-        };
+        }
+
+        $scope.sortList = $scope.disableSort !== true ? doSort : undefined;
 
         $scope.initColors = function() {
             $scope.state.tileColor = '';
@@ -14678,6 +15611,11 @@ function epTilesMenuFavoritesDirective() {
         $scope.$watch('afterList', function(newValue, oldValue) {
             if (newValue && newValue !== oldValue) {
                 $scope.initColors();
+            }
+        });
+        $scope.$watch('disableSort', function(newValue, oldValue) {
+            if ((newValue === true || newValue === false) && newValue !== oldValue) {
+                $scope.sortList = $scope.disableSort !== true ? doSort : undefined;
             }
         });
     }
@@ -14729,7 +15667,8 @@ function epTilesMenuFavoritesDirective() {
                 color: '=',
                 sizeMode: '=',
                 width: '=',
-                height: '='
+                height: '=',
+                disableSort: '='
             },
             link: function(scope, element) {
                 scope.state = {
@@ -14747,16 +15686,155 @@ function epTilesMenuFavoritesDirective() {
 })();
 
 /**
- * @ngdoc object
- * @name ep.token.object:tokenConfig
+ * @ngdoc controller
+ * @name ep.tile.controller:epTileCtrl
  * @description
- * Provider for tokenConfig.
- * Gets configuration options from tokenConfig.json or default
+ * Represents the login controller.
+ * This controller negotiates the login/logout requests with the token factory.
+ *
+ * @example
+ *
+ */
+
+(function() {
+    'use strict';
+
+    epLoginCtrl.$inject = ['$scope', 'epTokenService'];
+    angular.module('ep.token')
+        .controller('epLoginCtrl', epLoginCtrl);
+
+    /*@ngInject*/
+    function epLoginCtrl($scope, epTokenService) {
+        var tkn = epTokenService.getToken();
+        $scope.user = tkn ? tkn.user : {};
+        $scope.status = '';
+        $scope.$watch(function($scope) {
+            $scope.hasToken = epTokenService.hasToken();
+            return (epTokenService.hasToken());
+        });
+
+        /**
+         * @ngdoc method
+         * @name login
+         * @methodOf ep.login.controller:epLoginCtrl
+         * @private
+         * @description
+         * Handles the login request using the current user object from $scope
+         * the epTokenService returns a promise, so the controller will
+         * need to handle success or error
+         */
+        $scope.login = function() {
+            $scope.hasError = false;
+            $scope.status = '';
+
+            // verify input prompts are populated
+            if (!$scope.user ||
+                !$scope.user.hasOwnProperty('username') ||
+                !$scope.user.hasOwnProperty('password') ||
+                !$scope.user.username ||
+                !$scope.user.password) {
+                $scope.hasError = true;
+                $scope.status = 'Please fill required fields.';
+                return;
+            }
+
+            // ask the token factory to provide success/error promise
+            epTokenService.login($scope.user)
+              .success(function() {
+                  //this callback will be called asynchronously
+                  //when the response is available
+                  $scope.hasToken = true;
+                  if ($scope.onLoginSuccess) {
+                      $scope.onLoginSuccess($scope.user);
+                  }
+              }).
+              error(function(data, status, headers, config) {
+                  //called asynchronously if an error occurs
+                  //or server returns response with an error status.
+                  var restServer = (config !== undefined && config !== null) ? config.url : '';
+                  $scope.status = 'Login Failure at: ' + restServer;
+                  $scope.hasError = true;
+                  if ($scope.onLoginFail) {
+                      $scope.onLoginFail($scope.status);
+                  }
+              });
+        };
+
+        /**
+         * @ngdoc method
+         * @name logout
+         * @methodOf ep.login.controller:epLoginCtrl
+         * @private
+         * @description
+         * Handles the logout request using the epTokenService
+         */
+        $scope.logout = function() {
+            epTokenService.logout();
+            $scope.user = {};
+            $scope.hasToken = false;
+        };
+
+        /**
+         * @ngdoc method
+         * @name cancel
+         * @methodOf ep.login.controller:epLoginCtrl
+         * @private
+         * @description
+         * Handles the logout request using the epTokenService
+         */
+        $scope.cancel = function() {
+            if ($scope.onLoginCancel) {
+                $scope.onLoginCancel();
+            }
+        };
+    }
+})();
+
+/**
+* @ngdoc directive
+* @name ep.tile.directive:epTile
+* @restrict E
+*
+* @description
+* Represents the login dialog directive
+*
+* @example
+*/
+(function() {
+    'use strict';
+
+    angular.module('ep.token').
+    directive('epLogin', epLoginDirective);
+
+    /*@ngInject*/
+    function epLoginDirective() {
+        return {
+            restrict: 'E',
+            controller: 'epLoginCtrl',
+            templateUrl: 'src/components/ep.token/ep-login/login.html',
+            scope: {
+                showTitle: '=',      // (true/false) show title above the controls
+                showLabels: '=',     // (true/false) hide labels in line with entry text control
+                showCancel: '=',     // (true/false) hide cancel button
+                onLoginFail: '&',    // this get fired upon login failure
+                onLoginSuccess: '&', // this get fired upon login success
+                onLoginCancel: '&'   // this get fired upon login cancel
+            }
+        };
+    }
+})();
+
+/**
+ * @ngdoc object
+ * @name ep.token.object:epTokenConfig
+ * @description
+ * Provider for epTokenConfig.
+ * Gets configuration options from sysconfig
  */
 (function() {
     'use strict';
 
-    angular.module('ep.token').provider('tokenConfig',
+    angular.module('ep.token').provider('epTokenConfig',
     function() {
         var config = {
             /**
@@ -14776,14 +15854,63 @@ function epTilesMenuFavoritesDirective() {
             * @description
             * Represents the Id for the cookie that will store username and token
             */
-            tokenId: 'epicor.token.auth'
+            tokenId: 'emf.token.auth',
+            /**
+            * @ngdoc property
+            * @name timeout
+            * @propertyOf ep.token.object:tokenConfig
+            * @public
+            * @description
+            * Set timeout of the token in seconds. This can override the actual token timeout if it is smaller
+            */
+            timeout: 0,
+            /**
+            * @ngdoc property
+            * @name warnExpire
+            * @propertyOf ep.token.object:tokenConfig
+            * @public
+            * @description
+            * Should we give a warning on token expiration with renewal option
+            */
+            warnExpire: true,
+            /**
+            * @ngdoc property
+            * @name warnExpireDuration
+            * @propertyOf ep.token.object:tokenConfig
+            * @public
+            * @description
+            * How many seconds prior to expiration should we warn the user
+            */
+            warnExpireDuration: 60,
+            /**
+            * @ngdoc property
+            * @name storePassword
+            * @propertyOf ep.token.object:tokenConfig
+            * @public
+            * @description
+            * Store the password for renewal
+            */
+            storePassword: true,
+            /**
+            * @ngdoc property
+            * @name autoRenew
+            * @propertyOf ep.token.object:tokenConfig
+            * @public
+            * @description
+            * Auto renew token if renewal warning turned off
+            */
+            autoRenew: false,
+            /**
+            * @ngdoc property
+            * @name debug
+            * @propertyOf ep.token.object:tokenConfig
+            * @public
+            * @description
+            * If debug is on, the token service is not invoked and dummy results returned
+            */
+            debug: false
         };
 
-        //This $get, is kinda confusing - it does not return the provider, but it returns the "service".
-        //In our case, the "service" is the environment configuration object
-        //The $get is called automatically when AngularJS encounters a DI.
-        //
-        //we use the epSysConfig provider to perform the $http read against sysconfig.json
         this.$get = ['epSysConfig', function(epSysConfig) {
             epSysConfig.mergeSection('ep.token', config);
             return config;
@@ -14791,74 +15918,111 @@ function epTilesMenuFavoritesDirective() {
     });
 })();
 
-/**
- * @ngdoc service
- * @name ep.token.factory:tokenFactory
- * @description
- * Provides token auth login/logout behaviors
- *
- * **note:**    requires local tokenConfig.json file with restUri property to describe
- *              location for token auth rest server
- *
- * @example
- *
- */
 (function() {
     'use strict';
+    /**
+     * @ngdoc service
+     * @name ep.token.factory:epTokenService
+     * @description
+     * Provides token auth login/logout behaviors. The service is configurable. There is baked in
+     * logic some of which can be overriden by options or callbacks. For example if the http.post
+     * request needs to be different, one can provide a callback that will do its own request.
+     * Most options are configurable either from local sysconfig.json or through the login() function
+     *
+     * TO DO: currently storing token in the local storage because android issues with $cookies.
+     * we want to make it configurable or read a setting from sysconfig whether it is hybrid or not.
+     *
+     * @example
+     *
+     */
+    epTokenService.$inject = ['$cookies', '$http', '$q', '$timeout', 'epTokenConfig', 'epUtilsService', 'epModalDialogService', 'epLocalStorageService'];
+    angular.module('ep.token').
+        service('epTokenService', epTokenService);
 
-    angular.module('ep.token').factory('tokenFactory', [
-   '$cookieStore',
-   '$http',
-   'tokenConfig',
-   'utilsConfig',
-   '$q',
-    function($cookieStore, $http, tokenConfig, utilsConfig, $q) {
+    /*@ngInject*/
+    function epTokenService($cookies, $http, $q, $timeout,
+        epTokenConfig, epUtilsService, epModalDialogService, epLocalStorageService) {
+        var state = {
+            tokenTimeoutPromise: undefined,
+            options: {}
+        };
+
         /**
          * @ngdoc method
          * @name login
-         * @methodOf ep.token.factory:tokenFactory
+         * @methodOf ep.token.factory:epTokenService
          * @public
          * @description
          * Login to the token auth server and save the token in the cookie store
          *
-         * @param {object} user The object that represents the user
+         * @param {user} user The object that represents the user (must have username and password props)
+         * @param {object} options - (these override sysconfig settings)
+         * <pre>
+         *      restUri {string} - Represents the URI for the REST service that provides the token auth login
+         *      timeout {int} - token timeout (in seconds). Note you can only decrease token lifetime set by server
+         *      warnExpire {bool} - (default true) - show dialog when token is about to expire
+         *      warnExpireDuration {int} - (default 60) seconds prior to expiration to show warning dialog
+         *      warnExpireDialogOptions {object} - override options for the warning dialog such as title, message
+         *      storePassword {bool} - (default true) keep credentials for token renewal
+         *      autoRenew {bool} - (default false) - auto renew token (if warnExpire = false)
+         *      fnFetchToken {function} - custom fetch token function that should return promise with token object
+         *      fnRenewToken {function} - custom renew token function
+         * </pre>
          * @returns {Promise} A promise that returns the token if resolved,
          *      or an appropriate login exception if rejected
          */
-        function login(user) {
-            // backdoor login
-            // this is allowed when there is debug node on sysconfig.json.epUtilsConfig and
-            // user logs in as manager/Epicor123
-            if (utilsConfig.debug && user.username === 'manager' && user.password === 'Epicor123') {
-                return backdoorLogin(user);
-            }
-
-            // return the http promise so the caller can also handle the success/error
-            return fetchToken(user).success(function(data) {
-                // here is where we want to scrape off the 'Bearer' and put this onto our cookieStore
-                parseToken(data);
-                $cookieStore.put(tokenConfig.tokenId, user);
-            }).error(function() {
-                // error handling
-                // $cookieStore.put(tokenConfig.tokenId, user);
-            });
+        function login(user, options) {
+            state.options = {};
+            epUtilsService.copyProperties(epTokenConfig, state.options);
+            epUtilsService.copyProperties(options, state.options);
+            return doLogin(user, state.options.restUri);
         }
 
         /**
          * @ngdoc method
          * @name logout
-         * @methodOf ep.token.factory:tokenFactory
+         * @methodOf ep.token.factory:epTokenService
          * @public
          * @description
          * removes the current token from cookie store
          */
         function logout() {
-            $cookieStore.remove(tokenConfig.tokenId);
+            epLocalStorageService.update(epTokenConfig.tokenId, undefined);
+            //$cookies.remove(epTokenConfig.tokenId);
+            if (state.tokenTimeoutPromise) {
+                $timeout.cancel(state.tokenTimeoutPromise);
+            }
+        }
+        /**
+         * @ngdoc method
+         * @name showLoginDialog
+         * @methodOf ep.token.factory:epTokenService
+         * @public
+         * @description
+         * Show login dialog
+         *
+         * @param {user} user The object that represents the user (must have username and password props)
+         * @param {object} options - same options as in login()
+         * @param {object} dialogOptions - (optional) epModalDialogService.showCustomDialog() dialog options
+         */
+        function showLoginDialog(user, options, dialogOptions) {
+            var dlg = {
+                title: 'Login',
+                closeButton: true,
+                templateOptions: {
+                    template: '<ep-login show-title="false" on-login-cancel="config.onLoginCancel()"></ep-login>'
+                },
+                onLoginCancel: function() {
+                    epModalDialogService.hide();
+                }
+            };
+            epUtilsService.copyProperties(dialogOptions, dlg);
+            epModalDialogService.showCustomDialog(dlg);
         }
         /**
          * @ngdoc method
          * @name getToken
-         * @methodOf ep.token.factory:tokenFactory
+         * @methodOf ep.token.factory:epTokenService
          * @public
          * @description
          * Gets the current token
@@ -14866,13 +16030,39 @@ function epTilesMenuFavoritesDirective() {
          * @returns {object} object that represents current token
          */
         function getToken() {
-            return $cookieStore.get(tokenConfig.tokenId);
+            return epLocalStorageService.get(epTokenConfig.tokenId);
+            //return $cookies.getObject(epTokenConfig.tokenId);
+        }
+
+        /**
+         * @ngdoc method
+         * @name getExpiresIn
+         * @methodOf ep.token.factory:epTokenService
+         * @public
+         * @description
+         * Retruns in how many seconds token will expire
+         *
+         * @returns {int} number of secs
+         */
+        function getExpiresIn() {
+            var tkn = getToken();
+            var ret = 0;
+            if (tkn) {
+                var dateNow = new Date();
+                ret = tkn.expiresUTC - dateNow.getTime();
+                if (ret <= 0) {
+                    ret = 0;
+                } else {
+                    ret = Math.floor(ret / 1000);
+                }
+            }
+            return ret;
         }
 
         /**
          * @ngdoc method
          * @name hasToken
-         * @methodOf ep.token.factory:tokenFactory
+         * @methodOf ep.token.factory:epTokenService
          * @public
          * @description
          * Checks if service has a current token
@@ -14884,30 +16074,41 @@ function epTilesMenuFavoritesDirective() {
             return user !== undefined && !angular.equals({}, user);
         }
 
-        // private function to return the $http promise
-        // sets the header and fires the post request.
-        function fetchToken(user) {
-            $http.defaults.headers.post = user;
-            return $http.post(tokenConfig.restUri, {});
-        }
-
-        // private function to consume the bearer from json
-        function parseToken(data) {
-            if (data && data.hasOwnProperty('bearer')) {
-                $cookieStore.put(tokenConfig.tokenId, data);
+        /**
+         * @ngdoc method
+         * @name renewToken
+         * @methodOf ep.token.factory:epTokenService
+         * @public
+         * @description
+         * Renew token requests new token. storePassword option must be enabled.
+         */
+        function renewToken() {
+            var tkn = getToken();
+            if (state.options.fnRenewToken) {
+                state.options.fnRenewToken(tkn);
+            } else if (tkn && tkn.user) {
+                doLogin(tkn.user, tkn.uri);
             }
         }
 
-        return {
-            login: login,
-            logout: logout,
-            getToken: getToken,
-            hasToken: hasToken
-        };
+        // private function to return the $http promise
+        // sets the header and fires the post request.
+        function fetchToken(user, uri) {
+            var options = {
+                headers: {
+                    'username': user.username,
+                    'password': user.password,
+                    'Accept': 'application/json',
+                    'Content-Type': 'application/x-www-form-urlencoded'
+                }
+            };
+            var url = epUtilsService.ensureEndsWith(uri, '/'); //need for Chrome
+            return $http.post(url, null, options);
+        }
 
         // allow manager/Epicor123 to login without the real token for now
         // TODO:  need to remove this debug logic when ICE returns real token
-        function backdoorLogin(user) {
+        function backdoorLogin(user, uri) {
             var deferred = $q.defer();
             var promise = deferred.promise;
             promise.success = function(fn) {
@@ -14918,15 +16119,151 @@ function epTilesMenuFavoritesDirective() {
                 promise.then(null, fn);
                 return promise;
             };
-            parseToken({
-                username: user.username,
-                bearer: 'mySampleTokenDataValue'
-            });
-            deferred.resolve('');
+            var token = {
+                TokenType: 'Bearer',
+                AccessToken: 'mySampleTokenDataValue'
+            };
+            writeCookie(token, user, uri);
+            deferred.resolve(token);
             return promise;
         }
-    }]);
-})();
+
+        // private function to save cookie
+        function writeCookie(data, user, uri) {
+            var tkn = (data && data.AccessToken && data.TokenType === 'Bearer') ? data : undefined;
+            var expiresInSecs = (tkn && data.ExpiresIn) ? data.ExpiresIn : state.options.timeout;
+            if (state.options.timeout && state.options.timeout < expiresInSecs) {
+                expiresInSecs = state.options.timeout;
+            }
+            var dateNow = new Date();
+            var dateExp = new Date(dateNow);
+            dateExp.setTime(dateExp.getTime() + expiresInSecs * 1000);
+            //var options = expiresInSecs ? { expires: dateExp } : {};
+            //$cookies.putObject(epTokenConfig.tokenId, {
+            //    uri: uri,
+            //    user: user,
+            //    token: tkn,
+            //    createdUTC: dateNow.getTime(),
+            //    expiresUTC: dateExp.getTime(),
+            //    expiresInSecs: expiresInSecs
+            //}, options);
+            epLocalStorageService.update(epTokenConfig.tokenId, {
+                uri: uri,
+                user: user,
+                token: tkn,
+                createdUTC: dateNow.getTime(),
+                expiresUTC: dateExp.getTime(),
+                expiresInSecs: expiresInSecs
+            });
+
+            doSetTimeout(expiresInSecs);
+        }
+
+        // private function upon service initialization
+        function init() {
+            if (state.tokenTimeoutPromise) {
+                $timeout.cancel(state.tokenTimeoutPromise);
+            }
+            var exp = getExpiresIn();
+            if (exp) {
+                doSetTimeout(exp);
+            }
+        }
+
+        function doLogin(user, restUri) {
+            logout();
+            var uri = restUri || state.options.restUri;
+            if (state.options.debug) {
+                return backdoorLogin(user, uri);
+            }
+            var fnFetch = state.options.fnUserFetchToken || fetchToken;
+            // return the http promise so the caller can also handle the success/error
+            return fnFetch(user, uri).success(function(data) {
+                // here is where we want to scrape off the 'Bearer' and put this onto our cookieStore
+                writeCookie(data, user, uri);
+            }).error(function() {
+                // error handling
+            });
+        }
+
+        function doRenewToken(tkn) {
+            if (state.options.fnRenewToken) {
+                state.options.fnRenewToken(tkn);
+            } else if (tkn && tkn.user) {
+                doLogin(tkn.user, tkn.uri);
+            }
+        }
+
+        /**
+         * @ngdoc method
+         * @name doSetTimeout
+         * @methodOf ep.token.factory:epTokenService
+         * @private
+         * @description
+         * Set timeout when to bring up expiration warning or auto renewal
+         */
+        function doSetTimeout(expiresInSecs) {
+            if (state.tokenTimeoutPromise) {
+                $timeout.cancel(state.tokenTimeoutPromise);
+            }
+
+            if (!state.options.warnExpire && !state.options.autoRenew) {
+                return;
+            }
+
+            var dialogExpires = (expiresInSecs > state.options.warnExpireDuration) ?
+                (expiresInSecs - state.options.warnExpireDuration) : expiresInSecs;
+            dialogExpires -= 5; //some cushion to make the renewal call
+            state.tokenTimeoutPromise = $timeout(function() {
+                var tkn = getToken();
+                if (tkn) {
+                    var expiresIn = getExpiresIn();
+                    if (state.options.warnExpire) {
+                        var dlg = {
+                            title: 'Expiration Notice',
+                            message: 'Your session is about to expire in {timer} seconds...',
+                            autoClose: expiresIn,
+                            icon: 'fa fa-warning fa-4x',
+                            buttons: [
+                                {
+                                    text: 'Continue',
+                                    action: function() {
+                                        doRenewToken(tkn);
+                                    }
+                                },
+                                {
+                                    text: 'Log Out',
+                                    action: function() {
+                                        logout();
+                                    }
+                                }
+                            ],
+                            fnDefaultAction: function() {
+                                logout();
+                            }
+                        };
+                        epUtilsService.copyProperties(state.options.warnExpireDialogOptions, dlg);
+                        epModalDialogService.showMessage(dlg);
+                    } else if (state.options.autoRenew) {
+                        doRenewToken(tkn);
+                    }
+                }
+            }, dialogExpires * 1000);
+        }
+
+        init();
+
+        return {
+            login: login,
+            logout: logout,
+            getToken: getToken,
+            hasToken: hasToken,
+            getExpiresIn: getExpiresIn,
+            renewToken: renewToken,
+            showLoginDialog: showLoginDialog
+        };
+    }
+}());
 
 
 (function() {
@@ -15331,365 +16668,370 @@ function epTilesMenuFavoritesDirective() {
 (function() {
     'use strict';
     angular.module('ep.utils').service('epUtilsService', ['$document', '$log', '$q', '$timeout',
-    function($document, $log, $q, $timeout) {
+        function($document, $log, $q, $timeout) {
 
-        /**
-        * @ngdoc method
-        * @name strFormat
-        * @methodOf ep.utils.service:epUtilsService
-        * @public
-        * @description
-        * Formats the string in the same way as .NET strFormat('first argument is {0}, second is {1}', 'arg1', 'arg2')
-        * will result in 'first argument is arg1, second is arg2'
-        * @example
-        *   var str = epUtilsService.strFormat('The first name is: {0} and the last name {1}','Michael','Jackson');
-        * @returns {string} string with combined arguments
-         */
-        function strFormat(str) {
-            if (!str || arguments.length < 1) {
-                return '';
+            /**
+             * @ngdoc method
+             * @name strFormat
+             * @methodOf ep.utils.service:epUtilsService
+             * @public
+             * @description
+             * Formats the string in the same way as .NET strFormat('first argument is {0}, second is {1}', 'arg1', 'arg2')
+             * will result in 'first argument is arg1, second is arg2'
+             * @example
+             *   var str = epUtilsService.strFormat('The first name is: {0} and the last name {1}','Michael','Jackson');
+             * @returns {string} string with combined arguments
+             */
+            function strFormat(str) {
+                if (!str || arguments.length < 1) {
+                    return '';
+                }
+                var ret = str;
+                if (arguments.length > 1) {
+                    var tempArgs = arguments;
+                    ret = ret.replace(/\{\d+\}/g, function(match) {
+                        var index = +match.slice(1, -1);
+                        var arg = null;
+
+                        if (index + 1 < tempArgs.length) {
+                            arg = tempArgs[index + 1];
+                        }
+                        return arg;
+                    });
+                }
+                return ret;
             }
-            var ret = str;
-            if (arguments.length > 1) {
-                var tempArgs = arguments;
-                ret = ret.replace(/\{\d+\}/g, function(match) {
-                    var index = +match.slice(1, -1);
-                    var arg = null;
 
-                    if (index + 1 < tempArgs.length) {
-                        arg = tempArgs[index + 1];
+            /**
+             * @ngdoc method
+             * @name supportsDragAndDrop
+             * @methodOf ep.utils.service:epUtilsService
+             * @public
+             * @description
+             * Constructs an object out of an array by using
+             * the idAccessor to map each item to a property name.
+             * The idAccessor can be either a string or a function.
+             * If it's a string then it must refer to a property name
+             * that exists on each item of the array.
+             * If it's a function then the function must exist on each
+             * item of the array. The result of the property/function
+             * must yield either a unique string value or a function that yields
+             * a unique string value for each item of the array.
+             * @returns {object} return a map object
+             */
+            function mapArray(arr, idAccessor) {
+                var result = {};
+                arr.forEach(function(obj) {
+                    var id;
+                    var idVal;
+
+                    if (angular.isString(idAccessor)) {
+                        idVal = obj[idAccessor];
+                    } else if (angular.isFunction(idAccessor)) {
+                        idVal = idAccessor(obj);
+                    } else {
+                        throw new Error('mapArray called with an invalid idAccessor.');
                     }
-                    return arg;
+                    if (angular.isFunction(idVal)) {
+                        id = idVal();
+                    } else {
+                        id = idVal;
+                    }
+                    result[id] = obj;
+                });
+                return result;
+            }
+
+            /**
+             * @ngdoc method
+             * @name copyProperties
+             * @methodOf ep.utils.service:epUtilsService
+             * @public
+             * @description
+             * Copies properties from source to dest
+             * The property is copied only if source property is not null
+             * This is useful to copy new properties values over default object
+             * but only when new property is provided.
+             * @returns {object} copied object
+             */
+            function copyProperties(source, dest) {
+                if (!source || !dest) {
+                    return;
+                }
+                angular.forEach(source, function(value, propName) {
+                    if (source[propName] !== null) {
+                        if (angular.isArray(source[propName])) {
+                            dest[propName] = source[propName];
+                        } else if (angular.isObject(source[propName])) {
+                            if (!angular.isObject(dest[propName])) {
+                                dest[propName] = {};
+                            }
+                            copyProperties(source[propName], dest[propName]);
+                        } else {
+                            dest[propName] = source[propName];
+                        }
+                    }
                 });
             }
-            return ret;
-        }
 
-        /**
-        * @ngdoc method
-        * @name supportsDragAndDrop
-        * @methodOf ep.utils.service:epUtilsService
-        * @public
-        * @description
-        * Constructs an object out of an array by using
-        * the idAccessor to map each item to a property name.
-        * The idAccessor can be either a string or a function.
-        * If it's a string then it must refer to a property name
-        * that exists on each item of the array.
-        * If it's a function then the function must exist on each
-        * item of the array. The result of the property/function
-        * must yield either a unique string value or a function that yields
-        * a unique string value for each item of the array.
-        * @returns {object} return a map object
-        */
-        function mapArray(arr, idAccessor) {
-            var result = {};
-            arr.forEach(function(obj) {
-                var id;
-                var idVal;
+            /**
+             * @ngdoc method
+             * @name ensureStartsWith
+             * @methodOf ep.utils.service:epUtilsService
+             * @public
+             * @description
+             * Ensures that a string starts with a given beginning
+             * @returns {string} result
+             * @example
+             *       var str = epUtilsService.ensureStartsWith('root','/');
+             *       //results in '/root'
 
-                if (angular.isString(idAccessor)) {
-                    idVal = obj[idAccessor];
-                } else if (angular.isFunction(idAccessor)) {
-                    idVal = idAccessor(obj);
-                } else {
-                    throw new Error('mapArray called with an invalid idAccessor.');
+             */
+            function ensureStartsWith(beginning, str) {
+                if (str && str.indexOf(beginning) !== 0) {
+                    return beginning + str;
                 }
-                if (angular.isFunction(idVal)) {
-                    id = idVal();
-                } else {
-                    id = idVal;
-                }
-                result[id] = obj;
-            });
-            return result;
-        }
-
-        /**
-        * @ngdoc method
-        * @name copyProperties
-        * @methodOf ep.utils.service:epUtilsService
-        * @public
-        * @description
-        * Copies properties from source to dest
-        * The property is copied only if source property is not null
-        * This is useful to copy new properties values over default object
-        * but only when new property is provided.
-        * @returns {object} copied object
-        */
-        function copyProperties(source, dest) {
-            if (!source || !dest) {
-                return;
+                return str || '';
             }
-            angular.forEach(source, function(value, propName) {
-                if (source[propName] !== null) {
-                    if (angular.isArray(source[propName])) {
-                        dest[propName] = source[propName];
-                    } else if (angular.isObject(source[propName])) {
-                        if (!angular.isObject(dest[propName])) {
-                            dest[propName] = {};
-                        }
-                        copyProperties(source[propName], dest[propName]);
-                    } else {
-                        dest[propName] = source[propName];
+
+            /**
+             * @ngdoc method
+             * @name ensureEndsWith
+             * @methodOf ep.utils.service:epUtilsService
+             * @public
+             * @description
+             * Ensures that a string ends with a given ending
+             * @returns {string} result
+             * @example
+             *       var str = epUtilsService.ensureEndsWith('root','/');
+             *       //results in 'root/'
+
+             */
+            function ensureEndsWith(str, ending) {
+                if (str && str.lastIndexOf(ending) !== str.length - ending.length) {
+                    return str + ending;
+                }
+                return str || '';
+            }
+
+            /**
+             * @ngdoc method
+             * @name makePath
+             * @methodOf ep.utils.service:epUtilsService
+             * @public
+             * @description
+             * Creates path by concatination of input arguments which can be strings, array of
+             * strings or arguments object passed from another function
+             * @returns {string} path
+             * @example
+             *   var str = epUtilsService.makePath('root','dir1','dir2');
+             *   //result: '/root/dir1/dir2'
+             *
+             *   var str = utilsService.makePath('root', ['dir1', 'dir2'], ['dir3', 'dir4'], 'dir5');
+             *   //result: '/root/dir1/dir2/dir3/dir4/dir5';
+             *
+             */
+            function makePath() {
+                var path = '';
+                var _args = _.flatten(arguments, true);
+                if (_args && _args.length === 1 && angular.isObject(_args[0]) && _args[0].length === 0) {
+                    return path; //special case when caller passed arguments and arguments were empty
+                }
+                angular.forEach(_args, function(arg) {
+                    path += '/' + arg;
+                });
+                return path;
+            }
+
+            /**
+             * @ngdoc method
+             * @name loadScript
+             * @methodOf ep.utils.service:epUtilsService
+             * @public
+             * @description
+             * Adds a new script element to the page with the given url,
+             * optionally checking/adding the script to a given cache
+             * @returns {Promise} a promise that resolves or rejects depending on the result
+             * of adding the script to the page.
+             */
+            function loadScript(url, cache) {
+                var deferred = $q.defer();
+                var scriptId = 'script:' + url;
+                var scriptElement;
+                if (url && cache.get(scriptId)) {
+                    deferred.resolve(scriptId + ' from cache');
+                } else {
+                    scriptElement = $document[0].createElement('script');
+                    scriptElement.src = url;
+                    scriptElement.onload = function() {
+                        deferred.resolve(scriptId);
+                    };
+                    scriptElement.onerror = function(e) {
+                        $log.error('Error loading url: [' + url + ']');
+                        deferred.reject(e, scriptId);
+                    };
+                    $document[0].documentElement.appendChild(scriptElement);
+                    cache.put(scriptId, 1);
+                }
+
+                return deferred.promise;
+            }
+
+            /**
+             * @ngdoc method
+             * @name hasProperty
+             * @methodOf ep.utils.service:epUtilsService
+             * @public
+             * @description
+             * Check if an object has a nested property. For
+             * @param {object} obj - object whose nested property we want to check
+             * @param {string} property - nested property. Nesting through dot. Eg. 'propA.propAA'
+             * @returns {boolean} true if object has a nested property
+             * @example
+             *   var obj = { propA: { propAA: { propAAA: 'something' }}};
+             *   var result = epUtilsService.hasProperty(obj,'propA.propAA.propAAA');
+             *   //result: true
+             */
+            function hasProperty(obj, property) {
+                var o = obj;
+                if (!angular.isObject(obj)) {
+                    return false;
+                }
+                if (!angular.isString(property) || !property) {
+                    return false;
+                }
+                return !_.find(property.split('.'), function(prop) {
+                    var ret = o.hasOwnProperty(prop);
+                    if (ret) {
+                        o = o[prop];
                     }
+                    return !ret;
+                });
+            }
+
+            /**
+             * @ngdoc method
+             * @name wait
+             * @methodOf ep.utils.service:epUtilsService
+             * @public
+             * @description
+             * Wait for a condition to be accomplished by performing iterative calls at
+             * given interval. Alternative to deferred results.
+             * @param {object} fnCondtion - function that represents condition. Must return true/false
+             * @param {int} attempts - how many max attempts can be performed
+             * @param {int} interval - interval in ms between each new attempt
+             * @param {object} fnExecute - function that is executed when condition is met
+             * @param {object} fnFail - optional function that is executed when condition is not met after all attempts
+             * @example
+             *   wait( function() { return state; }, 10, 250, function() { alert('complete'); });
+             */
+            function wait(fnCondtion, attempts, interval, fnExecute, fnFail) {
+                attempts--;
+                if (attempts >= 0) {
+                    if (fnCondtion()) {
+                        fnExecute();
+                    } else {
+                        $timeout(function() {
+                            wait(fnCondtion, attempts, interval, fnExecute);
+                        }, interval);
+                    }
+                } else if (fnFail) {
+                    fnFail();
                 }
-            });
-        }
-
-        /**
-        * @ngdoc method
-        * @name ensureStartsWith
-        * @methodOf ep.utils.service:epUtilsService
-        * @public
-        * @description
-        * Ensures that a string starts with a given beginning
-        * @returns {string} result
-        * @example
-        *       var str = epUtilsService.ensureStartsWith('root','/');
-        *       //results in '/root'
-
-        */
-        function ensureStartsWith(beginning, str) {
-            if (str && str.indexOf(beginning) !== 0) {
-                return beginning + str;
-            }
-            return str || '';
-        }
-
-        /**
-        * @ngdoc method
-        * @name ensureEndsWith
-        * @methodOf ep.utils.service:epUtilsService
-        * @public
-        * @description
-        * Ensures that a string ends with a given ending
-        * @returns {string} result
-        * @example
-        *       var str = epUtilsService.ensureEndsWith('root','/');
-        *       //results in 'root/'
-
-        */
-        function ensureEndsWith(str, ending) {
-            if (str && str.lastIndexOf(ending) !== str.length - ending.length) {
-                return str + ending;
-            }
-            return str || '';
-        }
-
-        /**
-        * @ngdoc method
-        * @name makePath
-        * @methodOf ep.utils.service:epUtilsService
-        * @public
-        * @description
-        * Creates path by concatination of input arguments which can be strings, array of
-        * strings or arguments object passed from another function
-        * @returns {string} path
-        * @example
-        *   var str = epUtilsService.makePath('root','dir1','dir2');
-        *   //result: '/root/dir1/dir2'
-        *
-        *   var str = utilsService.makePath('root', ['dir1', 'dir2'], ['dir3', 'dir4'], 'dir5');
-        *   //result: '/root/dir1/dir2/dir3/dir4/dir5';
-        *
-        */
-        function makePath() {
-            var path = '';
-            var _args = _.flatten(arguments, true);
-            if (_args && _args.length === 1 && angular.isObject(_args[0]) && _args[0].length === 0) {
-                return path; //special case when caller passed arguments and arguments were empty
-            }
-            angular.forEach(_args, function(arg) {
-                path += '/' + arg;
-            });
-            return path;
-        }
-
-        /**
-        * @ngdoc method
-        * @name loadScript
-        * @methodOf ep.utils.service:epUtilsService
-        * @public
-        * @description
-        * Adds a new script element to the page with the given url,
-        * optionally checking/adding the script to a given cache
-        * @returns {Promise} a promise that resolves or rejects depending on the result
-        * of adding the script to the page.
-        */
-        function loadScript(url, cache) {
-            var deferred = $q.defer();
-            var scriptId = 'script:' + url;
-            var scriptElement;
-            if (url && cache.get(scriptId)) {
-                deferred.resolve(scriptId + ' from cache');
-            } else {
-                scriptElement = $document[0].createElement('script');
-                scriptElement.src = url;
-                scriptElement.onload = function() {
-                    deferred.resolve(scriptId);
-                };
-                scriptElement.onerror = function(e) {
-                    $log.error('Error loading url: [' + url + ']');
-                    deferred.reject(e, scriptId);
-                };
-                $document[0].documentElement.appendChild(scriptElement);
-                cache.put(scriptId, 1);
             }
 
-            return deferred.promise;
-        }
+            function baseMerge(dst, objs, deep) {
+                for (var i = 0, ii = objs.length; i < ii; ++i) {
+                    var obj = objs[i];
+                    if (!_.isObject(obj) && !_.isFunction(obj)) {
+                        continue;
+                    }
+                    var keys = Object.keys(obj).concat(Object.keys(dst));
+                    for (var j = 0, jj = keys.length; j < jj; j++) {
+                        var key = keys[j];
+                        var src = obj[key];
 
-        /**
-        * @ngdoc method
-        * @name hasProperty
-        * @methodOf ep.utils.service:epUtilsService
-        * @public
-        * @description
-        * Check if an object has a nested property. For
-        * @param {object} obj - object whose nested property we want to check
-        * @param {string} property - nested property. Nesting through dot. Eg. 'propA.propAA'
-        * @returns {boolean} true if object has a nested property
-        * @example
-        *   var obj = { propA: { propAA: { propAAA: 'something' }}};
-        *   var result = epUtilsService.hasProperty(obj,'propA.propAA.propAAA');
-        *   //result: true
-        */
-        function hasProperty(obj, property) {
-            var o = obj;
-            if (!angular.isObject(obj)) {
-                return false;
-            }
-            if (!angular.isString(property) || !property) {
-                return false;
-            }
-            return !_.find(property.split('.'), function(prop) {
-                var ret = o.hasOwnProperty(prop);
-                if (ret) {
-                    o = o[prop];
-                }
-                return !ret;
-            });
-        }
-
-        /**
-        * @ngdoc method
-        * @name wait
-        * @methodOf ep.utils.service:epUtilsService
-        * @public
-        * @description
-        * Wait for a condition to be accomplished by performing iterative calls at
-        * given interval. Alternative to deferred results.
-        * @param {object} fnCondtion - function that represents condition. Must return true/false
-        * @param {int} attempts - how many max attempts can be performed
-        * @param {int} interval - interval in ms between each new attempt
-        * @param {object} fnExecute - function that is executed when condition is met
-        * @param {object} fnFail - optional function that is executed when condition is not met after all attempts
-        * @example
-        *   wait( function() { return state; }, 10, 250, function() { alert('complete'); });
-        */
-        function wait(fnCondtion, attempts, interval, fnExecute, fnFail) {
-            attempts--;
-            if (attempts >= 0) {
-                if (fnCondtion()) {
-                    fnExecute();
-                } else {
-                    $timeout(function() {
-                        wait(fnCondtion, attempts, interval, fnExecute);
-                    }, interval);
-                }
-            } else if (fnFail) {
-                fnFail();
-            }
-        }
-        function baseMerge(dst, objs, deep) {
-            for (var i = 0, ii = objs.length; i < ii; ++i) {
-                var obj = objs[i];
-                if (!_.isObject(obj) && !_.isFunction(obj)) {
-                    continue;
-                }
-                var keys = Object.keys(obj);
-                for (var j = 0, jj = keys.length; j < jj; j++) {
-                    var key = keys[j];
-                    var src = obj[key];
-
-                    if (deep && _.isObject(src)) {
-                        if (_.isDate(src)) {
-                            dst[key] = new Date(src.valueOf());
-                        } else if (_.isRegExp(src)) {
-                            dst[key] = new RegExp(src);
-                        } else if (src.nodeName) {
-                            dst[key] = src.cloneNode(true);
-                        } else if (_.isElement(src)) {
-                            dst[key] = src.clone();
-                        } else {
-                            if (!_.isObject(dst[key])) {
-                                dst[key] = _.isArray(src) ? [] : {};
+                        if (deep && _.isObject(src)) {
+                            if (_.isDate(src)) {
+                                dst[key] = new Date(src.valueOf());
+                            } else if (_.isRegExp(src)) {
+                                dst[key] = new RegExp(src);
+                            } else if (src.nodeName) {
+                                dst[key] = src.cloneNode(true);
+                            } else if (_.isElement(src)) {
+                                dst[key] = src.clone();
+                            } else if (_.isNull(src)) {
+                                dst[key] = null;
+                            } else if (_.isUndefined(src)) {
+                                dst[key] = undefined;
+                            } else {
+                                if (!_.isObject(dst[key])) {
+                                    dst[key] = _.isArray(src) ? [] : {};
+                                }
+                                baseMerge(dst[key], [src], true);
                             }
-                            baseMerge(dst[key], [src], true);
+                        } else {
+                            dst[key] = src;
                         }
-                    } else {
-                        dst[key] = src;
                     }
                 }
+
+                return dst;
             }
 
-            return dst;
-        }
+            /**
+             * @ngdoc method
+             * @name merge
+             * @methodOf ep.utils.service:epUtilsService
+             * @public
+             * @description
+             * Deeply extends the destination object `dst` by copying own enumerable properties from the `src` object(s)
+             * to `dst`. You can specify multiple `src` objects. If you want to preserve original objects, you can do so
+             * by passing an empty object as the target: `var object = epUtilsService.merge({}, object1, object2)`.
 
-        /**
-        * @ngdoc method
-        * @name merge
-        * @methodOf ep.utils.service:epUtilsService
-        * @public
-        * @description
-        * Deeply extends the destination object `dst` by copying own enumerable properties from the `src` object(s)
-        * to `dst`. You can specify multiple `src` objects. If you want to preserve original objects, you can do so
-        * by passing an empty object as the target: `var object = epUtilsService.merge({}, object1, object2)`.
-
-        *
-        * @param {Object} dst Destination object.
-        * @param {...Object} src Source object(s).
-        * @returns {Object} Reference to `dst`.
-        */
-        function merge(dst) {
-            return baseMerge(dst, Array.prototype.slice.call(arguments, 1), true);
-        }
-
-        /**
-        * @ngdoc method
-        * @name getService
-        * @methodOf ep.utils.service:epUtilsService
-        * @public
-        * @description
-        * Retrieve an angular injector for a specified service name
-        * @param {string} name - name of injected service
-        * @returns {Object} Returns requested service injector
-        */
-        function getService(name) {
-            var ret;
-            try {
-                ret = angular.element('html').injector().get(name);
-            } catch (e) {
-                $log.error('Failed to retrieve service for requested name:' + name);
+             *
+             * @param {Object} dst Destination object.
+             * @param {...Object} src Source object(s).
+             * @returns {Object} Reference to `dst`.
+             */
+            function merge(dst) {
+                return baseMerge(dst, Array.prototype.slice.call(arguments, 1), true);
             }
-            return ret;
-        }
 
-        return {
-            copyProperties: copyProperties,
-            ensureEndsWith: ensureEndsWith,
-            ensureStartsWith: ensureStartsWith,
-            hasProperty: hasProperty,
-            loadScript: loadScript,
-            makePath: makePath,
-            mapArray: mapArray,
-            merge: merge,
-            strFormat: strFormat,
-            wait: wait,
-            getService: getService
-        };
-    }]);
+            /**
+             * @ngdoc method
+             * @name getService
+             * @methodOf ep.utils.service:epUtilsService
+             * @public
+             * @description
+             * Retrieve an angular injector for a specified service name
+             * @param {string} name - name of injected service
+             * @returns {Object} Returns requested service injector
+             */
+            function getService(name) {
+                var ret;
+                try {
+                    ret = angular.element('html').injector().get(name);
+                } catch (e) {
+                    $log.error('Failed to retrieve service for requested name:' + name);
+                }
+                return ret;
+            }
+
+            return {
+                copyProperties: copyProperties,
+                ensureEndsWith: ensureEndsWith,
+                ensureStartsWith: ensureStartsWith,
+                hasProperty: hasProperty,
+                loadScript: loadScript,
+                makePath: makePath,
+                mapArray: mapArray,
+                merge: merge,
+                strFormat: strFormat,
+                wait: wait,
+                getService: getService
+            };
+        }]);
 })();
 
 //# sourceMappingURL=app.min.js.map
@@ -15766,18 +17108,13 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   );
 
 
-  $templateCache.put('src/components/ep.login/login.html',
-    "<div class=thumbnail><div class=caption><h3 ng-hide=hasToken><span class=\"icon icon-enter\"></span> Login</h3><h3 ng-show=hasToken><span class=\"icon icon-exit\"></span> Logout</h3><hr></div><form role=form><div class=form-group><label for=user-name class=\"col-sm-2 control-label\">User:</label><div><input class=form-control id=user-name value={{::user.username}} ng-model=user.username placeholder=username required></div></div><div class=form-group><label for=user-password class=\"col-sm-2 control-label\">Password:</label><div><input type=password class=form-control id=user-password value={{::user.password}} ng-model=user.password placeholder=password required></div></div></form><hr><p></p><div class=\"alert alert-danger\" id=validationSummary role=alert ng-show=hasError>{{status}}</div><div><a class=\"btn btn-default\" ui-sref={{::cancelPath}}>Cancel</a> <button type=button class=\"btn btn-primary\" ng-hide=hasToken ng-click=login()>Login</button> <button type=button class=\"btn btn-primary\" ng-show=hasToken ng-click=logout()>Logout</button></div></div>"
-  );
-
-
   $templateCache.put('src/components/ep.modaldialog/modals/modaldialog-custom.html',
-    "<div class=\"ep-modaldialog ep-modaldialog-custom\"><div class=\"modal-header ep-padding-none\"><span class=close ng-show=config.closeButton><button class=\"btn btn-default\" type=button data-dismiss=modal aria-label=Close ng-click=\"btnclick({isCancel: true})\"><span aria-hidden=true>&times;</span></button></span><h4 id=dialogTitle class=\"bg-primary modal-title ep-margin-none\"><span class=\"ep-dlg-title-icon {{config.icon}}\"></span> <span class=ep-dlg-title ng-bind=config.fnGetTitle()></span></h4></div><div class=modal-body><form id=dialogForm name=dialogForm><!--<div ng-include=\"config.templateUrl\"></div>--><ep-include options=config.templateOptions></ep-include><div class=\"ep-dlg-rememberMe col-md-10\" ng-show=config.rememberMe><div class=form-group><div class=\"row col-md-1\"><input tabindex=1 id=cbxRemember class=form-control type=checkbox ng-model=config.rememberMeValue></div><label class=\"col-md-10 control-label\">Do not show this message again</label></div></div></form></div><div class=modal-footer ng-show=\"config.buttons && config.buttons.length\"><div class=ep-dlg-buttons><button ng-repeat=\"btn in config.buttons\" id={{btn.id}} tabindex=\"$index + 100\" data-dismiss=modal ng-hide=btn.hidden ng-disabled=\"btn.isPrimary && !dialogForm.$valid\" class=\"btn btn-{{btn.type}} {{config.btnBlock == true ? 'btn-block':''}}\" ng-click=btnclick(btn)><i ng-if=btn.icon ng-class=btn.icon></i> &nbsp;{{btn.text}}</button></div></div><div class=ep-dlg-status ng-show=config.statusBar><h4 class=\"bg-primary modal-title\"><span ng-if=!config.statusBarTextHTML ng-bind=config.statusBarText></span> <span ng-if=config.statusBarTextHTML ng-bind-html=config.statusBarTextHTML></span></h4></div></div>"
+    "<div class=\"ep-modaldialog ep-modaldialog-custom\"><div class=\"modal-header ep-padding-none\"><span class=close ng-show=config.closeButton><a class=\"fa fa-times fa-lg ep-navbar-button\" data-dismiss=modal aria-label=Close ng-click=\"btnclick({isCancel: true})\"></a></span> <span class=help ng-show=config.helpTemplateOptions><a class=\"fa fa-question-circle fa-lg ep-navbar-button\" ng-click=helpButtonClick()></a></span><h4 id=dialogTitle class=\"bg-primary modal-title ep-margin-none clearfix\"><span class=\"ep-dlg-title-icon {{config.icon}}\"></span> <span class=ep-dlg-title ng-bind=config.fnGetTitle()></span></h4></div><div class=modal-body><form id=dialogForm name=dialogForm><uib-alert ng-show=showHelp type=info close=closeHelp()><ep-include options=config.helpTemplateOptions></ep-include></uib-alert><!--<div ng-include=\"config.templateUrl\"></div>--><ep-include options=config.templateOptions></ep-include><div class=\"ep-dlg-rememberMe col-md-10\" ng-show=config.rememberMe><div class=form-group><div class=\"row col-md-1\"><input tabindex=1 id=cbxRemember class=form-control type=checkbox ng-model=config.rememberMeValue></div><label class=\"col-md-10 control-label\">Do not show this message again</label></div></div></form></div><div class=modal-footer ng-show=\"config.buttons && config.buttons.length\"><div class=ep-dlg-buttons><button ng-repeat=\"btn in config.buttons\" id={{btn.id}} tabindex=\"$index + 100\" data-dismiss=modal ng-hide=btn.hidden ng-disabled=\"btn.isPrimary && !dialogForm.$valid\" class=\"btn btn-{{btn.type}} {{config.btnBlock == true ? 'btn-block':''}}\" ng-click=btnclick(btn)><i ng-if=btn.icon ng-class=btn.icon></i> &nbsp;{{btn.text}}</button></div></div><div class=ep-dlg-status ng-show=config.statusBar><h4 class=\"bg-primary modal-title\"><span ng-if=!config.statusBarTextHTML ng-bind=config.statusBarText></span> <span ng-if=config.statusBarTextHTML ng-bind-html=config.statusBarTextHTML></span></h4></div></div>"
   );
 
 
   $templateCache.put('src/components/ep.modaldialog/modals/modaldialog-error.html',
-    "<!--Custom Dialog Error Template--><div class=ep-modaldialog-error ng-controller=epModalDialogErrorCtrl><section ng-if=config.callFnHideModalError ng-hide=config.fnHideModalError()></section><div class=\"alert clearfix\" ng-class=config.statusClass><table class=ep-dlg-bodytable><tr><td><span ng-if=config.showSpinner class=\"ep-dlg-icon fa-stack fa-2x\"><i class=\"ep-dlg-spinner-icon fa fa-spin fa-stack-2x\" ng-class=config.spinnerIconClass></i> <i ng-if=config.showTimer class=\"ep-dlg-spinner-text fa fa-stack-1x {{config.spinnerTextClass}}\" ng-class=config.spinnerTextClass>{{config.countDown}}</i></span> <span ng-if=!config.showSpinner class=ep-dlg-icon><i class=\"fa fa-3x\" ng-class=config.statusIcon></i></span></td><td><span class=ep-dlg-message ng-class=config.messageClass ng-bind=config.fnGetMessage()></span></td></tr></table></div><div class=ep-message-details ng-show=config.messageDetails><a href=\"\" ng-click=\"config.showDetails = !config.showDetails;\">{{config.showDetails ? 'Hide details': 'Show details'}}</a><div ng-show=config.showDetails><textarea ng-model=config.messageDetails ng-readonly=true disabled></textarea></div></div></div>"
+    "<!--Custom Dialog Error Template--><div class=ep-modaldialog-error ng-controller=epModalDialogErrorCtrl><section ng-if=config.callFnHideModalError ng-hide=config.fnHideModalError()></section><div class=\"alert clearfix ep-dialog-alert\" ng-class=config.statusClass><table class=ep-dlg-bodytable><tr><td><span ng-if=config.showSpinner class=\"ep-dlg-icon fa-stack fa-2x\"><i class=\"ep-dlg-spinner-icon fa fa-spin fa-stack-2x\" ng-class=config.spinnerIconClass></i> <i ng-if=config.showTimer class=\"ep-dlg-spinner-text fa fa-stack-1x {{config.spinnerTextClass}}\" ng-class=config.spinnerTextClass>{{config.countDown}}</i></span> <span ng-if=!config.showSpinner class=ep-dlg-icon><i class=\"fa fa-3x\" ng-class=config.statusIcon></i></span></td><td><span class=ep-dlg-message ng-class=config.messageClass ng-bind=config.fnGetMessage()></span></td></tr></table></div><div class=ep-message-details ng-show=config.messageDetails><a href=\"\" ng-click=\"config.showDetails = !config.showDetails;\">{{config.showDetails ? 'Hide details': 'Show details'}}</a><div ng-show=config.showDetails><textarea ng-model=config.messageDetails ng-readonly=true disabled></textarea></div></div></div>"
   );
 
 
@@ -15787,7 +17124,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.multi.level.menu/multi-level-menu.html',
-    "<div class=ep-mlm-container ng-class=\"{'ep-left-to-right': !isRightToLeft, 'ep-right-to-left': isRightToLeft}\"><form class=ep-mlm-search ng-hide=searchDisabled><input class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-focus=\"isRightToLeft = false\"></form><div ng-if=data.next class=\"ep-mlm-content ep-fadein-animation\"><div ng-hide=state.searchTerm class=ep-mlm-header ng-class=\"{ 'pointer': data.next._parent._id !== 'topmenu'}\" ng-click=\"navigate(data.next._parent, true, $event)\"><span ng-if=\"data.next._parent._id !== 'topmenu'\" class=\"ep-mlm-back-button pull-left fa fa-lg fa-caret-left\"></span> <span>{{data.next.caption}}</span></div><div ng-show=state.searchTerm class=ep-mlm-header><span>Search Results</span></div><ul><li ng-repeat=\"mi in currentItems | orderBy:'caption'\" class=\"ep-mlm-item clearfix ep-repeat-animation\"><div class=\"pull-left clearfix ep-mlm-item-div\" ng-click=navigate(mi)><div class=\"ep-mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"mi._type === 'item'\" class=\"ep-mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star text-warning': mi.favorite}\"></i> <i ng-if=\"mi._type === 'menu'\" class=\"ep-mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=navigate(mi)></i></li></ul><uib-alert class=\"ep-mlm-alert ep-fadein-animation\" ng-show=\"state.searchTerm && (!currentItems || currentItems.length === 0)\" type=warning>The term \"{{state.searchTerm}}\" did not match any menu items.</uib-alert></div></div>"
+    "<div class=ep-mlm-container ng-class=\"{'ep-left-to-right': !isRightToLeft, 'ep-right-to-left': isRightToLeft}\"><form class=ep-mlm-search ng-hide=searchDisabled><input class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-focus=\"isRightToLeft = false\"></form><div ng-if=data.next class=\"ep-mlm-content ep-fadein-animation\"><div ng-hide=state.searchTerm class=ep-mlm-header ng-class=\"{ 'pointer': data.next._parent._id !== 'topmenu'}\" ng-click=\"navigate(data.next._parent, true, $event)\"><span ng-if=\"data.next._parent._id !== 'topmenu'\" class=\"ep-mlm-back-button pull-left fa fa-lg fa-caret-left\"></span> <span>{{data.next.caption}}</span></div><div ng-show=state.searchTerm class=ep-mlm-header><span>Search Results</span></div><ul><li ng-repeat=\"mi in currentItems | orderBy:orderByMenu\" class=\"ep-mlm-item clearfix ep-repeat-animation\"><div ng-if=mi.separator class=\"ep-mlm-separator ep-mlm-separator-top {{mi.separator.class}}\"><i ng-if=mi.separator.icon class=\"ep-mlm-separator-icon fa fa-lg pull-left {{mi.separator.icon}}\"></i><div ng-if=mi.separator.text class=ep-mlm-separator-text>{{mi.separator.text}}</div></div><i ng-if=mi.icon class=\"ep-mlm-icon fa fa-lg pull-left {{mi.icon}}\"></i><div class=\"pull-left clearfix ep-mlm-item-div\" ng-class=\"{ 'ep-mlm-item-div-icon': mi.icon }\" ng-click=\"navigate(mi, false, $event)\"><div class=\"ep-mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"(mi._type === 'item' && mi.hideFavorite !== true)\" class=\"ep-mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star text-warning': mi.favorite}\"></i> <i ng-if=\"mi._type === 'menu'\" class=\"ep-mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=\"navigate(mi, false, $event)\"></i></li></ul><uib-alert class=\"ep-mlm-alert ep-fadein-animation\" ng-show=\"state.searchTerm && (!currentItems || currentItems.length === 0)\" type=warning>The term \"{{state.searchTerm}}\" did not match any menu items.</uib-alert></div></div>"
   );
 
 
@@ -15802,7 +17139,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/menu/ep-shell-menu.html',
-    "<div><ep-multi-level-menu ng-controller=epShellMenuCtrl menu=menuOptions.menu menu-id=menuId on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu></div>"
+    "<div ng-controller=epShellMenuCtrl><ep-multi-level-menu menu=menuOptions.menu menu-id=menuId search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu></div>"
   );
 
 
@@ -15812,7 +17149,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/sidebar/sidebar.html',
-    "<div class=ep-shell-container ng-class=\"{ 'nav-padding': shellState.showNavbar, 'footer-padding': shellState.showFooter, 'ep-disable-left-sidebar': !shellState.enableLeftSidebar, 'ep-hide-left-sidebar': (!shellState.showLeftSidebar) || (!shellState.enableLeftSidebar), 'ep-hide-right-sidebar': (!shellState.showRightSidebar) || !(shellState.enableRightSidebar)}\"><!-- Left Sidebar --><div class=\"ep-sidebar-nav ep-sidebar-nav-left well ep-ease-animation\" ng-class=\"{'ep-with-navbar': shellState.showNavbar, 'ep-with-footer': shellState.showFooter, 'cordova-ios': platform.app==='Cordova' && platform.os=='mac'}\" ng-click=dismissRightSidebar()></div><div id=viewPlaceholder class=\"ep-view-placeholder ep-fullscreen\" ng-transclude ng-click=dismissSidebars()><!--VIEW CONTENT HERE--></div><!-- Right Sidebar --><div class=\"ep-sidebar-nav ep-sidebar-nav-right well ep-ease-animation\"></div></div>"
+    "<div class=ep-shell-container ng-class=\"{ 'nav-padding': shellState.showNavbar, 'footer-padding': shellState.showFooter, 'ep-disable-left-sidebar': !shellState.enableLeftSidebar, 'ep-hide-left-sidebar': (!shellState.showLeftSidebar) || (!shellState.enableLeftSidebar), 'ep-hide-right-sidebar': (!shellState.showRightSidebar) || !(shellState.enableRightSidebar)}\"><!-- Left Sidebar --><div id=leftSidebar class=\"ep-sidebar-nav ep-sidebar-nav-left well ep-ease-animation\" ng-class=\"{'ep-with-navbar': shellState.showNavbar, 'ep-with-footer': shellState.showFooter, 'cordova-ios': platform.app==='Cordova' && platform.os=='mac'}\" ng-click=dismissRightSidebar()></div><div id=viewPlaceholder class=\"ep-view-placeholder ep-fullscreen\" ng-transclude><!--VIEW CONTENT HERE--></div><!-- Right Sidebar --><div class=\"ep-sidebar-nav ep-sidebar-nav-right well ep-ease-animation\"></div></div>"
   );
 
 
@@ -15855,17 +17192,22 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.tile/ep-tile-templates/ep-tile-menu.html',
-    "<!--This is a partial for the ep-tile-menu --><div class=\"live-tile accent\" ng-class=state.tileClass><div class=\"well ep-tile-container\"><span ng-if=\"tile.closeButton !== false\" class=ep-tile-close-button><i class=\"fa fa-times\" ng-click=\"state.closeAction(tile, $event)\"></i></span><h5 ng-if=\"tile.caption !== undefined\" class=\"ep-tile-caption-panel btn-primary clearfix\"><span ng-if=tile.icon class=\"ep-tile-icon fa-lg {{tile.icon}}\"></span> <span class=\"ep-tile-caption tile-caption\">{{tile.caption}}</span></h5><p class=\"ep-tile-description text-primary\">{{tile.description}}</p></div><span ng-if=\"tile.footer !== undefined\" class=\"tile-title accent\">{{tile.footer}}</span></div>"
+    "<!--This is a partial for the ep-tile-menu --><div class=\"live-tile accent\" ng-class=state.tileClass><div class=\"well ep-tile-container\"><span ng-if=\"tile.closeButton !== false\" class=ep-tile-close-button><i class=\"fa fa-times\" ng-click=\"state.closeAction(tile, $event)\"></i></span><h5 ng-if=\"tile.caption !== undefined\" class=\"ep-tile-caption-panel btn-primary clearfix\"><span ng-if=tile.icon class=\"ep-tile-icon fa-lg {{tile.icon}}\"></span> <span class=\"ep-tile-caption tile-caption\">{{tile.caption}}</span></h5><p class=\"ep-tile-description text-primary\">{{tile.description}}</p><div ng-if=tile.contentIcon class=\"ep-content-icon ep-align-content ep-align-vcenter\"><i class=\"fa {{tile.contentIcon}} fa-3x\"></i></div></div><span ng-if=\"tile.footer !== undefined\" class=\"tile-title accent\">{{tile.footer}}</span></div>"
   );
 
 
   $templateCache.put('src/components/ep.tile/ep-tile.html',
-    "<!--This is a partial for the ep-tile directive --><div class=\"ep-tile {{state.sizeMode}} {{state.color}}\" ng-class=state.optionsClass><div ng-if=\"tile.type !== 'custom'\" ng-click=\"state.action(tile, $event)\" class=ep-tile-container ng-include=state.templateUrl></div><div ng-if=\"tile.type === 'custom'\" class=\"live-tile accent {{state.color}}\" ng-class=state.tileClass><div ng-click=\"state.action(tile, $event)\" class=ep-tile-container><ep-include options=tile.templateOptions></ep-include></div></div></div>"
+    "<!--This is a partial for the ep-tile directive --><div class=\"ep-tile {{state.sizeMode}} {{state.color}}\" ng-class=state.optionsClass><div ng-if=\"tile.type !== 'custom'\" ng-click=\"state.action(tile, $event)\" class=ep-tile-container ng-include=state.templateUrl></div><div ng-if=\"tile.type === 'custom'\" class=\"live-tile accent {{state.color}}\" ng-class=state.tileClass><span ng-if=\"tile.closeButton !== false\" class=ep-tile-close-button><i class=\"fa fa-times\" ng-click=\"state.closeAction(tile, $event)\"></i></span><div ng-click=\"state.action(tile, $event)\" class=ep-tile-container><ep-include options=tile.templateOptions user-data=tile></ep-include></div></div></div>"
   );
 
 
   $templateCache.put('src/components/ep.tiles.panel/ep-tiles-panel.html',
     "<!--This is a partial for the ep-tiles-panel directive --><div class=\"ep-tiles-panel tiles tile-group {{state.tileColor}}\" style=\"margin: 0px\"><ep-tile ng-if=\"beforeList && beforeList.length\" class=\"ep-tiles-before-list ep-repeat-animation\" ng-class=state.colorFunc(item) tile=item ng-repeat=\"item in beforeList | orderBy:sortList\" size-mode=sizeMode width=width height=height></ep-tile><ep-tile class=\"ep-tiles-list ep-repeat-animation\" ng-class=state.colorFunc(item) tile=item ng-repeat=\"item in list | orderBy:sortList\" size-mode=sizeMode width=width height=height></ep-tile><ep-tile ng-if=\"afterList && afterList.length\" class=\"ep-tiles-after-list ep-repeat-animation\" ng-class=state.colorFunc(item) tile=item ng-repeat=\"item in afterList | orderBy:sortList\" size-mode=sizeMode width=width height=height></ep-tile></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.token/ep-login/login.html',
+    "<div class=thumbnail><div ng-if=\"showTitle !== false\" class=caption><h3 ng-hide=hasToken><span class=\"icon icon-enter\"></span> Login</h3><h3 ng-show=hasToken><span class=\"icon icon-exit\"></span> Logout</h3><hr></div><form role=form><div ng-if=\"showLabels === false\" class=input-group><span class=input-group-addon><i class=\"fa fa-user fa-fw\"></i></span> <input tabindex=1 id=user-name name=username required class=form-control ng-model=user.username placeholder=\"user name\"></div><div ng-if=\"showLabels !== false\" class=form-group><label for=user-name class=\"col-sm-2 control-label\">User:</label><div><input tabindex=1 id=user-name name=username required class=form-control ng-model=user.username placeholder=\"user name\"></div></div><div ng-if=\"showLabels === false\" class=form-group><div class=input-group><span class=input-group-addon><i class=\"fa fa-key fa-fw\"></i></span> <input tabindex=2 id=user-password name=password required class=form-control type=password placeholder=password ng-model=\"user.password\"></div></div><div ng-if=\"showLabels !== false\" class=form-group><label for=user-password class=\"col-sm-2 control-label\">Password:</label><div><input tabindex=2 id=user-password name=password required class=form-control type=password placeholder=password ng-model=\"user.password\"></div></div></form><div class=\"alert alert-danger\" id=validationSummary role=alert ng-show=hasError>{{status}}</div><div><button ng-if=\"showCancel !== false\" type=button class=\"btn btn-default\" ng-click=cancel()>Cancel</button> <button type=button class=\"btn btn-primary\" ng-hide=hasToken ng-click=login()>Login</button> <button type=button class=\"btn btn-primary\" ng-show=hasToken ng-click=logout()>Logout</button></div></div>"
   );
 
 
