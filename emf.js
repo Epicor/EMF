@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.9 built: 22-06-2016
+ * version:1.0.8-dev.15 built: 22-06-2016
 */
 (function() {
     'use strict';
@@ -6884,15 +6884,30 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             }
             return deferred.promise;
         }
-
-        function getFullFilePath(filename) {
+        /**
+         * @ngdoc method
+         * @name getFilePath
+         * @methodOf ep.file:epFileService
+         * @public
+         * @description
+         * This function returns a string that indicates the full path
+         * to the given file.
+         */
+        function getFilePath(filename) {
             if (fileSystem === storageSystems.fileStorage) {
                 return $window.cordova.file.dataDirectory + filename;
             } else {
                 return epFileConstants.namespace + '.' + filename;
             }
         }
-
+        /**
+         * @ngdoc method
+         * @name remove
+         * @methodOf ep.file:epFileService
+         * @public
+         * @description
+         * This function returns a promise that resolves if the file was successfully deleted.
+         */
         function remove(filename) {
             var deferred = $q.defer();
             try {
@@ -6925,13 +6940,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         return {
             load: load,
             save: save,
-            getFullFilePath: getFullFilePath,
+            getFilePath: getFilePath,
             fileExists: fileExists,
             remove: remove
         };
-
     }
-
 })();
 
 /**
@@ -8870,7 +8883,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         function showMessage(options) {
             var cfg = {
                 showProgress: false,
-                icon: 'fa fa-info-circle fa-4x',
+                icon: 'fa fa-info-circle fa-4x'
             };
 
             setPaneStatus(options, cfg);
@@ -8910,7 +8923,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 },
                     {
                         text: 'No', isCancel: true,
-                        action: (options ? options.fnCancelAction : null),
+                        action: (options ? options.fnCancelAction : null)
                     }]
             };
 
@@ -9095,6 +9108,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          *          # templateScope - the template scope
          *          # templateCtrl - the template controller
          *      templateUrl - the url template html for custom dialog's container (for compatability - should use templateOptions)
+         *      helpTemplateOptions - (optional)
+         *          # helpTemplateUrl - url to template html for custom dialog's help content
+         *          # template - the template html for custom dialog's help content
+         *          # templateScope - the template scope for the custom dialog's help content
+         *          # templateCtrl - the help template controller
          *      controller- the controller to execute when showing the dialog (default null)
          *      size - 'small'/'large'/'fullscreen'/'' (default)
          *      icon - font awesome icon class (icon in the header)
@@ -10911,7 +10929,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             var notOp = '';
             var logicalOp = (params && 'or' in params && params.or) ? ' or ' : ' and ';
             // init the tickmark seperator t
-            var tickMark = isNaN(arg1) ? '\'' : '';
+            var tickMark = (angular.isString(arg1) || isNaN(arg1)) ? '\'' : '';
             if (arg0 !== null && arg0 !== undefined && arg1 !== null && arg1 !== undefined) {
                 switch (compareOp) {
                     case 'math':
@@ -10965,6 +10983,25 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             return this;    // valid this to allow for method chaining
         }
 
+        /**
+        * @ngdoc method
+        * @name setWhereCustom
+        * @methodOf ep.odata.factory:odataQueryFactory
+        * @public
+        * @description
+        * Sets the custom where clause value onto $filter oData property
+        *
+        * @param {object} expression - The object that represents the where clause
+        * @param {bool} isOr (optional) to include 'or' logical operator, otherwise 'and' is applied.
+        * @returns {this} to allow for method chaining
+        */
+        function setWhereCustom(expression, isOr) {
+            var logicalOp = (isOr) ? ' or ' : ' and ';
+            odataObject.$filter = ((odataObject && odataObject.$filter) ? (odataObject.$filter + logicalOp) : '') +
+                expression;
+            return this;
+        }
+
         // returns the fully resolved oData object
         /**
         * @ngdoc method
@@ -10991,6 +11028,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             setExpands: setExpands,
             setFilter: setFilter,
             setWhere: setWhere,
+            setWhereCustom: setWhereCustom,
             compose: compose
         };
     });
@@ -14420,6 +14458,7 @@ angular.module('ep.signature').directive('epSignature',
 			{ 'name': 'cosmo', 'cssFilename': 'cosmo.min.css' },
 			{ 'name': 'cyborg', 'cssFilename': 'cyborg.min.css' },
 			{ 'name': 'darkly', 'cssFilename': 'darkly.min.css' },
+			{ 'name': 'epicormobile', 'cssFilename': 'epicormobile.min.css' },
 			{ 'name': 'flatly', 'cssFilename': 'flatly.min.css' },
 			{ 'name': 'journal', 'cssFilename': 'journal.min.css' },
 			{ 'name': 'paper', 'cssFilename': 'paper.min.css' },
@@ -14478,6 +14517,16 @@ angular.module('ep.signature').directive('epSignature',
 
             /**
             * @ngdoc property
+            * @name appendThemes
+            * @propertyOf ep.theme.object:epThemeConfig
+            * @public
+            * @description
+            * Append extra themes on top of existing emf themes
+            */
+            appendThemes: [],
+
+            /**
+            * @ngdoc property
             * @name theme
             * @propertyOf ep.theme.object:epThemeConfig
             * @public
@@ -14519,6 +14568,17 @@ angular.module('ep.signature').directive('epSignature',
             if (config.defaultPath === 'emf') {
                 config.defaultPath = '../lib/bower/emf/assets/css/themes';
                 config.themes = assetsThemes;
+            }
+            if (config.appendThemes && angular.isArray(config.appendThemes)) {
+                //append extra themes
+                angular.forEach(config.appendThemes, function(th) {
+                    var old = _.find(config.themes, function(t) { return t.name === th.name; });
+                    if (old) {
+                        old.cssFilename = th.cssFilename;
+                    } else {
+                        config.themes.push(th);
+                    }
+                });
             }
             return config;
         }];
@@ -17046,7 +17106,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.color.tile/ep-color-tile.html',
-    "<!-- Color Tile Component --><div class=\"ep-color-tile ep-align-container {{colorclass}}\" ng-style=\"{'background-color': color}\"><h3>{{title}}</h3><h5>{{description}}</h5><small>{{fineprint}}</small><div class=\"ep-color-tile-icon ep-align-content ep-align-vcenter\"><i class=\"fa {{icon}} fa-3x\"></i></div></div>"
+    "<!-- Color Tile Component --><div class=\"ep-color-tile ep-align-container {{colorclass}}\" ng-style=\"{'background-color': color}\"><h3>{{title}}</h3><h5>{{description}}</h5><small>{{fineprint}}</small><div class=\"ep-color-tile-icon ep-align-content ep-align-vcenter\"><i class=\"fa {{icon}}\"></i></div></div>"
   );
 
 
@@ -17091,7 +17151,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.modaldialog/modals/modaldialog-custom.html',
-    "<div class=\"ep-modaldialog ep-modaldialog-custom\"><div class=\"modal-header ep-padding-none\"><span class=close ng-show=config.closeButton><button class=\"btn btn-default\" type=button data-dismiss=modal aria-label=Close ng-click=\"btnclick({isCancel: true})\"><span aria-hidden=true>&times;</span></button></span> <span class=help ng-show=config.helpTemplateOptions><a class=\"fa fa-question-circle fa-lg ep-navbar-button\" ng-click=helpButtonClick()></a></span><h4 id=dialogTitle class=\"bg-primary modal-title ep-margin-none clearfix\"><span class=\"ep-dlg-title-icon {{config.icon}}\"></span> <span class=ep-dlg-title ng-bind=config.fnGetTitle()></span></h4></div><div class=modal-body><form id=dialogForm name=dialogForm><uib-alert ng-show=showHelp type=info close=closeHelp()><ep-include options=config.helpTemplateOptions></ep-include></uib-alert><!--<div ng-include=\"config.templateUrl\"></div>--><ep-include options=config.templateOptions></ep-include><div class=\"ep-dlg-rememberMe col-md-10\" ng-show=config.rememberMe><div class=form-group><div class=\"row col-md-1\"><input tabindex=1 id=cbxRemember class=form-control type=checkbox ng-model=config.rememberMeValue></div><label class=\"col-md-10 control-label\">Do not show this message again</label></div></div></form></div><div class=modal-footer ng-show=\"config.buttons && config.buttons.length\"><div class=ep-dlg-buttons><button ng-repeat=\"btn in config.buttons\" id={{btn.id}} tabindex=\"$index + 100\" data-dismiss=modal ng-hide=btn.hidden ng-disabled=\"btn.isPrimary && !dialogForm.$valid\" class=\"btn btn-{{btn.type}} {{config.btnBlock == true ? 'btn-block':''}}\" ng-click=btnclick(btn)><i ng-if=btn.icon ng-class=btn.icon></i> &nbsp;{{btn.text}}</button></div></div><div class=ep-dlg-status ng-show=config.statusBar><h4 class=\"bg-primary modal-title\"><span ng-if=!config.statusBarTextHTML ng-bind=config.statusBarText></span> <span ng-if=config.statusBarTextHTML ng-bind-html=config.statusBarTextHTML></span></h4></div></div>"
+    "<div class=\"ep-modaldialog ep-modaldialog-custom\"><div class=\"modal-header ep-padding-none\"><span class=close ng-show=config.closeButton><a class=\"fa fa-times fa-lg ep-navbar-button\" data-dismiss=modal aria-label=Close ng-click=\"btnclick({isCancel: true})\"></a></span> <span class=help ng-show=config.helpTemplateOptions><a class=\"fa fa-question-circle fa-lg ep-navbar-button\" ng-click=helpButtonClick()></a></span><h4 id=dialogTitle class=\"bg-primary modal-title ep-margin-none clearfix\"><span class=\"ep-dlg-title-icon {{config.icon}}\"></span> <span class=ep-dlg-title ng-bind=config.fnGetTitle()></span></h4></div><div class=modal-body><form id=dialogForm name=dialogForm><uib-alert ng-show=showHelp type=info close=closeHelp()><ep-include options=config.helpTemplateOptions></ep-include></uib-alert><!--<div ng-include=\"config.templateUrl\"></div>--><ep-include options=config.templateOptions></ep-include><div class=\"ep-dlg-rememberMe col-md-10\" ng-show=config.rememberMe><div class=form-group><div class=\"row col-md-1\"><input tabindex=1 id=cbxRemember class=form-control type=checkbox ng-model=config.rememberMeValue></div><label class=\"col-md-10 control-label\">Do not show this message again</label></div></div></form></div><div class=modal-footer ng-show=\"config.buttons && config.buttons.length\"><div class=ep-dlg-buttons><button ng-repeat=\"btn in config.buttons\" id={{btn.id}} tabindex=\"$index + 100\" data-dismiss=modal ng-hide=btn.hidden ng-disabled=\"btn.isPrimary && !dialogForm.$valid\" class=\"btn btn-{{btn.type}} {{config.btnBlock == true ? 'btn-block':''}}\" ng-click=btnclick(btn)><i ng-if=btn.icon ng-class=btn.icon></i> &nbsp;{{btn.text}}</button></div></div><div class=ep-dlg-status ng-show=config.statusBar><h4 class=\"bg-primary modal-title\"><span ng-if=!config.statusBarTextHTML ng-bind=config.statusBarText></span> <span ng-if=config.statusBarTextHTML ng-bind-html=config.statusBarTextHTML></span></h4></div></div>"
   );
 
 

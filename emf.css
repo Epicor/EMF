@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.9 built: 22-06-2016
+ * version:1.0.8-dev.15 built: 22-06-2016
 */
 .ep-relative {
   position: relative;
@@ -977,16 +977,16 @@
   padding-left: 8px;
   display: inline-block;
 }
-.ep-modaldialog.ep-modaldialog-custom .modal-header .close {
-  padding: 4px 4px 0 0;
-}
-span.help {
+.ep-modaldialog.ep-modaldialog-custom .modal-header span.help,
+.ep-modaldialog.ep-modaldialog-custom .modal-header span.close {
   float: right;
   font-size: 21px;
   font-weight: bold;
   line-height: 1;
+  opacity: 1;
 }
-span.help a {
+.ep-modaldialog.ep-modaldialog-custom .modal-header span.help a,
+.ep-modaldialog.ep-modaldialog-custom .modal-header span.close a {
   color: #fff;
   text-decoration: none;
   cursor: pointer;
