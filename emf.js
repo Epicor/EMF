@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.13 built: 22-06-2016
+ * version:1.0.8-dev.16 built: 23-06-2016
 */
 (function() {
     'use strict';
@@ -9972,10 +9972,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 *       hideFavorite {bool} - hide the favorite turning on/off (favorite star)
 *       icon {string} - the icon next to menu (favorite must be off)
 *       action {function} - function called when menu is pressed
+*       captionClass {string} - additional user class for caption
 *       tile {object} - settings for ep.tile when working with <ep-tiles-menu-favorites>
 *       separator {object} - add separator on top of th menu item
 *           # text {string} - (optional) separator text
 *           # icon {string} - (optional) the icon next separator text
+*           # isBottom {bool} - (optional) separtor to be displayed below the menu item
 *
 * @example
 */
@@ -9995,6 +9997,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                  searchType: '=',
                  searchDisabled: '=',   // disable search input
                  sortDisabled: '=',     // disable sorting
+                 iconDisabled: '=',     // disable icons on menu items
                  initFavorites: '=',    // initialize all favorites on very first time only
                  menu: '=',             // we take the menu as input parameter on the directive
                  onMenuInit: '&',       // this get fired upon menu initialization to provide factory
@@ -10929,7 +10932,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             var notOp = '';
             var logicalOp = (params && 'or' in params && params.or) ? ' or ' : ' and ';
             // init the tickmark seperator t
-            var tickMark = isNaN(arg1) ? '\'' : '';
+            var tickMark = (angular.isString(arg1) || isNaN(arg1)) ? '\'' : '';
             if (arg0 !== null && arg0 !== undefined && arg1 !== null && arg1 !== undefined) {
                 switch (compareOp) {
                     case 'math':
@@ -10983,6 +10986,25 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             return this;    // valid this to allow for method chaining
         }
 
+        /**
+        * @ngdoc method
+        * @name setWhereCustom
+        * @methodOf ep.odata.factory:odataQueryFactory
+        * @public
+        * @description
+        * Sets the custom where clause value onto $filter oData property
+        *
+        * @param {object} expression - The object that represents the where clause
+        * @param {bool} isOr (optional) to include 'or' logical operator, otherwise 'and' is applied.
+        * @returns {this} to allow for method chaining
+        */
+        function setWhereCustom(expression, isOr) {
+            var logicalOp = (isOr) ? ' or ' : ' and ';
+            odataObject.$filter = ((odataObject && odataObject.$filter) ? (odataObject.$filter + logicalOp) : '') +
+                expression;
+            return this;
+        }
+
         // returns the fully resolved oData object
         /**
         * @ngdoc method
@@ -11009,6 +11031,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             setExpands: setExpands,
             setFilter: setFilter,
             setWhere: setWhere,
+            setWhereCustom: setWhereCustom,
             compose: compose
         };
     });
@@ -14438,6 +14461,7 @@ angular.module('ep.signature').directive('epSignature',
 			{ 'name': 'cosmo', 'cssFilename': 'cosmo.min.css' },
 			{ 'name': 'cyborg', 'cssFilename': 'cyborg.min.css' },
 			{ 'name': 'darkly', 'cssFilename': 'darkly.min.css' },
+			{ 'name': 'epicormobile', 'cssFilename': 'epicormobile.min.css' },
 			{ 'name': 'flatly', 'cssFilename': 'flatly.min.css' },
 			{ 'name': 'journal', 'cssFilename': 'journal.min.css' },
 			{ 'name': 'paper', 'cssFilename': 'paper.min.css' },
@@ -14496,6 +14520,16 @@ angular.module('ep.signature').directive('epSignature',
 
             /**
             * @ngdoc property
+            * @name appendThemes
+            * @propertyOf ep.theme.object:epThemeConfig
+            * @public
+            * @description
+            * Append extra themes on top of existing emf themes
+            */
+            appendThemes: [],
+
+            /**
+            * @ngdoc property
             * @name theme
             * @propertyOf ep.theme.object:epThemeConfig
             * @public
@@ -14537,6 +14571,17 @@ angular.module('ep.signature').directive('epSignature',
             if (config.defaultPath === 'emf') {
                 config.defaultPath = '../lib/bower/emf/assets/css/themes';
                 config.themes = assetsThemes;
+            }
+            if (config.appendThemes && angular.isArray(config.appendThemes)) {
+                //append extra themes
+                angular.forEach(config.appendThemes, function(th) {
+                    var old = _.find(config.themes, function(t) { return t.name === th.name; });
+                    if (old) {
+                        old.cssFilename = th.cssFilename;
+                    } else {
+                        config.themes.push(th);
+                    }
+                });
             }
             return config;
         }];
@@ -17064,7 +17109,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.color.tile/ep-color-tile.html',
-    "<!-- Color Tile Component --><div class=\"ep-color-tile ep-align-container {{colorclass}}\" ng-style=\"{'background-color': color}\"><h3>{{title}}</h3><h5>{{description}}</h5><small>{{fineprint}}</small><div class=\"ep-color-tile-icon ep-align-content ep-align-vcenter\"><i class=\"fa {{icon}} fa-3x\"></i></div></div>"
+    "<!-- Color Tile Component --><div class=\"ep-color-tile ep-align-container {{colorclass}}\" ng-style=\"{'background-color': color}\"><h3>{{title}}</h3><h5>{{description}}</h5><small>{{fineprint}}</small><div class=\"ep-color-tile-icon ep-align-content ep-align-vcenter\"><i class=\"fa {{icon}}\"></i></div></div>"
   );
 
 
@@ -17124,7 +17169,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.multi.level.menu/multi-level-menu.html',
-    "<div class=ep-mlm-container ng-class=\"{'ep-left-to-right': !isRightToLeft, 'ep-right-to-left': isRightToLeft}\"><form class=ep-mlm-search ng-hide=searchDisabled><input class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-focus=\"isRightToLeft = false\"></form><div ng-if=data.next class=\"ep-mlm-content ep-fadein-animation\"><div ng-hide=state.searchTerm class=ep-mlm-header ng-class=\"{ 'pointer': data.next._parent._id !== 'topmenu'}\" ng-click=\"navigate(data.next._parent, true, $event)\"><span ng-if=\"data.next._parent._id !== 'topmenu'\" class=\"ep-mlm-back-button pull-left fa fa-lg fa-caret-left\"></span> <span>{{data.next.caption}}</span></div><div ng-show=state.searchTerm class=ep-mlm-header><span>Search Results</span></div><ul><li ng-repeat=\"mi in currentItems | orderBy:orderByMenu\" class=\"ep-mlm-item clearfix ep-repeat-animation\"><div ng-if=mi.separator class=\"ep-mlm-separator ep-mlm-separator-top {{mi.separator.class}}\"><i ng-if=mi.separator.icon class=\"ep-mlm-separator-icon fa fa-lg pull-left {{mi.separator.icon}}\"></i><div ng-if=mi.separator.text class=ep-mlm-separator-text>{{mi.separator.text}}</div></div><i ng-if=mi.icon class=\"ep-mlm-icon fa fa-lg pull-left {{mi.icon}}\"></i><div class=\"pull-left clearfix ep-mlm-item-div\" ng-class=\"{ 'ep-mlm-item-div-icon': mi.icon }\" ng-click=\"navigate(mi, false, $event)\"><div class=\"ep-mlm-item-text pull-left\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"(mi._type === 'item' && mi.hideFavorite !== true)\" class=\"ep-mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star text-warning': mi.favorite}\"></i> <i ng-if=\"mi._type === 'menu'\" class=\"ep-mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=\"navigate(mi, false, $event)\"></i></li></ul><uib-alert class=\"ep-mlm-alert ep-fadein-animation\" ng-show=\"state.searchTerm && (!currentItems || currentItems.length === 0)\" type=warning>The term \"{{state.searchTerm}}\" did not match any menu items.</uib-alert></div></div>"
+    "<div class=ep-mlm-container ng-class=\"{'ep-left-to-right': !isRightToLeft, 'ep-right-to-left': isRightToLeft}\"><form class=ep-mlm-search ng-hide=searchDisabled><input class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-focus=\"isRightToLeft = false\"></form><div ng-if=data.next class=\"ep-mlm-content ep-fadein-animation\"><div ng-hide=state.searchTerm class=ep-mlm-header ng-class=\"{ 'pointer': data.next._parent._id !== 'topmenu'}\" ng-click=\"navigate(data.next._parent, true, $event)\"><span ng-if=\"data.next._parent._id !== 'topmenu'\" class=\"ep-mlm-back-button pull-left fa fa-lg fa-caret-left\"></span> <span>{{data.next.caption}}</span></div><div ng-show=state.searchTerm class=ep-mlm-header><span>Search Results</span></div><ul><li ng-repeat=\"mi in currentItems | orderBy:orderByMenu\" class=\"ep-mlm-item clearfix ep-repeat-animation\"><div ng-if=\"mi.separator && !mi.separator.isBottom\" class=\"ep-mlm-separator ep-mlm-separator-top {{mi.separator.class}}\"><i ng-if=mi.separator.icon class=\"ep-mlm-separator-icon fa fa-lg pull-left {{mi.separator.icon}}\"></i><div ng-if=mi.separator.text class=ep-mlm-separator-text>{{mi.separator.text}}</div></div><i ng-if=\"mi.icon && !iconDisabled\" class=\"ep-mlm-icon fa fa-lg pull-left {{mi.icon}}\"></i><div class=\"pull-left clearfix ep-mlm-item-div\" ng-class=\"{ 'ep-mlm-item-div-icon': mi.icon }\" ng-click=\"navigate(mi, false, $event)\"><div class=\"ep-mlm-item-text pull-left {{mi.captionClass}}\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"(mi._type === 'item' && mi.hideFavorite !== true)\" class=\"ep-mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star text-warning': mi.favorite}\"></i> <i ng-if=\"mi._type === 'menu'\" class=\"ep-mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=\"navigate(mi, false, $event)\"></i><div ng-if=\"mi.separator && mi.separator.isBottom\"><br><div class=\"ep-mlm-separator ep-mlm-separator-top {{mi.separator.class}}\"><i ng-if=mi.separator.icon class=\"ep-mlm-separator-icon fa fa-lg pull-left {{mi.separator.icon}}\"></i><div ng-if=mi.separator.text class=ep-mlm-separator-text>{{mi.separator.text}}</div></div></div></li></ul><uib-alert class=\"ep-mlm-alert ep-fadein-animation\" ng-show=\"state.searchTerm && (!currentItems || currentItems.length === 0)\" type=warning>The term \"{{state.searchTerm}}\" did not match any menu items.</uib-alert></div></div>"
   );
 
 
@@ -17139,7 +17184,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/menu/ep-shell-menu.html',
-    "<div ng-controller=epShellMenuCtrl><ep-multi-level-menu menu=menuOptions.menu menu-id=menuId search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu></div>"
+    "<div ng-controller=epShellMenuCtrl><ep-multi-level-menu menu=menuOptions.menu menu-id=menuId search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu></div>"
   );
 
 
