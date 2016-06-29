@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.15 built: 22-06-2016
+ * version:1.0.8-dev.36 built: 29-06-2016
 */
 .ep-relative {
   position: relative;
@@ -1168,12 +1168,12 @@
   width: calc(100% - 65px);
 }
 .ep-mlm-container .ep-mlm-item .ep-mlm-item-div.ep-mlm-item-div-icon {
-  width: 70%;
+  width: 65%;
   /* for browsers not supporting calc */
-  width: -moz-calc(100% - 75px);
-  width: -webkit-calc(100% - 75px);
-  width: -o-calc(100% - 75px);
-  width: calc(100% - 75px);
+  width: -moz-calc(100% - 80px);
+  width: -webkit-calc(100% - 80px);
+  width: -o-calc(100% - 80px);
+  width: calc(100% - 80px);
 }
 .ep-mlm-container .ep-mlm-item-text {
   width: 100%;
@@ -1206,6 +1206,9 @@
 .ep-mlm-container .ep-mlm-separator-icon {
   padding-top: 13px;
   color: ghostwhite;
+}
+.ep-mlm-container .ep-mlm-separator {
+  cursor: default;
 }
 .ep-mlm-container .ep-mlm-submenu {
   line-height: 40px;
