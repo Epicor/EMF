@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.38 built: 30-06-2016
+ * version:1.0.8-dev.39 built: 01-07-2016
 */
 (function() {
     'use strict';
@@ -7654,14 +7654,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @ngdoc service
  * @name ep.hybrid.flashlight:epHybridFlashlightService
  * @description
- * Service for accessing Cordova flashlight plugin
- *
+ * Service for accessing Cordova flashlight plugin ({@link https://www.npmjs.com/package/cordova-plugin-flashlight cordova-plugin-flashlight})
  * @example
      <example module="TestApp">
      <file name="index.html">
 	     <div ng-controller="SampleCtrl">
             <div class="panel-body">
-                <button class="btn btn-primary btn-block" ng-click="on()">On</button>
+                <div><button class="btn btn-success btn-block" ng-click="on()">On</button></div> &nbsp
+                <div><button class="btn btn-danger btn-block" ng-click="off()">Off</button></div>
             </div>
 	      </div>
      </file>
@@ -7669,8 +7669,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      	angular.module("TestApp", ["ep.hybrid.flashlight"])
      		.controller("SampleCtrl",["$scope", "epHybridFlashlightService",
                 function($scope, epHybridFlashlightService){
-                        $scope.on = function() {
+                    $scope.on = function () {
                         epHybridFlashlightService.flashOn();
+                    }
+
+                    $scope.off = function () {
+                        epHybridFlashlightService.flashOff();
                     }
             }]);
      </file>
@@ -7691,19 +7695,13 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @methodOf ep.hybrid.flashlight:epHybridFlashlightService
          * @public
          * @description
-         * Allows you to switch the flashlight / torch of the device on and off.
+         * Allows you to switch the flashlight / torch of the device on.
          */
         function flashOn() {
             window.plugins.flashlight.available(function(isAvailable) {
                 if (isAvailable) {
                     // switch on
                     window.plugins.flashlight.switchOn();
-
-                    //// switch off after 3 seconds
-                    //setTimeout(function() {
-                    //    window.plugins.flashlight.switchOff();
-                    //}, 3000);
-
                 } else {
                     $log.debug('Flashlight not available on this device');
                 }
@@ -7715,11 +7713,17 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             }, false);
         }
 
+        /**
+         * @ngdoc method
+         * @name flashOff
+         * @methodOf ep.hybrid.flashlight:epHybridFlashlightService
+         * @public
+         * @description
+         * Allows you to switch the flashlight / torch of the device off.
+         */
         function flashOff() {
-            //if (window.plugins.flashlight.isSwitchedOn == true)
-            //{
-                window.plugins.flashlight.switchOff();
-            //}
+            // switch off
+            window.plugins.flashlight.switchOff();
         }
 
         function exitApp() {
@@ -7746,15 +7750,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @ngdoc service
  * @name ep.hybrid.geolocation:epHybridGeolocationService
  * @description
- * Service for accessing Cordova Geolocation plugin
- *
+ * Service for accessing Cordova Geolocation plugin ({@link https://www.npmjs.com/package/cordova-plugin-geolocation cordova-plugin-geolocation})
+ * @requires {@link https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places}
  * @example
    <example module="TestApp">
      <file name="index.html">
 	     <div ng-controller="SampleCtrl">
             <div class="panel-body">
                 <div id="map"></div>
-                <div id="panel"></div>
             </div>
 	      </div>
      </file>
@@ -11047,365 +11050,458 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
     });
 })();
 
-'use strict';
+/**
+* @ngdoc directive
+* @name ep.record.editor.directive:epCheckboxEditor
+* @restrict E
+*
+* @description
+*/
 (function() {
-    angular.module('ep.record.editor')
-        .directive('epCheckboxEditor', function() {
-            return {
-                restrict: 'E',
-                replace: true,
-                templateUrl: 'src/components/ep.record.editor/editors/ep-checkbox-editor.html',
-                scope: {
-                    'ctx': '=',
-                    'options': '='
-                },
-                compile: function() {
-                    return {
-                        pre: function($scope) {
-                            var ctx = $scope.ctx;
+    'use strict';
 
-                            if (ctx.updatable) {
-                                ctx.toggleValue = function(c, ev) {
-                                    if (c.state.activeRecord && !ctx.disabled) {
-                                        var newVal = !c.state.activeRecord[c.columnIndex];
-                                        ctx.fnSetCurrentValue(newVal, false);
+    angular.module('ep.record.editor').
+    directive('epCheckboxEditor', epCheckboxEditorDirective);
 
-                                        if (ctx.fnValidate && ctx.col.bRaiseEvent && ctx.updatable) {
-                                            ctx.fnValidate(ctx.col, this, ev);
-                                        }
+    /*@ngInject*/
+    function epCheckboxEditorDirective() {
+        return {
+            restrict: 'E',
+            replace: true,
+            templateUrl: 'src/components/ep.record.editor/editors/ep-checkbox-editor.html',
+            scope: {
+                'ctx': '=',
+                'options': '='
+            },
+            compile: function() {
+                return {
+                    pre: function($scope) {
+                        var ctx = $scope.ctx;
+
+                        if (ctx.updatable) {
+                            ctx.toggleValue = function(c, ev) {
+                                if (c.state.activeRecord && !ctx.disabled) {
+                                    var newVal = !c.state.activeRecord[c.columnIndex];
+                                    ctx.fnSetCurrentValue(newVal, false);
+
+                                    if (ctx.fnValidate && ctx.col.bRaiseEvent && ctx.updatable) {
+                                        ctx.fnValidate(ctx.col, this, ev);
                                     }
-                                };
-                            }
-                            ctx.checked = ctx.value ? 'checked' : '';
-                            $scope.handleKey = function($event) {
-                                if ($event.which === 32) {
-                                    $scope.ctx.toggleValue($scope.ctx);
                                 }
                             };
                         }
-                    };
-                }
-            };
-        });
+                        ctx.checked = ctx.value ? 'checked' : '';
+                        $scope.handleKey = function($event) {
+                            if ($event.which === 32) {
+                                $scope.ctx.toggleValue($scope.ctx);
+                            }
+                        };
+                    }
+                };
+            }
+        };
+    }
 })();
 
-'use strict';
+/**
+* @ngdoc directive
+* @name ep.record.editor.directive:epDateConvert
+* @restrict E
+*
+* @description
+*/
 (function() {
-    angular.module('ep.record.editor')
-        .directive('epDateEditor', ['epFeatureDetectionService', function(epFeatureDetectionService) {
+    'use strict';
 
-            var isDateInputSupported = epFeatureDetectionService.inputSupportsType('date');
+    angular.module('ep.record.editor').
+    directive('epDateConvert', epDateConvertDirective);
 
-            return {
-                restrict: 'E',
-                replace: true,
-                templateUrl: 'src/components/ep.record.editor/editors/ep-date-editor.html',
-                scope: {
-                    'ctx': '=',
-                    'options': '='
-                },
-                compile: function() {
-                    return {
-                        pre: function($scope) {
-                            var ctx = $scope.ctx;
-                            var col = ctx.col;
+    /*@ngInject*/
+    function epDateConvertDirective() {
+        //This directive is used to convert string to date between temp input and record
+        //we need this because date angular bootstrap and input 'date' for native dates work
+        //only if date object is bound to control. But our record stores ISO string date
+        //so we have temp control with date object which we edit and pass result to hidden
+        //control bound to actual record.
+        return {
+            restrict: 'A',
+            require: 'ngModel',
+            link: function(scope, element, attrs, ngModel) {
+                if (!ngModel) { return; }
 
-                            ctx.useDateInput = isDateInputSupported; //activate browser native date entry
+                var mode = attrs.epDateConvert;
 
-                            var format = col.oFormat.FormatString;
-                            ctx.format = format;
-                            ctx.dateOptions = {};
+                if (mode === 'toString') {
+                    //transform date to string
+                    ngModel.$parsers.unshift(function(value) {
+                        var dd = null;
+                        if (value !== undefined) {
+                            var m = moment(value);
+                            var fmt = scope.ctx.isDateTime ? 'YYYY-MM-DDT00:00:00' : 'YYYY-MM-DD';
+                            dd = m.isValid() ? m.format(fmt) : null;
+                        }
+                        var rec = scope.ctx.state.activeRecord;
+                        if (rec && rec[scope.ctx.columnIndex] !== dd) {
+                            rec[scope.ctx.columnIndex] = dd;
+                        }
+                        return value;
+                    });
 
-                            if (!ctx.useDateInput) {
-                                var reg;
-                                if (format) {
-                                    reg = /[A-Z]|[a-z]/;
-                                    ctx.dateSeparator = _.find(ctx.format, function(c) {
-                                        return c && !reg.test(c);
-                                    });
+                    ngModel.$viewChangeListeners.push(function() {
+                        if (ngModel.$modelValue === undefined) {
+                            //this happens during edit when date becomes invalid (modelValue undefined)
+                            var rec = scope.ctx.state.activeRecord;
+                            if (rec) {
+                                scope.ctx.isInvalidDateSet = true;
+                                rec[scope.ctx.columnIndex] = undefined;
+                            }
+                        }
+                    });
+                }
+                if (mode === 'toDate') {
+                    //transform ISO string date to date object
+                    ngModel.$formatters.push(function(value) {
+                        if (angular.isString(value)) {
+                            var md = moment(value);
+                            scope.ctx.dateValue = md.isValid() ? md.toDate() : null;
+                        } else {
+                            if (scope.ctx.isInvalidDateSet === true) {
+                                scope.ctx.isInvalidDateSet = false;
+                            } else {
+                                scope.ctx.dateValue = angular.isDate(value) ? value : null;
+                            }
+                        }
+                        return value;
+                    });
+                }
+            }
+        };
+    }
+})();
+
+
+/**
+* @ngdoc directive
+* @name ep.record.editor.directive:epDateEditor
+* @restrict E
+*
+* @description
+*/
+(function() {
+    'use strict';
+
+    epDateEditorDirective.$inject = ['epFeatureDetectionService'];
+    angular.module('ep.record.editor').
+    directive('epDateEditor', epDateEditorDirective);
+
+    /*@ngInject*/
+    function epDateEditorDirective(epFeatureDetectionService) {
+        var isDateInputSupported = epFeatureDetectionService.inputSupportsType('date');
+
+        return {
+            restrict: 'E',
+            replace: true,
+            templateUrl: 'src/components/ep.record.editor/editors/ep-date-editor.html',
+            scope: {
+                'ctx': '=',
+                'options': '='
+            },
+            compile: function() {
+                return {
+                    pre: function($scope) {
+                        var ctx = $scope.ctx;
+                        var col = ctx.col;
+
+                        ctx.useDateInput = isDateInputSupported; //activate browser native date entry
+
+                        var format = col.oFormat.FormatString;
+                        ctx.format = format;
+                        ctx.dateOptions = {};
+
+                        if (!ctx.useDateInput) {
+                            var reg;
+                            if (format) {
+                                reg = /[A-Z]|[a-z]/;
+                                ctx.dateSeparator = _.find(ctx.format, function(c) {
+                                    return c && !reg.test(c);
+                                });
+                            }
+                            if (!ctx.dateSeparator) {
+                                var dd = new Date().toLocaleDateString();
+                                reg = /[0-9]|[' ']/;
+                                ctx.dateSeparator = _.find(dd, function(c) {
+                                    return c && c.charCodeAt(0) !== 8206 && !reg.test(c);
+                                });
+                            }
+
+                            ctx.fnDateOpen = function($event) {
+                                if (!ctx.disabled) {
+                                    $event.preventDefault();
+                                    $event.stopPropagation();
+                                    ctx.dateOpened = true;
                                 }
-                                if (!ctx.dateSeparator) {
-                                    var dd = new Date().toLocaleDateString();
-                                    reg = /[0-9]|[' ']/;
-                                    ctx.dateSeparator = _.find(dd, function(c) {
-                                        return c && c.charCodeAt(0) !== 8206 && !reg.test(c);
-                                    });
+                            };
+                            ctx.fnDateKeyDown = function($event) {
+                                var k = $event.keyCode;
+                                if (k === 8 || k === 9 || k === 16 || k === 33 || k === 34 ||
+                                    k === 35 || k === 36 || k === 37 || k === 38 || k === 39 || k === 40) {
+                                    return true;
                                 }
-
-                                ctx.fnDateOpen = function($event) {
-                                    if (!ctx.disabled) {
-                                        $event.preventDefault();
-                                        $event.stopPropagation();
-                                        ctx.dateOpened = true;
-                                    }
-                                };
-                                ctx.fnDateKeyDown = function($event) {
-                                    var k = $event.keyCode;
-                                    if (k === 8 || k === 9 || k === 16 || k === 33 || k === 34 ||
-                                        k === 35 || k === 36 || k === 37 || k === 38 || k === 39 || k === 40) {
-                                        return true;
-                                    }
-                                    if ($event.ctrlKey) {
-                                        return true; //for Copy/Paste etc.
-                                    }
-                                    if (ctx.disabled) {
-                                        $event.preventDefault();
-                                        return false;
-                                    }
-                                    if (ctx.dateSeparator && $event.char) {
-                                        //with date separator check for it or [0-9]
-                                        var sepCode = ctx.dateSeparator;
-                                        if ($event.char === sepCode) {
-                                            //prevent more than 2 date separators
-                                            if (angular.isString($event.target.value) &&
-                                                $event.target.value.split(sepCode).length > 2) {
-                                                $event.preventDefault();
-                                                return false;
-                                            }
-                                            return true;
-                                        }
-                                        if (/[0-9]/.test($event.char)) {
-                                            return true;
-                                        }
-                                    } else if ($event.char) {
-                                        //without date separator we will allow all non-alphanumerics
-                                        if (!(/[A-Z]|[a-z]/.test($event.char))) {
-                                            return true;
-                                        }
-                                    } else {
-                                        //uncontrolled because we cannot trust key code
-                                        if (k < 65 || k > 90) {
-                                            return true;
-                                        }
-                                    }
+                                if ($event.ctrlKey) {
+                                    return true; //for Copy/Paste etc.
+                                }
+                                if (ctx.disabled) {
                                     $event.preventDefault();
                                     return false;
+                                }
+                                if (ctx.dateSeparator && $event.char) {
+                                    //with date separator check for it or [0-9]
+                                    var sepCode = ctx.dateSeparator;
+                                    if ($event.char === sepCode) {
+                                        //prevent more than 2 date separators
+                                        if (angular.isString($event.target.value) &&
+                                            $event.target.value.split(sepCode).length > 2) {
+                                            $event.preventDefault();
+                                            return false;
+                                        }
+                                        return true;
+                                    }
+                                    if (/[0-9]/.test($event.char)) {
+                                        return true;
+                                    }
+                                } else if ($event.char) {
+                                    //without date separator we will allow all non-alphanumerics
+                                    if (!(/[A-Z]|[a-z]/.test($event.char))) {
+                                        return true;
+                                    }
+                                } else {
+                                    //uncontrolled because we cannot trust key code
+                                    if (k < 65 || k > 90) {
+                                        return true;
+                                    }
+                                }
+                                $event.preventDefault();
+                                return false;
+                            };
+                        }
+                    }
+                };
+            }
+        };
+    }
+})();
+
+
+/**
+* @ngdoc directive
+* @name ep.record.editor.directive:epImageEditor
+* @restrict E
+*
+* @description
+*/
+(function() {
+    'use strict';
+
+    angular.module('ep.record.editor').
+    directive('epImageEditor', epImageEditorDirective);
+
+    /*@ngInject*/
+    function epImageEditorDirective() {
+        return {
+            restrict: 'E',
+            replace: true,
+            templateUrl: 'src/components/ep.record.editor/editors/ep-image-editor.html',
+            scope: {
+                'ctx': '=',
+                'options': '='
+            }
+        };
+    }
+})();
+
+/**
+* @ngdoc directive
+* @name ep.record.editor.directive:epMultilineEditor
+* @restrict E
+*
+* @description
+*/
+(function() {
+    'use strict';
+
+    angular.module('ep.record.editor').
+    directive('epMultilineEditor', epMultilineEditorDirective);
+
+    /*@ngInject*/
+    function epMultilineEditorDirective() {
+        return {
+            restrict: 'E',
+            replace: true,
+            templateUrl: 'src/components/ep.record.editor/editors/ep-multiline-editor.html',
+            scope: {
+                'ctx': '=',
+                'options': '='
+            }
+        };
+    }
+})();
+
+/**
+* @ngdoc directive
+* @name ep.record.editor.directive:epNumberEditor
+* @restrict E
+*
+* @description
+*/
+(function() {
+    'use strict';
+
+    angular.module('ep.record.editor').
+    directive('epNumberEditor', epNumberEditorDirective);
+
+    /*@ngInject*/
+    function epNumberEditorDirective() {
+        return {
+            restrict: 'E',
+            replace: true,
+            templateUrl: 'src/components/ep.record.editor/editors/ep-number-editor.html',
+            scope: {
+                'ctx': '=',
+                'options': '='
+            },
+            compile: function() {
+                return {
+                    pre: function($scope) {
+                        var ctx = $scope.ctx;
+                        var col = ctx.col;
+                        if (ctx.editor === 'number') {
+                            var fmt = col.oFormat;
+                            if (!fmt) {
+                                col.oFormat = fmt = {
+                                    Min: -99999999999,
+                                    Max: 99999999999
                                 };
                             }
-                        }
-                    };
-                }
-            };
-        }])
 
-        .directive('epDateConvert', function() {
-            //This directive is used to convert string to date between temp input and record
-            //we need this because date angular bootstrap and input 'date' for native dates work
-            //only if date object is bound to control. But our record stores ISO string date
-            //so we have temp control with date object which we edit and pass result to hidden
-            //control bound to actual record.
-            return {
-                restrict: 'A',
-                require: 'ngModel',
-                link: function(scope, element, attrs, ngModel) {
-                    if (!ngModel) { return; }
-
-                    var mode = attrs.epDateConvert;
-
-                    if (mode === 'toString') {
-                        //transform date to string
-                        ngModel.$parsers.unshift(function(value) {
-                            var dd = null;
-                            if (value !== undefined) {
-                                var m = moment(value);
-                                var fmt = scope.ctx.isDateTime ? 'YYYY-MM-DDT00:00:00' : 'YYYY-MM-DD';
-                                dd = m.isValid() ? m.format(fmt) : null;
-                            }
-                            var rec = scope.ctx.state.activeRecord;
-                            if (rec && rec[scope.ctx.columnIndex] !== dd) {
-                                rec[scope.ctx.columnIndex] = dd;
-                            }
-                            return value;
-                        });
-
-                        ngModel.$viewChangeListeners.push(function() {
-                            if (ngModel.$modelValue === undefined) {
-                                //this happens during edit when date becomes invalid (modelValue undefined)
-                                var rec = scope.ctx.state.activeRecord;
-                                if (rec) {
-                                    scope.ctx.isInvalidDateSet = true;
-                                    rec[scope.ctx.columnIndex] = undefined;
+                            if (fmt.Min || fmt.Min === 0) {
+                                ctx.min = fmt.Min;
+                                //TO DO: rework AllowNegative to be Min=0
+                                if (fmt.AllowNegative === false && fmt.Min < 0) {
+                                    ctx.min = 0;
                                 }
                             }
-                        });
-                    }
-                    if (mode === 'toDate') {
-                        //transform ISO string date to date object
-                        ngModel.$formatters.push(function(value) {
-                            if (angular.isString(value)) {
-                                var md = moment(value);
-                                scope.ctx.dateValue = md.isValid() ? md.toDate() : null;
-                            } else {
-                                if (scope.ctx.isInvalidDateSet === true) {
-                                    scope.ctx.isInvalidDateSet = false;
+                            if (fmt.Max || fmt.Max === 0) {
+                                ctx.max = fmt.Max;
+                            }
+                            if (fmt.NumberFormatInfo || (fmt.Decimals !== undefined)) {
+                                //to do : negatives mask!!!
+                                var dec = 0;
+                                if (fmt.Decimals !== undefined) {
+                                    dec = fmt.Decimals;
                                 } else {
-                                    scope.ctx.dateValue = angular.isDate(value) ? value : null;
+                                    dec = fmt.NumberFormatInfo.NumberDecimalDigits || 0;
+                                }
+                                if (dec < 0) {
+                                    dec = 0;
+                                }
+                                if (dec === 0) {
+                                    ctx.pattern = '^NEG(\\d+)$';
+                                } else {
+                                    ctx.pattern =
+                                        '^NEG(\\d+)([\'.\'](\\d){0,DEC})?$'.replace('DEC', dec.toString());
+                                }
+                                if (fmt.AllowNegative || false) {
+                                    ctx.pattern = ctx.pattern.replace('NEG', '([-]?)');
+                                } else {
+                                    ctx.pattern = ctx.pattern.replace('NEG', '');
                                 }
                             }
-                            return value;
-                        });
+                        }
                     }
-                }
-            };
-        });
-
+                };
+            }
+        };
+    }
 })();
 
-'use strict';
+/**
+* @ngdoc directive
+* @name ep.record.editor.directive:epSelectEditor
+* @restrict E
+*
+* @description
+*/
 (function() {
-    angular.module('ep.record.editor')
-        .directive('epImageEditor', function() {
-            return {
-                restrict: 'E',
-                replace: true,
-                templateUrl: 'src/components/ep.record.editor/editors/ep-image-editor.html',
-                scope: {
-                    'ctx': '=',
-                    'options': '='
-                }
-            };
-        });
-})();
+    'use strict';
 
-'use strict';
-(function() {
-    angular.module('ep.record.editor')
-        .directive('epMultilineEditor', function() {
-            return {
-                restrict: 'E',
-                replace: true,
-                templateUrl: 'src/components/ep.record.editor/editors/ep-multiline-editor.html',
-                scope: {
-                    'ctx': '=',
-                    'options': '='
-                }
-            };
-        });
-})();
+    angular.module('ep.record.editor').
+    directive('epSelectEditor', epSelectEditorDirective);
 
-'use strict';
-(function() {
-    angular.module('ep.record.editor')
-        .directive('epNumberEditor', function() {
-            return {
-                restrict: 'E',
-                replace: true,
-                templateUrl: 'src/components/ep.record.editor/editors/ep-number-editor.html',
-                scope: {
-                    'ctx': '=',
-                    'options': '='
-                },
-                compile: function() {
-                    return {
-                        pre: function($scope) {
-                            var ctx = $scope.ctx;
-                            var col = ctx.col;
-                            if (ctx.editor === 'number') {
-                                var fmt = col.oFormat;
-                                if (!fmt) {
-                                    col.oFormat = fmt = {
-                                        Min: -99999999999,
-                                        Max: 99999999999
-                                    };
-                                }
+    /*@ngInject*/
+    function epSelectEditorDirective() {
+        return {
+            restrict: 'E',
+            replace: true,
+            templateUrl: 'src/components/ep.record.editor/editors/ep-select-editor.html',
+            scope: {
+                'ctx': '=',
+                'options': '='
+            },
+            compile: function() {
+                return {
+                    pre: function($scope) {
+                        var ctx = $scope.ctx;
+                        var col = ctx.col;
 
-                                if (fmt.Min || fmt.Min === 0) {
-                                    ctx.min = fmt.Min;
-                                    //TO DO: rework AllowNegative to be Min=0
-                                    if (fmt.AllowNegative === false && fmt.Min < 0) {
-                                        ctx.min = 0;
-                                    }
-                                }
-                                if (fmt.Max || fmt.Max === 0) {
-                                    ctx.max = fmt.Max;
-                                }
-                                if (fmt.NumberFormatInfo || (fmt.Decimals !== undefined)) {
-                                    //to do : negatives mask!!!
-                                    var dec = 0;
-                                    if (fmt.Decimals !== undefined) {
-                                        dec = fmt.Decimals;
-                                    } else {
-                                        dec = fmt.NumberFormatInfo.NumberDecimalDigits || 0;
-                                    }
-                                    if (dec < 0) {
-                                        dec = 0;
-                                    }
-                                    if (dec === 0) {
-                                        ctx.pattern = '^NEG(\\d+)$';
-                                    } else {
-                                        ctx.pattern =
-                                            '^NEG(\\d+)([\'.\'](\\d){0,DEC})?$'.replace('DEC', dec.toString());
-                                    }
-                                    if (fmt.AllowNegative || false) {
-                                        ctx.pattern = ctx.pattern.replace('NEG', '([-]?)');
-                                    } else {
-                                        ctx.pattern = ctx.pattern.replace('NEG', '');
-                                    }
-                                }
-                            }
+                        if (ctx.col.list) {
+                            ctx.options = angular.extend([], ctx.col.list);
+                            angular.forEach(ctx.options, function(item) {
+                                item.getIsSelected = function() {
+                                    return item.value === ctx.fnGetCurrentValue();
+                                };
+                            });
                         }
-                    };
-                }
-            };
-        });
-})();
 
-'use strict';
-(function() {
-    angular.module('ep.record.editor')
-        .directive('epSelectEditor', function() {
-            return {
-                restrict: 'E',
-                replace: true,
-                templateUrl: 'src/components/ep.record.editor/editors/ep-select-editor.html',
-                scope: {
-                    'ctx': '=',
-                    'options': '='
-                },
-                compile: function() {
-                    return {
-                        pre: function($scope) {
-                            var ctx = $scope.ctx;
-                            var col = ctx.col;
-
-                            if (ctx.col.list) {
-                                ctx.options = angular.extend([], ctx.col.list);
-                                angular.forEach(ctx.options, function(item) {
-                                    item.getIsSelected = function() {
-                                        return item.value === ctx.fnGetCurrentValue();
-                                    };
-                                });
-                            }
-
-                            // add an 'empty' value for fields that are not required.
-                            if (!col.bRequired && !_.find(ctx.options, function(o) { return !o.value; })) {
-                                ctx.options.unshift({
-                                    label: '', value: null, getIsSelected: function() {
-                                        return !ctx.fnGetCurrentValue();
-                                    }
-                                });
-                            }
+                        // add an 'empty' value for fields that are not required.
+                        if (!col.bRequired && !_.find(ctx.options, function(o) { return !o.value; })) {
+                            ctx.options.unshift({
+                                label: '', value: null, getIsSelected: function() {
+                                    return !ctx.fnGetCurrentValue();
+                                }
+                            });
                         }
-                    };
-                }
-            };
-        });
+                    }
+                };
+            }
+        };
+    }
 })();
 
-'use strict';
+/**
+* @ngdoc directive
+* @name ep.record.editor.directive:epTextEditor
+* @restrict E
+*
+* @description
+*/
 (function() {
-    angular.module('ep.record.editor')
-        .directive('epTextEditor', function() {
-            return {
-                restrict: 'E',
-                replace: true,
-                templateUrl: 'src/components/ep.record.editor/editors/ep-text-editor.html',
-                scope: {
-                    'ctx': '=',
-                    'options': '='
-                }
-            };
-        });
+    'use strict';
+
+    angular.module('ep.record.editor').
+    directive('epTextEditor', epTextEditorDirective);
+
+    /*@ngInject*/
+    function epTextEditorDirective() {
+        return {
+            restrict: 'E',
+            replace: true,
+            templateUrl: 'src/components/ep.record.editor/editors/ep-text-editor.html',
+            scope: {
+                'ctx': '=',
+                'options': '='
+            }
+        };
+    }
 })();
 
 /**
@@ -11512,6 +11608,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         epShellConstants, epUtilsService, epFeatureDetectionService, epRecordEditorFactory) {
         // Private methods ------------------>
 
+        editorController.$inject = ['$scope'];
         var uniqueID = {
             counter: 0,
             get: function(prefix) {
@@ -11643,6 +11740,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 scope.setReadOnly();
             }
         }
+
+        /*@ngInject*/
+        function editorController($scope) {
+            //Must have inject or this will fail on minification!
+            //For each editor set the container and find editor
+            var ctx = $scope.userData;
+            ctx.editorContainer = $scope.state.iElement;
+        };
 
         function createContext(scope) {
             //creates editor context based on metadata
@@ -11869,11 +11974,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 }
                 editorsContext[col.mData] = ctx;
             });
-            scope.state.editorController = function($scope) {
-                //For each editor set the container and find editor
-                var ctx = $scope.userData;
-                ctx.editorContainer = $scope.state.iElement;
-            };
+            scope.state.editorController = editorController;
+
             scope.state.editorContexts = editorsContext;
         }
 
@@ -12023,13 +12125,20 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         selectFirstControl(scope);
                     }
                 };
+
+                if (scope.onInit) {
+                    scope.onInit({ factory: scope.state.factory });
+                }
+
                 scope.compareValues = compareValues;
+
             },
             scope: {
                 options: '=',
                 record: '=',
                 isReadOnly: '=',
-                sizeClass: '='
+                sizeClass: '=',
+                onInit: '&'
             }
         };
     }
@@ -15299,7 +15408,7 @@ angular.module('ep.signature').directive('epSignature',
                 workingCanvas.width = width;
                 workingCanvas.height = height;
                 var workingCtx = workingCanvas.getContext('2d');
-                workingCtx.fillStyle = "#fff";
+                workingCtx.fillStyle = '#fff';
                 workingCtx.fillRect(0, 0, width, height);
                 workingCtx.drawImage(workingImg, 0, 0, width, height);
                 deferred.resolve(workingCanvas.toDataURL('image/jpeg', 1.0));
@@ -18538,12 +18647,12 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-checkbox-editor.html',
-    "<section class=\"ep-editor-checkbox ep-center-item editor\" tabindex=0 ng-keyup=handleKey($event) ng-click=ctx.toggleValue(ctx,$event) ng-hide=ctx.fnDoValidations(this)><span ng-class=\"{'fa-square-o': !ctx.state.activeRecord[ctx.columnIndex], 'fa-check-square-o': ctx.state.activeRecord[ctx.columnIndex]}\" class=\"fa fa-lg\"></span></section>"
+    "<section class=\"ep-editor-checkbox ep-center-item editor\" tabindex=0 ng-keyup=handleKey($event) ng-click=ctx.toggleValue(ctx,$event) ng-hide=ctx.fnDoValidations()><span ng-class=\"{'fa-square-o': !ctx.state.activeRecord[ctx.columnIndex], 'fa-check-square-o': ctx.state.activeRecord[ctx.columnIndex]}\" class=\"fa fa-lg\"></span></section>"
   );
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-date-editor.html',
-    "<section><input id=dd_{{ctx.name}} ng-model=ctx.state.activeRecord[ctx.columnIndex] ep-date-convert=toDate ng-hide=\"true\"><div class=\"input-group date datepicker\" id=dp_{{ctx.name}} ng-if=!ctx.useDateInput><input size=16 ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor\" ng-hide=ctx.fnDoValidations(this) ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) pattern={{ctx.pattern}} ng-keydown=ctx.fnDateKeyDown($event) uib-datepicker-popup={{ctx.format}} datepicker-options111={{ctx.dateOptions}} placeholder={{ctx.format}} ng-pattern={{ctx.pattern}} is-open=\"ctx.dateOpened\"> <span class=input-group-addon ng-click=ctx.fnDateOpen($event) ng-style=\"{ 'cursor': ctx.disabled ? 'not-allowed' : 'pointer' }\"><a ng-if=!ctx.disabled><i class=\"fa fa-calendar\"></i></a> <i ng-if=ctx.disabled class=\"fa fa-calendar\"></i></span></div><div class=\"input-group date\" id=dp_{{ctx.name}} ng-if=\"ctx.useDateInput === true\"><input size=16 type=date ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor\" ng-hide=ctx.fnDoValidations(this) ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=\"ctx.fnBlur($event)\"></div></section>"
+    "<section><input id=dd_{{ctx.name}} ng-model=ctx.state.activeRecord[ctx.columnIndex] ep-date-convert=toDate ng-hide=\"true\"><div class=\"input-group date datepicker\" id=dp_{{ctx.name}} ng-if=!ctx.useDateInput><input size=16 ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor\" ng-hide=ctx.fnDoValidations() ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) pattern={{ctx.pattern}} ng-keydown=ctx.fnDateKeyDown($event) uib-datepicker-popup={{ctx.format}} datepicker-options111={{ctx.dateOptions}} placeholder={{ctx.format}} ng-pattern={{ctx.pattern}} is-open=\"ctx.dateOpened\"> <span class=input-group-addon ng-click=ctx.fnDateOpen($event) ng-style=\"{ 'cursor': ctx.disabled ? 'not-allowed' : 'pointer' }\"><a ng-if=!ctx.disabled><i class=\"fa fa-calendar\"></i></a> <i ng-if=ctx.disabled class=\"fa fa-calendar\"></i></span></div><div class=\"input-group date\" id=dp_{{ctx.name}} ng-if=\"ctx.useDateInput === true\"><input size=16 type=date ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor\" ng-hide=ctx.fnDoValidations(this) ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=\"ctx.fnBlur($event)\"></div></section>"
   );
 
 
@@ -18553,7 +18662,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-multiline-editor.html',
-    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span><textarea id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=ctx.state.activeRecord[ctx.columnIndex] ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-hide=ctx.fnDoValidations(this) maxlength={{ctx.maxlength}} ng-style=\"{'text-align': ctx.justification }\">\r" +
+    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span><textarea id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=ctx.state.activeRecord[ctx.columnIndex] ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-hide=ctx.fnDoValidations() maxlength={{ctx.maxlength}} ng-style=\"{'text-align': ctx.justification }\">\r" +
     "\n" +
     "\r" +
     "\n" +
@@ -18572,17 +18681,17 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-number-editor.html',
-    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input id={{ctx.name}} ng-cloak name={{ctx.name}} type=number ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=ctx.state.activeRecord[ctx.columnIndex] ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-style=\"{ 'text-align': ctx.justification }\" maxlength={{ctx.maxlength}} min={{ctx.min}} max={{ctx.max}} ng-hide=ctx.fnDoValidations(this) pattern=\"{{ctx.pattern}}\"> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
+    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input id={{ctx.name}} ng-cloak name={{ctx.name}} type=number ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=ctx.state.activeRecord[ctx.columnIndex] ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-style=\"{ 'text-align': ctx.justification }\" maxlength={{ctx.maxlength}} min={{ctx.min}} max={{ctx.max}} ng-hide=ctx.fnDoValidations() pattern=\"{{ctx.pattern}}\"> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
   );
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-select-editor.html',
-    "<section><select class=\"form-control editor\" id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) ng-hide=ctx.fnDoValidations(this) ng-model=ctx.state.activeRecord[ctx.columnIndex]><option ng-repeat=\"opt in ctx.options\" label={{opt.label}} value={{opt.value}} ng-selected=opt.getIsSelected()>{{opt.label}}</option></select></section>"
+    "<section><select class=\"form-control editor\" id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) ng-hide=ctx.fnDoValidations() ng-model=ctx.state.activeRecord[ctx.columnIndex]><option ng-repeat=\"opt in ctx.options\" label={{opt.label}} value={{opt.value}} ng-selected=opt.getIsSelected()>{{opt.label}}</option></select></section>"
   );
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-text-editor.html',
-    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input id={{ctx.name}} ng-cloak name={{ctx.name}} type={{ctx.type}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=ctx.state.activeRecord[ctx.columnIndex] ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-hide=ctx.fnDoValidations(this) maxlength={{ctx.maxlength}} ng-style=\"{ 'text-align': ctx.justification }\"> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
+    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input id={{ctx.name}} ng-cloak name={{ctx.name}} type={{ctx.type}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=ctx.state.activeRecord[ctx.columnIndex] ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-hide=ctx.fnDoValidations() maxlength={{ctx.maxlength}} ng-style=\"{ 'text-align': ctx.justification }\"> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
   );
 
 

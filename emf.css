@@ -1,3 +1,7 @@
+/*
+ * emf (Epicor Mobile Framework) 
+ * version:1.0.8-dev.39 built: 01-07-2016
+*/
 .ep-relative {
   position: relative;
 }
@@ -414,6 +418,9 @@
 }
 .ep-ci-calendar:before {
   content: "\e90a";
+}
+.ep-ci-offline-storage:before {
+  content: "\e90c";
 }
 
 .ep-console-warning {
