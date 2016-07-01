@@ -2,7 +2,7 @@
   "name": "emf",
   "description": "Epicor Mobile Framework",
   "author": "Epicor Software Corporation",
-  "version": "1.0.8-dev.36",
+  "version": "1.0.8-dev.37",
   "publishConfig": {
     "registry": "http://epichub.americas.epicor.net:4873"
   },
@@ -36,7 +36,6 @@
     "grunt-tfs-unlock": "0.*.*",
     "grunt-tocdoc": "0.*.*",
     "grunt-version": "^1.0.0",
-    "jasmine-core": "^2.3.4",
     "karma": "0.*.*",
     "karma-chrome-launcher": "0.*.*",
     "karma-coverage": "0.*.*",
@@ -46,14 +45,16 @@
     "karma-iebrowsers-launcher": "0.*.*",
     "karma-jasmine": "0.*.*",
     "karma-ng-html2js-preprocessor": "0.*.*",
-    "karma-phantomjs-launcher": "0.*.*",
     "karma-safari-launcher": "0.*.*",
     "karma-xml-reporter": "0.*.*",
+    "karma-phantomjs-launcher": "^1.0.1",
     "load-grunt-config": "0.*.*",
     "load-grunt-tasks": "~3.3.0",
     "marked": "0.*.*",
     "marked-toc": "0.*.*",
-    "phantomjs": "^1.9.18",
-    "time-grunt": "^1.0.0"
+    "time-grunt": "^1.0.0",
+    "jasmine": "^2.4.1",
+    "jasmine-core": "^2.4.1",
+    "phantomjs": "^2.1.7"
   }
 }

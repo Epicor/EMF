@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.36 built: 29-06-2016
+ * version:1.0.8-dev.37 built: 30-06-2016
 */
 .ep-relative {
   position: relative;
@@ -1267,6 +1267,62 @@
 }
 .ep-mlm-container .ep-repeat-animation.ng-move.ng-move-active {
   opacity: 1;
+}
+
+.ep-record-editor {
+  margin-left: 10px;
+  /*margin-right: 30px;*/
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+@media screen and (max-width: 500px) {
+  .ep-record-editor {
+    margin-left: 0;
+  }
+}
+.ep-record-editor-column {
+  min-width: 250px;
+}
+/* in modal dialogs (parameters) allow lesser size */
+.ep-modal-window .ep-record-editor-column {
+  min-width: 50px;
+}
+.ep-record-editor .ep-record-editor-container {
+  /* width: 300px; */
+  padding: 10px;
+  margin-top: 8px;
+  margin-right: 8px;
+}
+.ep-record-editor .ep-record-editor-container .input-group {
+  width: 100%;
+}
+.ep-record-editor .ep-record-editor-container .ep-editor-label {
+  display: block;
+}
+.ep-record-editor .ep-editor-checkbox {
+  width: 100%;
+  cursor: pointer;
+}
+.ep-record-editor .ep-editor-checkbox > span {
+  padding: 14px;
+}
+.ep-record-editor textarea.form-control.editor {
+  height: 145px;
+}
+.ep-record-editor .form-control.editor[disabled] {
+  cursor: default;
+}
+.ep-record-editor .standard-width {
+  width: 300px;
+}
+.ep-record-editor .standard-widthTimes1 {
+  width: 33%;
+}
+.ep-record-editor .standard-widthTimes2 {
+  width: 66%;
+}
+.ep-record-editor .standard-widthTimes3 {
+  width: 100%;
 }
 
 .ep-shell .ep-shell-feedback-btn {

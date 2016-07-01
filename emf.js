@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.36 built: 29-06-2016
+ * version:1.0.8-dev.37 built: 30-06-2016
 */
 (function() {
     'use strict';
@@ -249,6 +249,20 @@ angular.module('ep.include', [
 
     angular.module('ep.odata', []);
 })();
+
+'use strict';
+/**
+ * @ngdoc overview
+ * @name ep.record.editor
+ * @description
+ * record editor creates controls by metadata
+ */
+angular.module('ep.record.editor', [
+    'ep.feature.detection',
+    'ep.templates',
+    'ep.sysconfig',
+    'ep.include'
+]);
 
 /**
  * @ngdoc overview
@@ -11033,6 +11047,1372 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
     });
 })();
 
+'use strict';
+(function() {
+    angular.module('ep.record.editor')
+        .directive('epCheckboxEditor', function() {
+            return {
+                restrict: 'E',
+                replace: true,
+                templateUrl: 'src/components/ep.record.editor/editors/ep-checkbox-editor.html',
+                scope: {
+                    'ctx': '=',
+                    'options': '='
+                },
+                compile: function() {
+                    return {
+                        pre: function($scope) {
+                            var ctx = $scope.ctx;
+
+                            if (ctx.updatable) {
+                                ctx.toggleValue = function(c, ev) {
+                                    if (c.state.activeRecord && !ctx.disabled) {
+                                        var newVal = !c.state.activeRecord[c.columnIndex];
+                                        ctx.fnSetCurrentValue(newVal, false);
+
+                                        if (ctx.fnValidate && ctx.col.bRaiseEvent && ctx.updatable) {
+                                            ctx.fnValidate(ctx.col, this, ev);
+                                        }
+                                    }
+                                };
+                            }
+                            ctx.checked = ctx.value ? 'checked' : '';
+                            $scope.handleKey = function($event) {
+                                if ($event.which === 32) {
+                                    $scope.ctx.toggleValue($scope.ctx);
+                                }
+                            };
+                        }
+                    };
+                }
+            };
+        });
+})();
+
+'use strict';
+(function() {
+    angular.module('ep.record.editor')
+        .directive('epDateEditor', ['epFeatureDetectionService', function(epFeatureDetectionService) {
+
+            var isDateInputSupported = epFeatureDetectionService.inputSupportsType('date');
+
+            return {
+                restrict: 'E',
+                replace: true,
+                templateUrl: 'src/components/ep.record.editor/editors/ep-date-editor.html',
+                scope: {
+                    'ctx': '=',
+                    'options': '='
+                },
+                compile: function() {
+                    return {
+                        pre: function($scope) {
+                            var ctx = $scope.ctx;
+                            var col = ctx.col;
+
+                            ctx.useDateInput = isDateInputSupported; //activate browser native date entry
+
+                            var format = col.oFormat.FormatString;
+                            ctx.format = format;
+                            ctx.dateOptions = {};
+
+                            if (!ctx.useDateInput) {
+                                var reg;
+                                if (format) {
+                                    reg = /[A-Z]|[a-z]/;
+                                    ctx.dateSeparator = _.find(ctx.format, function(c) {
+                                        return c && !reg.test(c);
+                                    });
+                                }
+                                if (!ctx.dateSeparator) {
+                                    var dd = new Date().toLocaleDateString();
+                                    reg = /[0-9]|[' ']/;
+                                    ctx.dateSeparator = _.find(dd, function(c) {
+                                        return c && c.charCodeAt(0) !== 8206 && !reg.test(c);
+                                    });
+                                }
+
+                                ctx.fnDateOpen = function($event) {
+                                    if (!ctx.disabled) {
+                                        $event.preventDefault();
+                                        $event.stopPropagation();
+                                        ctx.dateOpened = true;
+                                    }
+                                };
+                                ctx.fnDateKeyDown = function($event) {
+                                    var k = $event.keyCode;
+                                    if (k === 8 || k === 9 || k === 16 || k === 33 || k === 34 ||
+                                        k === 35 || k === 36 || k === 37 || k === 38 || k === 39 || k === 40) {
+                                        return true;
+                                    }
+                                    if ($event.ctrlKey) {
+                                        return true; //for Copy/Paste etc.
+                                    }
+                                    if (ctx.disabled) {
+                                        $event.preventDefault();
+                                        return false;
+                                    }
+                                    if (ctx.dateSeparator && $event.char) {
+                                        //with date separator check for it or [0-9]
+                                        var sepCode = ctx.dateSeparator;
+                                        if ($event.char === sepCode) {
+                                            //prevent more than 2 date separators
+                                            if (angular.isString($event.target.value) &&
+                                                $event.target.value.split(sepCode).length > 2) {
+                                                $event.preventDefault();
+                                                return false;
+                                            }
+                                            return true;
+                                        }
+                                        if (/[0-9]/.test($event.char)) {
+                                            return true;
+                                        }
+                                    } else if ($event.char) {
+                                        //without date separator we will allow all non-alphanumerics
+                                        if (!(/[A-Z]|[a-z]/.test($event.char))) {
+                                            return true;
+                                        }
+                                    } else {
+                                        //uncontrolled because we cannot trust key code
+                                        if (k < 65 || k > 90) {
+                                            return true;
+                                        }
+                                    }
+                                    $event.preventDefault();
+                                    return false;
+                                };
+                            }
+                        }
+                    };
+                }
+            };
+        }])
+
+        .directive('epDateConvert', function() {
+            //This directive is used to convert string to date between temp input and record
+            //we need this because date angular bootstrap and input 'date' for native dates work
+            //only if date object is bound to control. But our record stores ISO string date
+            //so we have temp control with date object which we edit and pass result to hidden
+            //control bound to actual record.
+            return {
+                restrict: 'A',
+                require: 'ngModel',
+                link: function(scope, element, attrs, ngModel) {
+                    if (!ngModel) { return; }
+
+                    var mode = attrs.epDateConvert;
+
+                    if (mode === 'toString') {
+                        //transform date to string
+                        ngModel.$parsers.unshift(function(value) {
+                            var dd = null;
+                            if (value !== undefined) {
+                                var m = moment(value);
+                                var fmt = scope.ctx.isDateTime ? 'YYYY-MM-DDT00:00:00' : 'YYYY-MM-DD';
+                                dd = m.isValid() ? m.format(fmt) : null;
+                            }
+                            var rec = scope.ctx.state.activeRecord;
+                            if (rec && rec[scope.ctx.columnIndex] !== dd) {
+                                rec[scope.ctx.columnIndex] = dd;
+                            }
+                            return value;
+                        });
+
+                        ngModel.$viewChangeListeners.push(function() {
+                            if (ngModel.$modelValue === undefined) {
+                                //this happens during edit when date becomes invalid (modelValue undefined)
+                                var rec = scope.ctx.state.activeRecord;
+                                if (rec) {
+                                    scope.ctx.isInvalidDateSet = true;
+                                    rec[scope.ctx.columnIndex] = undefined;
+                                }
+                            }
+                        });
+                    }
+                    if (mode === 'toDate') {
+                        //transform ISO string date to date object
+                        ngModel.$formatters.push(function(value) {
+                            if (angular.isString(value)) {
+                                var md = moment(value);
+                                scope.ctx.dateValue = md.isValid() ? md.toDate() : null;
+                            } else {
+                                if (scope.ctx.isInvalidDateSet === true) {
+                                    scope.ctx.isInvalidDateSet = false;
+                                } else {
+                                    scope.ctx.dateValue = angular.isDate(value) ? value : null;
+                                }
+                            }
+                            return value;
+                        });
+                    }
+                }
+            };
+        });
+
+})();
+
+'use strict';
+(function() {
+    angular.module('ep.record.editor')
+        .directive('epImageEditor', function() {
+            return {
+                restrict: 'E',
+                replace: true,
+                templateUrl: 'src/components/ep.record.editor/editors/ep-image-editor.html',
+                scope: {
+                    'ctx': '=',
+                    'options': '='
+                }
+            };
+        });
+})();
+
+'use strict';
+(function() {
+    angular.module('ep.record.editor')
+        .directive('epMultilineEditor', function() {
+            return {
+                restrict: 'E',
+                replace: true,
+                templateUrl: 'src/components/ep.record.editor/editors/ep-multiline-editor.html',
+                scope: {
+                    'ctx': '=',
+                    'options': '='
+                }
+            };
+        });
+})();
+
+'use strict';
+(function() {
+    angular.module('ep.record.editor')
+        .directive('epNumberEditor', function() {
+            return {
+                restrict: 'E',
+                replace: true,
+                templateUrl: 'src/components/ep.record.editor/editors/ep-number-editor.html',
+                scope: {
+                    'ctx': '=',
+                    'options': '='
+                },
+                compile: function() {
+                    return {
+                        pre: function($scope) {
+                            var ctx = $scope.ctx;
+                            var col = ctx.col;
+                            if (ctx.editor === 'number') {
+                                var fmt = col.oFormat;
+                                if (!fmt) {
+                                    col.oFormat = fmt = {
+                                        Min: -99999999999,
+                                        Max: 99999999999
+                                    };
+                                }
+
+                                if (fmt.Min || fmt.Min === 0) {
+                                    ctx.min = fmt.Min;
+                                    //TO DO: rework AllowNegative to be Min=0
+                                    if (fmt.AllowNegative === false && fmt.Min < 0) {
+                                        ctx.min = 0;
+                                    }
+                                }
+                                if (fmt.Max || fmt.Max === 0) {
+                                    ctx.max = fmt.Max;
+                                }
+                                if (fmt.NumberFormatInfo || (fmt.Decimals !== undefined)) {
+                                    //to do : negatives mask!!!
+                                    var dec = 0;
+                                    if (fmt.Decimals !== undefined) {
+                                        dec = fmt.Decimals;
+                                    } else {
+                                        dec = fmt.NumberFormatInfo.NumberDecimalDigits || 0;
+                                    }
+                                    if (dec < 0) {
+                                        dec = 0;
+                                    }
+                                    if (dec === 0) {
+                                        ctx.pattern = '^NEG(\\d+)$';
+                                    } else {
+                                        ctx.pattern =
+                                            '^NEG(\\d+)([\'.\'](\\d){0,DEC})?$'.replace('DEC', dec.toString());
+                                    }
+                                    if (fmt.AllowNegative || false) {
+                                        ctx.pattern = ctx.pattern.replace('NEG', '([-]?)');
+                                    } else {
+                                        ctx.pattern = ctx.pattern.replace('NEG', '');
+                                    }
+                                }
+                            }
+                        }
+                    };
+                }
+            };
+        });
+})();
+
+'use strict';
+(function() {
+    angular.module('ep.record.editor')
+        .directive('epSelectEditor', function() {
+            return {
+                restrict: 'E',
+                replace: true,
+                templateUrl: 'src/components/ep.record.editor/editors/ep-select-editor.html',
+                scope: {
+                    'ctx': '=',
+                    'options': '='
+                },
+                compile: function() {
+                    return {
+                        pre: function($scope) {
+                            var ctx = $scope.ctx;
+                            var col = ctx.col;
+
+                            if (ctx.col.list) {
+                                ctx.options = angular.extend([], ctx.col.list);
+                                angular.forEach(ctx.options, function(item) {
+                                    item.getIsSelected = function() {
+                                        return item.value === ctx.fnGetCurrentValue();
+                                    };
+                                });
+                            }
+
+                            // add an 'empty' value for fields that are not required.
+                            if (!col.bRequired && !_.find(ctx.options, function(o) { return !o.value; })) {
+                                ctx.options.unshift({
+                                    label: '', value: null, getIsSelected: function() {
+                                        return !ctx.fnGetCurrentValue();
+                                    }
+                                });
+                            }
+                        }
+                    };
+                }
+            };
+        });
+})();
+
+'use strict';
+(function() {
+    angular.module('ep.record.editor')
+        .directive('epTextEditor', function() {
+            return {
+                restrict: 'E',
+                replace: true,
+                templateUrl: 'src/components/ep.record.editor/editors/ep-text-editor.html',
+                scope: {
+                    'ctx': '=',
+                    'options': '='
+                }
+            };
+        });
+})();
+
+/**
+ * @ngdoc object
+ * @name ep.record.editor.object:epRecordEditorConfig
+ * @description
+ * Provider for epRecordEditorConfig.
+ * Gets configuration options from sysconfig.json or default
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.record.editor').provider('epRecordEditorConfig',
+        function() {
+            var config = {
+                /**
+                * @ngdoc property
+                * @name sampleProperty
+                * @propertyOf ep.record.editor.object:epRecordEditorConfig
+                * @public
+                * @description
+                * Represents the sampleProperty
+                */
+                sampleProperty: false,
+            };
+
+            //we use the epSysConfig provider to perform the $http read against sysconfig.json
+            //epSysConfig.mergeSection() function merges the defaults with sysconfig.json settings
+            this.$get = ['epSysConfig', function(epSysConfig) {
+                epSysConfig.mergeSection('ep.record.editor', config);
+                return config;
+            }];
+        });
+})();
+
+(function() {
+    'use strict';
+    /**
+    * @ngdoc directive
+    * @name ep.record.editor.directive:epRecordEditor
+    * @restrict E
+    *
+    * @description
+    * Represents the ep.record.editor directive
+
+    RecordEditor Directive - used to display/edit record controls of a provided record
+    The usage in html is:
+        <recordeditor id="recordViewEditors" options="options" record="activeRecord" is-read-only="expression" />
+
+        options - are used to setup the directive;
+        activeRecord - is binding to a record
+        isReadOnly - set true if editing will not be allowed
+        sizeClass - default size class for all editors (bootstrap column size col-md-6, etc)
+
+    The controller or other hosting code must provide the options in active scope as follows:
+
+        scope.recordEditorOptions = {
+            columns: columns,       //metadata for columns - array of columns
+            factory: null,          //after directive initialization will expose factory to this control
+            flagInvalid: false      //flag controls when invalid (changes border color)
+            isDataArray: true       //data in activeRecors is an array (default). Otherwise a collection
+            fnOnChange()            //called when edit is started
+        };
+
+
+    The following are attributes (parameters) for the a editor control defined in metadata columns:
+        # editor {string} - 'number'| 'text' | 'multiline' | 'date' | 'checkbox' | 'select' | 'image' | 'custom'
+        # editorDirective {string} - directive name as in html for custom editor
+        # bizType {string} - 'phone' | 'address' | 'email' | 'url' | 'password'
+        # mData {int|string} - data ordinal index (data array index) or property name
+        # seq {int} - (optional) sequence index for ordering
+        # required {bool} - is entry required
+        # requiredFlag {bool} - should we display required flag
+        # name {string} - column name (optional)
+        # caption {string} - caption
+        # justification {string} - 'right' | 'left' | 'center'
+        # visible {bool}  - visible
+        # updatable {bool}  - updatable
+        # nullable {bool}  - nullable
+        # sizeClass {string} - editor size class (bootstrap column sizes like col-md-6, col-lg-8, etc)
+        # oFormat {object}
+        #   - MaxLength {int}
+        #   -
+        # buttons {array} - array of button objects that conatin properties:
+            text {string} - button text
+            style {string} - button class
+            position {string} - 'pre' or 'post'
+            seq {int} - button sequence
+            action {function} - function action that is invoked on click
+            type {string} - 'btn' - if button, otherwise a link
+        # imageHeight {int} - image height for image editor
+        # imageWidth {int} - image width for image editor
+        # fnOnFldValidate(ctx, event, originalValue, inputValue) - callback function on validation
+
+    *
+    * @example
+    */
+    epRecordEditorDirective.$inject = ['$timeout', 'appPackageService', '$rootScope', '$compile', '$templateCache', '$window', 'epShellConstants', 'epUtilsService', 'epFeatureDetectionService', 'epRecordEditorFactory'];
+    angular.module('ep.record.editor').
+        directive('epRecordEditor', epRecordEditorDirective);
+
+    /*@ngInject*/
+    function epRecordEditorDirective($timeout, appPackageService, $rootScope, $compile, $templateCache, $window,
+        epShellConstants, epUtilsService, epFeatureDetectionService, epRecordEditorFactory) {
+        // Private methods ------------------>
+
+        var uniqueID = {
+            counter: 0,
+            get: function(prefix) {
+                if (!prefix) {
+                    prefix = 'uniqueId';
+                }
+                return prefix + '_' + uniqueID.counter++;
+            }
+        };
+
+        var defaultSizeClass = 'col-xs-12 col-sm-8 col-md-6 col-lg-3';
+
+        var defaultFormat = {
+            FieldType: 0,
+            MaxLength: 30
+        };
+
+        function getNewState() {
+            var state = {
+                scope: null,
+                linkElement: null,
+                formElement: null,
+                editorContexts: null,
+                activeRecord: undefined,
+                rowData: {},
+                smartCtrlLayout: true,
+                isReadOnly: false,
+                initializeWithoutRecord: false,
+                boundEvents: {},
+                lastInputs: {},
+                showAllInvalidFields: false,
+                isDataArray: false
+            };
+            return state;
+        }
+
+        function selectFirstControl(scope) {
+            //TODO: This selects the first input element, even if there's a select element before it
+            var controls = _.filter(scope.state.linkElement.find('.editor'), function(el) {
+                return !$(el).attr('disabled');
+            });
+
+            if (controls.length) {
+                var first = $(controls[0]);
+                first.focus();
+            }
+        }
+
+        function selectFirstInvalidControl(scope) {
+            //TODO: This selects the first input element, even if there's a select element before it
+
+            if (scope.state.editorContexts) {
+                var ctxFirst = _.find(scope.state.editorContexts, function(ctx) {
+                    return (ctx.isInvalid);
+                });
+                if (ctxFirst) {
+                    var edt = ctxFirst.fnGetEditorElement();
+                    if (edt) {
+                        edt.focus();
+                    }
+                }
+            }
+        }
+
+        function selectFocusedControl(scope) {
+            if (scope.state.lastFocused && scope.state.lastFocused.Event.originalEvent &&
+                scope.state.lastFocused.Event.originalEvent.target) {
+                scope.state.lastFocused.Event.originalEvent.target.focus();
+                return true;
+            }
+            return false;
+        }
+
+        function doValidation(ctx, ev, focus) {
+            var state = ctx.state;
+            var dc = ctx.columnIndex;
+            if (state.activeRecord[dc] !== undefined) {
+                var originalValue = state.rowData[dc];
+                //We call the field validation if input value has changed compared to original
+                //and it is not the same as previously entered
+                if (state.lastInputs[dc]) {
+                    originalValue = state.lastInputs[dc];
+                }
+                var inputValue = state.activeRecord[dc];
+                if (state.lastInputs[dc] === inputValue) {
+                    return;
+                } //prevent calling if last input was same
+                state.lastInputs[dc] = inputValue;
+                if (compareValues(originalValue, inputValue)) {
+                    var targetEl = angular.element(ctx.fnGetEditorElement());
+                    ctx.isInvalid = false;
+                    var validate = ctx.col.fnOnFldValidate(ctx, ev, originalValue, inputValue);
+                    if (validate && validate.then) {
+                        validate.then(function(result) {
+                            if (result === false) {
+                                ctx.isInvalid = true;
+                            }
+                            if (focus) {
+                                targetEl.focus();
+                            }
+                        });
+                    } else if (validate === false) {
+                        ctx.isInvalid = true;
+                    }
+                    if (focus) {
+                        targetEl.focus();
+                    }
+                }
+            }
+        }
+
+        function doDraw(scope, bForceRedraw) {
+            if (scope.options === undefined) {
+                return;
+            }
+            if (scope.state.editorContexts !== null && !bForceRedraw) {
+                return; //unless force redraw, we should not recreate
+            }
+
+            scope.state.columns = scope.options.columns; //needed for editor's scope
+            createContext(scope);
+
+            // TODO: Fix this ugly hack
+            $timeout(function() {
+                selectFirstControl(scope);
+            }, 250);
+
+            if (scope.state.isReadOnly) {
+                scope.setReadOnly();
+            }
+        }
+
+        function createContext(scope) {
+            //creates editor context based on metadata
+            //state must contain following:
+            //  - scope
+            //  - activeRecord
+            var editorsContext = {};
+            var iIndex = -1;
+            _.each(_.filter(scope.state.columns, function(c) { return (c.mData >= 0 || c.mData); }), function(col) {
+                col.oFormat = col.oFormat || defaultFormat;
+
+                iIndex++;
+                var iVisibleIndex;
+                if (!col.seq && col.seq !== 0) {
+                    if (col.mData && !angular.isString(col.mData)) {
+                        iVisibleIndex = col.mData;
+                    }
+                } else {
+                    iVisibleIndex = col.seq;
+                }
+                if (iVisibleIndex === undefined) {
+                    iVisibleIndex = iIndex;
+                }
+
+                var name = col.name || col.mData.toString();
+                var editor = (col.editor || 'text').trim().toLowerCase();
+                var ctx = {
+                    state: scope.state,
+                    col: col,
+                    editor: editor,
+                    visibleIndex: ('000' + iVisibleIndex).substr(-3, 3), // <- so that it's sortable as a string
+                    columnIndex: col.mData,
+                    name: uniqueID.get(editor + '_' + name),
+                    required: col.required || (editor === 'number' && !col.nullable), //all number's except Nullable are required
+                    requiredFlag: col.requiredFlag,  //to display the required flag
+                    bizType: col.bizType,
+                    label: col.caption || '',
+                    maxlength: col.oFormat.MaxLength,
+                    justification: col.justification,
+                    hidden: col.hidden,
+                    updatable: col.updatable,
+                    disabled: !col.updatable,
+                    nullable: col.nullable,
+                    displayInvalid: scope.options.flagInvalid || true,
+                    buttons: col.buttons || [],
+                    imageWidth: (col.imageWidth ? col.imageWidth : 0),
+                    imageHeight: (col.imageHeight ? col.imageHeight : 0),
+                    isInvalid: false,
+                    sizeClass: col.sizeClass || scope.sizeClass || defaultSizeClass
+                };
+
+                //TO DO - validate buttons pre/post seq etc
+
+                if (ctx.editor !== 'custom') {
+                    ctx.editorDirective = '<ep-' + ctx.editor + '-editor ctx=userData />';
+                } else {
+                    ctx.editorDirective = '<' + col.editorDirective + ' ctx=userData />';
+                }
+
+                ctx.fnGetCurrentValue = function() {
+                    return ctx.state.activeRecord ? ctx.state.activeRecord[ctx.columnIndex] : null;
+                };
+
+                ctx.fnSetCurrentValue = function(val, focus) {
+                    var edt = ctx.fnGetEditorElement();
+                    if (ctx.state.activeRecord) {
+                        if (val !== undefined) {
+                            var isChanged = (ctx.state.activeRecord[ctx.columnIndex] !== val);
+                            if (isChanged) {
+                                ctx.state.activeRecord[ctx.columnIndex] = val;
+                                //because we set value programatically, set dirty
+
+                                if (edt) {
+                                    angular.element(edt).addClass('ng-dirty');
+                                }
+                                if (scope.callBackValidate && col.bRaiseEvent && ctx.updatable) {
+                                    scope.callBackValidate(col, ctx, {}, edt, true);
+                                }
+                                ctx.fnOnChange({}, ctx);
+                            }
+                        }
+                    }
+                    if (focus) {
+                        if (edt) {
+                            edt.focus();
+                        }
+                    }
+                };
+
+                ctx.fnGetEditorElement = function() {
+                    var editor = null;
+                    if (ctx.editorContainer) {
+                        editor = angular.element(ctx.editorContainer).find('.form-control.editor');
+                    }
+                    return editor;
+                };
+
+                ctx.fnOnChange = function($event) {
+                    if (scope.options.fnOnChange) {
+                        scope.options.fnOnChange($event, ctx);
+                    }
+                };
+
+                ctx.fnBlur = function onBlur(ev) {
+                    ctx.state.lastFocused = { Col: ctx.col, Ctx: ctx, Event: ev };
+                    if (ctx.col.bRaiseEvent && ctx.updatable) {
+                        if (angular.element(ev.currentTarget).hasClass('ng-dirty')) {
+                            scope.callbacks.callBackValidate(col, this, ev);
+                        }
+                    }
+                    return true;
+                };
+
+                //This function checks invalid status from angular and fiel;d validation to highlight invalid
+                ctx.fnDoValidations = function() {
+                    ctx.invalidFlag = false;
+                    if (ctx.displayInvalid && ctx.editorContainer) {
+                        var editor = angular.element(ctx.editorContainer).find('.form-control.editor');
+                        if (editor.length) {
+                            //TO DO: check in angular if we can remove the 'ng-invalid-remove'/'ng-dirty-add' check
+                            var isInvalid = ctx.isInvalid || ((editor.hasClass('ng-invalid') &&
+                                !editor.hasClass('ng-invalid-remove')) || editor.hasClass('ng-valid-remove'));
+                            var isDirty = (editor.hasClass('ng-dirty') || editor.hasClass('ng-dirty-add') ||
+                                ctx.state.showAllInvalidFields);
+                            ctx.invalidFlag = (isInvalid && isDirty);
+                        } else if (ctx.toggleValue) {
+                            //special checkbox case:
+                            ctx.invalidFlag = ctx.isInvalid;
+                        }
+                    }
+                    return false;
+                };
+
+                if (ctx.col.fnOnFldValidate) {
+                    ctx.fnOnChange = function($event) {
+                        doValidation(ctx, $event);
+                    };
+                }
+
+                //Configure BizType buttons
+                if (ctx.bizType && (ctx.bizType === 'phone' || ctx.bizType === 'address' ||
+                    ctx.bizType === 'email' || ctx.bizType === 'url')) {
+                    var btnHref = '';
+                    var btnStyle = '';
+                    var btnType = 'href-input';
+
+                    switch (ctx.bizType) {
+                        case 'address':
+                            btnHref = 'http://maps.google.com/maps?q={0}';
+                            btnStyle = 'fa fa-map-marker';
+                            break;
+
+                        case 'phone':
+                            btnHref = 'tel:{0}';
+                            btnStyle = 'fa fa-phone';
+                            break;
+
+                        case 'email':
+                            btnHref = 'mailto:{0}';
+                            btnStyle = 'fa fa-envelope';
+                            break;
+
+                        case 'url':
+                            btnHref = '';
+                            btnStyle = 'fa fa-globe';
+                            btnType = 'href-func';
+                            ctx.fnGetHref = function() {
+                                var v = ctx.fnGetCurrentValue();
+                                if (col.stringFormat) {
+                                    // example stringFormat = 'http://somewhere.com/{0}';
+                                    v = epUtilsService.strFormat(col.stringFormat, v);
+                                }
+                                if (v) {
+                                    //if string does not start with 'http' or 'https' then append
+                                    var v1 = v.trim().toLowerCase();
+                                    if (v1.substr(0, 4) !== 'http') {
+                                        v = 'http://' + v;
+                                    }
+                                }
+                                return v;
+                            };
+                            break;
+                    }
+                    if (btnStyle) {
+                        ctx.buttons.push({
+                            type: btnType,
+                            text: '',
+                            href: btnHref,
+                            style: btnStyle,
+                            seq: 2,
+                            position: 'pre',
+                        });
+                    }
+                }
+
+                if (ctx.buttons.length) {
+                    ctx.fnBtnClick = function(btn) {
+                        if (btn.type === 'btn') {
+                            btn.action(ctx);
+                        } else {
+                            var v = ctx.fnGetCurrentValue();
+                            if (v) {
+                                var url = '';
+                                switch (btn.type) {
+                                    case 'href':
+                                        url = btn.href;
+                                        break;
+                                    case 'href-input':
+                                        url = epUtilsService.strFormat(btn.href,
+                                            ctx.state.activeRecord[ctx.columnIndex]);
+                                        break;
+                                    case 'href-func':
+                                        url = ctx.fnGetHref();
+                                        break;
+                                }
+                                if (btn.type === 'href') {
+                                    $window.open(url, '_blank');
+                                } else {
+                                    $window.open(url);
+                                }
+                            }
+                        }
+                    };
+                }
+                editorsContext[col.mData] = ctx;
+            });
+            scope.state.editorController = function($scope) {
+                //For each editor set the container and find editor
+                var ctx = $scope.userData;
+                ctx.editorContainer = $scope.state.iElement;
+            };
+            scope.state.editorContexts = editorsContext;
+        }
+
+        function checkRecordType(scope) {
+            if (scope.record) {
+                scope.state.isDataArray = angular.isArray(scope.record);
+            } else {
+                scope.state.isDataArray = !scope.options || (scope.options.isDataArray !== false);
+            }
+        }
+
+        function compareValues(original, input) {
+            ///<summary>
+            /// Compares the value of an input control
+            /// to the value in underlying local store.
+            ///</summary>
+            ///<returns type='bool'>True if there is a change</returns>
+            if (!original) {
+                // if the original evaluates to 'false'
+                // then check if the input value is changed
+                return !!input;
+            }
+            if (input === null && original === null) {
+                return false;
+            }
+            if ((input === null && original !== null) || (input !== null && original === null)) {
+                return true;
+            }
+            return (original.toString() !== input.toString());
+        }
+
+        // <-----------------Private methods
+
+        return {
+            restrict: 'E,A',
+            require: '?^form', //may be used outside a form
+            templateUrl: 'src/components/ep.record.editor/ep-record-editor.html',
+            replace: true,
+            link: function(scope, element, iAttrs, formCtrl) {
+                scope.state = getNewState();
+
+                scope.state.factory = new epRecordEditorFactory(scope);
+
+                if (scope.options) {
+                    scope.options.factory = scope.state.factory;
+                }
+
+                scope.state.scope = scope;
+                scope.state.linkElement = element;
+                scope.state.formElement = formCtrl;
+                checkRecordType(scope);
+
+                scope.$watch('isReadOnly', function(newValue) {
+                    if (newValue !== undefined) {
+                        scope.state.isReadOnly = newValue;
+                        scope.setReadOnly();
+                    }
+                });
+
+                scope.$watch('record', function(newValue, oldValue) {
+                    if (newValue && scope.state.activeRecord !== newValue) {
+                        checkRecordType(scope);
+                        scope.state.lastInputs = {};
+                        scope.state.activeRecord = newValue;
+
+                        //store a copy for reset
+                        scope.state.rowData = scope.extendRecord(scope.state.activeRecord);
+
+                        if (oldValue === undefined) {
+                            doDraw(scope, false);
+                        }
+                        scope.state.factory.setPristine();
+                    }
+                });
+
+                scope.$watch('options', function(newValue) {
+                    if (newValue) {
+                        //Expose this directive's scope to outside caller
+                        newValue.factory = scope.state.factory;
+                        checkRecordType(scope);
+                        doDraw(scope, false);
+                    }
+                });
+
+                scope.$watch('sizeClass', function(newValue, oldValue) {
+                    if (newValue !== oldValue) {
+                        if (scope.state.editorContexts) {
+                            angular.forEach(scope.state.editorContexts, function(ctx) {
+                                if (!ctx.col.sizeClass) {
+                                    ctx.sizeClass = ctx.col.sizeClass || scope.sizeClass || defaultSizeClass;
+                                }
+                            });
+                        }
+                    }
+                });
+
+                scope.extendRecord = function(record) {
+                    return jQuery.extend(scope.state.isDataArray ? [] : {}, record);
+                };
+
+                scope.redraw = function() {
+                    doDraw(scope, true);
+                };
+
+                // When the local scope is destroyed, be sure to clean up the events
+                scope.$on(
+                    '$destroy',
+                    function() {
+                        //clean up events and buffers
+                        scope.state.editorContexts = null;
+                        _.each(scope.state.boundEvents, function(unbind) {
+                            unbind();
+                        });
+                        scope.state.boundEvents = {};
+                    }
+                );
+
+                // Interface (public) methods: -->
+
+                scope.doDraw = function() {
+                    doDraw(scope, true);
+                };
+
+                scope.setReadOnly = function() {
+                    //set readonly attribute to all updatable controls
+                    if (scope.state.editorContexts) {
+                        _.each(scope.state.editorContexts, function(ctx) {
+                            if (ctx.updatable) {
+                                ctx.readonly = scope.state.isReadOnly;
+                            }
+                        });
+                    }
+                };
+
+                scope.recEdtSelectControl = function(mode) {
+                    if (mode === 'first') {
+                        selectFirstControl(scope);
+                    } else if (mode === 'focused') {
+                        selectFocusedControl(scope);
+                    } else if (mode === 'focusedOrFirst') {
+                        if (selectFocusedControl(scope) === false) {
+                            selectFirstControl(scope);
+                        }
+                    } else if (mode === 'invalid') {
+                        selectFirstInvalidControl(scope);
+                    } else {
+                        selectFirstControl(scope);
+                    }
+                };
+                scope.compareValues = compareValues;
+            },
+            scope: {
+                options: '=',
+                record: '=',
+                isReadOnly: '=',
+                sizeClass: '='
+            }
+        };
+    }
+}());
+
+
+(function() {
+'use strict';
+/**
+ * @ngdoc service
+ * @name ep.record.editor.factory:epRecordEditorFactory
+ * @description
+ * Factory service for the ep.record.editor module
+ * record editor creates controls by metadata
+ *
+ * @example
+ *
+ */
+angular.module('ep.record.editor').
+    factory('epRecordEditorFactory', epRecordEditorFactory);
+
+    /*@ngInject*/
+    function epRecordEditorFactory() {
+        var epRecordEditorFactoryInstance = function(directiveScope) {
+            var scope = directiveScope;
+            var id = 'recordEditor' + scope.$id;
+
+            /**
+             * @ngdoc method
+             * @name getEnteredData
+             * @methodOf ep.record.editor.factory:epRecordEditorFactory
+             * @public
+             * @description
+             * Get the entered data information
+            */
+            function getEnteredData() {
+                ///<summary>
+                /// Get the results of record entry
+                ///</summary>
+                var ret = {
+                    editsDetected: false,
+                    changedColumns: [],
+                    record: scope.extendRecord(scope.state.rowData)
+                };
+
+                if (scope.options.columns) {
+                    var columns = scope.options.columns;
+                    for (var idx = 0; idx < columns.length; idx++) {
+                        var col = columns[idx];
+                        var dataColumn = col.mData;
+                        var inputValue;
+                        if (scope.state.activeRecord) {
+                            inputValue = scope.state.activeRecord[dataColumn];
+                        }
+                        if (inputValue === undefined) {
+                            if (col.editor === 'text') {
+                                inputValue = '';
+                            } else if (col.editor === 'number') {
+                                inputValue = 0;
+                            }
+                        }
+
+                        if (inputValue !== undefined) {
+                            var originalValue = scope.state.rowData[dataColumn];
+                            if (scope.compareValues(originalValue, inputValue)) {
+                                ret.changedColumns.push({
+                                    rowIndex: scope.state.rowIndex, columnIndex: dataColumn,
+                                    originalValue: originalValue, newValue: inputValue
+                                });
+                                ret.editsDetected = true;
+                                ret.rowData[dataColumn] = inputValue;
+                            }
+                        } else if (col.editor === 'date') {
+                            ret.editsDetected = true;
+                            ret.invalidEntry = true;
+                        }
+                    }
+                }
+                return ret;
+            }
+
+            /**
+             * @ngdoc method
+             * @name resetEditors
+             * @methodOf ep.record.editor.factory:epRecordEditorFactory
+             * @public
+             * @description
+             * Reset the editors to original values
+            */
+            function resetEditors() {
+                var columns = scope.options.columns;
+                for (var idx = 0; idx < columns.length; idx++) {
+                    var col = columns[idx];
+                    scope.state.activeRecord[col.mData] = scope.state.rowData[col.mData];
+                }
+
+                setPristine();
+                scope.recEdtSelectControl('first');
+            }
+
+            /**
+             * @ngdoc method
+             * @name clearEditors
+             * @methodOf ep.record.editor.factory:epRecordEditorFactory
+             * @public
+             * @description
+             * Clear all values
+            */
+            function clearEditors() {
+                if (scope.state.editorContexts) {
+                    _.each(scope.state.editorContexts, function(ctx) {
+                        var emptyVal = '';
+                        if (ctx.editor === 'number') {
+                            emptyVal = 0;
+                        } else if (ctx.editor === 'checkbox') {
+                            emptyVal = false;
+                        }
+                        scope.state.activeRecord[ctx.col.mData] = emptyVal;
+                    });
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name setPristine
+             * @methodOf ep.record.editor.factory:epRecordEditorFactory
+             * @public
+             * @description
+             * Set record editor as pristine (clear dirty and invalid flags)
+            */
+            function setPristine() {
+                if (scope.state.formElement) {
+                    scope.state.formElement.$setPristine();
+                }
+                scope.state.lastInputs = {};
+                scope.state.showAllInvalidFields = false;
+
+                if (scope.state.editorContexts) {
+                    angular.forEach(scope.state.editorContexts, function(ctx) {
+                        ctx.isInvalid = false;
+                    });
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name setReadOnly
+             * @methodOf ep.record.editor.factory:epRecordEditorFactory
+             * @public
+             * @description
+             * Set record editor in read-only state
+             *
+             * @param {bool} readOnly - true - turn on; false - turn off
+            */
+            function setReadOnly(readOnly) {
+                ///set specified readonly state to updatable fields
+                scope.state.isReadOnly = readOnly;
+                scope.setReadOnly();
+            }
+
+            /**
+             * @ngdoc method
+             * @name draw
+             * @methodOf ep.record.editor.factory:epRecordEditorFactory
+             * @public
+             * @description
+             * Force a redraw
+            */
+            function draw() {
+                scope.doDraw(scope, true);
+            }
+
+            /**
+             * @ngdoc method
+             * @name setRecord
+             * @methodOf ep.record.editor.factory:epRecordEditorFactory
+             * @public
+             * @description
+             * Force set record even if it has not changed, resetting original copy and redrawing and setting pristine
+             * @param {object} record - record as array or object
+            */
+            function setRecord(record) {
+                var rec = (record) ? record : scope.state.activeRecord;
+                scope.state.lastInputs = {};
+                scope.state.activeRecord = rec;
+                scope.state.rowData = scope.extendRecord(rec); //store a copy for reset
+                setPristine();
+            }
+
+            /**
+             * @ngdoc method
+             * @name setRecordWithoutOriginal
+             * @methodOf ep.record.editor.factory:epRecordEditorFactory
+             * @public
+             * @description
+             * Set record without changing the original values
+             * @param {object} record - record as array or object
+            */
+            function setRecordWithoutOriginal(record) {
+                if (record && scope.state.activeRecord !== record) {
+                    scope.state.activeRecord = record;
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name selectControl
+             * @methodOf ep.record.editor.factory:epRecordEditorFactory
+             * @public
+             * @description
+             * Select control by specified mode
+             * @param {string} mode - 'first','invalid'
+            */
+            function selectControl(mode) {
+                scope.recEdtSelectControl(mode);
+            }
+
+            /**
+             * @ngdoc method
+             * @name validate
+             * @methodOf ep.record.editor.factory:epRecordEditorFactory
+             * @public
+             * @description
+             * Perform validation
+             * @param {bool} showAllInvalidFields - highlight all invalid fields
+             * @param {bool} focusOnFirstInvalid - focus on first invalid field
+            */
+            function validate(showAllInvalidFields, focusOnFirstInvalid) {
+                ///<summary>
+                /// Validate user input record entry
+                ///</summary>
+                var ret = {
+                    invalidEntry: false,
+                    requiredFields: false,
+                    invalidFieldValidation: false
+                };
+
+                if (scope.state.editorContexts) {
+                    scope.state.linkElement.find('.form-control.editor').each(function() {
+                        var editor = $(this);
+                        if (editor.length) {
+                            if (editor.hasClass('ng-invalid')) {
+                                ret.invalidEntry = true;
+                                if (editor.hasClass('ng-invalid-required')) {
+                                    ret.requiredFields = true;
+                                }
+                            }
+                        }
+                    });
+
+                    var epInvalid = _.find(scope.state.editorContexts, function(ctx) {
+                        return ctx.isInvalid;
+                    });
+                    if (epInvalid) {
+                        ret.invalidEntry = true;
+                        ret.invalidFieldValidation = true;
+                    }
+                }
+                if (ret.requiredFields) {
+                    //this will be combination of various flags
+                    ret.invalidEntry = true;
+                }
+                scope.state.showAllInvalidFields = showAllInvalidFields || false;
+
+                if (ret.invalidEntry && (focusOnFirstInvalid || false)) {
+                    selectControl('invalid');
+                }
+
+                return ret;
+            }
+
+            /**
+             * @ngdoc method
+             * @name resetCombo
+             * @methodOf ep.record.editor.factory:epRecordEditorFactory
+             * @public
+             * @description
+             * Reset combo for specified column
+             * @param {bool} column - column
+             * @param {array} list - new list of items
+            */
+            function resetCombo(column, list) {
+                if (!list) { return; }
+                //reset column combo. if column is string then by columnName otherwise by mData (index)
+                var ctx = getColumnContext(scope, column);
+                if (ctx && ctx.col.list) {
+                    ctx.options = angular.extend([], ctx.col.list);
+                    angular.forEach(ctx.options, function(item) {
+                        item.getIsSelected = function() {
+                            return item.value === ctx.fnGetCurrentValue();
+                        };
+                    });
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name getColumnContext
+             * @methodOf ep.record.editor.factory:epRecordEditorFactory
+             * @public
+             * @description
+             * Get column context
+             * @param {object} column - column name or column index
+            */
+            function getColumnContext(column) {
+                if (column === null || !scope.options.columns) { return null; }
+                if (!scope.state.editorContexts) {
+                    //in case if editors context has not been initialized, force initialization
+                    if (scope.options.record === undefined) {
+                        scope.state.activeRecord = null;
+                        scope.record = null;
+                    }
+                    scope.doDraw(scope, true);
+                }
+                if (!scope.state.editorContexts) {
+                    return null;
+                }
+
+                var ret = null;
+                if (typeof column !== 'string') {
+                    //assume that this is mData
+                    ret = _.find(scope.state.editorContexts, function(ctx) {
+                        return (ctx.col && ctx.col.mData === column);
+                    });
+                } else {
+                    ret = _.find(scope.state.editorContexts, function(ctx) {
+                        return (ctx.col && ctx.name === column);
+                    });
+                }
+                if (ret) {
+                    return scope.state.editorContexts[ret.col.mData];
+                }
+                return ret;
+            }
+
+            return {
+                id: id,
+                getEnteredData: getEnteredData,
+                resetEditors: resetEditors,
+                clearEditors: clearEditors,
+                setPristine: setPristine,
+                setReadOnly: setReadOnly,
+                draw: draw,
+                setRecord: setRecord,
+                setRecordWithoutOriginal: setRecordWithoutOriginal,
+                selectControl: selectControl,
+                validate: validate,
+                resetCombo: resetCombo,
+                getColumnContext: getColumnContext
+            };
+        };
+        return epRecordEditorFactoryInstance;
+    }
+}());
+
+(function() {
+'use strict';
+/**
+* @ngdoc filter
+* @name ep.record.editor.filter:epRecordEditor
+* @restrict E
+*
+* @description
+* Represents the ep.record.editor filter
+*
+* @example
+*/
+angular.module('ep.record.editor').
+    filter('epOrderObjectBy', epOrderObjectByFilter);
+
+    /*@ngInject*/
+    function epOrderObjectByFilter() {
+        return function(items, field, reverse) {
+            var filtered = _.map(items, _.identity);
+            var director = reverse ? -1 : 1;
+            filtered.sort(function(a, b) {
+                return (a[field] > b[field] ? director : -director);
+            });
+            return filtered;
+        };
+    }
+}());
+
 /**
  * @ngdoc object
  * @name ep.search.object:searchConfig
@@ -11411,7 +12791,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             $scope.menuOptions.onMenuInit = function(factory) {
                 $scope.menuOptions.factory = factory;
             };
-            $scope.onTopMenuClick = function(factory) {
+            $scope.onTopMenuClick = function() {
                 if ($scope.menuOptions.onTopMenuClick) {
                     $scope.menuOptions.onTopMenuClick();
                 }
@@ -17154,6 +18534,60 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
   $templateCache.put('src/components/ep.multi.level.menu/multi-level-menu.html',
     "<div class=ep-mlm-container ng-class=\"{'ep-left-to-right': !isRightToLeft, 'ep-right-to-left': isRightToLeft}\"><form class=ep-mlm-search ng-hide=searchDisabled><input class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-focus=\"isRightToLeft = false\"></form><div ng-if=data.next class=\"ep-mlm-content ep-fadein-animation\"><div ng-hide=state.searchTerm class=ep-mlm-header ng-class=\"{ 'pointer': data.next._parent._id !== 'topmenu'}\" ng-click=\"navigate(data.next._parent, true, $event)\"><span ng-if=\"data.next._parent._id !== 'topmenu'\" class=\"ep-mlm-back-button pull-left fa fa-lg fa-caret-left\"></span> <span>{{data.next.caption}}</span></div><div ng-show=state.searchTerm class=ep-mlm-header><span>Search Results</span></div><ul><li ng-repeat=\"mi in currentItems | orderBy:orderByMenu\" class=\"ep-mlm-item clearfix ep-repeat-animation\"><div ng-if=\"mi.separator && !mi.separator.isBottom\" class=\"ep-mlm-separator ep-mlm-separator-top {{mi.separator.class}}\"><i ng-if=mi.separator.icon class=\"ep-mlm-separator-icon fa fa-lg pull-left {{mi.separator.icon}}\"></i><div ng-if=mi.separator.text class=ep-mlm-separator-text>{{mi.separator.text}}</div></div><i ng-if=\"mi.icon && !iconDisabled\" class=\"ep-mlm-icon fa fa-lg pull-left {{mi.icon}}\"></i><div class=\"pull-left clearfix ep-mlm-item-div\" ng-class=\"{ 'ep-mlm-item-div-icon': mi.icon }\" ng-click=\"navigate(mi, false, $event)\"><div class=\"ep-mlm-item-text pull-left {{mi.captionClass}}\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"(mi._type === 'item' && mi.hideFavorite !== true)\" class=\"ep-mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star text-warning': mi.favorite}\"></i> <i ng-if=\"mi._type === 'menu'\" class=\"ep-mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=\"navigate(mi, false, $event)\"></i><div ng-if=\"mi.separator && mi.separator.isBottom\"><br><div class=\"ep-mlm-separator ep-mlm-separator-top {{mi.separator.class}}\"><i ng-if=mi.separator.icon class=\"ep-mlm-separator-icon fa fa-lg pull-left {{mi.separator.icon}}\"></i><div ng-if=mi.separator.text class=ep-mlm-separator-text>{{mi.separator.text}}</div></div></div></li></ul><uib-alert class=\"ep-mlm-alert ep-fadein-animation\" ng-show=\"state.searchTerm && (!currentItems || currentItems.length === 0)\" type=warning>The term \"{{state.searchTerm}}\" did not match any menu items.</uib-alert></div></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.record.editor/editors/ep-checkbox-editor.html',
+    "<section class=\"ep-editor-checkbox ep-center-item editor\" tabindex=0 ng-keyup=handleKey($event) ng-click=ctx.toggleValue(ctx,$event) ng-hide=ctx.fnDoValidations(this)><span ng-class=\"{'fa-square-o': !ctx.state.activeRecord[ctx.columnIndex], 'fa-check-square-o': ctx.state.activeRecord[ctx.columnIndex]}\" class=\"fa fa-lg\"></span></section>"
+  );
+
+
+  $templateCache.put('src/components/ep.record.editor/editors/ep-date-editor.html',
+    "<section><input id=dd_{{ctx.name}} ng-model=ctx.state.activeRecord[ctx.columnIndex] ep-date-convert=toDate ng-hide=\"true\"><div class=\"input-group date datepicker\" id=dp_{{ctx.name}} ng-if=!ctx.useDateInput><input size=16 ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor\" ng-hide=ctx.fnDoValidations(this) ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) pattern={{ctx.pattern}} ng-keydown=ctx.fnDateKeyDown($event) uib-datepicker-popup={{ctx.format}} datepicker-options111={{ctx.dateOptions}} placeholder={{ctx.format}} ng-pattern={{ctx.pattern}} is-open=\"ctx.dateOpened\"> <span class=input-group-addon ng-click=ctx.fnDateOpen($event) ng-style=\"{ 'cursor': ctx.disabled ? 'not-allowed' : 'pointer' }\"><a ng-if=!ctx.disabled><i class=\"fa fa-calendar\"></i></a> <i ng-if=ctx.disabled class=\"fa fa-calendar\"></i></span></div><div class=\"input-group date\" id=dp_{{ctx.name}} ng-if=\"ctx.useDateInput === true\"><input size=16 type=date ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor\" ng-hide=ctx.fnDoValidations(this) ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=\"ctx.fnBlur($event)\"></div></section>"
+  );
+
+
+  $templateCache.put('src/components/ep.record.editor/editors/ep-image-editor.html',
+    "<section><img alt={{ctx.label}} id={{ctx.name}} ng-src={{ctx.state.activeRecord[ctx.columnIndex]}} width={{ctx.imageWidth}} height=\"{{ctx.imageHeight}}\"></section>"
+  );
+
+
+  $templateCache.put('src/components/ep.record.editor/editors/ep-multiline-editor.html',
+    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span><textarea id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=ctx.state.activeRecord[ctx.columnIndex] ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-hide=ctx.fnDoValidations(this) maxlength={{ctx.maxlength}} ng-style=\"{'text-align': ctx.justification }\">\r" +
+    "\n" +
+    "\r" +
+    "\n" +
+    "        <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\">\r" +
+    "\n" +
+    "            <i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i>\r" +
+    "\n" +
+    "            <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a>\r" +
+    "\n" +
+    "        </span>\r" +
+    "\n" +
+    "    </div>\r" +
+    "\n" +
+    "</section>"
+  );
+
+
+  $templateCache.put('src/components/ep.record.editor/editors/ep-number-editor.html',
+    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input id={{ctx.name}} ng-cloak name={{ctx.name}} type=number ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=ctx.state.activeRecord[ctx.columnIndex] ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-style=\"{ 'text-align': ctx.justification }\" maxlength={{ctx.maxlength}} min={{ctx.min}} max={{ctx.max}} ng-hide=ctx.fnDoValidations(this) pattern=\"{{ctx.pattern}}\"> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
+  );
+
+
+  $templateCache.put('src/components/ep.record.editor/editors/ep-select-editor.html',
+    "<section><select class=\"form-control editor\" id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) ng-hide=ctx.fnDoValidations(this) ng-model=ctx.state.activeRecord[ctx.columnIndex]><option ng-repeat=\"opt in ctx.options\" label={{opt.label}} value={{opt.value}} ng-selected=opt.getIsSelected()>{{opt.label}}</option></select></section>"
+  );
+
+
+  $templateCache.put('src/components/ep.record.editor/editors/ep-text-editor.html',
+    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input id={{ctx.name}} ng-cloak name={{ctx.name}} type={{ctx.type}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=ctx.state.activeRecord[ctx.columnIndex] ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-hide=ctx.fnDoValidations(this) maxlength={{ctx.maxlength}} ng-style=\"{ 'text-align': ctx.justification }\"> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
+  );
+
+
+  $templateCache.put('src/components/ep.record.editor/ep-record-editor.html',
+    "<div class=ep-record-editor><div ng-repeat=\"(key, ctx) in state.editorContexts | epOrderObjectBy:'visibleIndex'\" class=\"ep-record-editor-column {{ctx.sizeClass}}\"><section class=ep-record-editor-container ng-class=\"{'has-error': ctx.invalidFlag}\" ng-hide=ctx.hidden><label class=ep-editor-label for={{ctx.name}}>{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label><ep-include user-data=ctx template=ctx.editorDirective template-ctrl=state.editorController></ep-include></section></div></div>"
   );
 
 
