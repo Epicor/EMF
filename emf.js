@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.39 built: 01-07-2016
+ * version:1.0.8-dev.40 built: 01-07-2016
 */
 (function() {
     'use strict';
@@ -11078,6 +11078,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     pre: function($scope) {
                         var ctx = $scope.ctx;
 
+                        //set size class smaller for check box
+                        ctx.fnSetSizeClass('col-xs-12 col-sm-4 col-md-3 col-lg-2');
+
                         if (ctx.updatable) {
                             ctx.toggleValue = function(c, ev) {
                                 if (c.state.activeRecord && !ctx.disabled) {
@@ -11341,7 +11344,17 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             scope: {
                 'ctx': '=',
                 'options': '='
+            },
+            compile: function() {
+                return {
+                    pre: function($scope) {
+                        var ctx = $scope.ctx;
+                        //set size class larger for multiline
+                        ctx.fnSetSizeClass('col-xs-12 col-sm-12 col-md-8 col-lg-8');
+                    }
+                };
             }
+
         };
     }
 })();
@@ -11795,8 +11808,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     buttons: col.buttons || [],
                     imageWidth: (col.imageWidth ? col.imageWidth : 0),
                     imageHeight: (col.imageHeight ? col.imageHeight : 0),
-                    isInvalid: false,
-                    sizeClass: col.sizeClass || scope.sizeClass || defaultSizeClass
+                    isInvalid: false
                 };
 
                 //TO DO - validate buttons pre/post seq etc
@@ -11806,6 +11818,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 } else {
                     ctx.editorDirective = '<' + col.editorDirective + ' ctx=userData />';
                 }
+
+                ctx.fnSetSizeClass = function(sizeClass) {
+                    ctx.sizeClass = col.sizeClass || sizeClass || scope.sizeClass || defaultSizeClass;
+                };
+                ctx.fnSetSizeClass();
 
                 ctx.fnGetCurrentValue = function() {
                     return ctx.state.activeRecord ? ctx.state.activeRecord[ctx.columnIndex] : null;
@@ -12064,9 +12081,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     if (newValue !== oldValue) {
                         if (scope.state.editorContexts) {
                             angular.forEach(scope.state.editorContexts, function(ctx) {
-                                if (!ctx.col.sizeClass) {
-                                    ctx.sizeClass = ctx.col.sizeClass || scope.sizeClass || defaultSizeClass;
-                                }
+                                ctx.fnSetSizeClass();
                             });
                         }
                     }
@@ -18696,7 +18711,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/ep-record-editor.html',
-    "<div class=ep-record-editor><div ng-repeat=\"(key, ctx) in state.editorContexts | epOrderObjectBy:'visibleIndex'\" class=\"ep-record-editor-column {{ctx.sizeClass}}\"><section class=ep-record-editor-container ng-class=\"{'has-error': ctx.invalidFlag}\" ng-hide=ctx.hidden><label class=ep-editor-label for={{ctx.name}}>{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label><ep-include user-data=ctx template=ctx.editorDirective template-ctrl=state.editorController></ep-include></section></div></div>"
+    "<div class=ep-record-editor><div ng-repeat=\"(key, ctx) in state.editorContexts | epOrderObjectBy:'visibleIndex'\" class=\"form-group ep-record-editor-column {{ctx.sizeClass}}\"><div class=ep-record-editor-container ng-class=\"{'has-error': ctx.invalidFlag}\" ng-hide=ctx.hidden><label class=\"control-label ep-editor-label\" for={{ctx.name}}>{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label><ep-include user-data=ctx template=ctx.editorDirective template-ctrl=state.editorController></ep-include></div></div></div>"
   );
 
 
