@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.42 built: 03-07-2016
+ * version:1.0.8-dev.43 built: 04-07-2016
 */
 (function() {
     'use strict';
@@ -6972,7 +6972,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @ngdoc service
  * @name ep.hybrid.barcode:epHybridBarcodeService
  * @description
- * Service for accessing Cordova Barcode plugin
+ * Service for accessing Cordova Barcode plugin. This will scan a barcode and recognize the UPC code and format.
+ * 
+ * Note: Include cordova.js script file in html file and add 
+ * {@link https://www.npmjs.com/package/cordova-plugin-barcodescanner cordova barcodescanner plugin} into app.
  *
  * @example
     <example module="TestApp">
@@ -6981,7 +6984,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             <div class="panel-body">
                 <p>{{barCodeNumber}}</p>
                 <p>{{barCodeFormat}}</p>
-                <button class="btn btn-primary" style="width:100%" ng-click="scanBarcode()">Scan</button>
+                <button class="btn btn-primary btn-block" ng-click="scanBarcode()">Scan</button>
             </div>
 	      </div>
      </file>
@@ -7060,7 +7063,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @ngdoc service
  * @name ep.hybrid.calendar:epHybridCalendarService
  * @description
- * Service for accessing Cordova Calendar plugin
+ * Service for accessing Cordova Calendar plugin. This allows you to manipulate the native calendar.
+ * 
+ * Note: Include cordova.js script file in html file and add 
+ * {@link https://www.npmjs.com/package/cordova-plugin-calendar cordova calendar plugin} into app.
  *
  * @example
    <example module="TestApp">
@@ -7430,7 +7436,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @ngdoc service
  * @name ep.hybrid.contacts:epHybridContactsService
  * @description
- * Service for accessing Cordova contacts plugin
+ * Service for accessing Cordova contacts plugin. This will select a contact from device and display the information.
+ *
+ * Note: Include cordova.js script file in html file and add 
+ * {@link https://www.npmjs.com/package/cordova-plugin-contacts cordova contacts plugin} into app
  *
  * @example
     <example module="TestApp">
@@ -7442,8 +7451,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 </button>
                 <div class="card" ng-if="selectedContact != undefined">
                     <div>Name: {{selectedContact.name.formatted}}</div>
-                    <div>Phone: {{selectedContact.phoneNumbers[0].value}}</div>
-                    <div>Email: {{selectedContact.emails[0].value}}</div>
+                    <div ng-repeat="phone in selectedContact.phoneNumbers">
+                        Phone {{ $index + 1 }}: {{phone.value}}
+                    </div>
+                    <div ng-repeat="email in selectedContact.emails">
+                        Email {{ $index + 1 }}: {{email.value}}
+                    </div>
                 </div>
             </div>
 	      </div>
@@ -7526,7 +7539,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @ngdoc service
  * @name ep.hybrid.device:epHybridDeviceService
  * @description
- * Service for accessing Cordova device plugin
+ * Service for accessing Cordova device plugin. This will fetch the details about the device.
+ *
+ * Note: Include cordova.js script file in html file and add 
+ * {@link https://www.npmjs.com/package/cordova-plugin-device cordova device plugin} into app
  *
  * @example
     <example module="TestApp">
@@ -7568,6 +7584,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @public
          * @description
          * To get the OS of the device
+         * @returns {string} Operating System name.
          */
         function getPlatform() {
             if (!isDevicePluginAvailable()) {
@@ -7583,6 +7600,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @public
          * @description
          * To get the model of the device
+         * @returns {string} model name.
          */
         function getModel() {
             if (!isDevicePluginAvailable()) { return; }
@@ -7596,6 +7614,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @public
          * @description
          * To get the UUID of the device
+         * @returns {string} Device's UUID.
          */
         function getUUID() {
             if (!isDevicePluginAvailable()) { return; }
@@ -7609,6 +7628,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @public
          * @description
          * To get OS version of the device
+         * @returns {string} Operating System version.
          */
         function getVersion() {
             if (!isDevicePluginAvailable()) { return; }
@@ -7622,6 +7642,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @private
          * @description
          * To check the cordova device plugin availability
+         * @returns {Boolean} true or false based on the device plugin availablity.
          */
         function isDevicePluginAvailable() {
             if (!$window.device) {
@@ -8173,16 +8194,20 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @ngdoc service
  * @name ep.hybrid.photo:epHybridPhotoService
  * @description
- * Service for accessing Cordova camera plugin
+ * Service for accessing Cordova camera plugin. This will allow to take picture from camera
+ * or to select a picture from photo library.
+ *
+ * Note: Include cordova.js script file in html file and add 
+ * {@link https://www.npmjs.com/package/cordova-plugin-camera cordova camera plugin} into app.
  *
  * @example
    <example module="TestApp">
      <file name="index.html">
 	     <div ng-controller="SampleCtrl">
             <div class="panel-body">
-                <img id="pictureImage" class="full-image" src="">
-                <div><button class="btn btn-primary" style="width:100%" ng-click="takePicture()">Take Picture</button></div> &nbsp
-                <div><button class="btn btn-primary" style="width:100%" ng-click="loadPicture()">Load from Photo Library</button></div>
+                <img id="pictureImage" class="full-image img-thumbnail" src="">
+                <div><button class="btn btn-primary btn-block" ng-click="takePicture()">Take Picture</button></div> &nbsp
+                <div><button class="btn btn-primary btn-block" ng-click="loadPicture()">Load from Photo Library</button></div>
             </div>
 	      </div>
      </file>
@@ -8239,7 +8264,41 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @public
          * @param {function} successCallback - function called on success of API call
          * @param {function} errorCallback - function called on error of API call
-         * @param {object} options - Cordova Camera Plugin options
+         * @param {object} options - Cordova Camera Plugin options. This will override camera.CameraOptions object of cordova
+         * @param {number} options.quality - Quality of the saved image, expressed as a range of 0-100
+         * @param {DestinationType} options.destinationType - The format of the return value. This is a static enum property of Camera
+         * <pre>
+         *      Camera.DestinationType.DATA_URL - Return base64 encoded string
+         *      Camera.DestinationType.FILE_URI - Default. Return file uri (content://media/external/images/media/2 for Android)
+         *      Camera.DestinationType.NATIVE_URI - Return native uri (eg. asset-library://... for iOS)
+         * </pre>
+         * @param {PictureSourceType} options.sourceType - Set the source of the picture. This is a static enum property of Camera.
+         * <pre>
+         *      Camera.PictureSourceType.PHOTOLIBRARY - Choose image from picture library
+         *      Camera.PictureSourceType.CAMERA - Take picture from camera
+         * </pre>
+         * @param {Boolean} options.allowEdit - Allow simple editing of image before selection.
+         * @param {EncodingType} options.encodingType - Choose the returned image file's encoding.
+         * <pre>
+         *      Camera.EncodingType.JPEG - Return JPEG encoded image
+         *      Camera.EncodingType.PNG - Return PNG encoded image
+         * </pre>
+         * @param {number} options.targetWidth - Width in pixels to scale image. Must be used with targetHeight. Aspect ratio remains constant.
+         * @param {number} options.targetHeight - Height in pixels to scale image. Must be used with targetWidth. Aspect ratio remains constant.
+         * @param {MediaType} options.mediaType - Set this option when PictureSourceType is PHOTOLIBRARY.
+         * <pre>
+         *      Camera.MediaType.PICTURE - Allow selection of still pictures only. DEFAULT. Will return format specified via DestinationType
+         *      Camera.MediaType.VIDEO - Allow selection of video only, ONLY RETURNS URL
+         *      Camera.MediaType.ALLMEDIA - Allow selection from all media types
+         * </pre>
+         * @param {Boolean} options.correctOrientation - Rotate the image to correct for the orientation of the device during capture.
+         * @param {Boolean} options.saveToPhotoAlbum - Save the image to the photo album on the device after capture.
+         * @param {CameraPopoverOptions} options.popoverOptions - iOS-only options that specify popover location in iPad.
+         * @param {Direction} options.cameraDirection - Choose the camera to use (front- or back-facing).
+         * <pre>
+         *      Camera.Direction.BACK - Use the back-facing camera
+         *      Camera.Direction.FRONT - Use the front-facing camera
+         * </pre>
          * @description
          * To take picture using camera or load photos from gallery
          */
