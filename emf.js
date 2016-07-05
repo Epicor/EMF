@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.43 built: 04-07-2016
+ * version:1.0.8-dev.44 built: 05-07-2016
 */
 (function() {
     'use strict';
@@ -6973,8 +6973,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @name ep.hybrid.barcode:epHybridBarcodeService
  * @description
  * Service for accessing Cordova Barcode plugin. This will scan a barcode and recognize the UPC code and format.
- * 
- * Note: Include cordova.js script file in html file and add 
+ *
+ * Note: Include cordova.js script file in html file and add
  * {@link https://www.npmjs.com/package/cordova-plugin-barcodescanner cordova barcodescanner plugin} into app.
  *
  * @example
@@ -7064,8 +7064,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @name ep.hybrid.calendar:epHybridCalendarService
  * @description
  * Service for accessing Cordova Calendar plugin. This allows you to manipulate the native calendar.
- * 
- * Note: Include cordova.js script file in html file and add 
+ *
+ * Note: Include cordova.js script file in html file and add
  * {@link https://www.npmjs.com/package/cordova-plugin-calendar cordova calendar plugin} into app.
  *
  * @example
@@ -7438,7 +7438,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @description
  * Service for accessing Cordova contacts plugin. This will select a contact from device and display the information.
  *
- * Note: Include cordova.js script file in html file and add 
+ * Note: Include cordova.js script file in html file and add
  * {@link https://www.npmjs.com/package/cordova-plugin-contacts cordova contacts plugin} into app
  *
  * @example
@@ -7446,7 +7446,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      <file name="index.html">
 	     <div ng-controller="SampleCtrl">
             <div class="panel-body">
-                <button class="button button-block button-balanced" ng-click="pickContact()">
+                <button class="btn btn-block btn-primary" ng-click="pickContact()">
                 Pick a Contact from Phone
                 </button>
                 <div class="card" ng-if="selectedContact != undefined">
@@ -7541,7 +7541,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @description
  * Service for accessing Cordova device plugin. This will fetch the details about the device.
  *
- * Note: Include cordova.js script file in html file and add 
+ * Note: Include cordova.js script file in html file and add
  * {@link https://www.npmjs.com/package/cordova-plugin-device cordova device plugin} into app
  *
  * @example
@@ -7690,10 +7690,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      	angular.module("TestApp", ["ep.hybrid.flashlight"])
      		.controller("SampleCtrl",["$scope", "epHybridFlashlightService",
                 function($scope, epHybridFlashlightService){
+                    // Allows to switch on the flashlight
                     $scope.on = function () {
                         epHybridFlashlightService.flashOn();
                     }
 
+                    // Allows to switch off the flashlight
                     $scope.off = function () {
                         epHybridFlashlightService.flashOff();
                     }
@@ -7806,7 +7808,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         //Adds marker on map
                         epHybridGeolocationService.addMarker(latLng, map);
 
-                        //Get the from and to autocomplete inputs and show directions
+                        //Get the from and to autocomplete inputs and show direction
                         epHybridGeolocationService.autocompleteAndAssociatedActions(map, start, end);
                 }
 
@@ -7837,6 +7839,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @param {function} successCallback - function called on success of API call
          * @param {function} errorCallback - function called on error of API call
          * @param {object} options - Cordova Geolocation Plugin options
+         * @param {boolean} options.enableHighAccuracy - Indicates the application would like to receive the best possible results
+         * @param {long} options.timeout - Represents the maximum length of time (in milliseconds) the device is allowed to take in order to return a position
+         * @param {long} options.maximumAge - Indicates the maximum age in milliseconds of a possible cached position that is acceptable to return
          * @description
          * To get geolocation
          */
@@ -8028,8 +8033,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      <file name="index.html">
 	     <div ng-controller="SampleCtrl">
             <div class="panel-body">
-                <div><button class="btn btn-primary" style="width:100%" ng-click="playMusic()">Let's Jam!</button></div> &nbsp
-                <div><button class="btn btn-primary" style="width:100%" ng-click="stopMusic()">Stop</button></div>
+                <div><button class="btn btn-primary btn-block" ng-click="playMusic()">Let's Jam!</button></div> &nbsp
+                <div><button class="btn btn-primary btn-block" ng-click="stopMusic()">Stop</button></div>
             </div>
 	      </div>
      </file>
@@ -8121,26 +8126,72 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @example
    <example module="TestApp">
      <file name="index.html">
-	     <div ng-controller="SampleCtrl">
-            <div class="panel-body">
-                <div><button class="btn btn-primary" style="width:100%" ng-click="playMusic()">Let's Jam!</button></div> &nbsp
-                <div><button class="btn btn-primary" style="width:100%" ng-click="stopMusic()">Stop</button></div>
+	    <div class="ep-fullscreen" id="network">
+            <div class="panel panel-default">
+                <div class="panel-heading">
+                    <i class="ep-ci-network-status fa-4x text-warning" style="float:left"></i><h2>Network Status</h2>
+                    <p>Determines the status and type of device network connection.</p>
+                </div>
             </div>
-	      </div>
+            <div class="panel panel-default">
+                <div class="panel-heading ep-align-center">
+                    <span class="ep-ci-network-status fa-2x text-warning"></span> Internet Status
+                </div>
+                <div class="panel-body ep-align-center" style="margin-left:5px">
+                    {{status}}
+                </div>
+            </div>
+            <div class="panel panel-default">
+                <div class="panel-heading ep-align-center">
+                    <span class="ep-ci-network-status fa-2x text-warning"></span> Internet Type
+                </div>
+                <div class="panel-body ep-align-center" style="margin-left:5px">
+                    {{type}}
+                </div>
+            </div>
+        </div>
      </file>
      <file name="script.js">
-     	angular.module('TestApp', ['ep.hybrid.media'])
-     		.controller('SampleCtrl',['$scope', '$log', 'epHybridMediaService',
-                function($scope, epHybridMediaService){
-                    var audioUrl = 'http://www.sounddogs.com/sound-effects/2217/mp3/410647_SOUNDDOGS__wo.mp3';
-
-                    $scope.playMusic = function() {
-                        epHybridMediaService.playAudio(audioUrl);
+     	angular.module('TestApp', ['ep.hybrid.network'])
+     		.controller('networkCtrl',['$scope', '$log', 'epHybridMediaService',
+                function($scope, epHybridNetworkService){
+                    function checkStatus() {
+            var status = epHybridNetworkService.checkConnection();
+                switch(status){
+                    case 1:
+                        $scope.status = "ON";
+                        $scope.type = "Unknown connection"
+                        break;
+                    case 2:
+                        $scope.status = "ON";
+                        $scope.type = "Ethernet connections"
+                        break;
+                    case 3:
+                        $scope.status = "ON";
+                        $scope.type = "WiFi connection"
+                        break;
+                    case 4:
+                        $scope.status = "ON";
+                        $scope.type = "Cell 2G connection"
+                        break;
+                    case 5:
+                        $scope.status = "ON";
+                        $scope.type = "Cell 3G connection"
+                        break;
+                    case 6:
+                        $scope.status = "ON";
+                        $scope.type = "Cell 4G connection"
+                        break;
+                    case 7:
+                        $scope.status = "ON";
+                        $scope.type = "Cell generic connection"
+                        break;
+                    case 8:
+                        $scope.status = "OFF";
+                        $scope.type = "No network connection"
+                        break;
                     }
-
-                    $scope.stopMusic = function() {
-                        epHybridMediaService.stopAudio(audioUrl);
-                    }
+                }
             }]);
      </file>
    </example>
@@ -8155,7 +8206,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         /**
          * @ngdoc method
          * @name checkConnection
-         * @methodOf ep.hybrid.media:epHybridNetworkService
+         * @methodOf ep.hybrid.network:epHybridNetworkService
          * @public
          * @description
          * To check the internet connection and status
@@ -8164,14 +8215,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             var networkState = navigator.connection.type;
             var states = {};
 
-            states[Connection.UNKNOWN] = 'Unknown connection';
-            states[Connection.ETHERNET] = 'Ethernet connection';
-            states[Connection.WIFI] = 'WiFi connection';
-            states[Connection.CELL_2G] = 'Cell 2G connection';
-            states[Connection.CELL_3G] = 'Cell 3G connection';
-            states[Connection.CELL_4G] = 'Cell 4G connection';
-            states[Connection.CELL] = 'Cell generic connection';
-            states[Connection.NONE] = 'No network connection';
+            states[Connection.UNKNOWN] = 1;
+            states[Connection.ETHERNET] = 2;
+            states[Connection.WIFI] = 3;
+            states[Connection.CELL_2G] = 4;
+            states[Connection.CELL_3G] = 5;
+            states[Connection.CELL_4G] = 6;
+            states[Connection.CELL] = 7;
+            states[Connection.NONE] = 8;
 
             return states[networkState];
 
@@ -8197,7 +8248,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * Service for accessing Cordova camera plugin. This will allow to take picture from camera
  * or to select a picture from photo library.
  *
- * Note: Include cordova.js script file in html file and add 
+ * Note: Include cordova.js script file in html file and add
  * {@link https://www.npmjs.com/package/cordova-plugin-camera cordova camera plugin} into app.
  *
  * @example
