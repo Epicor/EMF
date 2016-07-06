@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.44 built: 05-07-2016
+ * version:1.0.8-dev.45 built: 06-07-2016
 */
 (function() {
     'use strict';
@@ -7840,8 +7840,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @param {function} errorCallback - function called on error of API call
          * @param {object} options - Cordova Geolocation Plugin options
          * @param {boolean} options.enableHighAccuracy - Indicates the application would like to receive the best possible results
-         * @param {long} options.timeout - Represents the maximum length of time (in milliseconds) the device is allowed to take in order to return a position
-         * @param {long} options.maximumAge - Indicates the maximum age in milliseconds of a possible cached position that is acceptable to return
+         * @param {number} options.timeout - Represents the maximum length of time (in milliseconds) the device is allowed to take in order to return a position
+         * @param {number} options.maximumAge - Indicates the maximum age in milliseconds of a possible cached position that is acceptable to return
          * @description
          * To get geolocation
          */
@@ -11695,7 +11695,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         # editor {string} - 'number'| 'text' | 'multiline' | 'date' | 'checkbox' | 'select' | 'image' | 'custom'
         # editorDirective {string} - directive name as in html for custom editor
         # bizType {string} - 'phone' | 'address' | 'email' | 'url' | 'password'
-        # mData {int|string} - data ordinal index (data array index) or property name
+        # columnIndex - data ordinal index (data array index) or property name
         # seq {int} - (optional) sequence index for ordering
         # required {bool} - is entry required
         # requiredFlag {bool} - should we display required flag
@@ -11707,7 +11707,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         # updatable {bool}  - updatable
         # nullable {bool}  - nullable
         # sizeClass {string} - editor size class (bootstrap column sizes like col-md-6, col-lg-8, etc)
-        # size {string}  - applicable to checkbox only (for now). Can be '1x', '2x', '3x'
+        # checkBoxSize {string}  - applicable to checkbox only (for now). Can be '1x', '2x', '3x'
         # oFormat {object}
         #   - MaxLength {int}
         #   -
@@ -11882,14 +11882,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             //  - activeRecord
             var editorsContext = {};
             var iIndex = -1;
-            _.each(_.filter(scope.state.columns, function(c) { return (c.mData >= 0 || c.mData); }), function(col) {
+            _.each(_.filter(scope.state.columns, function(c) { return (c.columnIndex >= 0 || c.columnIndex); }), function(col) {
                 col.oFormat = col.oFormat || defaultFormat;
 
                 iIndex++;
                 var iVisibleIndex;
                 if (!col.seq && col.seq !== 0) {
-                    if (col.mData && !angular.isString(col.mData)) {
-                        iVisibleIndex = col.mData;
+                    if (col.columnIndex && !angular.isString(col.columnIndex)) {
+                        iVisibleIndex = col.columnIndex;
                     }
                 } else {
                     iVisibleIndex = col.seq;
@@ -11898,14 +11898,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     iVisibleIndex = iIndex;
                 }
 
-                var name = col.name || col.mData.toString();
+                var name = col.name || col.columnIndex.toString();
                 var editor = (col.editor || 'text').trim().toLowerCase();
                 var ctx = {
                     state: scope.state,
                     col: col,
                     editor: editor,
                     visibleIndex: ('000' + iVisibleIndex).substr(-3, 3), // <- so that it's sortable as a string
-                    columnIndex: col.mData,
+                    columnIndex: col.columnIndex,
                     name: uniqueID.get(editor + '_' + name),
                     required: col.required || (editor === 'number' && !col.nullable), //all number's except Nullable are required
                     requiredFlag: col.requiredFlag,  //to display the required flag
@@ -11923,7 +11923,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     imageHeight: (col.imageHeight ? col.imageHeight : 0),
                     isInvalid: false,
                     placeholder: col.placeholder,
-                    size: col.size
+                    checkBoxSize: col.checkBoxSize
                 };
 
                 //TO DO - validate buttons pre/post seq etc
@@ -11955,8 +11955,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                                 if (edt) {
                                     angular.element(edt).addClass('ng-dirty');
                                 }
-                                if (scope.callBackValidate && col.bRaiseEvent && ctx.updatable) {
-                                    scope.callBackValidate(col, ctx, {}, edt, true);
+                                if (ctx.updatable) {
+                                    doValidation(ctx, {}, true);
                                 }
                                 ctx.fnOnChange({}, ctx);
                             }
@@ -11985,9 +11985,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
                 ctx.fnBlur = function onBlur(ev) {
                     ctx.state.lastFocused = { Col: ctx.col, Ctx: ctx, Event: ev };
-                    if (ctx.col.bRaiseEvent && ctx.updatable) {
+                    if (ctx.updatable) {
                         if (angular.element(ev.currentTarget).hasClass('ng-dirty')) {
-                            scope.callbacks.callBackValidate(col, this, ev);
+                            doValidation(ctx, {}, true);
                         }
                     }
                     return true;
@@ -12104,7 +12104,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         }
                     };
                 }
-                editorsContext[col.mData] = ctx;
+                editorsContext[col.columnIndex] = ctx;
             });
             scope.state.editorController = editorController;
 
@@ -12311,14 +12311,14 @@ angular.module('ep.record.editor').
                 var ret = {
                     editsDetected: false,
                     changedColumns: [],
-                    record: scope.extendRecord(scope.state.rowData)
+                    record: scope.state.activeRecord
                 };
 
                 if (scope.options.columns) {
                     var columns = scope.options.columns;
                     for (var idx = 0; idx < columns.length; idx++) {
                         var col = columns[idx];
-                        var dataColumn = col.mData;
+                        var dataColumn = col.columnIndex;
                         var inputValue;
                         if (scope.state.activeRecord) {
                             inputValue = scope.state.activeRecord[dataColumn];
@@ -12339,7 +12339,6 @@ angular.module('ep.record.editor').
                                     originalValue: originalValue, newValue: inputValue
                                 });
                                 ret.editsDetected = true;
-                                ret.rowData[dataColumn] = inputValue;
                             }
                         } else if (col.editor === 'date') {
                             ret.editsDetected = true;
@@ -12362,7 +12361,7 @@ angular.module('ep.record.editor').
                 var columns = scope.options.columns;
                 for (var idx = 0; idx < columns.length; idx++) {
                     var col = columns[idx];
-                    scope.state.activeRecord[col.mData] = scope.state.rowData[col.mData];
+                    scope.state.activeRecord[col.columnIndex] = scope.state.rowData[col.columnIndex];
                 }
 
                 setPristine();
@@ -12386,7 +12385,7 @@ angular.module('ep.record.editor').
                         } else if (ctx.editor === 'checkbox') {
                             emptyVal = false;
                         }
-                        scope.state.activeRecord[ctx.col.mData] = emptyVal;
+                        scope.state.activeRecord[ctx.columnIndex] = emptyVal;
                     });
                 }
             }
@@ -12552,7 +12551,7 @@ angular.module('ep.record.editor').
             */
             function resetCombo(column, list) {
                 if (!list) { return; }
-                //reset column combo. if column is string then by columnName otherwise by mData (index)
+                //reset column combo. if column is string then by columnName otherwise by columnIndex
                 var ctx = getColumnContext(scope, column);
                 if (ctx && ctx.col.list) {
                     ctx.options = angular.extend([], ctx.col.list);
@@ -12589,9 +12588,9 @@ angular.module('ep.record.editor').
 
                 var ret = null;
                 if (typeof column !== 'string') {
-                    //assume that this is mData
+                    //assume that this is columnIndex
                     ret = _.find(scope.state.editorContexts, function(ctx) {
-                        return (ctx.col && ctx.col.mData === column);
+                        return (ctx.col && ctx.columnIndex === column);
                     });
                 } else {
                     ret = _.find(scope.state.editorContexts, function(ctx) {
@@ -12599,7 +12598,7 @@ angular.module('ep.record.editor').
                     });
                 }
                 if (ret) {
-                    return scope.state.editorContexts[ret.col.mData];
+                    return scope.state.editorContexts[ret.col.columnIndex];
                 }
                 return ret;
             }
@@ -17335,7 +17334,7 @@ function epTilesMenuFavoritesDirective() {
 
 /**
  * @ngdoc controller
- * @name ep.tile.controller:epTileCtrl
+ * @name ep.login.controller:epLoginCtrl
  * @description
  * Represents the login controller.
  * This controller negotiates the login/logout requests with the token factory.
@@ -17488,7 +17487,7 @@ function epTilesMenuFavoritesDirective() {
             /**
             * @ngdoc property
             * @name restUri
-            * @propertyOf ep.token.object:tokenConfig
+            * @propertyOf ep.token.object:epTokenConfig
             * @public
             * @description
             * Represents the URI for the REST service that provides the token auth login
@@ -17497,7 +17496,7 @@ function epTilesMenuFavoritesDirective() {
             /**
             * @ngdoc property
             * @name tokenId
-            * @propertyOf ep.token.object:tokenConfig
+            * @propertyOf ep.token.object:epTokenConfig
             * @public
             * @description
             * Represents the Id for the cookie that will store username and token
@@ -17506,7 +17505,7 @@ function epTilesMenuFavoritesDirective() {
             /**
             * @ngdoc property
             * @name timeout
-            * @propertyOf ep.token.object:tokenConfig
+            * @propertyOf ep.token.object:epTokenConfig
             * @public
             * @description
             * Set timeout of the token in seconds. This can override the actual token timeout if it is smaller
@@ -17515,7 +17514,7 @@ function epTilesMenuFavoritesDirective() {
             /**
             * @ngdoc property
             * @name warnExpire
-            * @propertyOf ep.token.object:tokenConfig
+            * @propertyOf ep.token.object:epTokenConfig
             * @public
             * @description
             * Should we give a warning on token expiration with renewal option
@@ -17524,7 +17523,7 @@ function epTilesMenuFavoritesDirective() {
             /**
             * @ngdoc property
             * @name warnExpireDuration
-            * @propertyOf ep.token.object:tokenConfig
+            * @propertyOf ep.token.object:epTokenConfig
             * @public
             * @description
             * How many seconds prior to expiration should we warn the user
@@ -17533,7 +17532,7 @@ function epTilesMenuFavoritesDirective() {
             /**
             * @ngdoc property
             * @name storePassword
-            * @propertyOf ep.token.object:tokenConfig
+            * @propertyOf ep.token.object:epTokenConfig
             * @public
             * @description
             * Store the password for renewal
@@ -17542,7 +17541,7 @@ function epTilesMenuFavoritesDirective() {
             /**
             * @ngdoc property
             * @name autoRenew
-            * @propertyOf ep.token.object:tokenConfig
+            * @propertyOf ep.token.object:epTokenConfig
             * @public
             * @description
             * Auto renew token if renewal warning turned off
@@ -17551,7 +17550,7 @@ function epTilesMenuFavoritesDirective() {
             /**
             * @ngdoc property
             * @name debug
-            * @propertyOf ep.token.object:tokenConfig
+            * @propertyOf ep.token.object:epTokenConfig
             * @public
             * @description
             * If debug is on, the token service is not invoked and dummy results returned
@@ -18777,7 +18776,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-checkbox-editor.html',
-    "<section class=\"ep-editor-checkbox ep-center-item editor\" tabindex=0 ng-keyup=handleKey($event) ng-click=ctx.toggleValue(ctx,$event) ng-hide=ctx.fnDoValidations()><span ng-class=\"{'fa-square-o': !ctx.state.activeRecord[ctx.columnIndex], 'fa-check-square-o': ctx.state.activeRecord[ctx.columnIndex]}\" class=\"fa fa-{{size}}\"></span></section>"
+    "<section class=\"ep-editor-checkbox ep-center-item editor\" tabindex=0 ng-keyup=handleKey($event) ng-click=ctx.toggleValue(ctx,$event) ng-hide=ctx.fnDoValidations()><span ng-class=\"{'fa-square-o': !ctx.state.activeRecord[ctx.columnIndex], 'fa-check-square-o': ctx.state.activeRecord[ctx.columnIndex]}\" class=\"fa fa-{{checkBoxSize}}\"></span></section>"
   );
 
 
