@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.45 built: 06-07-2016
+ * version:1.0.8-dev.46 built: 07-07-2016
 */
 .ep-relative {
   position: relative;
@@ -1296,36 +1296,24 @@
   margin-top: 8px;
   margin-right: 8px;
 }
-.ep-record-editor .ep-record-editor-container .input-group {
+.ep-editor-control .ep-record-editor-container .input-group {
   width: 100%;
 }
-.ep-record-editor .ep-record-editor-container .ep-editor-label {
+.ep-editor-control .ep-record-editor-container .ep-editor-label {
   display: block;
 }
-.ep-record-editor .ep-editor-checkbox {
+.ep-editor-control .ep-editor-checkbox {
   width: 100%;
   cursor: pointer;
 }
-.ep-record-editor .ep-editor-checkbox > span {
+.ep-editor-control .ep-editor-checkbox > span {
   padding: 14px;
 }
-.ep-record-editor textarea.form-control.editor {
+.ep-editor-control textarea.form-control.editor {
   height: 145px;
 }
-.ep-record-editor .form-control.editor[disabled] {
+.ep-editor-control .form-control.editor[disabled] {
   cursor: default;
-}
-.ep-record-editor .standard-width {
-  width: 300px;
-}
-.ep-record-editor .standard-widthTimes1 {
-  width: 33%;
-}
-.ep-record-editor .standard-widthTimes2 {
-  width: 66%;
-}
-.ep-record-editor .standard-widthTimes3 {
-  width: 100%;
 }
 
 .ep-shell .ep-shell-feedback-btn {

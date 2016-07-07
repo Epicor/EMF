@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.45 built: 06-07-2016
+ * version:1.0.8-dev.46 built: 07-07-2016
 */
 (function() {
     'use strict';
@@ -6753,19 +6753,24 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
         var fileSystem = storageSystems.localStorage;
 
-        // private method
-        function fail(deferred, error) {
-            var errDesc;
-            if (error.name) {
-                errDesc = domErrors[error.name];
-            } else if (error.code) {
-                errDesc = fileErrors[error.code];
-            } else {
-                errDesc = error;
+        function failWith(deferred, url) {
+            return function(error){
+                var errDesc;
+                if (error.name) {
+                    errDesc = domErrors[error.name];
+                } else if (error.code) {
+                    errDesc = fileErrors[error.code];
+                } else {
+                    errDesc = error;
+                }
+                var msg = 'LocalFileSystem failure: ' + errDesc + ' [ ' + url;
+                if(error.name) {
+                    msg += ': ' + error.name;
+                }
+                msg += ' ]';
+                $log.error(msg);
+                deferred.reject(msg);
             }
-            var msg = 'LocalFileSystem failure: ' + errDesc + ' [' + error.name + ']';
-            $log.error(msg);
-            deferred.reject(msg);
         }
 
         /**
@@ -6773,30 +6778,37 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @name load
          * @methodOf ep.file:epFileService
          * @public
+         * @param {string} path (optional) the device file system directory to use when loading the file (defaults to the application's data directory)
+         * @param {string} filename the name of the file to load
          * @description
          * Loads an object from persistent storage. On cordova apps the file
-         * is loaded from the application's data directory. On browser based apps,
-         * the data is stored in localStorage
+         * is loaded from the application's data directory by default. On browser based apps,
+         * the data is stored in localStorage. The path parameter is optional, defaulting to the
          */
-        function load(filename) {
+        function load(path, filename) {
             var graph;
             var deferred = $q.defer();
             var filePath;
 
             if (fileSystem === storageSystems.localStorage) {
-                filePath = epFileConstants.namespace + '.' + filename;
+                if(!filename){
+                    filename = path;
+                    path = epFileConstants.namespace;
+                }
+                filePath = path + '.' + filename;
                 graph = epLocalStorageService.get(filePath);
                 if (!graph) {
-                    deferred.reject({
-                        code: 1,
-                        message: 'File not found'
-                    });
+                    failWith(deferred, filename)({code: 1});
                 } else {
                     $log.debug('Successfully loaded ' + filePath + ' from LocalStorage.');
                     deferred.resolve(graph);
                 }
             } else {
-                $window.resolveLocalFileSystemURL($window.cordova.file.dataDirectory + filename,
+                if(!filename){
+                    filename = path;
+                    path = $window.cordova.file.dataDirectory;
+                }
+                $window.resolveLocalFileSystemURL(path + filename,
                     function(fileEntry) {
                         fileEntry.file(function(file) {
                             var reader = new FileReader();
@@ -6808,8 +6820,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                                 deferred.resolve(JSON.parse(graph));
                             };
                             reader.readAsText(file);
-                        }, fail.bind(null, deferred));
-                    }, fail.bind(null, deferred));
+                        }, failWith(deferred, filename));
+                    }, failWith(deferred, filename));
             }
 
             return deferred.promise;
@@ -6820,23 +6832,34 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @name save
          * @methodOf ep.file:epFileService
          * @public
+         * @param {object} graph to save to the file system.
+         * @param {string} path (optional) the device file system directory to use when saving the file (defaults to the application's data directory)
+         * @param {string} filename the name of the file to load
          * @description
          * Saves an object to persistent storage. On cordova apps the file
-         * is saved in the application's data directory. On browser based apps,
+         * is saved in the application's data directory by default. On browser based apps,
          * the data is stored in localStorage.
          */
-        function save(graph, filename) {
+        function save(graph, path, filename) {
             var deferred = $q.defer();
             try {
                 var filePath = '';
 
                 if (fileSystem === storageSystems.localStorage) {
-                    filePath = epFileConstants.namespace + '.' + filename;
+                    if(!filename){
+                        filename = path;
+                        path = epFileConstants.namespace;
+                    }
+                    filePath = path + '.' + filename;
                     epLocalStorageService.update(filePath, graph);
                     $log.debug('Successfully saved ' + filePath + ' to LocalStorage.');
                     deferred.resolve();
                 } else {
-                    $window.resolveLocalFileSystemURL($window.cordova.file.dataDirectory, function(directoryEntry) {
+                    if(!filename){
+                        filename = path;
+                        path = $window.cordova.file.dataDirectory;
+                    }
+                    $window.resolveLocalFileSystemURL(path, function(directoryEntry) {
                         directoryEntry.getFile(filename, {create: true}, function(fileEntry) {
                             fileEntry.createWriter(function(writer) {
 
@@ -6854,12 +6877,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                                 var blob = new Blob([JSON.stringify(graph)], {type: 'text/plain'});
                                 writer.write(blob);
 
-                            }, fail.bind(null, deferred));
-                        }, fail.bind(null, deferred));
-                    }, fail.bind(null, deferred));
+                            }, failWith(deferred, filename));
+                        }, failWith(deferred, filename));
+                    }, failWith(deferred, filename));
                 }
             } catch (e) {
-                deferred.reject(e);
+                failWith(deferred, filename)(e);
             }
             return deferred.promise;
         }
@@ -6875,25 +6898,34 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * On cordova based apps, the dataDirectory is searched for the given file,
          * and on browser apps, the localStorage is queried.
          */
-        function fileExists(filename) {
+        function fileExists(path, filename) {
             var deferred = $q.defer();
             try {
                 if (fileSystem === storageSystems.fileStorage) {
-                    $window.resolveLocalFileSystemURL($window.cordova.file.dataDirectory + filename,
+                    if(!filename){
+                        filename = path;
+                        path = $window.cordova.file.dataDirectory;
+                    }
+                    $window.resolveLocalFileSystemURL(path + filename,
                         function() {
                             deferred.resolve(true);
                         }, function(err) {
                             if (err.code === 1) {
                                 deferred.resolve(false);
                             } else {
-                                fail(deferred, err);
+                                failWith(deferred, filename)(err);
                             }
                         });
                 } else {
-                    deferred.resolve(!!epLocalStorageService.get(epFileConstants.namespace + '.' + filename));
+                    if(!filename){
+                        filename = path;
+                        path = epFileConstants.namespace;
+                    }
+                    var filePath = path + '.' + filename;
+                    deferred.resolve(!!epLocalStorageService.get(filePath));
                 }
             } catch (e) {
-                deferred.reject(e);
+                failWith(deferred, filename)(e);
             }
             return deferred.promise;
         }
@@ -6933,11 +6965,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             fileEntry.remove();
                             deferred.resolve();
                         }, function(err) {
-                            fail(deferred, err);
+                            failWith(deferred, filename)(err);
                         });
                 }
             } catch (e) {
-                deferred.reject(e);
+                failWith(deferred, filename)(e);
             }
             return deferred.promise;
         }
@@ -8123,16 +8155,13 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @description
  * Service for accessing Cordova Network-Information plugin
  *
+ * Note: Include cordova.js script file in html file and add
+ * {@link https://www.npmjs.com/package/cordova-plugin-network-information cordova network information plugin} into app.
+ *
  * @example
    <example module="TestApp">
      <file name="index.html">
 	    <div class="ep-fullscreen" id="network">
-            <div class="panel panel-default">
-                <div class="panel-heading">
-                    <i class="ep-ci-network-status fa-4x text-warning" style="float:left"></i><h2>Network Status</h2>
-                    <p>Determines the status and type of device network connection.</p>
-                </div>
-            </div>
             <div class="panel panel-default">
                 <div class="panel-heading ep-align-center">
                     <span class="ep-ci-network-status fa-2x text-warning"></span> Internet Status
@@ -8156,41 +8185,15 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      		.controller('networkCtrl',['$scope', '$log', 'epHybridMediaService',
                 function($scope, epHybridNetworkService){
                     function checkStatus() {
-            var status = epHybridNetworkService.checkConnection();
-                switch(status){
-                    case 1:
-                        $scope.status = "ON";
-                        $scope.type = "Unknown connection"
-                        break;
-                    case 2:
-                        $scope.status = "ON";
-                        $scope.type = "Ethernet connections"
-                        break;
-                    case 3:
-                        $scope.status = "ON";
-                        $scope.type = "WiFi connection"
-                        break;
-                    case 4:
-                        $scope.status = "ON";
-                        $scope.type = "Cell 2G connection"
-                        break;
-                    case 5:
-                        $scope.status = "ON";
-                        $scope.type = "Cell 3G connection"
-                        break;
-                    case 6:
-                        $scope.status = "ON";
-                        $scope.type = "Cell 4G connection"
-                        break;
-                    case 7:
-                        $scope.status = "ON";
-                        $scope.type = "Cell generic connection"
-                        break;
-                    case 8:
+                     var type = epHybridNetworkService.checkConnection();
+                     if (type == epNetworkStatus.Unknown || type == epNetworkStatus.None) {
                         $scope.status = "OFF";
-                        $scope.type = "No network connection"
-                        break;
-                    }
+                        $scope.type = type;
+                      }
+                      else {
+                        $scope.status = "ON";
+                        $scope.type = type;
+                     }
                 }
             }]);
      </file>
@@ -8200,6 +8203,17 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
     'use strict';
 
     angular.module('ep.hybrid.network')
+        .constant('epNetworkStatus', {
+            Unknown: 'unknown',
+            Ethernet: 'ethernet',
+            Wifi: 'wifi',
+            Cell2g: '2g',
+            Cell3g: '3g',
+            Cell4g: '4g',
+            Cell: 'cellular',
+            None: 'none'
+        })
+
         .service('epHybridNetworkService', /*@ngInject*/ epHybridNetworkService);
 
     function epHybridNetworkService() {
@@ -8212,20 +8226,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * To check the internet connection and status
          */
         function checkConnection() {
-            var networkState = navigator.connection.type;
-            var states = {};
-
-            states[Connection.UNKNOWN] = 1;
-            states[Connection.ETHERNET] = 2;
-            states[Connection.WIFI] = 3;
-            states[Connection.CELL_2G] = 4;
-            states[Connection.CELL_3G] = 5;
-            states[Connection.CELL_4G] = 6;
-            states[Connection.CELL] = 7;
-            states[Connection.NONE] = 8;
-
-            return states[networkState];
-
+            return navigator.connection.type;
         }
         return {
             checkConnection: checkConnection
@@ -8384,8 +8385,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @ngdoc service
  * @name ep.hybrid.barcode:epHybridVibrationService
  * @description
- * Service for accessing Cordova vibration plugin <br />
- * <b>Note</b>:vibrate length only works on Android and Windows
+ * Service for accessing Cordova vibration plugin. This will make the device vibrate for 3 seconds.
+ *
+ * Note: Include cordova.js script file in html file and add
+ * {@link https://www.npmjs.com/package/cordova-plugin-vibration cordova vibration plugin} into app.
  *
  * @example
    <example module="TestApp">
@@ -8415,6 +8418,15 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         .service('epHybridVibrationService', /*@ngInject*/ epHybridVibrationService);
     function epHybridVibrationService() {
 
+        /**
+        * @ngdoc method
+        * @name vibrateDevice
+        * @methodOf ep.hybrid.vibration:epHybridVibrationService
+        * @public
+        * @param {sec} sec - number of seconds device to vibrate
+        * @description
+        * Make the device to vibrate
+        */
         function vibrateDevice(sec) {
             navigator.vibrate([sec]);
         }
@@ -11166,6 +11178,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 * @restrict E
 *
 * @description
+* Checkbox editor used by ep-record-editor or ep-editor-control
 */
 (function() {
     'use strict';
@@ -11181,6 +11194,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             templateUrl: 'src/components/ep.record.editor/editors/ep-checkbox-editor.html',
             scope: {
                 'ctx': '=',
+                'value': '=',
                 'options': '='
             },
             compile: function() {
@@ -11190,15 +11204,15 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
                         //set size class smaller for check box
                         ctx.fnSetSizeClass('col-xs-12 col-sm-4 col-md-3 col-lg-2');
-                        ctx.size = ctx.size || '2x';
+                        ctx.checkBoxSize = ctx.checkBoxSize || '2x';
 
                         if (ctx.updatable) {
                             ctx.toggleValue = function(c, ev) {
-                                if (c.state.activeRecord && !ctx.disabled) {
-                                    var newVal = !c.state.activeRecord[c.columnIndex];
+                                if ($scope.value !== undefined && !ctx.disabled) {
+                                    var newVal = !$scope.value;
                                     ctx.fnSetCurrentValue(newVal, false);
 
-                                    if (ctx.fnValidate && ctx.col.bRaiseEvent && ctx.updatable) {
+                                    if (ctx.fnValidate && ctx.updatable) {
                                         ctx.fnValidate(ctx.col, this, ev);
                                     }
                                 }
@@ -11254,9 +11268,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             var fmt = scope.ctx.isDateTime ? 'YYYY-MM-DDT00:00:00' : 'YYYY-MM-DD';
                             dd = m.isValid() ? m.format(fmt) : null;
                         }
-                        var rec = scope.ctx.state.activeRecord;
-                        if (rec && rec[scope.ctx.columnIndex] !== dd) {
-                            rec[scope.ctx.columnIndex] = dd;
+                        var vCur = scope.ctx.fnGetCurrentValue();
+                        if (vCur !== dd) {
+                            scope.value = dd;
                         }
                         return value;
                     });
@@ -11264,11 +11278,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     ngModel.$viewChangeListeners.push(function() {
                         if (ngModel.$modelValue === undefined) {
                             //this happens during edit when date becomes invalid (modelValue undefined)
-                            var rec = scope.ctx.state.activeRecord;
-                            if (rec) {
-                                scope.ctx.isInvalidDateSet = true;
-                                rec[scope.ctx.columnIndex] = undefined;
-                            }
+                            scope.ctx.isInvalidDateSet = true;
+                            scope.value = undefined;
                         }
                     });
                 }
@@ -11300,6 +11311,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 * @restrict E
 *
 * @description
+* @description
+* Date editor used by ep-record-editor or ep-editor-control
 */
 (function() {
     'use strict';
@@ -11318,6 +11331,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             templateUrl: 'src/components/ep.record.editor/editors/ep-date-editor.html',
             scope: {
                 'ctx': '=',
+                'value': '=',
                 'options': '='
             },
             compile: function() {
@@ -11406,6 +11420,327 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 })();
 
 
+(function() {
+    'use strict';
+    /**
+    * @ngdoc directive
+    * @name ep.editor.directive:epEditorControl
+    * @restrict E
+    *
+    * @description
+    * Represents the ep.editor.control directive
+    * This directive allows using editors standalone without ep-record-editor
+    *
+    * @example
+    *   HTML:
+    *   <ep-editor-control column="columnText" value="valueText"></ep-editor-control>
+    *
+    *   Script:
+    *   $scope.columnText = {
+    *       caption: 'My Caption',
+    *       editor: 'text',
+    *       updatable: true,
+    *       placeholder: 'Enter text here...'
+    *   };
+    *   $scope.valueText = 'My Text';
+    */
+    epEditorControlDirective.$inject = ['$timeout', '$window', '$compile', '$q', 'epUtilsService'];
+    angular.module('ep.record.editor').
+        directive('epEditorControl', epEditorControlDirective);
+
+    /*@ngInject*/
+    function epEditorControlDirective($timeout, $window, $compile, $q, epUtilsService) {
+
+        var defaultSizeClass = 'col-xs-12 col-sm-8 col-md-6 col-lg-3';
+
+        var defaultFormat = {
+            FieldType: 0,
+            MaxLength: 30
+        };
+
+        function doValidation(ctx, ev, focus) {
+            if (!ctx.col.fnOnFldValidate) {
+                return;
+            }
+            if (getRecordEditor(ctx.control.scope)) {
+                var re = getRecordEditor(ctx.control.scope);
+                re.doValidation(ctx.control.scope.options.recordEditor.state, ctx, ev, focus);
+            } else {
+                ctx.isInvalid = false;
+                var newValue = ctx.control.scope.value;
+                $q.when(ctx.col.fnOnFldValidate(ctx, ev, newValue)).then(function(result) {
+                    if (result === false) {
+                        ctx.isInvalid = true;
+                    }
+                    if (focus) {
+                        ctx.fnSetFocus();
+                    }
+                    $timeout(function() {
+                        ctx.fnDoValidations();
+                    });
+                });
+            }
+            $timeout(function() {
+                ctx.fnDoValidations();
+            });
+        }
+
+        function createContext(scope) {
+            //creates editor context based on metadata
+            var col = scope.column;
+            col.oFormat = col.oFormat || defaultFormat;
+
+            var name = col.name || col.caption;
+            var editor = (col.editor || 'text').trim().toLowerCase();
+            var ctx = {
+                editorContainer: scope.state.iElement,
+                control: {
+                    scope: scope
+                },
+                col: col,
+                editor: editor,
+                name: editor + '_' + name + scope.$id,
+                columnIndex: col.columnIndex,
+                required: col.required || (editor === 'number' && !col.nullable), //all number's except Nullable are required
+                requiredFlag: col.requiredFlag,  //to display the required flag
+                bizType: col.bizType,
+                label: col.caption || '',
+                maxlength: col.oFormat.MaxLength,
+                justification: col.justification,
+                hidden: col.hidden,
+                updatable: col.updatable,
+                disabled: !col.updatable,
+                nullable: col.nullable,
+                displayInvalid: col.flagInvalid || true,
+                buttons: col.buttons || [],
+                imageWidth: (col.imageWidth ? col.imageWidth : 0),
+                imageHeight: (col.imageHeight ? col.imageHeight : 0),
+                isInvalid: false,
+                placeholder: col.placeholder,
+                size: col.size
+            };
+
+            //TO DO - validate buttons pre/post seq etc
+            var directive = ctx.editor === 'custom' ? col.editorDirective : ('ep-' + ctx.editor + '-editor');
+            scope.editorDirective = '<' + directive + ' ctx=ctx value=value />';
+
+            ctx.fnSetSizeClass = function(sizeClass) {
+                ctx.sizeClass = col.sizeClass || sizeClass || defaultSizeClass;
+            };
+            ctx.fnSetSizeClass();
+
+            ctx.fnSetFocus = function() {
+                var edt = ctx.fnGetEditorElement();
+                if (edt) {
+                    angular.element(edt).focus();
+                }
+            };
+
+            ctx.fnGetCurrentValue = function() {
+                return ctx.control.scope.value;
+            };
+
+            ctx.fnSetCurrentValue = function(val, focus) {
+                var edt = ctx.fnGetEditorElement();
+                if (val !== undefined) {
+                    if (ctx.fnGetCurrentValue() !== val) {
+                        ctx.control.scope.value = val;
+                        //because we set value programatically, set dirty
+                        if (edt) {
+                            angular.element(edt).addClass('ng-dirty');
+                        }
+                        if (ctx.updatable) {
+                            doValidation(ctx, {}, true);
+                        }
+                        ctx.fnOnChange({}, ctx);
+                    }
+                }
+                if (focus) {
+                    ctx.fnSetFocus();
+                }
+            };
+
+            ctx.fnGetEditorElement = function() {
+                var editor = null;
+                if (ctx.editorContainer) {
+                    editor = angular.element(ctx.editorContainer).find('.form-control.editor');
+                }
+                return editor;
+            };
+
+            ctx.fnOnChange = function($event) {
+                if (ctx.col.fnOnChange) {
+                    ctx.col.fnOnChange($event, ctx);
+                }
+            };
+
+            ctx.fnBlur = function onBlur(ev) {
+                if (getRecordEditorState(scope)) {
+                    var state = getRecordEditorState(scope);
+                    state.lastFocused = { Col: ctx.col, Ctx: ctx, Event: ev };
+                }
+                if (ctx.updatable) {
+                    if (angular.element(ev.currentTarget).hasClass('ng-dirty')) {
+                        doValidation(ctx, ev, false);
+                    }
+                }
+                if (ctx.col.fnOnBlur) {
+                    ctx.col.fnOnBlur(ev, ctx);
+                }
+                return true;
+            };
+
+            //This function checks invalid status from angular and field validation to highlight invalid
+            ctx.fnDoValidations = function() {
+                ctx.invalidFlag = false;
+                if (ctx.displayInvalid && ctx.editorContainer) {
+                    var state = getRecordEditorState(scope);
+                    var showAllInvalidFields = (state && state.showAllInvalidFields);
+                    var editor = angular.element(ctx.editorContainer).find('.form-control.editor');
+                    if (editor.length) {
+                        //TO DO: check in angular if we can remove the 'ng-invalid-remove'/'ng-dirty-add' check
+                        var isInvalid = ctx.isInvalid || ((editor.hasClass('ng-invalid') &&
+                            !editor.hasClass('ng-invalid-remove')) || editor.hasClass('ng-valid-remove'));
+                        var isDirty = (editor.hasClass('ng-dirty') || editor.hasClass('ng-dirty-add') ||
+                            showAllInvalidFields);
+                        ctx.invalidFlag = (isInvalid && isDirty);
+                    } else if (ctx.toggleValue) {
+                        //special checkbox case:
+                        ctx.invalidFlag = ctx.isInvalid;
+                    }
+                }
+                return false;
+            };
+
+            //Configure BizType buttons
+            if (ctx.bizType && (ctx.bizType === 'phone' || ctx.bizType === 'address' ||
+                ctx.bizType === 'email' || ctx.bizType === 'url')) {
+                var btnHref = '';
+                var btnStyle = '';
+                var btnType = 'href-input';
+
+                switch (ctx.bizType) {
+                    case 'address':
+                        btnHref = 'http://maps.google.com/maps?q={0}';
+                        btnStyle = 'fa fa-map-marker';
+                        break;
+
+                    case 'phone':
+                        btnHref = 'tel:{0}';
+                        btnStyle = 'fa fa-phone';
+                        break;
+
+                    case 'email':
+                        btnHref = 'mailto:{0}';
+                        btnStyle = 'fa fa-envelope';
+                        break;
+
+                    case 'url':
+                        btnHref = '';
+                        btnStyle = 'fa fa-globe';
+                        btnType = 'href-func';
+                        ctx.fnGetHref = function() {
+                            var v = ctx.fnGetCurrentValue();
+                            if (col.stringFormat) {
+                                // example stringFormat = 'http://somewhere.com/{0}';
+                                v = epUtilsService.strFormat(col.stringFormat, v);
+                            }
+                            if (v) {
+                                //if string does not start with 'http' or 'https' then append
+                                var v1 = v.trim().toLowerCase();
+                                if (v1.substr(0, 4) !== 'http') {
+                                    v = 'http://' + v;
+                                }
+                            }
+                            return v;
+                        };
+                        break;
+                }
+                if (btnStyle) {
+                    ctx.buttons.push({
+                        type: btnType,
+                        text: '',
+                        href: btnHref,
+                        style: btnStyle,
+                        seq: 2,
+                        position: 'pre',
+                    });
+                }
+            }
+
+            if (ctx.buttons.length) {
+                ctx.fnBtnClick = function(btn) {
+                    if (btn.type === 'btn') {
+                        btn.action(ctx);
+                    } else {
+                        var v = ctx.fnGetCurrentValue();
+                        if (v) {
+                            var url = '';
+                            switch (btn.type) {
+                                case 'href':
+                                    url = btn.href;
+                                    break;
+                                case 'href-input':
+                                    url = epUtilsService.strFormat(btn.href, v);
+                                    break;
+                                case 'href-func':
+                                    url = ctx.fnGetHref();
+                                    break;
+                            }
+                            if (btn.type === 'href') {
+                                $window.open(url, '_blank');
+                            } else {
+                                $window.open(url);
+                            }
+                        }
+                    }
+                };
+            }
+            scope.ctx = ctx;
+            if (getRecordEditorState(scope)) {
+                var state = getRecordEditorState(scope);
+                var ctrl = state.controls[ctx.columnIndex];
+                ctrl.controlCtx = ctx;
+            }
+
+            var target = angular.element(scope.state.iElement).find('#xtemplate');
+            target.empty().append($compile(scope.editorDirective)(scope));
+        }
+
+        function getRecordEditorState(scope) {
+            return (scope.options && scope.options.recordEditor) ? scope.options.recordEditor.state : null;
+        }
+        function getRecordEditor(scope) {
+            return (scope.options && scope.options.recordEditor) ? scope.options.recordEditor : null;
+        }
+
+        // <-----------------Private methods
+
+        return {
+            restrict: 'E,A',
+            templateUrl: 'src/components/ep.record.editor/editors/ep-editor-control.html',
+            replace: true,
+            link: function(scope, element) {
+                scope.state = {
+                    iElement: element
+                };
+
+                scope.$watch('column', function(newValue) {
+                    if (newValue !== undefined) {
+                        createContext(scope);
+                    }
+                });
+            },
+            scope: {
+                column: '=',
+                value: '=',
+                options: '='
+            }
+        };
+    }
+}());
+
+
 /**
 * @ngdoc directive
 * @name ep.record.editor.directive:epImageEditor
@@ -11427,6 +11762,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             templateUrl: 'src/components/ep.record.editor/editors/ep-image-editor.html',
             scope: {
                 'ctx': '=',
+                'value': '=',
                 'options': '='
             }
         };
@@ -11439,6 +11775,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 * @restrict E
 *
 * @description
+* @description
+* Multiline editor used by ep-record-editor or ep-editor-control
 */
 (function() {
     'use strict';
@@ -11454,6 +11792,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             templateUrl: 'src/components/ep.record.editor/editors/ep-multiline-editor.html',
             scope: {
                 'ctx': '=',
+                'value': '=',
                 'options': '='
             },
             compile: function() {
@@ -11476,6 +11815,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 * @restrict E
 *
 * @description
+* @description
+* Number editor used by ep-record-editor or ep-editor-control
 */
 (function() {
     'use strict';
@@ -11491,6 +11832,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             templateUrl: 'src/components/ep.record.editor/editors/ep-number-editor.html',
             scope: {
                 'ctx': '=',
+                'value': '=',
                 'options': '='
             },
             compile: function() {
@@ -11554,6 +11896,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 * @restrict E
 *
 * @description
+* @description
+* Select editor used by ep-record-editor or ep-editor-control
 */
 (function() {
     'use strict';
@@ -11569,28 +11913,27 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             templateUrl: 'src/components/ep.record.editor/editors/ep-select-editor.html',
             scope: {
                 'ctx': '=',
+                'value': '=',
                 'options': '='
             },
             compile: function() {
                 return {
                     pre: function($scope) {
                         var ctx = $scope.ctx;
-                        var col = ctx.col;
-
                         if (ctx.col.list) {
                             ctx.options = angular.extend([], ctx.col.list);
                             angular.forEach(ctx.options, function(item) {
                                 item.getIsSelected = function() {
-                                    return item.value === ctx.fnGetCurrentValue();
+                                    return item.value === $scope.value;
                                 };
                             });
                         }
 
                         // add an 'empty' value for fields that are not required.
-                        if (!col.bRequired && !_.find(ctx.options, function(o) { return !o.value; })) {
+                        if (!ctx.required && !_.find(ctx.options, function(o) { return !o.value; })) {
                             ctx.options.unshift({
                                 label: '', value: null, getIsSelected: function() {
-                                    return !ctx.fnGetCurrentValue();
+                                    return !$scope.value;
                                 }
                             });
                         }
@@ -11607,6 +11950,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 * @restrict E
 *
 * @description
+* @description
+* Text editor used by ep-record-editor or ep-editor-control
 */
 (function() {
     'use strict';
@@ -11622,6 +11967,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             templateUrl: 'src/components/ep.record.editor/editors/ep-text-editor.html',
             scope: {
                 'ctx': '=',
+                'value': '=',
                 'options': '='
             }
         };
@@ -11687,7 +12033,6 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             factory: null,          //after directive initialization will expose factory to this control
             flagInvalid: false      //flag controls when invalid (changes border color)
             isDataArray: true       //data in activeRecors is an array (default). Otherwise a collection
-            fnOnChange()            //called when edit is started
         };
 
 
@@ -11720,52 +12065,32 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             type {string} - 'btn' - if button, otherwise a link
         # imageHeight {int} - image height for image editor
         # imageWidth {int} - image width for image editor
-        # fnOnFldValidate(ctx, event, originalValue, inputValue) - callback function on validation
+        # fnOnFldValidate(ctx, event, inputValue, originalValue) - callback function on validation
+        # fnOnChange(ctx, event) - callback function on change
+        # fnOnBlur(ctx, event) - callback function on change
 
     *
     * @example
     */
-    epRecordEditorDirective.$inject = ['$timeout', 'appPackageService', '$rootScope', '$compile', '$templateCache', '$window', 'epShellConstants', 'epUtilsService', 'epFeatureDetectionService', 'epRecordEditorFactory'];
+    epRecordEditorDirective.$inject = ['$timeout', '$q', 'epRecordEditorFactory'];
     angular.module('ep.record.editor').
         directive('epRecordEditor', epRecordEditorDirective);
 
     /*@ngInject*/
-    function epRecordEditorDirective($timeout, appPackageService, $rootScope, $compile, $templateCache, $window,
-        epShellConstants, epUtilsService, epFeatureDetectionService, epRecordEditorFactory) {
+    function epRecordEditorDirective($timeout, $q, epRecordEditorFactory) {
         // Private methods ------------------>
-
-        editorController.$inject = ['$scope'];
-        var uniqueID = {
-            counter: 0,
-            get: function(prefix) {
-                if (!prefix) {
-                    prefix = 'uniqueId';
-                }
-                return prefix + '_' + uniqueID.counter++;
-            }
-        };
-
-        var defaultSizeClass = 'col-xs-12 col-sm-8 col-md-6 col-lg-3';
-
-        var defaultFormat = {
-            FieldType: 0,
-            MaxLength: 30
-        };
 
         function getNewState() {
             var state = {
                 scope: null,
                 linkElement: null,
                 formElement: null,
-                editorContexts: null,
+                controls: null,
                 activeRecord: undefined,
                 rowData: {},
-                smartCtrlLayout: true,
                 isReadOnly: false,
-                initializeWithoutRecord: false,
                 boundEvents: {},
                 lastInputs: {},
-                showAllInvalidFields: false,
                 isDataArray: false
             };
             return state;
@@ -11785,16 +12110,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
         function selectFirstInvalidControl(scope) {
             //TODO: This selects the first input element, even if there's a select element before it
-
-            if (scope.state.editorContexts) {
-                var ctxFirst = _.find(scope.state.editorContexts, function(ctx) {
+            if (scope.state.controls) {
+                var ctx;
+                var ctrlFirst = _.find(scope.state.controls, function(ctrl) {
+                    ctx = ctrl.getControlCtx();
                     return (ctx.isInvalid);
                 });
-                if (ctxFirst) {
-                    var edt = ctxFirst.fnGetEditorElement();
-                    if (edt) {
-                        edt.focus();
-                    }
+                if (ctrlFirst) {
+                    ctx.fnSetFocus();
                 }
             }
         }
@@ -11808,8 +12131,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             return false;
         }
 
-        function doValidation(ctx, ev, focus) {
-            var state = ctx.state;
+        function doValidation(state, ctx, ev, focus) {
             var dc = ctx.columnIndex;
             if (state.activeRecord[dc] !== undefined) {
                 var originalValue = state.rowData[dc];
@@ -11824,24 +12146,15 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 } //prevent calling if last input was same
                 state.lastInputs[dc] = inputValue;
                 if (compareValues(originalValue, inputValue)) {
-                    var targetEl = angular.element(ctx.fnGetEditorElement());
                     ctx.isInvalid = false;
-                    var validate = ctx.col.fnOnFldValidate(ctx, ev, originalValue, inputValue);
-                    if (validate && validate.then) {
-                        validate.then(function(result) {
-                            if (result === false) {
-                                ctx.isInvalid = true;
-                            }
-                            if (focus) {
-                                targetEl.focus();
-                            }
-                        });
-                    } else if (validate === false) {
-                        ctx.isInvalid = true;
-                    }
-                    if (focus) {
-                        targetEl.focus();
-                    }
+                    $q.when(ctx.col.fnOnFldValidate(ctx, ev, inputValue, originalValue)).then(function(result) {
+                        if (result === false) {
+                            ctx.isInvalid = true;
+                        }
+                        if (focus) {
+                            ctx.fnSetFocus();
+                        }
+                    });
                 }
             }
         }
@@ -11850,7 +12163,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             if (scope.options === undefined) {
                 return;
             }
-            if (scope.state.editorContexts !== null && !bForceRedraw) {
+            if (scope.state.controls !== null && !bForceRedraw) {
                 return; //unless force redraw, we should not recreate
             }
 
@@ -11867,248 +12180,43 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             }
         }
 
-        /*@ngInject*/
-        function editorController($scope) {
-            //Must have inject or this will fail on minification!
-            //For each editor set the container and find editor
-            var ctx = $scope.userData;
-            ctx.editorContainer = $scope.state.iElement;
-        };
-
         function createContext(scope) {
-            //creates editor context based on metadata
-            //state must contain following:
-            //  - scope
-            //  - activeRecord
-            var editorsContext = {};
+            //to pass as options to control editors
+            scope.state.options = {
+                recordEditor: {
+                    state: scope.state,
+                    doValidation: doValidation
+                }
+            };
+
+            var controls = {};
             var iIndex = -1;
-            _.each(_.filter(scope.state.columns, function(c) { return (c.columnIndex >= 0 || c.columnIndex); }), function(col) {
-                col.oFormat = col.oFormat || defaultFormat;
+            _.each(_.filter(scope.state.columns,
+                function(c) { return (c.columnIndex >= 0 || c.columnIndex); }),
+                function(col) {
 
                 iIndex++;
-                var iVisibleIndex;
-                if (!col.seq && col.seq !== 0) {
-                    if (col.columnIndex && !angular.isString(col.columnIndex)) {
-                        iVisibleIndex = col.columnIndex;
-                    }
-                } else {
+                var iVisibleIndex = iIndex;
+                if (col.seq || col.seq === 0) {
                     iVisibleIndex = col.seq;
-                }
-                if (iVisibleIndex === undefined) {
-                    iVisibleIndex = iIndex;
+                } else if (col.columnIndex && !angular.isString(col.columnIndex)) {
+                    iVisibleIndex = col.columnIndex;
                 }
 
-                var name = col.name || col.columnIndex.toString();
                 var editor = (col.editor || 'text').trim().toLowerCase();
-                var ctx = {
-                    state: scope.state,
+                var ctrl = {
                     col: col,
                     editor: editor,
                     visibleIndex: ('000' + iVisibleIndex).substr(-3, 3), // <- so that it's sortable as a string
                     columnIndex: col.columnIndex,
-                    name: uniqueID.get(editor + '_' + name),
-                    required: col.required || (editor === 'number' && !col.nullable), //all number's except Nullable are required
-                    requiredFlag: col.requiredFlag,  //to display the required flag
-                    bizType: col.bizType,
-                    label: col.caption || '',
-                    maxlength: col.oFormat.MaxLength,
-                    justification: col.justification,
-                    hidden: col.hidden,
-                    updatable: col.updatable,
-                    disabled: !col.updatable,
-                    nullable: col.nullable,
-                    displayInvalid: scope.options.flagInvalid || true,
-                    buttons: col.buttons || [],
-                    imageWidth: (col.imageWidth ? col.imageWidth : 0),
-                    imageHeight: (col.imageHeight ? col.imageHeight : 0),
-                    isInvalid: false,
-                    placeholder: col.placeholder,
-                    checkBoxSize: col.checkBoxSize
+                    options: scope.state.options
                 };
-
-                //TO DO - validate buttons pre/post seq etc
-
-                if (ctx.editor !== 'custom') {
-                    ctx.editorDirective = '<ep-' + ctx.editor + '-editor ctx=userData />';
-                } else {
-                    ctx.editorDirective = '<' + col.editorDirective + ' ctx=userData />';
-                }
-
-                ctx.fnSetSizeClass = function(sizeClass) {
-                    ctx.sizeClass = col.sizeClass || sizeClass || scope.sizeClass || defaultSizeClass;
+                ctrl.getControlCtx = function() {
+                    return ctrl.controlCtx;
                 };
-                ctx.fnSetSizeClass();
-
-                ctx.fnGetCurrentValue = function() {
-                    return ctx.state.activeRecord ? ctx.state.activeRecord[ctx.columnIndex] : null;
-                };
-
-                ctx.fnSetCurrentValue = function(val, focus) {
-                    var edt = ctx.fnGetEditorElement();
-                    if (ctx.state.activeRecord) {
-                        if (val !== undefined) {
-                            var isChanged = (ctx.state.activeRecord[ctx.columnIndex] !== val);
-                            if (isChanged) {
-                                ctx.state.activeRecord[ctx.columnIndex] = val;
-                                //because we set value programatically, set dirty
-
-                                if (edt) {
-                                    angular.element(edt).addClass('ng-dirty');
-                                }
-                                if (ctx.updatable) {
-                                    doValidation(ctx, {}, true);
-                                }
-                                ctx.fnOnChange({}, ctx);
-                            }
-                        }
-                    }
-                    if (focus) {
-                        if (edt) {
-                            edt.focus();
-                        }
-                    }
-                };
-
-                ctx.fnGetEditorElement = function() {
-                    var editor = null;
-                    if (ctx.editorContainer) {
-                        editor = angular.element(ctx.editorContainer).find('.form-control.editor');
-                    }
-                    return editor;
-                };
-
-                ctx.fnOnChange = function($event) {
-                    if (scope.options.fnOnChange) {
-                        scope.options.fnOnChange($event, ctx);
-                    }
-                };
-
-                ctx.fnBlur = function onBlur(ev) {
-                    ctx.state.lastFocused = { Col: ctx.col, Ctx: ctx, Event: ev };
-                    if (ctx.updatable) {
-                        if (angular.element(ev.currentTarget).hasClass('ng-dirty')) {
-                            doValidation(ctx, {}, true);
-                        }
-                    }
-                    return true;
-                };
-
-                //This function checks invalid status from angular and fiel;d validation to highlight invalid
-                ctx.fnDoValidations = function() {
-                    ctx.invalidFlag = false;
-                    if (ctx.displayInvalid && ctx.editorContainer) {
-                        var editor = angular.element(ctx.editorContainer).find('.form-control.editor');
-                        if (editor.length) {
-                            //TO DO: check in angular if we can remove the 'ng-invalid-remove'/'ng-dirty-add' check
-                            var isInvalid = ctx.isInvalid || ((editor.hasClass('ng-invalid') &&
-                                !editor.hasClass('ng-invalid-remove')) || editor.hasClass('ng-valid-remove'));
-                            var isDirty = (editor.hasClass('ng-dirty') || editor.hasClass('ng-dirty-add') ||
-                                ctx.state.showAllInvalidFields);
-                            ctx.invalidFlag = (isInvalid && isDirty);
-                        } else if (ctx.toggleValue) {
-                            //special checkbox case:
-                            ctx.invalidFlag = ctx.isInvalid;
-                        }
-                    }
-                    return false;
-                };
-
-                if (ctx.col.fnOnFldValidate) {
-                    ctx.fnOnChange = function($event) {
-                        doValidation(ctx, $event);
-                    };
-                }
-
-                //Configure BizType buttons
-                if (ctx.bizType && (ctx.bizType === 'phone' || ctx.bizType === 'address' ||
-                    ctx.bizType === 'email' || ctx.bizType === 'url')) {
-                    var btnHref = '';
-                    var btnStyle = '';
-                    var btnType = 'href-input';
-
-                    switch (ctx.bizType) {
-                        case 'address':
-                            btnHref = 'http://maps.google.com/maps?q={0}';
-                            btnStyle = 'fa fa-map-marker';
-                            break;
-
-                        case 'phone':
-                            btnHref = 'tel:{0}';
-                            btnStyle = 'fa fa-phone';
-                            break;
-
-                        case 'email':
-                            btnHref = 'mailto:{0}';
-                            btnStyle = 'fa fa-envelope';
-                            break;
-
-                        case 'url':
-                            btnHref = '';
-                            btnStyle = 'fa fa-globe';
-                            btnType = 'href-func';
-                            ctx.fnGetHref = function() {
-                                var v = ctx.fnGetCurrentValue();
-                                if (col.stringFormat) {
-                                    // example stringFormat = 'http://somewhere.com/{0}';
-                                    v = epUtilsService.strFormat(col.stringFormat, v);
-                                }
-                                if (v) {
-                                    //if string does not start with 'http' or 'https' then append
-                                    var v1 = v.trim().toLowerCase();
-                                    if (v1.substr(0, 4) !== 'http') {
-                                        v = 'http://' + v;
-                                    }
-                                }
-                                return v;
-                            };
-                            break;
-                    }
-                    if (btnStyle) {
-                        ctx.buttons.push({
-                            type: btnType,
-                            text: '',
-                            href: btnHref,
-                            style: btnStyle,
-                            seq: 2,
-                            position: 'pre',
-                        });
-                    }
-                }
-
-                if (ctx.buttons.length) {
-                    ctx.fnBtnClick = function(btn) {
-                        if (btn.type === 'btn') {
-                            btn.action(ctx);
-                        } else {
-                            var v = ctx.fnGetCurrentValue();
-                            if (v) {
-                                var url = '';
-                                switch (btn.type) {
-                                    case 'href':
-                                        url = btn.href;
-                                        break;
-                                    case 'href-input':
-                                        url = epUtilsService.strFormat(btn.href,
-                                            ctx.state.activeRecord[ctx.columnIndex]);
-                                        break;
-                                    case 'href-func':
-                                        url = ctx.fnGetHref();
-                                        break;
-                                }
-                                if (btn.type === 'href') {
-                                    $window.open(url, '_blank');
-                                } else {
-                                    $window.open(url);
-                                }
-                            }
-                        }
-                    };
-                }
-                editorsContext[col.columnIndex] = ctx;
+                controls[col.columnIndex] = ctrl;
             });
-            scope.state.editorController = editorController;
-
-            scope.state.editorContexts = editorsContext;
+            scope.state.controls = controls;
         }
 
         function checkRecordType(scope) {
@@ -12194,9 +12302,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
                 scope.$watch('sizeClass', function(newValue, oldValue) {
                     if (newValue !== oldValue) {
-                        if (scope.state.editorContexts) {
-                            angular.forEach(scope.state.editorContexts, function(ctx) {
-                                ctx.fnSetSizeClass();
+                        if (scope.state.controls) {
+                            angular.forEach(scope.state.controls, function(ctrl) {
+                                var ctx = ctrl.getControlCtx();
+                                ctx.fnSetSizeClass(newValue);
                             });
                         }
                     }
@@ -12215,7 +12324,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     '$destroy',
                     function() {
                         //clean up events and buffers
-                        scope.state.editorContexts = null;
+                        scope.state.controls = null;
                         _.each(scope.state.boundEvents, function(unbind) {
                             unbind();
                         });
@@ -12231,8 +12340,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
                 scope.setReadOnly = function() {
                     //set readonly attribute to all updatable controls
-                    if (scope.state.editorContexts) {
-                        _.each(scope.state.editorContexts, function(ctx) {
+                    if (scope.state.controls) {
+                        _.each(scope.state.controls, function(ctrl) {
+                            var ctx = ctrl.getControlCtx();
                             if (ctx.updatable) {
                                 ctx.readonly = scope.state.isReadOnly;
                             }
@@ -12261,7 +12371,6 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 }
 
                 scope.compareValues = compareValues;
-
             },
             scope: {
                 options: '=',
@@ -12377,8 +12486,9 @@ angular.module('ep.record.editor').
              * Clear all values
             */
             function clearEditors() {
-                if (scope.state.editorContexts) {
-                    _.each(scope.state.editorContexts, function(ctx) {
+                if (scope.state.controls) {
+                    _.each(scope.state.controls, function(ctrl) {
+                        var ctx = ctrl.getControlCtx();
                         var emptyVal = '';
                         if (ctx.editor === 'number') {
                             emptyVal = 0;
@@ -12405,8 +12515,9 @@ angular.module('ep.record.editor').
                 scope.state.lastInputs = {};
                 scope.state.showAllInvalidFields = false;
 
-                if (scope.state.editorContexts) {
-                    angular.forEach(scope.state.editorContexts, function(ctx) {
+                if (scope.state.controls) {
+                    angular.forEach(scope.state.controls, function(ctrl) {
+                        var ctx = ctrl.getControlCtx();
                         ctx.isInvalid = false;
                     });
                 }
@@ -12505,7 +12616,7 @@ angular.module('ep.record.editor').
                     invalidFieldValidation: false
                 };
 
-                if (scope.state.editorContexts) {
+                if (scope.state.controls) {
                     scope.state.linkElement.find('.form-control.editor').each(function() {
                         var editor = $(this);
                         if (editor.length) {
@@ -12518,7 +12629,8 @@ angular.module('ep.record.editor').
                         }
                     });
 
-                    var epInvalid = _.find(scope.state.editorContexts, function(ctx) {
+                    var epInvalid = _.find(scope.state.controls, function(ctrl) {
+                        var ctx = ctrl.getControlCtx();
                         return ctx.isInvalid;
                     });
                     if (epInvalid) {
@@ -12573,34 +12685,27 @@ angular.module('ep.record.editor').
              * @param {object} column - column name or column index
             */
             function getColumnContext(column) {
-                if (column === null || !scope.options.columns) { return null; }
-                if (!scope.state.editorContexts) {
-                    //in case if editors context has not been initialized, force initialization
-                    if (scope.options.record === undefined) {
-                        scope.state.activeRecord = null;
-                        scope.record = null;
-                    }
-                    scope.doDraw(scope, true);
-                }
-                if (!scope.state.editorContexts) {
+                if (column === null || !scope.options.columns)
+                {
                     return null;
                 }
-
-                var ret = null;
+                var ctrl = null;
                 if (typeof column !== 'string') {
                     //assume that this is columnIndex
-                    ret = _.find(scope.state.editorContexts, function(ctx) {
+                    ctrl = _.find(scope.state.controls, function(ctrl) {
+                        var ctx = ctrl.getControlCtx();
                         return (ctx.col && ctx.columnIndex === column);
                     });
                 } else {
-                    ret = _.find(scope.state.editorContexts, function(ctx) {
+                    ctrl = _.find(scope.state.controls, function(ctrl) {
+                        var ctx = ctrl.getControlCtx();
                         return (ctx.col && ctx.name === column);
                     });
                 }
-                if (ret) {
-                    return scope.state.editorContexts[ret.col.columnIndex];
+                if (ctrl) {
+                    return ctrl.getControlCtx();
                 }
-                return ret;
+                return null;
             }
 
             return {
@@ -15198,7 +15303,7 @@ angular.module('ep.shell').service('epSidebarService', [
              setLeftTemplateUrl: setLeftTemplateUrl,
              setRightTemplateUrl: setRightTemplateUrl,
              setLeftTemplate: setLeftTemplate,
-             setRightTemplate: setRightTemplate,
+             setRightTemplate: setRightTemplate
          };
      }
 ]);
@@ -15219,7 +15324,7 @@ angular.module('ep.shell').service('epSidebarService', [
         ['$log', '$parse', '$rootScope', '$timeout', 'epShellService', 'epSidebarService', 'epViewContainerService', 'epShellConstants', function($log, $parse, $rootScope, $timeout, epShellService, epSidebarService,
             epViewContainerService, epShellConstants) {
 
-            function setSidebarSettings(sidebar, scope, updateIfChanged) {
+            function setSidebarSettings(sidebar, updateIfChanged) {
                 if (sidebar.left) {
                     if (sidebar.left.template) {
                         epSidebarService.setLeftTemplate(sidebar.left.template, updateIfChanged);
@@ -15293,7 +15398,7 @@ angular.module('ep.shell').service('epSidebarService', [
                                 epShellService.__setCurrentModeFlags();
                             }
                             if (viewSettings.sidebar) {
-                                setSidebarSettings(viewSettings.sidebar, $scope);
+                                setSidebarSettings(viewSettings.sidebar, false);
                             }
 
                             if (epViewContainerService.state.cleanup) {
@@ -15307,7 +15412,7 @@ angular.module('ep.shell').service('epSidebarService', [
                                             epShellService.__setCurrentModeFlags();
                                         }
                                         if (viewSettings.sidebar) {
-                                            setSidebarSettings(viewSettings.sidebar, $scope, true);
+                                            setSidebarSettings(viewSettings.sidebar, true);
                                         }
                                         $timeout(function() {
                                             $scope.$apply();
@@ -15492,16 +15597,16 @@ angular.module('ep.signature').directive('epSignature',
 
         function drawText(ctx, text, x, y) {
             if (text) {
+                ctx.strokeText(text, x, y);
                 ctx.fillText(text, x, y);
             }
         }
 
         // Adds the text ($scope.ulText, $scope.llText, etc) to the corners of the canvas
-        function stampText($scope) {
-            var canvas = $('canvas');
-            var ctx = canvas[0].getContext('2d');
-            var canvasHeight = canvas.attr('height');
-            var canvasWidth = canvas.attr('width');
+        function stampText($scope, $canvas) {
+            var ctx = $canvas[0].getContext('2d');
+            var canvasHeight = $canvas.attr('height');
+            var canvasWidth = $canvas.attr('width');
             ctx.shadowColor = '';
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 0;
@@ -15528,9 +15633,10 @@ angular.module('ep.signature').directive('epSignature',
             drawText(ctx, lrTxt, lrx, lry);
         }
 
-        function resizeCanvasToDataUrl($canvas, width, height) {
+        function resizeCanvasToDataUrl($scope, $canvas) {
             var deferred = $q.defer();
-
+            var width = $scope.imageSizeWidth;
+            var height = $scope.imageSizeHeight;
             var workingImg = new Image();
             workingImg.onload = function() {
                 var workingCanvas = $document[0].createElement('canvas');
@@ -15540,6 +15646,7 @@ angular.module('ep.signature').directive('epSignature',
                 workingCtx.fillStyle = '#fff';
                 workingCtx.fillRect(0, 0, width, height);
                 workingCtx.drawImage(workingImg, 0, 0, width, height);
+                stampText($scope, $(workingCanvas));
                 deferred.resolve(workingCanvas.toDataURL('image/jpeg', 1.0));
             };
             workingImg.onerror = function(err) {
@@ -15582,7 +15689,7 @@ angular.module('ep.signature').directive('epSignature',
                     $scope.isEnabled = false;
                     $scope.drawText = true;
                     $timeout(function() {
-                        stampText($scope);
+
                         var $canvas = $('canvas.jSignature');
                         var canvas = $canvas[0];
                         if ($scope.imageSizeWidth || $scope.imageSizeHeight) {
@@ -15599,11 +15706,12 @@ angular.module('ep.signature').directive('epSignature',
                             } else if ($scope.imageSizeHeight && !$scope.imageSizeWidth) {
                                 $scope.imageSizeWidth = Math.floor($scope.imageSizeHeight * currentAspect);
                             }
-                            resizeCanvasToDataUrl($canvas, $scope.imageSizeWidth, $scope.imageSizeHeight).then(
+                            resizeCanvasToDataUrl($scope, $canvas).then(
                                 function(dataUrl) {
                                     $scope.onAccept(dataUrl.replace('data:image/jpeg;base64,', ''));
                                 });
                         } else {
+                            stampText($scope, $canvas);
                             $scope.onAccept(canvas.toDataURL('image/jpeg', 1.0).replace('data:image/jpeg;base64,', ''));
                         }
 
@@ -16113,6 +16221,17 @@ angular.module('ep.signature').directive('epSignature',
             * @propertyOf ep.theme.object:epThemeConfig
             * @public
             * @description
+            * The path to theme override css files. The override for each theme has to be located
+            * in this fiolder and have name <original theme file name>_custom.css
+            */
+            customPath: '',
+
+            /**
+            * @ngdoc property
+            * @name themes
+            * @propertyOf ep.theme.object:epThemeConfig
+            * @public
+            * @description
             * Represents the collection of available themes
             */
             themes: [
@@ -16179,7 +16298,7 @@ angular.module('ep.signature').directive('epSignature',
                 angular.forEach(config.appendThemes, function(th) {
                     var old = _.find(config.themes, function(t) { return t.name === th.name; });
                     if (old) {
-                        old.cssFilename = th.cssFilename;
+                        old.cssFilename = th.cssFilename || old.cssFilename;
                     } else {
                         config.themes.push(th);
                     }
@@ -16208,14 +16327,27 @@ angular.module('ep.signature').directive('epSignature',
     'epThemeService',
     'epThemeConstants',
     function($log, $rootScope, epThemeService, epThemeConstants) {
-        function setHref(attr) {
+        function setHref(attr, element) {
+            var href = '';
+            var th;
             if (epThemeService.disableTheming() !== true) {
-                var th = epThemeService.theme();
-                if (th && (attr.href !== th.cssPath)) {
-                    attr.$set('href', th.cssPath);
+                th = epThemeService.theme();
+                if (th) {
+                    href = th.cssPath;
                 }
-            } else {
-                attr.$set('href', '');
+            }
+            if (attr.href !== href) {
+                attr.$set('href', href);
+                angular.element('#epThemeCustomHref').remove();
+                if (th) {
+                    var hrefCustom = epThemeService.getCustomThemeCss(th);
+                    if (hrefCustom) {
+                        var customEl =
+                            angular.element('<link id="epThemeCustomHref" rel="stylesheet" type="text/css" href="' +
+                            hrefCustom + '" />');
+                        customEl.insertAfter(element);
+                    }
+                }
             }
         }
         return {
@@ -16224,13 +16356,13 @@ angular.module('ep.signature').directive('epSignature',
             link: function(scope, element, attr) {
                 if (element[0].tagName === 'LINK') {
                     epThemeService.initialize(false).then(function() {
-                        setHref(attr);
+                        setHref(attr, element);
                     });
                     $rootScope.$on(epThemeConstants.THEME_CHANGE_EVENT, function() {
-                        setHref(attr);
+                        setHref(attr, element);
                     });
                     $rootScope.$on(epThemeConstants.STATE_CHANGE_EVENT, function() {
-                        setHref(attr);
+                        setHref(attr, element);
                     });
                 } else {
                     $log.warn('ep-theme-href can only be used on an <link> tag');
@@ -16447,6 +16579,28 @@ angular.module('ep.signature').directive('epSignature',
 
         /**
         * @ngdoc method
+        * @name theme
+        * @methodOf ep.theme.service:epThemeService
+        * @public
+        * @param {object} theme - theme item or theme name to set. Can be omiited to return current
+        * @description
+        * sets the theme by name. Upon change epThemeConstants.THEME_CHANGE_EVENT is broadcasted
+        * returns current theme
+        */
+        function getCustomThemeCss(theme) {
+            if (epThemeConfig.customPath) {
+                var key = angular.isObject(theme) ? theme.name : theme;
+                var th = getTheme(key);
+                if (th) {
+                    var customFile = th.cssFilename.replace('.css', '.custom.css');
+                    return getFilePath(epThemeConfig.customPath, customFile);
+                }
+            }
+            return '';
+        }
+
+        /**
+        * @ngdoc method
         * @name setItemsFullPath
         * @methodOf ep.theme.service:epThemeService
         * @private
@@ -16461,6 +16615,29 @@ angular.module('ep.signature').directive('epSignature',
 
         /**
         * @ngdoc method
+        * @name getFilePath
+        * @methodOf ep.theme.service:epThemeService
+        * @private
+        * @description
+        * Gets full path
+        */
+        function getFilePath(path, fileName) {
+            var ret = '';
+            var p = path;
+            if (p && fileName) {
+                p = p.trim();
+                if (p.lastIndexOf('/') === p.length - 1) {
+                    p = p.substr(0, p.length - 1);
+                }
+                ret = p + '/' + fileName;
+            } else {
+                ret = fileName;
+            }
+            return ret;
+        }
+
+        /**
+        * @ngdoc method
         * @name setItemFullPath
         * @methodOf ep.theme.service:epThemeService
         * @private
@@ -16468,16 +16645,7 @@ angular.module('ep.signature').directive('epSignature',
         * Sets full path to cssPath property to given item
         */
         function setItemFullPath(item) {
-            var p = epThemeConfig.defaultPath;
-            if (p && item.cssFilename) {
-                p = p.trim();
-                if (p.lastIndexOf('/') === p.length - 1) {
-                    p = p.substr(0, p.length - 1);
-                }
-                item.cssPath = p + '/' + item.cssFilename;
-            } else {
-                item.cssPath = item.cssFilename;
-            }
+            item.cssPath = getFilePath(epThemeConfig.defaultPath, item.cssFilename);
         }
 
         /**
@@ -16537,7 +16705,8 @@ angular.module('ep.signature').directive('epSignature',
             theme: theme,
             reset: reset,
             defaultTheme: defaultTheme,
-            disableTheming: disableTheming
+            disableTheming: disableTheming,
+            getCustomThemeCss: getCustomThemeCss
         };
     }]);
 })();
@@ -18776,22 +18945,27 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-checkbox-editor.html',
-    "<section class=\"ep-editor-checkbox ep-center-item editor\" tabindex=0 ng-keyup=handleKey($event) ng-click=ctx.toggleValue(ctx,$event) ng-hide=ctx.fnDoValidations()><span ng-class=\"{'fa-square-o': !ctx.state.activeRecord[ctx.columnIndex], 'fa-check-square-o': ctx.state.activeRecord[ctx.columnIndex]}\" class=\"fa fa-{{checkBoxSize}}\"></span></section>"
+    "<section class=\"ep-editor-checkbox ep-center-item editor\" tabindex=0 ng-keyup=handleKey($event) ng-click=ctx.toggleValue(ctx,$event) ng-hide=ctx.fnDoValidations()><span ng-class=\"{'fa-square-o': !value, 'fa-check-square-o': value}\" class=\"fa fa-{{ctx.checkBoxSize}}\"></span></section>"
   );
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-date-editor.html',
-    "<section><input id=dd_{{ctx.name}} ng-model=ctx.state.activeRecord[ctx.columnIndex] ep-date-convert=toDate ng-hide=\"true\"><div class=\"input-group date datepicker\" id=dp_{{ctx.name}} ng-if=!ctx.useDateInput><input size=16 ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor\" ng-hide=ctx.fnDoValidations() ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) pattern={{ctx.pattern}} ng-keydown=ctx.fnDateKeyDown($event) uib-datepicker-popup={{ctx.format}} datepicker-options111={{ctx.dateOptions}} placeholder={{ctx.format}} ng-pattern={{ctx.pattern}} is-open=\"ctx.dateOpened\"> <span class=input-group-addon ng-click=ctx.fnDateOpen($event) ng-style=\"{ 'cursor': ctx.disabled ? 'not-allowed' : 'pointer' }\"><a ng-if=!ctx.disabled><i class=\"fa fa-calendar\"></i></a> <i ng-if=ctx.disabled class=\"fa fa-calendar\"></i></span></div><div class=\"input-group date\" id=dp_{{ctx.name}} ng-if=\"ctx.useDateInput === true\"><input size=16 type=date ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor\" ng-hide=ctx.fnDoValidations(this) ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=\"ctx.fnBlur($event)\"></div></section>"
+    "<section><input id=dd_{{ctx.name}} ng-model=value ep-date-convert=toDate ng-hide=\"true\"><div class=\"input-group date datepicker\" id=dp_{{ctx.name}} ng-if=!ctx.useDateInput><input size=16 ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor\" ng-hide=ctx.fnDoValidations() ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) pattern={{ctx.pattern}} ng-keydown=ctx.fnDateKeyDown($event) uib-datepicker-popup={{ctx.format}} data-container=body datepicker-options111={{ctx.dateOptions}} placeholder={{ctx.format}} ng-pattern={{ctx.pattern}} is-open=\"ctx.dateOpened\"> <span class=input-group-addon ng-click=ctx.fnDateOpen($event) ng-style=\"{ 'cursor': ctx.disabled ? 'not-allowed' : 'pointer' }\"><a ng-if=!ctx.disabled><i class=\"fa fa-calendar\"></i></a> <i ng-if=ctx.disabled class=\"fa fa-calendar\"></i></span></div><div class=\"input-group date\" id=dp_{{ctx.name}} ng-if=\"ctx.useDateInput === true\"><input size=16 type=date ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor\" ng-hide=ctx.fnDoValidations(this) ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=\"ctx.fnBlur($event)\"></div></section>"
+  );
+
+
+  $templateCache.put('src/components/ep.record.editor/editors/ep-editor-control.html',
+    "<div class=\"ep-editor-control {{ctx.sizeClass}}\"><fieldset class=\"form-group ep-record-editor-container\" ng-class=\"{'has-error': ctx.invalidFlag}\" ng-hide=ctx.hidden><label class=ep-editor-label for={{ctx.name}}>{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label><section id=xtemplate></section></fieldset></div>"
   );
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-image-editor.html',
-    "<section><img alt={{ctx.label}} id={{ctx.name}} ng-src={{ctx.state.activeRecord[ctx.columnIndex]}} width={{ctx.imageWidth}} height=\"{{ctx.imageHeight}}\"></section>"
+    "<section><img alt={{ctx.label}} id={{ctx.name}} ng-src={{value}} width={{ctx.imageWidth}} height=\"{{ctx.imageHeight}}\"></section>"
   );
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-multiline-editor.html',
-    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span><textarea id={{ctx.name}} name={{ctx.name}} placeholder={{ctx.placeholder}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=ctx.state.activeRecord[ctx.columnIndex] ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-hide=ctx.fnDoValidations() maxlength={{ctx.maxlength}} ng-style=\"{'text-align': ctx.justification }\">\r" +
+    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span><textarea id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=value ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-hide=ctx.fnDoValidations() maxlength={{ctx.maxlength}} ng-style=\"{'text-align': ctx.justification }\">\r" +
     "\n" +
     "\r" +
     "\n" +
@@ -18810,22 +18984,22 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-number-editor.html',
-    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input id={{ctx.name}} ng-cloak name={{ctx.name}} type=number ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=ctx.state.activeRecord[ctx.columnIndex] ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-style=\"{ 'text-align': ctx.justification }\" maxlength={{ctx.maxlength}} min={{ctx.min}} max={{ctx.max}} ng-hide=ctx.fnDoValidations() pattern=\"{{ctx.pattern}}\"> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
+    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input id={{ctx.name}} ng-cloak name={{ctx.name}} type=number ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=value ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-style=\"{ 'text-align': ctx.justification }\" maxlength={{ctx.maxlength}} min={{ctx.min}} max={{ctx.max}} ng-hide=ctx.fnDoValidations() pattern=\"{{ctx.pattern}}\"> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
   );
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-select-editor.html',
-    "<section><select class=\"form-control editor\" id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) ng-hide=ctx.fnDoValidations() ng-model=ctx.state.activeRecord[ctx.columnIndex]><option ng-repeat=\"opt in ctx.options\" label={{opt.label}} value={{opt.value}} ng-selected=opt.getIsSelected()>{{opt.label}}</option></select></section>"
+    "<section><select class=\"form-control editor\" id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) ng-hide=ctx.fnDoValidations() ng-model=value><option ng-repeat=\"opt in ctx.options\" label={{opt.label}} value={{opt.value}} ng-selected=opt.getIsSelected()>{{opt.label}}</option></select></section>"
   );
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-text-editor.html',
-    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input id={{ctx.name}} ng-cloak name={{ctx.name}} type={{ctx.type}} placeholder={{ctx.placeholder}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=ctx.state.activeRecord[ctx.columnIndex] ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-hide=ctx.fnDoValidations() maxlength={{ctx.maxlength}} ng-style=\"{ 'text-align': ctx.justification }\"> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
+    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input id={{ctx.name}} ng-cloak name={{ctx.name}} type={{ctx.type}} placeholder={{ctx.placeholder}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=value ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-hide=ctx.fnDoValidations() maxlength={{ctx.maxlength}} ng-style=\"{ 'text-align': ctx.justification }\"> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
   );
 
 
   $templateCache.put('src/components/ep.record.editor/ep-record-editor.html',
-    "<div class=ep-record-editor><div ng-repeat=\"(key, ctx) in state.editorContexts | epOrderObjectBy:'visibleIndex'\" class=\"ep-record-editor-column {{ctx.sizeClass}}\"><fieldset class=\"form-group ep-record-editor-container\" ng-class=\"{'has-error': ctx.invalidFlag}\" ng-hide=ctx.hidden><label class=\"control-label ep-editor-label\" for={{ctx.name}}>{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label><ep-include user-data=ctx template=ctx.editorDirective template-ctrl=state.editorController></ep-include></fieldset></div></div>"
+    "<div class=ep-record-editor><div ng-repeat=\"(key, ctrl) in state.controls | epOrderObjectBy:'visibleIndex'\" class=ep-record-editor-column><ep-editor-control column=ctrl.col value=state.activeRecord[ctrl.columnIndex] options=ctrl.options></ep-editor-control></div></div>"
   );
 
 
