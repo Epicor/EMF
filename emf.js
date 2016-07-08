@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.46 built: 07-07-2016
+ * version:1.0.8-dev.47 built: 08-07-2016
 */
 (function() {
     'use strict';
@@ -7812,6 +7812,13 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      <file name="index.html">
 	     <div ng-controller="SampleCtrl">
             <div class="panel-body">
+                <div>
+                    <button type="button" class="btn btn-primary btn-block" ng-click="showMap()">Show Multiple Locations</button>
+                </div> &nbsp
+                <div>
+                    <input type="text" id="start" class="form-control" ng-keypress="addNeedClickClass()" value="" placeholder="Choose starting point" />
+                    <input type="text" id="end" class="form-control" ng-keypress="addNeedClickClass()" value="" placeholder="Choose destination" />
+                </div>
                 <div id="map"></div>
             </div>
 	      </div>
@@ -7820,6 +7827,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      	angular.module("TestApp", ["ep.hybrid.geolocation"])
      		.controller("SampleCtrl",["$scope", "epHybridGeolocationService",
                 function($scope, epHybridGeolocationService){
+
+                    //Specially this method need to be included while using autocomplete textboxes in ios devices
+                    $scope.addNeedClickClass = function () {
+                        $('.pac-container').bind('touchstart', function (event) {
+                        event.target.classList.add('needsclick');
+                        });
+                    };
+
                     epHybridGeolocationService.getGeolocation(
                         onSucess,
                         onError,
@@ -7842,6 +7857,19 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
                         //Get the from and to autocomplete inputs and show direction
                         epHybridGeolocationService.autocompleteAndAssociatedActions(map, start, end);
+
+                        //Adds multiple markers on map based on the given locations
+                        $scope.showMultipleLocations = function()
+                        {
+                            var locations = [
+                                ['Bondi Beach', -33.890542, 151.274856],
+                                ['Coogee Beach', -33.923036, 151.259052],
+                                ['Cronulla Beach', -34.028249, 151.157507],
+                                ['Manly Beach', -33.80010128657071, 151.28747820854187],
+                                ['Maroubra Beach', -33.950198, 151.259302]
+                            ];
+                            epHybridGeolocationService.addMultipleMarkers(locations, map);
+                        }
                 }
 
                 function onError(error) {
@@ -7946,6 +7974,53 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
         /**
          * @ngdoc method
+         * @name addMultipleMarkers
+         * @methodOf ep.hybrid.geolocation:epHybridGeolocationService
+         * @public
+         * @param {object} locations - Includes name, latitude and longitude of the multiple locations where the pins need to be placed
+         * @param {object} map - Map on which the markers need to be placed
+         * @description
+         * To show multiple markers/pins on map
+         */
+        function addMultipleMarkers(locations, map) {
+
+            var infowindow = new google.maps.InfoWindow({
+                maxWidth: 160
+            });
+
+            var markers = new Array();
+
+            // Add the markers and infowindows to the map
+            for (var i = 0; i < locations.length; i++) {
+                var marker = new google.maps.Marker({
+                    position: new google.maps.LatLng(locations[i][1], locations[i][2]),
+                    map: map
+                });
+                markers.push(marker);
+
+                google.maps.event.addListener(marker, 'click', (function(marker, i) {
+                    return function() {
+                        infowindow.setContent(locations[i][0]);
+                        infowindow.open(map, marker);
+                    }
+                })(marker, i));
+            }
+
+            function autoCenter() {
+                //  Create a new viewpoint bound
+                var bounds = new google.maps.LatLngBounds();
+                //  Go through each...
+                for (var i = 0; i < markers.length; i++) {
+                    bounds.extend(markers[i].position);
+                }
+                //  Fit these bounds to the map
+                map.fitBounds(bounds);
+            }
+            autoCenter();
+        }
+
+        /**
+         * @ngdoc method
          * @name calculateAndDisplayRoute
          * @methodOf ep.hybrid.geolocation:epHybridGeolocationService
          * @public
@@ -8039,6 +8114,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             getGeolocation: getGeolocation,
             showMap: showMap,
             addMarker: addMarker,
+            addMultipleMarkers: addMultipleMarkers,
             calculateAndDisplayRoute: calculateAndDisplayRoute,
             autocompleteAndAssociatedActions: autocompleteAndAssociatedActions
         };
