@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.49 built: 10-07-2016
+ * version:1.0.8-dev.50 built: 11-07-2016
 */
 (function() {
     'use strict';
@@ -7983,6 +7983,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * To show multiple markers/pins on map
          */
         function addMultipleMarkers(locations, map) {
+
+            if (!locations || locations.length == 0) {
+                return
+            }
 
             var infowindow = new google.maps.InfoWindow({
                 maxWidth: 160
