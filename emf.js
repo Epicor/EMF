@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.50 built: 11-07-2016
+ * version:1.0.8-dev.51 built: 11-07-2016
 */
 (function() {
     'use strict';
@@ -428,6 +428,7 @@ angular.module('ep.signature', [
     'use strict';
 
     angular.module('ep.token', [
+	    'ep.sysconfig',
         'ep.utils'
     ]);
 })();
@@ -18063,6 +18064,9 @@ function epTilesMenuFavoritesDirective() {
             var exp = getExpiresIn();
             if (exp) {
                 doSetTimeout(exp);
+            } else {
+                //remove token if it has expired
+                logout();
             }
         }
 
