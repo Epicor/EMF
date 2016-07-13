@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.52 built: 12-07-2016
+ * version:1.0.8-dev.53 built: 13-07-2016
 */
 (function() {
     'use strict';
@@ -6787,6 +6787,24 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * the data is stored in localStorage. The path parameter is optional, defaulting to the
          */
         function load(path, filename) {
+            return loadText(path, filename).then(function(text){
+                return angular.fromJson(text);
+            });
+        }
+
+        /**
+         * @ngdoc method
+         * @name load
+         * @methodOf ep.file:epFileService
+         * @public
+         * @param {string} path (optional) the device file system directory to use when loading the file (defaults to the application's data directory)
+         * @param {string} filename the name of the file to load
+         * @description
+         * Loads text from persistent storage. On cordova apps the file
+         * is loaded from the application's data directory by default. On browser based apps,
+         * the data is stored in localStorage. The path parameter is optional, defaulting to the
+         */
+        function loadText(path, filename){
             var graph;
             var deferred = $q.defer();
             var filePath;
@@ -6817,8 +6835,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             // to satisfy the Blob interface. When it is read, the function
                             // returns it as an array with one member.
                             reader.onloadend = function() {
-                                graph = this.result;
-                                deferred.resolve(JSON.parse(graph));
+                                deferred.resolve(this.result);
                             };
                             reader.readAsText(file);
                         }, failWith(deferred, filename));
@@ -6842,10 +6859,30 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * the data is stored in localStorage.
          */
         function save(graph, path, filename) {
+            return saveText(angular.toJson(graph), path, filename);
+        }
+
+        /**
+         * @ngdoc method
+         * @name save
+         * @methodOf ep.file:epFileService
+         * @public
+         * @param {string} text to save to the file system.
+         * @param {string} path (optional) the device file system directory to use when saving the file (defaults to the application's data directory)
+         * @param {string} filename the name of the file to load
+         * @param {string} type the mime type with which to save the file
+         * @description
+         * Saves text to persistent storage. On cordova apps the file
+         * is saved in the application's data directory by default. On browser based apps,
+         * the data is stored in localStorage.
+         */
+        function saveText(text, path, filename, type){
             var deferred = $q.defer();
             try {
                 var filePath = '';
-
+                if(!type){
+                    type = 'text/plain';
+                }
                 if (fileSystem === storageSystems.localStorage) {
                     if(!filename){
                         filename = path;
@@ -6875,7 +6912,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                                 };
                                 // the blob interface expects the object graph to be inside an array
                                 // so the graph gets stringified, then set as the only element in the array
-                                var blob = new Blob([JSON.stringify(graph)], {type: 'text/plain'});
+                                var blob = new Blob([text], {type: type});
                                 writer.write(blob);
 
                             }, failWith(deferred, filename));
@@ -6985,7 +7022,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
         return {
             load: load,
+            loadText: loadText,
             save: save,
+            saveText: saveText,
             getFilePath: getFilePath,
             fileExists: fileExists,
             remove: remove
@@ -13730,9 +13769,11 @@ angular.module('ep.record.editor').
        epFeatureDetectionService.registerMediaQuery(epShellConstants.MEDIA_SIZE_BREAKPOINT, function() {
          shellState.mediaMode = epShellConstants.MEDIA_MODE_LARGE;
          notifyStateChanged('setMediaMode');
+         toggleLeftSidebarBackdrop();
        }, function() {
          shellState.mediaMode = epShellConstants.MEDIA_MODE_SMALL;
          notifyStateChanged('setMediaMode');
+         toggleLeftSidebarBackdrop();
        });
 
        //Any time the size of the shell window changes fire an event to the views
@@ -14434,6 +14475,7 @@ angular.module('ep.record.editor').
      function toggleLeftSidebar() {
        shellState.showLeftSidebar = !shellState.showLeftSidebar;
        shellState.viewSettings[shellState.mediaMode].showLeftSidebar = shellState.showLeftSidebar;
+       toggleLeftSidebarBackdrop();
 
        notifySizeChanged(shellState.showLeftSidebar ? 'showLeftSidebar' : 'hideLeftSidebar');
      }
@@ -14467,6 +14509,7 @@ angular.module('ep.record.editor').
        if (shellState.showLeftSidebar) {
          shellState.showLeftSidebar = false;
          shellState.viewSettings[shellState.mediaMode].showLeftSidebar = false;
+         shellState.showViewContainerBackdrop = false;
 
          notifySizeChanged('hideLeftSidebar');
        }
@@ -14537,6 +14580,7 @@ angular.module('ep.record.editor').
      function toggleRightSidebar() {
        shellState.showRightSidebar = !shellState.showRightSidebar;
        shellState.viewSettings[shellState.mediaMode].showRightSidebar = shellState.showRightSidebar;
+       toggleRightSidebarBackdrop();
 
        notifySizeChanged(shellState.showRightSidebar ? 'showRightSidebar' : 'hideRightSidebar');
 
@@ -14561,6 +14605,44 @@ angular.module('ep.record.editor').
 
      /**
       * @ngdoc method
+      * @name toggleLeftSidebarBackdrop
+      * @methodOf ep.shell.service:epShellService
+      * @public
+      * @description
+      * Toggles backdrop on view container while toggling the left sidebar
+      */
+     function toggleLeftSidebarBackdrop() {
+         if (shellState.showLeftSidebar && getMediaMode() === epShellConstants.MEDIA_MODE_SMALL) {
+             hideRightSidebar();
+             shellState.showViewContainerBackdrop = true;
+         } else {
+             if (!shellState.showRightSidebar) {
+                 shellState.showViewContainerBackdrop = false;
+             }
+         }
+     }
+
+     /**
+      * @ngdoc method
+      * @name toggleRightSidebarBackdrop
+      * @methodOf ep.shell.service:epShellService
+      * @public
+      * @description
+      * Toggles backdrop on view container while toggling the right sidebar
+      */
+     function toggleRightSidebarBackdrop() {
+         if (shellState.showRightSidebar) {
+             if (getMediaMode() === epShellConstants.MEDIA_MODE_SMALL) {
+                 hideLeftSidebar();
+             }
+             shellState.showViewContainerBackdrop = true;
+         } else {
+             shellState.showViewContainerBackdrop = false;
+         }
+     }
+
+     /**
+      * @ngdoc method
       * @name hideRightSidebar
       * @methodOf ep.shell.service:epShellService
       * @public
@@ -14571,8 +14653,9 @@ angular.module('ep.record.editor').
        if (shellState.showRightSidebar) {
          shellState.showRightSidebar = false;
          shellState.viewSettings[shellState.mediaMode].showRightSidebar = false;
+         shellState.showViewContainerBackdrop = false;
 
-         notifyStateChanged('hideRightSidebar');
+         notifySizeChanged('hideRightSidebar');
        }
      }
 
@@ -15245,7 +15328,9 @@ angular.module('ep.record.editor').
        navbarButtonClicked: navbarButtonClicked,
        viewAnimation: viewAnimation,
        isHomeLocation: isHomeLocation,
-       goHome: goHome
+       goHome: goHome,
+       toggleLeftSidebarBackdrop: toggleRightSidebarBackdrop,
+       toggleRightSidebarBackdrop: toggleRightSidebarBackdrop
      };
    }]
   );
@@ -15303,7 +15388,7 @@ angular.module('ep.record.editor').
                     // this event is bound programmatically so that it doesn't
                     // participate in the ng-click lifecycle (which causes sporadic
                     // problems with click events on child elements)
-                    $('#viewPlaceholder').bind('click', dismissSidebars);
+                    $('#viewContainerBackdrop').bind('click', dismissSidebars);
                 }
 
                 $rootScope.$watch('initComplete', function(initComplete) {
@@ -19108,7 +19193,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/sidebar/sidebar.html',
-    "<div class=ep-shell-container ng-class=\"{ 'nav-padding': shellState.showNavbar, 'footer-padding': shellState.showFooter, 'ep-disable-left-sidebar': !shellState.enableLeftSidebar, 'ep-hide-left-sidebar': (!shellState.showLeftSidebar) || (!shellState.enableLeftSidebar), 'ep-hide-right-sidebar': (!shellState.showRightSidebar) || !(shellState.enableRightSidebar)}\"><!-- Left Sidebar --><div id=leftSidebar class=\"ep-sidebar-nav ep-sidebar-nav-left well ep-ease-animation\" ng-class=\"{'ep-with-navbar': shellState.showNavbar, 'ep-with-footer': shellState.showFooter, 'cordova-ios': platform.app==='Cordova' && platform.os=='mac'}\" ng-click=dismissRightSidebar()></div><div id=viewPlaceholder class=\"ep-view-placeholder ep-fullscreen\" ng-transclude><!--VIEW CONTENT HERE--></div><!-- Right Sidebar --><div ng-show=\"shellState.showRightSidebar && shellState.enableRightSidebar\" class=\"ep-sidebar-nav ep-sidebar-nav-right well ep-ease-animation\"></div></div>"
+    "<div class=ep-shell-container ng-class=\"{ 'nav-padding': shellState.showNavbar, 'footer-padding': shellState.showFooter, 'ep-disable-left-sidebar': !shellState.enableLeftSidebar, 'ep-hide-left-sidebar': (!shellState.showLeftSidebar) || (!shellState.enableLeftSidebar), 'ep-hide-right-sidebar': (!shellState.showRightSidebar) || !(shellState.enableRightSidebar)}\"><!-- Backdrop to disable view container when sidebars are on --><div id=viewContainerBackdrop ng-class=\"{'ep-view-container-backdrop': shellState.showViewContainerBackdrop}\"></div><!-- Left Sidebar --><div id=leftSidebar class=\"ep-sidebar-nav ep-sidebar-nav-left well ep-ease-animation\" ng-class=\"{'ep-with-navbar': shellState.showNavbar, 'ep-with-footer': shellState.showFooter, 'cordova-ios': platform.app==='Cordova' && platform.os=='mac'}\" ng-click=dismissRightSidebar()></div><div id=viewPlaceholder class=\"ep-view-placeholder ep-fullscreen\" ng-transclude><!--VIEW CONTENT HERE--></div><!-- Right Sidebar --><div ng-show=\"shellState.showRightSidebar && shellState.enableRightSidebar\" class=\"ep-sidebar-nav ep-sidebar-nav-right well ep-ease-animation\"></div></div>"
   );
 
 

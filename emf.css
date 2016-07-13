@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.52 built: 12-07-2016
+ * version:1.0.8-dev.53 built: 13-07-2016
 */
 .ep-relative {
   position: relative;
@@ -1785,6 +1785,15 @@ VIEW CONTAINER [ep-view-container]
   -webkit-transform: translate3d(0, 0, 0);
   transform: translate3d(0, 0, 0);
   width: 100%;
+}
+.ep-shell .ep-shell-container .ep-view-container-backdrop {
+  background-color: rgba(0, 0, 0, 0.3);
+  bottom: 0;
+  left: 0;
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 999;
 }
 
 
