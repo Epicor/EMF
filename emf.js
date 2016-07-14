@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.53 built: 13-07-2016
+ * version:1.0.8-dev.54 built: 14-07-2016
 */
 (function() {
     'use strict';
@@ -6870,7 +6870,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @param {string} text to save to the file system.
          * @param {string} path (optional) the device file system directory to use when saving the file (defaults to the application's data directory)
          * @param {string} filename the name of the file to load
-         * @param {string} type the mime type with which to save the file
+         * @param {string} type {optional} the mime type with which to save the file
          * @description
          * Saves text to persistent storage. On cordova apps the file
          * is saved in the application's data directory by default. On browser based apps,
@@ -6889,7 +6889,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         path = epFileConstants.namespace;
                     }
                     filePath = path + '.' + filename;
-                    epLocalStorageService.update(filePath, graph);
+                    epLocalStorageService.update(filePath, text);
                     $log.debug('Successfully saved ' + filePath + ' to LocalStorage.');
                     deferred.resolve();
                 } else {
@@ -8017,7 +8017,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @name addMultipleMarkers
          * @methodOf ep.hybrid.geolocation:epHybridGeolocationService
          * @public
-         * @param {object} locations - Includes name, latitude and longitude of the multiple locations where the pins need to be placed
+         * @param {object} locations - Includes list of location names where the pins need to be placed
          * @param {object} map - Map on which the markers need to be placed
          * @description
          * To show multiple markers/pins on map
@@ -8032,35 +8032,37 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 maxWidth: 160
             });
 
-            var markers = new Array();
+            var bounds = new google.maps.LatLngBounds();
+            var geocoder = new google.maps.Geocoder();
 
-            // Add the markers and infowindows to the map
-            for (var i = 0; i < locations.length; i++) {
-                var marker = new google.maps.Marker({
-                    position: new google.maps.LatLng(locations[i][1], locations[i][2]),
-                    map: map
-                });
-                markers.push(marker);
+            locations.forEach(function(location) {
+                geocoder.geocode({
+                    'address': location
+                }, function(results, status) {
+                    if (status == google.maps.GeocoderStatus.OK) {
+                        var marker = new google.maps.Marker({
+                            position: results[0].geometry.location,
+                            map: map
+                        });
 
-                google.maps.event.addListener(marker, 'click', (function(marker, i) {
-                    return function() {
-                        infowindow.setContent(locations[i][0]);
-                        infowindow.open(map, marker);
+                        google.maps.event.addListener(marker, 'click', (function(marker) {
+                            return function() {
+                                // because formatted_address does not conform with jscs rules - turn them off here
+                                // jscs:disable
+                                infowindow.setContent(results[0].formatted_address);
+                                // jscs:enable
+                                infowindow.open(map, marker);
+                            }
+                        })(marker));
+
+                        bounds.extend(results[0].geometry.location);
+                        //  Fit the bounds to map
+                        map.fitBounds(bounds);
+                    } else {
+                        alert('Geocode of ' + location + ' return ' + status);
                     }
-                })(marker, i));
-            }
-
-            function autoCenter() {
-                //  Create a new viewpoint bound
-                var bounds = new google.maps.LatLngBounds();
-                //  Go through each...
-                for (var i = 0; i < markers.length; i++) {
-                    bounds.extend(markers[i].position);
-                }
-                //  Fit these bounds to the map
-                map.fitBounds(bounds);
-            }
-            autoCenter();
+                });
+            });
         }
 
         /**
@@ -8119,39 +8121,43 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
             directionsDisplay.setMap(map);//Set Map
 
-            //Autocomplete and actions on Origin textbox
-            var origin = new google.maps.places.Autocomplete(originInput);
-            google.maps.event.addListener(origin, 'place_changed', function() {
-                var from = origin.getPlace();
-                // because palce_id does not conform with jscs rules - turn them off here
-                // jscs:disable
-                start = from.place_id;
-                // jscs:enable
+            if (originInput) {
+                //Autocomplete and actions on Origin textbox
+                var origin = new google.maps.places.Autocomplete(originInput);
+                google.maps.event.addListener(origin, 'place_changed', function() {
+                    var from = origin.getPlace();
+                    // because palce_id does not conform with jscs rules - turn them off here
+                    // jscs:disable
+                    start = from.place_id;
+                    // jscs:enable
 
-                $rootScope.$watch('start', function() {
-                    console.log('origin:' + start);
+                    $rootScope.$watch('start', function() {
+                        console.log('origin:' + start);
+                    });
+
+                    addMarker(from.geometry.location, map);
+                    calculateAndDisplayRoute(start, end);
                 });
+            }
 
-                addMarker(from.geometry.location, map);
-                calculateAndDisplayRoute(start, end);
-            });
+            if (destinationInput) {
+                //Autocomplete and actions on destination textbox
+                var destination = new google.maps.places.Autocomplete(destinationInput);
+                google.maps.event.addListener(destination, 'place_changed', function() {
+                    var to = destination.getPlace();
+                    // because palce_id does not conform with jscs rules - turn them off here
+                    // jscs:disable
+                    end = to.place_id;
+                    // jscs:enable
 
-            //Autocomplete and actions on destination textbox
-            var destination = new google.maps.places.Autocomplete(destinationInput);
-            google.maps.event.addListener(destination, 'place_changed', function() {
-                var to = destination.getPlace();
-                // because palce_id does not conform with jscs rules - turn them off here
-                // jscs:disable
-                end = to.place_id;
-                // jscs:enable
+                    $rootScope.$watch('end', function() {
+                        console.log('destination:' + end);
+                    });
 
-                $rootScope.$watch('end', function() {
-                    console.log('destination:' + end);
+                    addMarker(to.geometry.location, map);
+                    calculateAndDisplayRoute(start, end);
                 });
-
-                addMarker(to.geometry.location, map);
-                calculateAndDisplayRoute(start, end);
-            });
+            }
         }
 
         return {
