@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.54 built: 14-07-2016
+ * version:1.0.8-dev.55 built: 15-07-2016
 */
 (function() {
     'use strict';
@@ -7898,16 +7898,20 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         //Get the from and to autocomplete inputs and show direction
                         epHybridGeolocationService.autocompleteAndAssociatedActions(map, start, end);
 
-                        //Adds multiple markers on map based on the given locations
+                        //Adds multiple markers on map, based on the given locations
                         $scope.showMultipleLocations = function()
                         {
+
+                            //locations as list of Objects with name, latitude and longitude of the locations
                             var locations = [
                                 ['Bondi Beach', -33.890542, 151.274856],
                                 ['Coogee Beach', -33.923036, 151.259052],
-                                ['Cronulla Beach', -34.028249, 151.157507],
-                                ['Manly Beach', -33.80010128657071, 151.28747820854187],
-                                ['Maroubra Beach', -33.950198, 151.259302]
+                                ['Cronulla Beach', -34.028249, 151.157507]
                             ];
+
+                            //Or locations as a list of strings with names of locations
+                            //var locations = ['Bondi Beach', 'Coogee Beach',...];
+
                             epHybridGeolocationService.addMultipleMarkers(locations, map);
                         }
                 }
@@ -8017,7 +8021,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @name addMultipleMarkers
          * @methodOf ep.hybrid.geolocation:epHybridGeolocationService
          * @public
-         * @param {object} locations - Includes list of location names where the pins need to be placed
+         * @param {object} locations - Includes list of locations (Example: locations = ['Bondi Beach', ...] or locations = ['Bondi Beach', -33.890542, 151.274856], ...) where the pins need to be placed
          * @param {object} map - Map on which the markers need to be placed
          * @description
          * To show multiple markers/pins on map
@@ -8035,34 +8039,70 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             var bounds = new google.maps.LatLngBounds();
             var geocoder = new google.maps.Geocoder();
 
-            locations.forEach(function(location) {
-                geocoder.geocode({
-                    'address': location
-                }, function(results, status) {
-                    if (status == google.maps.GeocoderStatus.OK) {
-                        var marker = new google.maps.Marker({
-                            position: results[0].geometry.location,
-                            map: map
-                        });
+            if (angular.isString(locations[0])) {
+                // Add the markers on map for the list of locations containing names
+                locations.forEach(function(location) {
+                    geocoder.geocode({
+                        'address': location
+                    }, function(results, status) {
+                        if (status == google.maps.GeocoderStatus.OK) {
+                            var marker = new google.maps.Marker({
+                                position: results[0].geometry.location,
+                                map: map
+                            });
 
-                        google.maps.event.addListener(marker, 'click', (function(marker) {
-                            return function() {
-                                // because formatted_address does not conform with jscs rules - turn them off here
-                                // jscs:disable
-                                infowindow.setContent(results[0].formatted_address);
-                                // jscs:enable
-                                infowindow.open(map, marker);
-                            }
-                        })(marker));
+                            google.maps.event.addListener(marker, 'click', (function(marker) {
+                                return function() {
+                                    // because formatted_address does not conform with jscs rules - turn them off here
+                                    // jscs:disable
+                                    infowindow.setContent(results[0].formatted_address);
+                                    // jscs:enable
+                                    infowindow.open(map, marker);
+                                }
+                            })(marker));
 
-                        bounds.extend(results[0].geometry.location);
-                        //  Fit the bounds to map
-                        map.fitBounds(bounds);
-                    } else {
-                        alert('Geocode of ' + location + ' return ' + status);
-                    }
+                            bounds.extend(results[0].geometry.location);
+                            //  Fit the bounds to map
+                            map.fitBounds(bounds);
+                        } else {
+                            $log.debug('Geocode of ' + location + ' return ' + status);
+                        }
+                    });
                 });
-            });
+            }
+
+            if (angular.isObject(locations[0])) {
+                // Add the markers on map, for the list of locations containing names and respective latitude and longitude
+                for (var i = 0; i < locations.length; i++) {
+
+                    if (angular.isArray(locations[i])) {
+                        try {
+                            var latLng = new google.maps.LatLng(locations[i][1], locations[i][2]);
+
+                            var marker = new google.maps.Marker({
+                                position: latLng,
+                                map: map
+                            });
+
+                            google.maps.event.addListener(marker, 'click', (function(marker, i) {
+                                return function() {
+                                    infowindow.setContent(locations[i][0]);
+                                    infowindow.open(map, marker);
+                                }
+                            })(marker, i));
+
+                            bounds.extend(latLng);
+                            //  Fit the bounds to map
+                            map.fitBounds(bounds);
+                        }
+                        catch (e) {
+                            $log.error('Something went wrong. Please provide valid location addresses. Error: ' + e);
+                        }
+                    } else {
+                        $log.debug('Location address is not valid');
+                    }
+                }
+            }
         }
 
         /**
@@ -8509,7 +8549,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
 /**
  * @ngdoc service
- * @name ep.hybrid.barcode:epHybridVibrationService
+ * @name ep.hybrid.vibration:epHybridVibrationService
  * @description
  * Service for accessing Cordova vibration plugin. This will make the device vibrate for 3 seconds.
  *
@@ -13405,6 +13445,38 @@ angular.module('ep.record.editor').
                 $scope.toggleRightSidebar = function() {
                     epShellService.toggleRightSidebar();
                 };
+                //Swipe left 0-35% of the width of screen to pull left sidebar
+                $scope.showSwipeLeftSidebar = function() {
+                    var swipePosition = epShellService.executeLeftSidebar(event);
+                    var screenWidth = screen.width;
+                    var swipeXPosition = swipePosition.x;
+                    var screenLeftSwipePosition = (swipeXPosition / screenWidth) * 100;
+                    if (screenLeftSwipePosition <= 35) {
+                        if ($scope.state.enableLeftSidebar) {
+                            epShellService.toggleLeftSidebar();
+                        }
+                    }
+                };
+                //Swipe right 0-35% of the width of screen to pull right sidebar
+                $scope.showSwipeRightSidebar = function() {
+                    var swipePosition = epShellService.executeLeftSidebar(event);
+                    var screenWidth = screen.width;
+                    var swipeXPosition = swipePosition.x;
+                    var screenLeftSwipePosition = (swipeXPosition / screenWidth) * 100;
+                    if (screenLeftSwipePosition >= 65) {
+                        if ($scope.state.enableLeftSidebar) {
+                            epShellService.toggleRightSidebar();
+                        }
+                    }
+                };
+                //Close left sidebar on swipping right on left sidebar
+                $scope.closeLeftSidebar = function() {
+                    epShellService.hideLeftSidebar();
+                };
+                //Close right sidebar on swipping left on right sidebar
+                $scope.closeRightSidebar = function() {
+                    epShellService.hideRightSidebar();
+                };
                 if (epShellConfig.options.enableViewAnimations) {
                     epShellService.initViewBackground();
                 }
@@ -14563,6 +14635,28 @@ angular.module('ep.record.editor').
        }
      }
 
+        /**
+      * @ngdoc method
+      * @name executeLeftSidebar
+      * @methodOf ep.shell.service:epShellService
+      * @public
+      * @description
+      * get coordinates for the swipe event 
+      */
+     function executeLeftSidebar(event) {
+         var touches = event.touches && event.touches.length ? event.touches : [event];
+         var e = (event.changedTouches && event.changedTouches[0]) ||
+             (event.originalEvent && event.originalEvent.changedTouches &&
+                 event.originalEvent.changedTouches[0]) ||
+             touches[0].originalEvent || touches[0];
+
+         return {
+             x: e.clientX,
+             y: e.clientY
+         };
+
+     }
+
      /**
       * @ngdoc method
       * @name clearLeftSidebar
@@ -15305,6 +15399,7 @@ angular.module('ep.record.editor').
        setRightTemplate: setRightTemplate,
        setLeftTemplateUrl: setLeftTemplateUrl,
        setRightTemplateUrl: setRightTemplateUrl,
+       executeLeftSidebar: executeLeftSidebar,
        //Navigation bar functions
        showNavbar: showNavbar,
        hideNavbar: hideNavbar,
@@ -15569,6 +15664,7 @@ angular.module('ep.shell').service('epSidebarService', [
                             if (viewSettings[currentMode]) {
                                 epShellService.__setCurrentModeFlags();
                             }
+                            
                             if (viewSettings.sidebar) {
                                 setSidebarSettings(viewSettings.sidebar, false);
                             }
@@ -15576,6 +15672,7 @@ angular.module('ep.shell').service('epSidebarService', [
                             if (epViewContainerService.state.cleanup) {
                                 epViewContainerService.state.cleanup();
                             }
+
                             epViewContainerService.state.cleanup =
                                 $rootScope.$on(epShellConstants.SHELL_STATE_CHANGE_EVENT, function() {
                                     if (currentMode !== epShellService.getMediaMode()) {
@@ -16460,10 +16557,15 @@ angular.module('ep.signature').directive('epSignature',
         //
         //we use the epSysConfig provider to perform the $http read against sysconfig.json
         this.$get = ['epSysConfig', function(epSysConfig) {
-            epSysConfig.mergeSection('ep.theme', config);
+            var sysCfg = epSysConfig.mergeSection('ep.theme', config);
             if (config.defaultPath === 'emf') {
-                config.defaultPath = '../lib/bower/emf/assets/css/themes';
-                config.themes = assetsThemes;
+                var appCfg = epSysConfig.section('application');
+                var libPath = appCfg && appCfg.libPath ? appCfg.libPath : '../lib'; //TO DO!!!! Move to sysconfig
+                config.defaultPath = libPath + '/bower/emf/assets/css/themes';
+                if (!angular.isArray(sysCfg.themes) || sysCfg.themes.length < 1) {
+                    //set to default fukll list of themes only if no themes were provided
+                    config.themes = assetsThemes;
+                }
             }
             if (config.appendThemes && angular.isArray(config.appendThemes)) {
                 //append extra themes
@@ -16965,7 +17067,7 @@ angular.module('ep.signature').directive('epSignature',
             */
         function retrieveBing(numImages) {
             var deferred = $q.defer();
-
+            //TO DO!!!! set lib path from sysconfig
             var fnError = function onError(message) {
                 $log.error('Error parsing retrieving bing images: ' + message);
                 var imgs = { images: [] };
@@ -19199,12 +19301,12 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/sidebar/sidebar.html',
-    "<div class=ep-shell-container ng-class=\"{ 'nav-padding': shellState.showNavbar, 'footer-padding': shellState.showFooter, 'ep-disable-left-sidebar': !shellState.enableLeftSidebar, 'ep-hide-left-sidebar': (!shellState.showLeftSidebar) || (!shellState.enableLeftSidebar), 'ep-hide-right-sidebar': (!shellState.showRightSidebar) || !(shellState.enableRightSidebar)}\"><!-- Backdrop to disable view container when sidebars are on --><div id=viewContainerBackdrop ng-class=\"{'ep-view-container-backdrop': shellState.showViewContainerBackdrop}\"></div><!-- Left Sidebar --><div id=leftSidebar class=\"ep-sidebar-nav ep-sidebar-nav-left well ep-ease-animation\" ng-class=\"{'ep-with-navbar': shellState.showNavbar, 'ep-with-footer': shellState.showFooter, 'cordova-ios': platform.app==='Cordova' && platform.os=='mac'}\" ng-click=dismissRightSidebar()></div><div id=viewPlaceholder class=\"ep-view-placeholder ep-fullscreen\" ng-transclude><!--VIEW CONTENT HERE--></div><!-- Right Sidebar --><div ng-show=\"shellState.showRightSidebar && shellState.enableRightSidebar\" class=\"ep-sidebar-nav ep-sidebar-nav-right well ep-ease-animation\"></div></div>"
+    "<div class=ep-shell-container ng-controller=epShellCtrl ng-class=\"{ 'nav-padding': shellState.showNavbar, 'footer-padding': shellState.showFooter, 'ep-disable-left-sidebar': !shellState.enableLeftSidebar, 'ep-hide-left-sidebar': (!shellState.showLeftSidebar) || (!shellState.enableLeftSidebar), 'ep-hide-right-sidebar': (!shellState.showRightSidebar) || !(shellState.enableRightSidebar)}\"><!-- Backdrop to disable view container when sidebars are on --><div ng-swipe-right=showSwipeLeftSidebar($event) ng-swipe-left=showSwipeRightSidebar() id=viewContainerBackdrop ng-class=\"{'ep-view-container-backdrop': shellState.showViewContainerBackdrop}\"></div><!-- Left Sidebar --><div id=leftSidebar class=\"ep-sidebar-nav ep-sidebar-nav-left well ep-ease-animation\" ng-class=\"{'ep-with-navbar': shellState.showNavbar, 'ep-with-footer': shellState.showFooter, 'cordova-ios': platform.app==='Cordova' && platform.os=='mac'}\" ng-click=dismissRightSidebar() ng-swipe-left=closeLeftSidebar()></div><div id=viewPlaceholder class=\"ep-view-placeholder ep-fullscreen\" ng-transclude><!--VIEW CONTENT HERE--></div><!-- Right Sidebar --><div ng-show=\"shellState.showRightSidebar && shellState.enableRightSidebar\" class=\"ep-sidebar-nav ep-sidebar-nav-right well ep-ease-animation\" ng-swipe-right=closeRightSidebar()></div></div>"
   );
 
 
   $templateCache.put('src/components/ep.shell/view-container/view-container.html',
-    "<div id=viewContainer class=ep-view-container ng-class=\"{ 'ep-with-navbar': !!state.showNavbar,\r" +
+    "<div id=viewContainer ng-controller=epShellCtrl ng-swipe-right=showSwipeLeftSidebar() ng-swipe-left=showSwipeRightSidebar() class=ep-view-container ng-class=\"{ 'ep-with-navbar': !!state.showNavbar,\r" +
     "\n" +
     "                                    'ep-with-footer': !!state.showFooter,\r" +
     "\n" +
