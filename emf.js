@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.55 built: 15-07-2016
+ * version:1.0.8-dev.56 built: 15-07-2016
 */
 (function() {
     'use strict';
@@ -1354,8 +1354,33 @@ angular.module('ep.card').service('epCardService', [
 *
 * @description
 * This component displays a square tile with a title, description and an icon and allows you to set the color of the tile using either a CSS class or an HTML color keyword/hex value.
-*
-* @example
+ *
+ * @property {string} title:string
+ *  This property sets the title of the tile.
+ *  <br/><br/>
+ *  title="My Tile Title"
+ *
+ * @property {string} description:string
+ *  This property sets the description of the tile.
+ *  <br/><br/>
+ *  description="My Tile Description"
+ *
+ * @property {string} fineprint:string
+ *  This property sets the fine print of the tile.
+ *  <br/><br/>
+ *  fineprint="My Tile Fine Print"
+ *
+ * @property {string} icon:string
+ *  This property sets the icon of the tile.  This needs to be set to a font-awesome icon string.
+ *  <br/><br/>
+ *  icon="fa-cogs"
+ *
+ * @property {string} color:string
+ *  This property set the color of the tile.
+ *  <br/><br/>
+ *  color="red"
+ *
+ * @example
 <doc:example module="ep.color.tile">
     <doc:source>
       <ep-color-tile title="My Tile Title" description="This is the description for the tile." fineprint="This is the fine print for the tile." icon="fa-arrows" color="deepskyblue">
@@ -15581,7 +15606,85 @@ angular.module('ep.shell').service('epSidebarService', [
  * @restrict E
  *
  * @description
- * Represents the shell view container directive.
+ * This represents the view containers that are used to display content inside of the shell.  The following properties
+ * can be used to control the behavior of the view declaratively.
+ *
+ * @property {object} sidebarsettings:object
+ *  This property will allow you to designate a left or right sidebar template URL.
+ *  <br/><br/>
+ *  sidebarsettings='{"left": {"templateUrl": "/home-lsidebar.html"}, "right": {"templateUrl": "/home-rsidebar.html"}'
+
+ * @property {object} smallmodesettings:object
+ *  This property will allow you to designate options on how the view behaves in small mode (800px or below).
+ *  <br/><br/>
+ *  smallmodesettings='{[mode setting options]}'
+
+ * @property {object} largemodesettings:object
+ *  This property will allow you to designate options on how the view behaves in large mode (800px or above).
+ *  <br/><br/>
+ *  largemodesettings='{[mode setting options]}'
+
+ * @property {boolean} modesetting:enableLeftSidebar:boolean
+ * This mode setting controls whether the left sidebar will be shown in the view.
+ *  <br/><br/>
+ *  smallmodesettings='{"enableLeftSidebar"=true/false}'
+ *  <br/>
+ *  largemodesettings='{"enableLeftSidebar"=true/false}'
+
+ * @property {boolean} modesetting:enableRightSidebar:boolean
+ * This mode setting controls whether the right sidebar will be shown in the view.
+ *  <br/><br/>
+ *  smallmodesettings='{"enableRightSidebar"=true/false}'
+ *  <br/>
+ *  largemodesettings='{"enableRightSidebar"=true/false}'
+
+ * @property {boolean} modesetting:autoActivateSidebar:boolean
+ * This mode setting controls whether the left sidebar will be automatically shown in the view in large mode (800px or above).
+ *  <br/><br/>
+ *  largemodesettings='{"autoActivateSidebar"=true/false}'
+
+ * @property {boolean} modesetting:showNavbar:boolean
+ * This mode setting controls whether the navigation bar will be shown in the view.
+ *  <br/><br/>
+ *  smallmodesettings='{"showNavbar"=true/false}'
+ *  <br/>
+ *  largemodesettings='{"showNavbar"=true/false}'
+
+ * @property {boolean} modesetting:showHomeButton:boolean
+ * This mode setting controls whether the home button will be shown on the navigation bar.
+ *  <br/><br/>
+ *  smallmodesettings='{"showHomeButton"=true/false}'
+ *  <br/>
+ *  largemodesettings='{"showHomeButton"=true/false}'
+
+ * @property {boolean} modesetting:showBrand:boolean
+ * This mode setting controls whether the brand text will be shown on the navigation bar.
+ *  <br/><br/>
+ *  smallmodesettings='{"showBrand"=true/false}'
+ *  <br/>
+ *  largemodesettings='{"showBrand"=true/false}'
+
+ * @property {boolean} modesetting:centerBrand:boolean
+ * This mode setting controls what brand text will be in the center of the view on the navigation bar.
+ *  <br/><br/>
+ *  smallmodesettings='{"centerBrand"=true/false}'
+ *  <br/>
+ *  largemodesettings='{"centerBrand"=true/false}'
+
+ * @property {boolean} modesetting:animateViewContainer:boolean
+ * This mode setting controls whether the view will participate in the animation.
+ *  <br/><br/>
+ *  smallmodesettings='{"animateViewContainer"=true/false}'
+ *  <br/>
+ *  largemodesettings='{"animateViewContainer"=true/false}'
+
+ * @property {boolean} modesetting:allowVerticalScroll:boolean
+ * This mode setting controls whether the view will allow vertical scrolling beyond the displayed content.
+ *  <br/><br/>
+ *  smallmodesettings='{"allowVerticalScroll"=true/false}'
+ *  <br/>
+ *  largemodesettings='{"allowVerticalScroll"=true/false}'
+
  */
 (function() {
     'use strict';
