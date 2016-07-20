@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.56 built: 15-07-2016
+ * version:1.0.8-dev.57 built: 20-07-2016
 */
 (function() {
     'use strict';
@@ -8241,6 +8241,133 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  *
  */
 (function() {
+    'use strict';
+    angular.module('ep.hybrid.gpsTracker', []);
+})();
+
+/**
+ * @ngdoc service
+ * @name ep.hybrid.gpsTracker:epHybridGPSTrackerService
+ * @description
+ * Service for accessing Cordova foreground and background geolocation service
+ *
+ *
+ * @example
+    <example module="TestApp">
+     <file name="index.html">
+	     <div ng-controller="SampleCtrl">
+            <div class="panel-body">
+            </div>
+	      </div>
+     </file>
+     <file name="script.js">
+     	angular.module('TestApp', ['ep.hybrid.gpsTracker'])
+     		.controller('SampleCtrl',['$scope', '$log', 'epHybridGPSTrackerService',
+	     		function($scope, epHybridGPSTrackerService){  }]);
+     </file>
+   </example>
+ */
+(function() {
+    'use strict';
+
+    epHybridGPSTrackerService.$inject = ['$rootScope'];
+    angular.module('ep.hybrid.gpsTracker')
+        .service('epHybridGPSTrackerService', /*@ngInject*/ epHybridGPSTrackerService);
+
+    function epHybridGPSTrackerService($rootScope) {
+
+        var gpsConfigured = false;
+
+        /**
+         * @ngdoc method
+         * @name scan
+         * @methodOf ep.hybrid.gpsTracker:epHybridGPSTrackerService
+         * @public
+         * @param {function} successCallback - function called on success of API call
+         * @param {function} errorCallback - function called on error of API call
+         * @description
+         * To get geolocation
+         */
+        function background(successCallback, errorCallback, options) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    $rootScope.$apply(successCallback(position));
+                },
+                function(error) {
+                    $rootScope.$apply(errorCallback(error));
+                },
+                options
+			);
+        }
+
+        function configureGPSTracking() {
+            /*
+             * This callback will be executed every time a geolocation is recorded in the background.
+             */
+            var callbackFn = function(position) {
+                //write the lat / long
+                console.log('[js] BackgroundGeolocation callback:  ' + location.latitude + ',' + location.longitude);
+
+                /*
+                 IMPORTANT:  We must execute the finish method here to inform the native plugin that we are finished,
+                 and the background-task may be completed. IF YOU DON'T, ios will CRASH YOUR APP for spending
+                 too much time in the background.
+                 */
+                backgroundGeolocation.finish();
+            };
+
+            var failureFn = function(error) {
+                $log.error('Error capturing geolocation - ' + error.message);
+            };
+
+            // If we're not running in the browser, then turn on the geolocation service
+            if (window.backgroundGeolocation) {
+                //setup geolocation tracking settings
+                backgroundGeolocation.configure(callbackFn, failureFn, {
+                    desiredAccuracy: 0, //set to 10 for best performance / battery power consumption
+                    stationaryRadius: 0, //if inside of 10 meters it will not track
+                    distanceFilter: 0, //only send every 3 meters
+                    debug: true, // <-- enable this hear sounds for background-geolocation life-cycle.
+                    stopOnTerminate: false, // <-- enable this to clear background location settings when the app terminates
+
+                });
+
+                //turn ON the background-geolocation system if the track GPS setting is turned on.
+                backgroundGeolocation.start();
+            } else {
+                $log.debug('No background geolocation service is available.');
+            }
+        }
+
+        function startGPSTracking() {
+            if (!gpsConfigured && window.backgroundGeoLocation) {
+                $log.info('GPS background tracking started.');
+                gpsConfigured = true;
+                configureGPSTracking();
+            }
+        }
+
+        function stopGPSTracking() {
+            if (gpsConfigured && window.backgroundGeoLocation) {
+                $log.info('GPS background tracking stopped.');
+                gpsConfigured = false;
+                backgroundGeolocation.stop();
+            }
+        }
+
+        return {
+            background: background,
+            startGPSTracking: startGPSTracking,
+            stopGPSTracking: stopGPSTracking
+        };
+    }
+
+})();
+
+/**
+ *
+ */
+(function() {
   'use strict';
     angular.module('ep.hybrid.media', []);
 })();
@@ -13428,7 +13555,7 @@ angular.module('ep.record.editor').
         FOOTERHEIGHT: 25,
         MEDIA_MODE_LARGE: 'large',
         MEDIA_MODE_SMALL: 'small',
-        MEDIA_SIZE_BREAKPOINT: 800
+        MEDIA_SIZE_BREAKPOINT: 801
     });
 })();
 
@@ -16663,7 +16790,7 @@ angular.module('ep.signature').directive('epSignature',
             var sysCfg = epSysConfig.mergeSection('ep.theme', config);
             if (config.defaultPath === 'emf') {
                 var appCfg = epSysConfig.section('application');
-                var libPath = appCfg && appCfg.libPath ? appCfg.libPath : '../lib'; //TO DO!!!! Move to sysconfig
+                var libPath = appCfg && appCfg.libPath ? appCfg.libPath : './lib'; //TO DO!!!! Move to sysconfig
                 config.defaultPath = libPath + '/bower/emf/assets/css/themes';
                 if (!angular.isArray(sysCfg.themes) || sysCfg.themes.length < 1) {
                     //set to default fukll list of themes only if no themes were provided
@@ -17141,12 +17268,12 @@ angular.module('ep.signature').directive('epSignature',
 (function() {
     'use strict';
 
-    epTileCtrl.$inject = ['$scope', '$timeout', '$http', '$q', '$log', 'epTileConfig', 'epUtilsService'];
+    epTileCtrl.$inject = ['$scope', '$timeout', '$http', '$q', '$log', 'epTileConfig', 'epUtilsService', 'epSysConfig'];
     angular.module('ep.tile')
         .controller('epTileCtrl', epTileCtrl);
 
     /*@ngInject*/
-    function epTileCtrl($scope, $timeout, $http, $q, $log, epTileConfig, epUtilsService) {
+    function epTileCtrl($scope, $timeout, $http, $q, $log, epTileConfig, epUtilsService, epSysConfig) {
 
         /**
             * @ngdoc method
@@ -17170,13 +17297,18 @@ angular.module('ep.signature').directive('epSignature',
             */
         function retrieveBing(numImages) {
             var deferred = $q.defer();
+
+            var appCfg = epSysConfig.section('application');
+            var libPath = appCfg && appCfg.libPath ? appCfg.libPath : './lib'; //TO DO!!!! Move to sysconfig
+            var imgPath = libPath + '/bower/emf/assets/ep.tile/bing';
+
             //TO DO!!!! set lib path from sysconfig
             var fnError = function onError(message) {
                 $log.error('Error parsing retrieving bing images: ' + message);
                 var imgs = { images: [] };
                 for (var i = 1; i < 6; i++) {
                     imgs.images.push({
-                        src: '../lib/bower/emf/assets/ep.tile/bing' + i + '.jpg',
+                        src: imgPath + i + '.jpg',
                         title: 'Bing Image of the day (offline)'
                     });
                 }
@@ -18223,8 +18355,16 @@ function epTilesMenuFavoritesDirective() {
          * @returns {object} object that represents current token
          */
         function getToken() {
-            return epLocalStorageService.get(epTokenConfig.tokenId);
             //return $cookies.getObject(epTokenConfig.tokenId);
+            var tkn = epLocalStorageService.get(epTokenConfig.tokenId);
+            if (tkn && tkn.expiresInSecs) {
+                var secs = getExpiresIn(tkn);
+                if (!secs) {
+                    logout();
+                    tkn = null;
+                }
+            }
+            return tkn;
         }
 
         /**
@@ -18233,12 +18373,12 @@ function epTilesMenuFavoritesDirective() {
          * @methodOf ep.token.factory:epTokenService
          * @public
          * @description
-         * Retruns in how many seconds token will expire
-         *
+         * Returns in how many seconds token will expire
+         * @param {object} token - token to be checked. If ommited then retrievd from storage
          * @returns {int} number of secs
          */
-        function getExpiresIn() {
-            var tkn = getToken();
+        function getExpiresIn(token) {
+            var tkn = token || getToken();
             var ret = 0;
             if (tkn) {
                 var dateNow = new Date();
