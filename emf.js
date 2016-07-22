@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.57 built: 20-07-2016
+ * version:1.0.8-dev.58 built: 22-07-2016
 */
 (function() {
     'use strict';
@@ -1407,6 +1407,115 @@ angular.module('ep.card').service('epCardService', [
                 templateUrl: 'src/components/ep.color.tile/ep-color-tile.html',
             };
         });
+})();
+
+/**
+ * @ngdoc overview
+ * @name epApplicationLoader
+ * @description
+ * Provides script that loads angular application on devices. This replaces the ng-app='someModuleId'
+ * This script makes sure that angular bootstraping is done after the device is ready and document is loaded
+ * The html root element on index page must have the module id declared as
+ * <html ep-module-id='someModuleId'>
+ * The following has to be included in the head section
+ * <script type='text/javascript'>epApplicationLoader.initialize();</script>
+ */
+(function() {
+    'use strict';
+
+    var epApplicationLoader = {
+        state: {
+            moduleId: '',
+            contentLoaded: false,
+            deviceDetected: false,
+            messages: ['Initializing application.'],
+            debugMode: false
+        },
+        // Application Constructor
+        initialize: function(debugMode) {
+            this.state.moduleId = document.getElementsByTagName('html')[0].getAttribute('ep-ng-app');
+            //$('html').attr('ep-module-id');
+            if (this.state.moduleId) {
+                this.state.debugMode = debugMode;
+                document.addEventListener('deviceready', this.onDeviceReady, false);
+                window.addEventListener('load', this.onLoad, false)
+            }
+        },
+        // deviceready Event Handler
+        onDeviceReady: function() {
+            epApplicationLoader.state.deviceDetected = true;
+            epApplicationLoader.state.messages.push('The device is ready.');
+            epApplicationLoader.bootstrapApp();
+        },
+        // load Event Handler
+        onLoad: function() {
+            epApplicationLoader.state.contentLoaded = true;
+            epApplicationLoader.state.messages.push('onLoad event is triggered.')
+
+            //sometimes this onLoad fires faster than the onDeviceReady so in that case we need to bootstrap angular
+            if (epApplicationLoader.state.deviceDetected) {
+                epApplicationLoader.doTheBootstrap();
+            }
+
+            //if we are running as a web page the onDeviceReady will never fire so we bootstrap
+            if (!window.cordova) {
+                epApplicationLoader.state.messages.push('No device detected, executing a manual bootstrap.');
+                epApplicationLoader.bootstrapApp();
+            }
+        },
+
+        /*
+         =====================================================================================================
+         MAIN bootstrapping function.
+         =====================================================================================================
+         */
+        bootstrapApp: function() {
+            epApplicationLoader.debugOutput(function() {
+                if (!epApplicationLoader.state.contentLoaded) {
+                    epApplicationLoader.state.messages.push('Waiting for DOM to load.');
+                    document.addEventListener('DOMContentLoaded', function() {
+                        epApplicationLoader.doTheBootstrap();
+                    });
+                } else {
+                    epApplicationLoader.doTheBootstrap();
+                }
+            });
+        },
+
+        doTheBootstrap: function() {
+            var state = epApplicationLoader.state;
+            state.contentLoaded = true;
+            if (state.moduleId) {
+                epApplicationLoader.attachFastClick();
+                state.messages.push('Bootstrapping epApplicationLoader...');
+                angular.bootstrap(document, [state.moduleId]);
+                state.messages.push('Application successfully bootstrapped.');
+            }
+        },
+
+        attachFastClick: function () {
+            FastClick.attach(document.body);
+            this.state.messages.push('FastClick attached.');
+        },
+
+        debugOutput: function (continuation) {
+            if (this.state.debugMode) {
+                angular.element('body').append('<div id="messages"></div>');
+                var messageBlock = angular.element('#messages');
+                messageBlock.append('<button id="continueButton" class="btn btn-default">Continue</button>');
+                this.state.messages.forEach(function(msg) {
+                    messageBlock.append(angular.element('<p>' + msg + '</p>'));
+                });
+                angular.element('#continueButton').on('click', function() {
+                    continuation();
+                });
+            } else {
+                continuation();
+            }
+        }
+    };
+
+    epApplicationLoader.initialize();
 })();
 
 /**
@@ -7764,6 +7873,76 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  *
  */
 (function() {
+    'use strict';
+    angular.module('ep.hybrid.emailcomposer', []);
+})();
+
+/**
+ * @ngdoc service
+ * @name ep.hybrid.emailcomposer:epHybridEmailComposerService
+ * @description
+ * Service for accessing Cordova Barcode plugin. This will scan a barcode and recognize the UPC code and format.
+ *
+ * Note: Include cordova.js script file in html file and add
+ * {@link https://www.npmjs.com/package/cordova-plugin-barcodescanner cordova barcodescanner plugin} into app.
+ *
+ * @example
+    <example module="TestApp">
+     <file name="index.html">
+	     <div ng-controller="SampleCtrl">
+            <div class="panel-body">
+            </div>
+	      </div>
+     </file>
+     <file name="script.js">
+     	angular.module('TestApp', ['ep.hybrid.emailcomposer'])
+     		.controller('SampleCtrl',['$scope', '$log', 'epHybridEmailComposer',
+	     		function($scope, epHybridEmailComposer){
+            }]);
+     </file>
+   </example>
+ */
+(function() {
+    'use strict';
+
+    epHybridEmailComposerService.$inject = ['$rootScope'];
+    angular.module('ep.hybrid.emailcomposer')
+        .service('epHybridEmailComposerService', /*@ngInject*/ epHybridEmailComposerService);
+
+    function epHybridEmailComposerService($rootScope) {
+
+        /**
+         * @ngdoc method
+         * @name isEmailAvailable
+         * @methodOf ep.hybrid.emailcomposer:epHybridEmailComposerService
+         * @private
+         * @description
+         * To check the cordova device plugin availability
+         * @returns {Boolean} true or false based on the device plugin availablity.
+         */
+        function isEmailAvailable() {
+            try {
+                cordova.plugins.email.isAvailable(
+                   function(isAvailable) {
+                       alert('Service is available');
+                   }
+            );
+            } catch (e) {
+                alert('Service not available');
+            }
+        }
+
+        return {
+            isEmailAvailable: isEmailAvailable
+        };
+    }
+
+})();
+
+/**
+ *
+ */
+(function() {
   'use strict';
     angular.module('ep.hybrid.flashlight', []);
 })();
@@ -8242,12 +8421,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  */
 (function() {
     'use strict';
-    angular.module('ep.hybrid.gpsTracker', []);
+    angular.module('ep.hybrid.gpstracker', []);
 })();
 
 /**
  * @ngdoc service
- * @name ep.hybrid.gpsTracker:epHybridGPSTrackerService
+ * @name ep.hybrid.gpstracker:epHybridGPSTrackerService
  * @description
  * Service for accessing Cordova foreground and background geolocation service
  *
@@ -8261,7 +8440,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 	      </div>
      </file>
      <file name="script.js">
-     	angular.module('TestApp', ['ep.hybrid.gpsTracker'])
+     	angular.module('TestApp', ['ep.hybrid.gpstracker'])
      		.controller('SampleCtrl',['$scope', '$log', 'epHybridGPSTrackerService',
 	     		function($scope, epHybridGPSTrackerService){  }]);
      </file>
@@ -8270,18 +8449,18 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 (function() {
     'use strict';
 
-    epHybridGPSTrackerService.$inject = ['$rootScope'];
-    angular.module('ep.hybrid.gpsTracker')
+    epHybridGPSTrackerService.$inject = ['$rootScope', '$log'];
+    angular.module('ep.hybrid.gpstracker')
         .service('epHybridGPSTrackerService', /*@ngInject*/ epHybridGPSTrackerService);
 
-    function epHybridGPSTrackerService($rootScope) {
+    function epHybridGPSTrackerService($rootScope, $log) {
 
         var gpsConfigured = false;
 
         /**
          * @ngdoc method
-         * @name scan
-         * @methodOf ep.hybrid.gpsTracker:epHybridGPSTrackerService
+         * @name background
+         * @methodOf ep.hybrid.gpstracker:epHybridGPSTrackerService
          * @public
          * @param {function} successCallback - function called on success of API call
          * @param {function} errorCallback - function called on error of API call
@@ -8306,7 +8485,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
              */
             var callbackFn = function(position) {
                 //write the lat / long
-                console.log('[js] BackgroundGeolocation callback:  ' + location.latitude + ',' + location.longitude);
+                console.log('[js] BackgroundGeolocation callback:  ' + position.latitude + ',' + position.longitude);
 
                 /*
                  IMPORTANT:  We must execute the finish method here to inform the native plugin that we are finished,
@@ -8321,7 +8500,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             };
 
             // If we're not running in the browser, then turn on the geolocation service
-            if (window.backgroundGeolocation) {
+            //if (window.backgroundGeolocation) {
                 //setup geolocation tracking settings
                 backgroundGeolocation.configure(callbackFn, failureFn, {
                     desiredAccuracy: 0, //set to 10 for best performance / battery power consumption
@@ -8334,25 +8513,27 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
                 //turn ON the background-geolocation system if the track GPS setting is turned on.
                 backgroundGeolocation.start();
-            } else {
-                $log.debug('No background geolocation service is available.');
-            }
+            //} else {
+            //    $log.debug('No background geolocation service is available.');
+            //}
         }
 
         function startGPSTracking() {
-            if (!gpsConfigured && window.backgroundGeoLocation) {
+            var bg = backgroundGeoLocation;
+            console.log(bg);
+            //if (!gpsConfigured && window.backgroundGeoLocation) {
                 $log.info('GPS background tracking started.');
                 gpsConfigured = true;
                 configureGPSTracking();
-            }
+            //}
         }
 
         function stopGPSTracking() {
-            if (gpsConfigured && window.backgroundGeoLocation) {
+            //if (gpsConfigured && window.backgroundGeoLocation) {
                 $log.info('GPS background tracking stopped.');
                 gpsConfigured = false;
                 backgroundGeolocation.stop();
-            }
+            //}
         }
 
         return {
@@ -13614,9 +13795,9 @@ angular.module('ep.record.editor').
                     var swipePosition = epShellService.executeLeftSidebar(event);
                     var screenWidth = screen.width;
                     var swipeXPosition = swipePosition.x;
-                    var screenLeftSwipePosition = (swipeXPosition / screenWidth) * 100;
-                    if (screenLeftSwipePosition >= 65) {
-                        if ($scope.state.enableLeftSidebar) {
+                    var screenRightSwipePosition = (swipeXPosition / screenWidth) * 100;
+                    if (screenRightSwipePosition >= 65) {
+                        if ($scope.state.enableRightSidebar) {
                             epShellService.toggleRightSidebar();
                         }
                     }

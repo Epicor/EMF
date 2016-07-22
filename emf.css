@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.57 built: 20-07-2016
+ * version:1.0.8-dev.58 built: 22-07-2016
 */
 .ep-relative {
   position: relative;
@@ -362,6 +362,14 @@
 .ep-padding-left,
 .ep-padding-horizontal {
   padding-left: 10px;
+}
+/**Overriding font-awesome to work in windows devices*/
+@font-face {
+  font-family: 'FontAwesome';
+  src: url('../font-awesome/fonts/fontawesome-webfont.eot');
+  src: url('../font-awesome/fonts/fontawesome-webfont.eot?#iefix') format('embedded-opentype'), url('../fonts/fontawesome-webfont.woff2') format('woff2'), url('../fonts/fontawesome-webfont.woff') format('woff'), url('../fonts/fontawesome-webfont.ttf') format('truetype'), url('../fonts/fontawesome-webfont.svg?#fontawesomeregular') format('svg');
+  font-weight: normal;
+  font-style: normal;
 }
 /* Custom Icon font */
 @font-face {
@@ -1582,24 +1590,28 @@ View Animation
   transition: all 200ms ease-out;
 }
 /* Slide animations */
+.ep-slide-left-add,
 .ep-slide-left.ep-view.ng-enter {
   left: 100%;
 }
 .ep-slide-left.ep-view.ng-enter.ng-enter-active {
   left: 0;
 }
+.ep-slide-right-add,
 .ep-slide-right.ep-view.ng-enter {
   left: -100%;
 }
 .ep-slide-right.ep-view.ng-enter.ng-enter-active {
   left: 0;
 }
+.ep-slide-down-add,
 .ep-slide-down.ep-view.ng-enter {
   top: -100%;
 }
 .ep-slide-down.ep-view.ng-enter.ng-enter-active {
   top: 0;
 }
+.ep-slide-up-add,
 .ep-slide-up.ep-view.ng-enter {
   top: 100%;
 }
