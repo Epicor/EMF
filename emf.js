@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.61 built: 25-07-2016
+ * version:1.0.8-dev.62 built: 26-07-2016
 */
 (function() {
     'use strict';
@@ -25,6 +25,18 @@
     'ep.sysconfig'
     ]);
 })();
+
+'use strict';
+/**
+ * @ngdoc overview
+ * @name ep.application
+ * @description
+ * Contains some basic information about the application
+ */
+angular.module('ep.application', [
+    'ep.templates',
+    'ep.sysconfig'
+]);
 
 'use strict';
 /**
@@ -1187,225 +1199,63 @@ angular.module('ep.signature', [
     });
 })();
 
-'use strict';
-
 /**
- * @ngdoc controller
- * @name ep.card.controller:epCardCtrl
+ * @ngdoc object
+ * @name ep.application.object:epApplicationConfig
  * @description
- * Represents the epCard controller for the
- * ep.card module, or for specific ep-card directive
- *
- * @example
- *
+ * Provider for epApplicationConfig.
+ * Gets configuration options from sysconfig.json or default
  */
-angular.module('ep.card').controller('epCardCtrl', [
-    '$scope',
-    function($scope) {
-        // do something with $scope property
-        $scope.myProperty = 'emf';
-
-        /**
-         * @ngdoc method
-         * @name myFunction
-         * @methodOf ep.card.controller:epCardCtrl
-         * @public
-         * @description
-         * Handles the myFunction request
-         */
-        $scope.myFunction = function() {
-            // do something else with $scope property
-            // $scope.myProperty = 'new property value';
-        };
-    }
-]);
-
-'use strict';
-/**
-* @ngdoc directive
-* @name ep.card.directive:epCard
-* @restrict E
-*
-* @description
-* This component contains a card that has wrapping text, title and responsive image.
-*
-* @example
-<doc:example module="ep.card">
-    <doc:source>
-      <ep-card>
-            <ep-card-block contrast="false">
-                <div>
-                    <img src="http://byteclub.fr/img/logo-angularjs.svg" alt='Card image cap' class='card-responsive' />
-                </div>
-            </ep-card-block>
-            <ep-card-title><h2><font color="blue">Ep Card Demo</font> <a href="http://www.google.com">search</a></h2></ep-card-title>
-            <ep-card-block contrast="true">
-                <p>We can place a rich html description to each card within the ep-card-block</p>
-                <ol>
-                    <li>Title: content of title can be customized to contain every valid html tag and custom directives</li>
-                    <li>Image: allows resizing of image within the card </li>
-                    <li>Block: content of block can be customized to contain every valid html tag and custom directives</li>
-                </ol>
-
-                <button class="btn-primary">Sample Button in HTML</button>
-            </ep-card-block>
-        </ep-card>
-    </doc:source>
-</doc:example>
-*/
-var app = angular.module('ep.card');
-app.directive('epCard',
-    function() {
-        return {
-            restrict: 'E',
-            transclude: true,
-            replace: true,
-            templateUrl: 'src/components/ep.card/ep-card-template.html'
-        };
-	});
-
-app.directive('epCardBlock',
-    function() {
-        return {
-            restrict: 'E',
-            transclude: true,
-            replace: true,
-            templateUrl: 'src/components/ep.card/ep-card-block-template.html',
-            link: function($scope, element, attributes) {
-                if (attributes.contrast === 'true') {
-                    element[0].className = element[0].className + ' card-block-contrast';
-                }
-            }
-        };
-	});
-
-app.directive('epCardTitle',
-    function() {
-        return {
-            restrict: 'E',
-            transclude: true,
-            replace: true,
-            templateUrl: 'src/components/ep.card/ep-card-title-template.html'
-        };
-	});
-
-'use strict';
-/**
- * @ngdoc service
- * @name ep.card.factory:epCardFactory
- * @description
- * Factory service for the ep.card module
- * card component
- *
- * @example
- *
- */
-angular.module('ep.card').factory('epCardFactory', [
-    function() {
-        /**
-         * @ngdoc method
-         * @name publicMethod
-         * @methodOf ep.card.factory:epCardFactory
-         * @public
-         * @description
-         * sample public method stub
-         */
-        function publicMethod() {
-            // do something
-            return true;
-        }
-
-        return {
-            publicMethod: publicMethod
-        };
-    }]);
-
-'use strict';
-/**
- * @ngdoc service
- * @name ep.card.service:epCardService
- * @description
- * Service for the ep.card module
- * card component
- *
- * @example
- *
- */
-angular.module('ep.card').service('epCardService', [
-    function() {
-        /**
-         * @ngdoc method
-         * @name publicFunction
-         * @methodOf ep.card.service:epCardService
-         * @public
-         * @description
-         * sample public service function stub
-         */
-        this.publicFunction = function() {
-            // do something
-            return true;
-        };
-    }]);
-
-/**
-* @ngdoc directive
-* @name ep.color.tile.directive:epColorTile
-* @restrict E
-*
-* @description
-* This component displays a square tile with a title, description and an icon and allows you to set the color of the tile using either a CSS class or an HTML color keyword/hex value.
- *
- * @property {string} title:string
- *  This property sets the title of the tile.
- *  <br/><br/>
- *  title="My Tile Title"
- *
- * @property {string} description:string
- *  This property sets the description of the tile.
- *  <br/><br/>
- *  description="My Tile Description"
- *
- * @property {string} fineprint:string
- *  This property sets the fine print of the tile.
- *  <br/><br/>
- *  fineprint="My Tile Fine Print"
- *
- * @property {string} icon:string
- *  This property sets the icon of the tile.  This needs to be set to a font-awesome icon string.
- *  <br/><br/>
- *  icon="fa-cogs"
- *
- * @property {string} color:string
- *  This property set the color of the tile.
- *  <br/><br/>
- *  color="red"
- *
- * @example
-<doc:example module="ep.color.tile">
-    <doc:source>
-      <ep-color-tile title="My Tile Title" description="This is the description for the tile." fineprint="This is the fine print for the tile." icon="fa-arrows" color="deepskyblue">
-      </ep-color-tile>
-  </doc:source>
-</doc:example>
-
-*/
 (function() {
     'use strict';
 
-    angular.module('ep.color.tile').directive('epColorTile',
+    angular.module('ep.application').provider('epApplicationConfig',
         function() {
-            return {
-                restrict: 'E',
-                scope: {
-                    title: '@',
-                    description: '@',
-                    fineprint: '@',
-                    icon: '@',
-                    color: '@',
-                    colorclass: '@'
-                },
-                templateUrl: 'src/components/ep.color.tile/ep-color-tile.html',
+            var config = {
+                /**
+                * @ngdoc property
+                * @name id
+                * @propertyOf ep.application.object:epApplicationConfig
+                * @public
+                * @description
+                * Application identifier, corresponds to folder name
+                */
+                id: '',
+                /**
+                * @ngdoc property
+                * @name type
+                * @propertyOf ep.application.object:epApplicationConfig
+                * @public
+                * @description
+                * Application type - 'webapp' or 'hybridmobileapp'
+                */
+                type: 'webapp',
+                /**
+                * @ngdoc property
+                * @name generatorEMF
+                * @propertyOf ep.application.object:epApplicationConfig
+                * @public
+                * @description
+                * what version of emf generator was used
+                */
+                generatorEMF: '',
+                /**
+                * @ngdoc property
+                * @name libPath
+                * @propertyOf ep.application.object:epApplicationConfig
+                * @public
+                * @description
+                * path to libs
+                */
+                libPath: './lib',
             };
+
+            //we use the epSysConfig provider to perform the $http read against sysconfig.json
+            //epSysConfig.mergeSection() function merges the defaults with sysconfig.json settings
+            this.$get = ['epSysConfig', function(epSysConfig) {
+                epSysConfig.mergeSection('ep.application', config);
+                return config;
+            }];
         });
 })();
 
@@ -1516,6 +1366,137 @@ angular.module('ep.card').service('epCardService', [
     };
 
     epApplicationLoader.initialize();
+})();
+
+'use strict';
+/**
+* @ngdoc directive
+* @name ep.card.directive:epCard
+* @restrict E
+*
+* @description
+* This component contains a card that has wrapping text, title and responsive image.
+*
+* @example
+<doc:example module="ep.card">
+    <doc:source>
+      <ep-card>
+            <ep-card-block contrast="false">
+                <div>
+                    <img src="http://byteclub.fr/img/logo-angularjs.svg" alt='Card image cap' class='card-responsive' />
+                </div>
+            </ep-card-block>
+            <ep-card-title><h2><font color="blue">Ep Card Demo</font> <a href="http://www.google.com">search</a></h2></ep-card-title>
+            <ep-card-block contrast="true">
+                <p>We can place a rich html description to each card within the ep-card-block</p>
+                <ol>
+                    <li>Title: content of title can be customized to contain every valid html tag and custom directives</li>
+                    <li>Image: allows resizing of image within the card </li>
+                    <li>Block: content of block can be customized to contain every valid html tag and custom directives</li>
+                </ol>
+
+                <button class="btn-primary">Sample Button in HTML</button>
+            </ep-card-block>
+        </ep-card>
+    </doc:source>
+</doc:example>
+*/
+var app = angular.module('ep.card');
+app.directive('epCard',
+    function() {
+        return {
+            restrict: 'E',
+            transclude: true,
+            replace: true,
+            templateUrl: 'src/components/ep.card/ep-card-template.html'
+        };
+	});
+
+app.directive('epCardBlock',
+    function() {
+        return {
+            restrict: 'E',
+            transclude: true,
+            replace: true,
+            templateUrl: 'src/components/ep.card/ep-card-block-template.html',
+            link: function($scope, element, attributes) {
+                if (attributes.contrast === 'true') {
+                    element[0].className = element[0].className + ' card-block-contrast';
+                }
+            }
+        };
+	});
+
+app.directive('epCardTitle',
+    function() {
+        return {
+            restrict: 'E',
+            transclude: true,
+            replace: true,
+            templateUrl: 'src/components/ep.card/ep-card-title-template.html'
+        };
+	});
+
+/**
+* @ngdoc directive
+* @name ep.color.tile.directive:epColorTile
+* @restrict E
+*
+* @description
+* This component displays a square tile with a title, description and an icon and allows you to set the color of the tile using either a CSS class or an HTML color keyword/hex value.
+ *
+ * @property {string} title:string
+ *  This property sets the title of the tile.
+ *  <br/><br/>
+ *  title="My Tile Title"
+ *
+ * @property {string} description:string
+ *  This property sets the description of the tile.
+ *  <br/><br/>
+ *  description="My Tile Description"
+ *
+ * @property {string} fineprint:string
+ *  This property sets the fine print of the tile.
+ *  <br/><br/>
+ *  fineprint="My Tile Fine Print"
+ *
+ * @property {string} icon:string
+ *  This property sets the icon of the tile.  This needs to be set to a font-awesome icon string.
+ *  <br/><br/>
+ *  icon="fa-cogs"
+ *
+ * @property {string} color:string
+ *  This property set the color of the tile.
+ *  <br/><br/>
+ *  color="red"
+ *
+ * @example
+<doc:example module="ep.color.tile">
+    <doc:source>
+      <ep-color-tile title="My Tile Title" description="This is the description for the tile." fineprint="This is the fine print for the tile." icon="fa-arrows" color="deepskyblue">
+      </ep-color-tile>
+  </doc:source>
+</doc:example>
+
+*/
+(function() {
+    'use strict';
+
+    angular.module('ep.color.tile').directive('epColorTile',
+        function() {
+            return {
+                restrict: 'E',
+                scope: {
+                    title: '@',
+                    description: '@',
+                    fineprint: '@',
+                    icon: '@',
+                    color: '@',
+                    colorclass: '@'
+                },
+                templateUrl: 'src/components/ep.color.tile/ep-color-tile.html',
+            };
+        });
 })();
 
 /**
