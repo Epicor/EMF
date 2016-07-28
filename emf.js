@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.64 built: 28-07-2016
+ * version:1.0.8-dev.65 built: 28-07-2016
 */
 (function() {
     'use strict';
@@ -220,6 +220,24 @@ angular.module('ep.include', [
         'ep.sysconfig'
     ]);
 })();
+
+'use strict';
+/**
+ * @ngdoc overview
+ * @name ep.menu.builder
+ * @description
+ * This is the dynamic popup/context menu builder
+ * This will replace the ep-action-set; The SPA needs one instance of the <ep-dynamic-menu>
+ * directive on the main index.html, this directive will respond to the $broadcast
+ * of 'dynamicMenuCall' event.
+ *
+ * The <ep-context-menu> directive will use an instance of the menuBuilder (served up
+ * from the epMenuBuilderFactory) to add/remove menu item actions and/or separators
+ *
+ */
+angular.module('ep.menu.builder', [
+    'ep.templates'
+]);
 
 /**
  * @ngdoc overview
@@ -9343,6 +9361,340 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         };
     }]);
 })();
+
+(function() {
+'use strict';
+
+/**
+ * @ngdoc controller
+ * @name ep.menu.builder.controller:epContextMenuCtrl
+ * @description
+ * Represents the epContextMenu controller for the
+ * ep.menu.builder module, or for specific ep-context-menu directive
+ *
+ *
+ */
+    epContextMenuCtrl.$inject = ['$scope'];
+    angular.module('ep.menu.builder')
+        .controller('epContextMenuCtrl', epContextMenuCtrl);
+
+    /*@ngInject*/
+    function epContextMenuCtrl($scope) {
+        /*jshint validthis:true */
+        var vm = this;
+        vm.onDynamicMenuCall = onDynamicMenuCall;
+
+        /**
+         * @ngdoc method
+         * @name myFunction
+         * @methodOf ep.menu.builder.controller:epContextMenuCtrl
+         * @private
+         * @description
+         * Handles the broadcast of DynamicMenuCall event
+         */
+        function onDynamicMenuCall(event) {
+            if (angular.isUndefined(vm.epContextMenuBuilder)) {
+                return;
+            }
+            $scope.$root.$broadcast('dynamicMenuCall', {
+                event: event,
+                builder: vm.epContextMenuBuilder,
+                context: vm.epMenuOptionContext,
+            });
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    }
+}());
+
+(function() {
+'use strict';
+/**
+* @ngdoc directive
+* @name ep.menu.builder.directive:epContextMenu
+* @restrict E
+*
+* @description
+* Represents the ep.menu.builder directive
+*
+* @example <ep-context-menu
+            ep-context-menu-builder="myBuilder"
+            ep-menu-option-context="myCurrentNode"
+            ep-context-menu-icon="fa fa-meh-o"
+            ep-context-menu-position="right-center">
+            </ep-context-menu>
+*/
+angular.module('ep.menu.builder').
+    directive('epContextMenu', epContextMenuDirective);
+
+    /*@ngInject*/
+    function epContextMenuDirective() {
+        return {
+            restrict: 'EA',
+            controller: 'epContextMenuCtrl',
+            controllerAs:'contextMenuCtrl',
+            templateUrl: 'src/components/ep.menu.builder/context.menu/ep-context-menu.html',
+            scope: {
+            },
+            bindToController: {
+                epContextMenuBuilder: '=',
+                epMenuOptionContext: '=',
+                epContextMenuIcon: '@',
+                epContextMenuPosition: '@'
+            },
+            link: function(scope, el, attr) {
+                //Context menu icon decided here
+                var iconClass = angular.isUndefined(attr.epContextMenuIcon) ?
+                                    'fa fa-ellipsis-v' : attr.epContextMenuIcon;
+                angular.element(el[0].querySelector('.ep-context-menu')).addClass(iconClass);
+
+                //Context menu position decided here
+                var positionClass = 'ep-actionset-right-down';
+                if (attr.epContextMenuPosition) {
+                    switch (attr.epContextMenuPosition) {
+                        case 'absolute-right-bottom':
+                            positionClass = 'ep-actionset-right-bottom';
+                            break;
+                        case 'right-bottom':
+                            positionClass = 'ep-actionset-right-down';
+                            break;
+                        case 'right-center':
+                            positionClass = 'ep-actionset-right-center';
+                            break;
+                    }
+                }
+                angular.element(el[0].querySelector('.ep-actionset')).addClass(positionClass);
+
+                //Available position attribute values :
+                // 1. ep-actionset-right-bottom
+                // 2. ep-actionset-right-down
+                // 3. ep-actionset-right-center
+            }
+        };
+    }
+}());
+
+(function() {
+'use strict';
+
+/**
+ * @ngdoc controller
+ * @name ep.menu.builder.controller:epDynamicMenuCtrl
+ * @description
+ * Represents the epDynamicMenu controller for the
+ * ep.menu.builder module, or for specific ep-dynamic-menu directive
+ *
+ * @example
+ *
+ */
+    epDynamicMenuCtrl.$inject = ['$scope', '$document'];
+    angular.module('ep.menu.builder')
+        .controller('epDynamicMenuCtrl', epDynamicMenuCtrl);
+
+    /*@ngInject*/
+    function epDynamicMenuCtrl($scope, $document) {
+        /*jshint validthis:true */
+        var vm = this;
+        vm.closeMenu = closeMenu;
+        vm.invokeAction = invokeAction;
+
+        // closes the Action menu popup
+        function closeMenu() {
+            vm.menuItems = null;
+            if (!$scope.$root.$$phase) {
+                $scope.$apply();
+            }
+            $document.off('click.actionMenu');
+        }
+
+        // invoke the menuItem's action handler function
+        function invokeAction(event, menuItem, context) {
+            if (angular.isFunction(menuItem.action)) {
+                menuItem.action(context);
+            }
+            closeMenu();
+            event.stopPropagation();
+            event.preventDefault();
+        }
+
+        $scope.$on('dynamicMenuCall', function(event, args) {
+            if (angular.isUndefined(args.builder)) { return; }
+            if (angular.isFunction(args.builder.beforeShowMenu)) {
+                args.builder.beforeShowMenu(args.context);
+            }
+            // use the menuBuilder to serve up the collection of menu items
+            vm.menuItems = angular.isFunction(args.builder.menuItems) ? args.builder.menuItems() : null;
+            vm.context = args.context || null;
+
+            // if position is fixed we are running on small width devices. Just skip this statement
+            // if not, set css position of actionMenu
+            if (vm.element.css('position') !== 'fixed') {
+                vm.element.css({ left: args.event.clientX + 'px', top: (args.event.clientY - 40) + 'px' });
+            }
+            $document.on('click.actionMenu', function() {
+                closeMenu();
+            });
+            //added for passing unit tests
+            if (!$scope.$root.$$phase) {
+                $scope.$apply();
+            }
+        });
+    }
+}());
+
+(function() {
+'use strict';
+/**
+* @ngdoc directive
+* @name ep.menu.builder.directive:epDynamicMenu
+* @restrict E
+*
+* @description
+* Represents the ep.menu.builder directive
+*
+* @example <ep-dynamic-menu></ep-dynamic-menu>
+*/
+angular.module('ep.menu.builder').
+    directive('epDynamicMenu', epDynamicMenuDirective);
+
+    /*@ngInject*/
+    function epDynamicMenuDirective() {
+        return {
+            restrict: 'E',
+            replace: true,
+            controller: 'epDynamicMenuCtrl',
+            controllerAs: 'dynamicMenuCtrl',
+            templateUrl: 'src/components/ep.menu.builder/dynamic.menu/ep-dynamic-menu.html',
+            link: function(scope, el) {
+                // at link, we set the current element onto the controller vm
+                // we use this on full screen mode to set the position of dynamic menu based on the position of parent
+                scope.dynamicMenuCtrl.element = el;
+            }
+        };
+    }
+}());
+
+(function() {
+    'use strict';
+
+    /**
+     * @ngdoc service
+     * @name ep.menu.builder.factory:epMenuBuilderFactory
+     * @description
+     * Factory service for the ep.menu.builder module
+     * This factory will serve up an instance of the menuBuilder
+     *
+     * @example
+     *
+     */
+    epMenuBuilderFactory.$inject = ['$filter'];
+    angular.module('ep.menu.builder').
+        factory('epMenuBuilderFactory', epMenuBuilderFactory);
+
+    /*@ngInject*/
+    function epMenuBuilderFactory($filter) {
+        /**
+         * @ngdoc method
+         * @name getMenuBuilder
+         * @methodOf ep.menu.builder.factory:epMenuBuilderFactory
+         * @public
+         * @description
+         * serves up a new instance of the menuBuilder
+         */
+        function getMenuBuilder() {
+            var items = [];
+
+            /**
+             * @ngdoc method
+             * @name setItem
+             * @methodOf ep.menu.builder.object:menuBuilder
+             * @public
+             * @description
+             * sets menu item onto instance of the menuBuilder
+             */
+            function setItem(menuItem) {
+                var foundItem = $filter('filter')(items, { caption: menuItem.caption }, true)[0];
+                var idx = items.indexOf(foundItem);
+                // if we add an untyped item assume it's an action
+                if (angular.isUndefined(menuItem.type) && angular.isFunction(menuItem.action)) {
+                    menuItem.type = 'action';
+                }
+                if (idx === -1) {
+                    items.push(menuItem);
+                } else {
+                    items[idx] = angular.extend(items[idx], menuItem);
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name removeItem
+             * @methodOf ep.menu.builder.object:menuBuilder
+             * @public
+             * @description
+             * removes menu item from instance of the menuBuilder
+             */
+            function removeItem(menuItem) {
+                var foundItem = $filter('filter')(items, { caption: menuItem.caption }, true)[0];
+                var idx = items.indexOf(foundItem);
+                if (idx !== -1) {
+                    var spliceAtIndex = idx;
+                    var itemsToRemove = 1;
+
+                    if (items[idx - 1] && items[idx - 1].type === 'separator') {
+                        spliceAtIndex = idx - 1;
+                        itemsToRemove = 2;
+                    } else if (items[idx + 1] && items[idx + 1].type === 'separator') {
+                        spliceAtIndex = idx;
+                        itemsToRemove = 2;
+                    }
+                    items.splice(spliceAtIndex, itemsToRemove);
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name getItems
+             * @methodOf ep.menu.builder.object:menuBuilder
+             * @public
+             * @description
+             * returns collection of menu item from instance of the menuBuilder
+             */
+            function getItems() {
+                return angular.copy(items);
+            }
+
+            /**
+             * @ngdoc method
+             * @name addSeparator
+             * @methodOf ep.menu.builder.object:menuBuilder
+             * @public
+             * @description
+             * adds the separator between menu items where needed
+             */
+            function addSeparator() {
+                items.push({ type: 'separator' });
+            }
+
+            /**
+             * @ngdoc service
+             * @name ep.menu.builder.object:menuBuilder
+             * @description
+             * menuBuilder instance for the ep.menu.builder module
+             */
+            return {
+                setMenuItem: setItem,
+                removeMenuItem: removeItem,
+                menuItems: getItems,
+                addSeparator: addSeparator
+            };
+        }
+
+        return {
+            getMenuBuilder: getMenuBuilder
+        };
+    }
+}());
 
 /**
      * @ngdoc directive
@@ -19603,6 +19955,16 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
   $templateCache.put('src/components/ep.list/ep-list.html',
     "<!--This is a partial for the ep-list directive --><div class=ep-list><ul id={{config.id}}><li ng-repeat=\"item in config.items\"></li></ul></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.menu.builder/context.menu/ep-context-menu.html',
+    "<span class=\"ep-relative ep-context-menu-owner\"><span class=\"ep-actionset ep-interactivity-context-menu\"><span class=ep-context-menu ng-click=contextMenuCtrl.onDynamicMenuCall($event)></span></span></span>"
+  );
+
+
+  $templateCache.put('src/components/ep.menu.builder/dynamic.menu/ep-dynamic-menu.html',
+    "<div id=ep-dynamic-menu ng-show=dynamicMenuCtrl.menuItems><ul class=\"dropdown-menu ep-actions-menu list-unstyled noselect\" role=menu><li ng-repeat=\"menuItem in dynamicMenuCtrl.menuItems\" ng-switch=menuItem.type><a ng-switch-when=action class=ep-actions-menu-item ng-click=\"dynamicMenuCtrl.invokeAction($event, menuItem, dynamicMenuCtrl.context)\"><span class=\"icon {{menuItem.icon}}\"></span><span>{{::menuItem.caption}}</span></a><div ng-switch-when=separator class=ep-actions-menu-item-separator></div></li><li class=ep-actions-menu-item-mobile><a class=\"ep-actions-menu-item edd-red separate\" ng-click=dynamicMenuCtrl.closeMenu()><span class=\"icon icon-clear\"></span><span>Close</span></a></li></ul></div>"
   );
 
 
