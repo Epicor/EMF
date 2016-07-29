@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.65 built: 28-07-2016
+ * version:1.0.8-dev.66 built: 29-07-2016
 */
 (function() {
     'use strict';
@@ -9529,7 +9529,7 @@ angular.module('ep.menu.builder').
             // if position is fixed we are running on small width devices. Just skip this statement
             // if not, set css position of actionMenu
             if (vm.element.css('position') !== 'fixed') {
-                vm.element.css({ left: args.event.clientX + 'px', top: (args.event.clientY - 40) + 'px' });
+                vm.element.css({ left: args.event.clientX + 'px', top: args.event.clientY + 'px' });
             }
             $document.on('click.actionMenu', function() {
                 closeMenu();
