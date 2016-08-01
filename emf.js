@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.68 built: 31-07-2016
+ * version:1.0.8-dev.69 built: 01-08-2016
 */
 (function() {
     'use strict';
@@ -77,6 +77,18 @@ angular.module('ep.card', [
         'ep.datagrid',
         'ep.modaldialog'
     ]);
+})();
+
+/**
+ * @ngdoc overview
+ * @name ep.contacts.list
+ * @description
+ * Provides the contact list directive
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.contacts.list', []);
 })();
 
 /**
@@ -1757,6 +1769,173 @@ app.directive('epCardTitle',
             hasLog: hasLog,
             clearLog: clearLog,
             showLog: showLog
+        };
+    }
+})();
+
+/**
+ * @ngdoc object
+ * @name ep.contacts.list:epContactsListConstants
+ * @description
+ * Constants for epContactsListConstants.
+ * ep.constacts.list constants
+ * Events:
+    * <pre>
+    *   CONTACTS_LIST_INDEXES - indexes displayed default.
+    *   CONTACTS_LIST_INDEXES_SMALL - indexes displayed if contacts list container height is < 450px
+    * </pre>
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.contacts.list').constant('epContactsListConstants', {
+        CONTACTS_LIST_INDEXES: '#ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+        CONTACTS_LIST_INDEXES_SMALL: '#A.E.H.L.O.S.V.Z'
+    });
+})();
+
+/**
+ * @ngdoc directive
+ * @name ep.contacts.list:epContactsList
+ * @restrict EA
+ *
+ * @description
+ * Represents contacts list with alphabet indexes on right side
+ * - data: contacts list array
+ * - handler: handler function when clicks on a contact.
+ *
+ * @example
+ *  <pre>
+ *      <ep-contacts-list data="['Bname', 'Cname', 'Aname'"></ep-contacts-list>
+ *  </pre>
+ */
+(function() {
+    'use strict';
+
+    epContactsListDirective.$inject = ['$filter', '$timeout', 'epContactsListService', 'epContactsListConstants'];
+    angular.module('ep.contacts.list').directive('epContactsList', epContactsListDirective);
+
+    function epContactsListDirective($filter, $timeout, epContactsListService, epContactsListConstants) {
+        return {
+            restrict: 'EA',
+            scope: {
+                data: '=',
+                handler: '='
+            },
+            templateUrl: 'src/components/ep.contacts.list/contacts_list.html',
+            link: function(scope) {
+                scope.nameList = epContactsListService.getGroupedList(scope.data);
+
+                scope.indexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES;
+                scope.smallIndexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES_SMALL;
+
+                $(window).resize(function() {
+                    epContactsListService.toggleIndexes();
+                });
+                epContactsListService.toggleIndexes();
+
+                scope.goToLink = function(id) {
+                    if (id === '.') {
+                        return;
+                    }
+                    var container = $('.ep-contacts-list-container');
+
+                    //hash index will scroll to numbers list
+                    id = (id === '#') ? '1' : id;
+                    var scrollToElem = $('#list-group-' + id);
+                    if (scrollToElem.length) {
+                        container.animate({
+                            scrollTop: scrollToElem.offset().top - container.offset().top + container.scrollTop()
+                        });
+                    }
+                };
+
+            }
+        };
+    }
+})();
+
+/**
+ * @ngdoc service
+ * @name ep.contacts.list:epContactsListService
+ * @description
+ * Provides methods for dislaying contacts list with indexes.
+ *
+ * @example
+ *
+ */
+(function() {
+    'use strict';
+
+    epContactsListService.$inject = ['$filter', '$timeout'];
+    angular.module('ep.contacts.list').factory('epContactsListService', epContactsListService);
+
+    function epContactsListService($filter, $timeout) {
+
+        /**
+         * @ngdoc method
+         * @name getGroupedList
+         * @methodOf ep.contacts.list:epContactsListService
+         * @public
+         * @param {Array} listData - list of contacts to display
+         * @description
+         * To group the contacts list based on alphabets
+         */
+        function getGroupedList(listData) {
+            var sortedlist = $filter('orderBy')(listData);
+            var groupedObj = {};
+            var itemGroup = [];
+            var currAlphabet = '';
+            var prevAlphabet = '';
+            for (var i = 0; i < sortedlist.length; i++) {
+                currAlphabet = sortedlist[i].substring(0, 1).toUpperCase();
+
+                //if a number, make group name as #
+                if (!isNaN(currAlphabet)) {
+                    currAlphabet = '#';
+                }
+                if (currAlphabet !== prevAlphabet && prevAlphabet !== '') {
+                    groupedObj[prevAlphabet] = itemGroup;
+                    itemGroup = [];
+                }
+                itemGroup.push(sortedlist[i]);
+                if (i === (sortedlist.length - 1)) {
+                    groupedObj[currAlphabet] = itemGroup;
+                    itemGroup = [];
+                }
+                prevAlphabet = currAlphabet;
+
+            }
+            return groupedObj;
+
+        }
+
+        /**
+         * @ngdoc method
+         * @name toggleIndexes
+         * @methodOf ep.contacts.list:epContactsListService
+         * @public
+         * @description
+         * To toggle index list based on the contacts container height
+         */
+        function toggleIndexes() {
+            $timeout(function() {
+                var mainContainerHeight = $('.ep-contacts-list-container').height();
+                if (mainContainerHeight < 200) {
+                    $('.ep-index-list').hide();
+                } else if (mainContainerHeight < 450) {
+                    $('.ep-index-list').hide();
+                    $('.ep-index-list.small-index-list').show();
+                } else {
+                    $('.ep-index-list').show();
+                    $('.ep-index-list.small-index-list').hide();
+                }
+            });
+        }
+
+        return {
+            getGroupedList: getGroupedList,
+            toggleIndexes: toggleIndexes
         };
     }
 })();
@@ -19915,6 +20094,11 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
   $templateCache.put('src/components/ep.color.tile/ep-color-tile.html',
     "<!-- Color Tile Component --><div class=\"ep-color-tile ep-align-container {{colorclass}}\" ng-style=\"{'background-color': color}\"><h3>{{title}}</h3><h5>{{description}}</h5><small>{{fineprint}}</small><div class=\"ep-color-tile-icon ep-align-content ep-align-vcenter\"><i class=\"fa {{icon}}\"></i></div></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.contacts.list/contacts_list.html',
+    "<div class=\"ep-list-search-container vertical-align\"><input ng-model=contactListSearch placeholder=Search class=form-control id=ep-contacts-list-search><label for=ep-contacts-list-search class=\"glyphicon glyphicon-search\" rel=tooltip title=search></label></div><div class=ep-contacts-list-container><div class=ep-contacts-list><div ng-repeat=\"(key, value) in nameList\"><div class=ep-group-heading ng-if=\"filterVal.length > 0\" id=\"list-group-{{key == '#' ? 1 : (key | uppercase)}}\">{{key | uppercase}}</div><ul><li ng-repeat=\"name in filterVal = (value | filter: contactListSearch)\" ng-click=handler(name)>{{ name }}</li></ul></div></div></div><ul class=ep-index-list ng-hide=contactListSearch><li ng-repeat=\"key in indexKeys\" ng-click=goToLink(key)>{{key}}</li></ul><ul class=\"ep-index-list small-index-list\" ng-hide=contactListSearch><li ng-repeat=\"key in smallIndexKeys track by $index\" ng-click=goToLink(key)><span ng-if=\"key == '.'\" class=\"fa fa-circle\"></span> <span ng-if=\"key !='.'\">{{key}}</span></li></ul>"
   );
 
 

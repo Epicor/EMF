@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.68 built: 31-07-2016
+ * version:1.0.8-dev.69 built: 01-08-2016
 */
 .ep-relative {
   position: relative;
@@ -445,6 +445,94 @@
 }
 .ep-console-info {
   color: blue;
+}
+
+.ep-contacts-list-container {
+  position: relative;
+  height: calc(100% - 50px);
+  overflow-x: hidden;
+  overflow-y: scroll;
+  -webkit-overflow-scrolling: touch;
+  z-index: 1;
+  padding-left: 5%;
+  top: 50px;
+}
+.ep-contacts-list-container li {
+  list-style-type: none;
+}
+.ep-contacts-list {
+  display: inline-block;
+  width: 100%;
+  height: 100%;
+  position: absolute;
+}
+.ep-contacts-list li {
+  border-bottom: 1px solid #eee;
+  line-height: 44px;
+  height: 44px;
+}
+.ep-index-list {
+  position: fixed;
+  right: 0;
+  font-size: 12px;
+  text-align: center;
+  display: inline-block;
+  z-index: 2;
+  padding: 0;
+  margin: 0;
+  background-color: #fafafa;
+  width: 20px;
+  top: 50px;
+  height: 100%;
+}
+.ep-index-list a {
+  text-decoration: none !important;
+  font-weight: bold;
+}
+.ep-index-list li {
+  list-style-type: none;
+  line-height: 3vh;
+  color: #129ff4;
+  font-weight: bold;
+}
+.ep-index-list.small-index-list {
+  display: none;
+}
+.ep-index-list.small-index-list li {
+  line-height: 4vh;
+}
+.ep-index-list .fa-circle {
+  font-size: 8px;
+}
+.ep-group-heading {
+  font-weight: bold;
+  background: #fafafa;
+  box-shadow: -60px 0 0 #fafafa;
+  line-height: 28px;
+  height: 28px;
+}
+.ep-contacts-list ul {
+  padding: 0;
+  margin: 0;
+}
+#ep-contacts-list-search {
+  padding: 10px 10px 10px 30px;
+  border-radius: 5px;
+  width: 90%;
+}
+.ep-list-search-container {
+  position: fixed;
+  width: 100%;
+  background-color: #CAC9CE;
+  z-index: 3;
+  height: 50px;
+  padding-left: 5%;
+}
+.ep-list-search-container .glyphicon {
+  position: absolute;
+  left: 10px;
+  top: 17px;
+  padding-left: 5%;
 }
 
 /* ----->>>> Pagination styling taken from dataTables.jqueryui.css -------------->>>>*/
