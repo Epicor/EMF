@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.69 built: 01-08-2016
+ * version:1.0.8-dev.70 built: 02-08-2016
 */
 (function() {
     'use strict';
@@ -1314,9 +1314,9 @@ angular.module('ep.signature', [
         // Application Constructor
         initialize: function(debugMode) {
             this.state.moduleId = document.getElementsByTagName('html')[0].getAttribute('ep-ng-app');
-            //$('html').attr('ep-module-id');
             if (this.state.moduleId) {
-                this.state.debugMode = debugMode;
+                var dbg = document.getElementsByTagName('html')[0].getAttribute('ep-debug');
+                this.state.debugMode = (dbg === '1' || dbg === 'true');
                 document.addEventListener('deviceready', this.onDeviceReady, false);
                 window.addEventListener('load', this.onLoad, false)
             }
@@ -1782,7 +1782,7 @@ app.directive('epCardTitle',
  * Events:
     * <pre>
     *   CONTACTS_LIST_INDEXES - indexes displayed default.
-    *   CONTACTS_LIST_INDEXES_SMALL - indexes displayed if contacts list container height is < 450px
+    *   CONTACTS_LIST_INDEXES_SMALL - indexes displayed if contacts list container height is < 430px
     * </pre>
  */
 (function() {
@@ -1790,7 +1790,9 @@ app.directive('epCardTitle',
 
     angular.module('ep.contacts.list').constant('epContactsListConstants', {
         CONTACTS_LIST_INDEXES: '#ABCDEFGHIJKLMNOPQRSTUVWXYZ',
-        CONTACTS_LIST_INDEXES_SMALL: '#A.E.H.L.O.S.V.Z'
+        CONTACTS_LIST_INDEXES_SMALL: '#A.E.H.L.O.S.V.Z',
+        CONTACTS_LIST_INDEXES_BREAKPOINT: 430,
+        CONTACTS_LIST_INDEXES_HIDDEN_BREAKPOINT: 180
     });
 })();
 
@@ -1867,10 +1869,10 @@ app.directive('epCardTitle',
 (function() {
     'use strict';
 
-    epContactsListService.$inject = ['$filter', '$timeout'];
+    epContactsListService.$inject = ['$filter', '$timeout', 'epContactsListConstants'];
     angular.module('ep.contacts.list').factory('epContactsListService', epContactsListService);
 
-    function epContactsListService($filter, $timeout) {
+    function epContactsListService($filter, $timeout, epContactsListConstants) {
 
         /**
          * @ngdoc method
@@ -1921,9 +1923,9 @@ app.directive('epCardTitle',
         function toggleIndexes() {
             $timeout(function() {
                 var mainContainerHeight = $('.ep-contacts-list-container').height();
-                if (mainContainerHeight < 200) {
+                if (mainContainerHeight < epContactsListConstants.CONTACTS_LIST_INDEXES_HIDDEN_BREAKPOINT) {
                     $('.ep-index-list').hide();
-                } else if (mainContainerHeight < 450) {
+                } else if (mainContainerHeight < epContactsListConstants.CONTACTS_LIST_INDEXES_BREAKPOINT) {
                     $('.ep-index-list').hide();
                     $('.ep-index-list.small-index-list').show();
                 } else {
@@ -20252,7 +20254,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/sidebar/sidebar.html',
-    "<div class=ep-shell-container ng-controller=epShellCtrl ng-class=\"{ 'nav-padding': shellState.showNavbar, 'footer-padding': shellState.showFooter, 'ep-disable-left-sidebar': !shellState.enableLeftSidebar, 'ep-hide-left-sidebar': (!shellState.showLeftSidebar) || (!shellState.enableLeftSidebar), 'ep-hide-right-sidebar': (!shellState.showRightSidebar) || !(shellState.enableRightSidebar)}\"><!-- Backdrop to disable view container when sidebars are on --><div ng-swipe-right=showSwipeLeftSidebar($event) ng-swipe-left=showSwipeRightSidebar() id=viewContainerBackdrop ng-class=\"{'ep-view-container-backdrop': shellState.showViewContainerBackdrop}\"></div><!-- Left Sidebar --><div id=leftSidebar class=\"ep-sidebar-nav ep-sidebar-nav-left well ep-ease-animation\" ng-class=\"{'ep-with-navbar': shellState.showNavbar, 'ep-with-footer': shellState.showFooter, 'cordova-ios': platform.app==='Cordova' && platform.os=='mac'}\" ng-click=dismissRightSidebar() ng-swipe-left=closeLeftSidebar()></div><div id=viewPlaceholder class=\"ep-view-placeholder ep-fullscreen\" ng-transclude><!--VIEW CONTENT HERE--></div><!-- Right Sidebar --><div ng-show=\"shellState.showRightSidebar && shellState.enableRightSidebar\" class=\"ep-sidebar-nav ep-sidebar-nav-right well ep-ease-animation\" ng-swipe-right=closeRightSidebar()></div></div>"
+    "<div class=ep-shell-container ng-controller=epShellCtrl ng-class=\"{ 'nav-padding': shellState.showNavbar, 'footer-padding': shellState.showFooter}\"><!-- Backdrop to disable view container when sidebars are on --><div ng-swipe-right=showSwipeLeftSidebar($event) ng-swipe-left=showSwipeRightSidebar() id=viewContainerBackdrop ng-class=\"{'ep-view-container-backdrop': shellState.showViewContainerBackdrop}\"></div><!-- Left Sidebar --><div id=leftSidebar ng-show=\"shellState.showLeftSidebar && shellState.enableLeftSidebar\" class=\"ep-sidebar-nav ep-sidebar-nav-left well ep-ease-animation\" ng-class=\"{'ep-with-navbar': shellState.showNavbar, 'ep-with-footer': shellState.showFooter, 'cordova-ios': platform.app==='Cordova' && platform.os=='mac'}\" ng-click=dismissRightSidebar() ng-swipe-left=closeLeftSidebar()></div><div id=viewPlaceholder class=\"ep-view-placeholder ep-fullscreen\" ng-transclude><!--VIEW CONTENT HERE--></div><!-- Right Sidebar --><div id=rightSidebar ng-show=\"shellState.showRightSidebar && shellState.enableRightSidebar\" class=\"ep-sidebar-nav ep-sidebar-nav-right well ep-ease-animation\" ng-swipe-right=closeRightSidebar()></div></div>"
   );
 
 
