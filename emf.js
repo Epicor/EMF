@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.70 built: 02-08-2016
+ * version:1.0.8-dev.71 built: 03-08-2016
 */
 (function() {
     'use strict';
@@ -341,6 +341,7 @@ angular.module('ep.record.editor', [
     'ep.theme',
     'ep.utils',
     'ep.sysconfig',
+    'ep.application',
     'ep.console',
     'ep.multi.level.menu',
     'ep.embedded.apps',
@@ -421,9 +422,10 @@ angular.module('ep.signature', [
     'use strict';
 
     angular.module('ep.theme', [
-    'ep.templates',
-    'ep.local.storage',
-    'ep.sysconfig'
+        'ep.templates',
+        'ep.local.storage',
+        'ep.sysconfig',
+        'ep.application'
     ]);
 })();
 
@@ -437,10 +439,11 @@ angular.module('ep.signature', [
     'use strict';
 
     angular.module('ep.tile', [
-    'ep.templates',
-    'ep.sysconfig',
-    'ep.utils',
-    'ep.include'
+        'ep.templates',
+        'ep.sysconfig',
+        'ep.application',
+        'ep.utils',
+        'ep.include'
     ]);
 })();
 
@@ -8052,7 +8055,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 /**
  *
  */
-(function() {
+(function () {
     'use strict';
     angular.module('ep.hybrid.emailcomposer', []);
 })();
@@ -8061,23 +8064,35 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @ngdoc service
  * @name ep.hybrid.emailcomposer:epHybridEmailComposerService
  * @description
- * Service for accessing Cordova Barcode plugin. This will scan a barcode and recognize the UPC code and format.
- *
+ * Service for accessing Cordova Email Composer plugin. This provides access to the standard interface that manages the editing and sending an email.
+  *
  * Note: Include cordova.js script file in html file and add
- * {@link https://www.npmjs.com/package/cordova-plugin-barcodescanner cordova barcodescanner plugin} into app.
+ * {@link https://www.npmjs.com/package/cordova-plugin-email cordova email plugin} into app
  *
  * @example
     <example module="TestApp">
      <file name="index.html">
 	     <div ng-controller="SampleCtrl">
             <div class="panel-body">
+                <div><button class="btn btn-primary btn-block" ng-click="sendEmail()">Send An Email</button></div>
             </div>
 	      </div>
      </file>
      <file name="script.js">
      	angular.module('TestApp', ['ep.hybrid.emailcomposer'])
-     		.controller('SampleCtrl',['$scope', '$log', 'epHybridEmailComposer',
-	     		function($scope, epHybridEmailComposer){
+     		.controller('SampleCtrl',['$scope', '$log', 'epHybridEmailComposerService',
+	     		function($scope, epHybridEmailComposerService){
+                  $scope.sendEmail = function () {
+                    epHybridEmailComposerService.draftAnEmail({
+                        to: ['max@mustermann.d'],
+                        cc: ['john@doe.com', 'jane@doe.com'],
+                        bcc: [],
+                        subject: 'EpicApp',
+                        body: 'EpicApp Common CSS File Attached',
+                        isHtml: true,
+                        attachments: ['file://app/css/EpicApp.css']
+                   });
+        };
             }]);
      </file>
    </example>
@@ -8085,11 +8100,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 (function() {
     'use strict';
 
-    epHybridEmailComposerService.$inject = ['$rootScope'];
+    epHybridEmailComposerService.$inject = ['$log'];
     angular.module('ep.hybrid.emailcomposer')
         .service('epHybridEmailComposerService', /*@ngInject*/ epHybridEmailComposerService);
 
-    function epHybridEmailComposerService($rootScope) {
+    function epHybridEmailComposerService($log) {
 
         /**
          * @ngdoc method
@@ -8097,27 +8112,70 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @methodOf ep.hybrid.emailcomposer:epHybridEmailComposerService
          * @private
          * @description
-         * To check the cordova device plugin availability
-         * @returns {Boolean} true or false based on the device plugin availablity.
+         * To check the availability of cordova email composer plugin.
+         * @returns {Boolean} true or false based on the availablity of email composer plugin .
          */
         function isEmailAvailable() {
+            var emailAvailable;
             try {
                 cordova.plugins.email.isAvailable(
                    function(isAvailable) {
-                       alert('Service is available');
+                       emailAvailable = isAvailable;
                    }
             );
-            } catch (e) {
-                alert('Service not available');
+            } catch (ex) {
+                emailAvailable = false;
+                $log.debug('Email service not available' + ex);
             }
+            return emailAvailable;
+        }
+
+        /**
+         * @ngdoc method
+         * @name draftAnEmail
+         * @methodOf ep.hybrid.emailcomposer:epHybridEmailComposerService
+         * @public
+         * @param {object} settings - Options to configure the Action Sheet
+         * @param {object} settings.to - Array of strings i.e. Email addresses for TO field
+         * @param {object} settings.cc - Array of strings i.e. Email addresses for CC field
+         * @param {object} settings.bcc - Array of strings i.e. Email addresses for BCC field
+         * @param {string} settings.subject - Subject of the email
+         * @param {string} settings.body - Email body (for HTML, set isHtml to true)
+         * @param {boolean} settings.isHtml - Indicats if the body is HTML or plain text
+         * @param {object} settings.attachments - Array of strings i.e. File paths that needs to be attached
+         * @description
+         * Opens an Email draft with the provided inputs. After opening the draft the user can edit, delete or send an email.
+         */
+        function draftAnEmail(settings) {
+            cordova.plugins.email.isAvailable(
+                   function(isAvailable) {
+                       var defaults = {
+                           to: [],
+                           cc: [],
+                           bcc: [],
+                           subject: '[No Subject]',
+                           body: '',
+                           isHtml: false,
+                           attachments: []
+                       };
+                       var emailSettings = angular.extend(defaults, settings);
+
+                       cordova.plugins.email.open(emailSettings, function(e) {
+                           $log.error('An error occurred while attempting to launch the email application.' + e);
+                       });
+                   }, function() {
+                       $log.debug('Email service not available');
+                   });
         }
 
         return {
-            isEmailAvailable: isEmailAvailable
+            isEmailAvailable: isEmailAvailable,
+            draftAnEmail: draftAnEmail
         };
     }
 
 })();
+
 
 /**
  *
@@ -17481,11 +17539,10 @@ angular.module('ep.signature').directive('epSignature',
         //The $get is called automatically when AngularJS encounters a DI.
         //
         //we use the epSysConfig provider to perform the $http read against sysconfig.json
-        this.$get = ['epSysConfig', function(epSysConfig) {
+        this.$get = ['epSysConfig', 'epApplicationConfig', function(epSysConfig, epApplicationConfig) {
             var sysCfg = epSysConfig.mergeSection('ep.theme', config);
             if (config.defaultPath === 'emf') {
-                var appCfg = epSysConfig.section('application');
-                var libPath = appCfg && appCfg.libPath ? appCfg.libPath : './lib'; //TO DO!!!! Move to sysconfig
+                var libPath = epApplicationConfig.libPath ? epApplicationConfig.libPath : './lib';
                 config.defaultPath = libPath + '/bower/emf/assets/css/themes';
                 if (!angular.isArray(sysCfg.themes) || sysCfg.themes.length < 1) {
                     //set to default fukll list of themes only if no themes were provided
@@ -17963,12 +18020,12 @@ angular.module('ep.signature').directive('epSignature',
 (function() {
     'use strict';
 
-    epTileCtrl.$inject = ['$scope', '$timeout', '$http', '$q', '$log', 'epTileConfig', 'epUtilsService', 'epSysConfig'];
+    epTileCtrl.$inject = ['$scope', '$timeout', '$http', '$q', '$log', 'epTileConfig', 'epUtilsService', 'epApplicationConfig'];
     angular.module('ep.tile')
         .controller('epTileCtrl', epTileCtrl);
 
     /*@ngInject*/
-    function epTileCtrl($scope, $timeout, $http, $q, $log, epTileConfig, epUtilsService, epSysConfig) {
+    function epTileCtrl($scope, $timeout, $http, $q, $log, epTileConfig, epUtilsService, epApplicationConfig) {
 
         /**
             * @ngdoc method
@@ -17993,11 +18050,9 @@ angular.module('ep.signature').directive('epSignature',
         function retrieveBing(numImages) {
             var deferred = $q.defer();
 
-            var appCfg = epSysConfig.section('application');
-            var libPath = appCfg && appCfg.libPath ? appCfg.libPath : './lib'; //TO DO!!!! Move to sysconfig
+            var libPath = epApplicationConfig.libPath ? epApplicationConfig.libPath : './lib';
             var imgPath = libPath + '/bower/emf/assets/ep.tile/bing';
 
-            //TO DO!!!! set lib path from sysconfig
             var fnError = function onError(message) {
                 $log.error('Error parsing retrieving bing images: ' + message);
                 var imgs = { images: [] };
