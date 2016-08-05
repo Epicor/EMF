@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.72 built: 04-08-2016
+ * version:1.0.8-dev.73 built: 05-08-2016
 */
 (function() {
     'use strict';
@@ -191,6 +191,18 @@ angular.module('ep.embedded.apps', ['ep.templates', 'ep.sysconfig', 'ep.utils'])
 (function() {
   'use strict';
     angular.module('ep.file', []);
+})();
+
+/**
+ * @ngdoc overview
+ * @name ep.filter.list
+ * @description
+ * Provides a filter input to a list
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.filter.list', []);
 })();
 
 'use strict';
@@ -7350,6 +7362,38 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 })();
 
 /**
+ * @ngdoc directive
+ * @name ep.filter.list.directive:epFilterList
+ * @restrict E
+ *
+ * @description
+ * Represents the filter list input directive
+ *
+ * @example
+ * <pre>
+        <ep-filter-list search-by=filter1.firstname></ep-filter-list>
+        <ul>
+            <li ng-repeat="name in nameList | filter: filter1">{{name.firstname}} {{name.lastname}}</li>
+        </ul>
+ * </pre>
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.filter.list').directive('epFilterList',
+    function() {
+        return {
+            restrict: 'E',
+            replace: true,
+            scope: {
+                searchBy: '='
+            },
+            templateUrl: 'src/components/ep.filter.list/filter_list.html'
+        };
+    });
+})();
+
+/**
  *
  */
 (function() {
@@ -14217,7 +14261,11 @@ angular.module('ep.record.editor').
                 menuitems: []
             };
 
-            $scope.menuGets = [$scope.menuOptions.fnGetMenu];
+            if(!angular.isArray($scope.menuOptions.fnGetMenu)){
+                $scope.menuOptions.fnGetMenu = [$scope.menuOptions.fnGetMenu];
+            }
+            
+            $scope.menuGets = $scope.menuOptions.fnGetMenu;
             if ($scope.includeEmbeddedMenu) {
                 $scope.menuGets.push(epEmbeddedAppsService.retrieveAppsMenu);
             }
@@ -14320,7 +14368,16 @@ angular.module('ep.record.editor').
  */
 (function() {
     'use strict';
+    angular.module('ep.shell').directive('myTouchstart', [function() {
+        return function(scope, element, attr) {
 
+            element.on('touchstart', function(event) {
+                scope.$apply(function() {
+                    scope.$eval(attr.myTouchstart);
+                });
+            });
+        };
+    }])
     angular.module('ep.shell').controller('epShellCtrl', [
         '$location',
         '$rootScope',
@@ -14341,7 +14398,7 @@ angular.module('ep.record.editor').
                 // get the epShellService state so it can be used in the views
                 $scope.state = epShellService.__state;
                 $scope.options = epShellConfig.options;
-
+                $scope.findXTouch;
                 //toggle sidebar event function
                 $scope.toggleLeftSidebar = function() {
                     epShellService.toggleLeftSidebar();
@@ -14350,30 +14407,28 @@ angular.module('ep.record.editor').
                 $scope.toggleRightSidebar = function() {
                     epShellService.toggleRightSidebar();
                 };
-                //Swipe left 0-35% of the width of screen to pull left sidebar
+                //Swipe right 0-20% of the width of screen to pull left sidebar
                 $scope.showSwipeLeftSidebar = function() {
-                    var swipePosition = epShellService.executeLeftSidebar(event);
+                    var touchStart = $scope.findXTouch;;
                     var screenWidth = screen.width;
-                    var swipeXPosition = swipePosition.x;
-                    var screenLeftSwipePosition = (swipeXPosition / screenWidth) * 100;
-                    if (screenLeftSwipePosition <= 35) {
-                        if ($scope.state.enableLeftSidebar) {
-                            epShellService.toggleLeftSidebar();
-                        }
+                    var touchStartPercent = (touchStart / screenWidth) * 100;
+                    if (touchStartPercent <= 40 && $scope.state.enableLeftSidebar) {
+                        epShellService.toggleLeftSidebar();
                     }
                 };
-                //Swipe right 0-35% of the width of screen to pull right sidebar
+                //Swipe left 80-100% of the width of screen to pull right sidebar
                 $scope.showSwipeRightSidebar = function() {
-                    var swipePosition = epShellService.executeLeftSidebar(event);
+                    var touchStart = $scope.findXTouch;
                     var screenWidth = screen.width;
-                    var swipeXPosition = swipePosition.x;
-                    var screenRightSwipePosition = (swipeXPosition / screenWidth) * 100;
-                    if (screenRightSwipePosition >= 65) {
-                        if ($scope.state.enableRightSidebar) {
-                            epShellService.toggleRightSidebar();
-                        }
+                    var touchStartPercent = (touchStart / screenWidth) * 100;
+                    if (touchStartPercent >= 80 && $scope.state.enableRightSidebar) {
+                        epShellService.toggleRightSidebar();
                     }
                 };
+                $scope.getTouchXPoint = function() {
+                    $scope.findXTouch = epShellService.executeLeftSidebar(event);
+                    return $scope.findXTouch;
+                }
                 //Close left sidebar on swipping right on left sidebar
                 $scope.closeLeftSidebar = function() {
                     epShellService.hideLeftSidebar();
@@ -14382,6 +14437,7 @@ angular.module('ep.record.editor').
                 $scope.closeRightSidebar = function() {
                     epShellService.hideRightSidebar();
                 };
+
                 if (epShellConfig.options.enableViewAnimations) {
                     epShellService.initViewBackground();
                 }
@@ -20194,6 +20250,11 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   );
 
 
+  $templateCache.put('src/components/ep.filter.list/filter_list.html',
+    "<div class=\"ep-search-list-container vertical-align\"><input ng-model=searchBy placeholder=Search class=form-control id=ep-search-list><label for=ep-search-list class=\"glyphicon glyphicon-search\" rel=tooltip title=search></label></div>"
+  );
+
+
   $templateCache.put('src/components/ep.list/ep-list.html',
     "<!--This is a partial for the ep-list directive --><div class=ep-list><ul id={{config.id}}><li ng-repeat=\"item in config.items\"></li></ul></div>"
   );
@@ -20314,7 +20375,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/view-container/view-container.html',
-    "<div id=viewContainer ng-controller=epShellCtrl ng-swipe-right=showSwipeLeftSidebar() ng-swipe-left=showSwipeRightSidebar() class=ep-view-container ng-class=\"{ 'ep-with-navbar': !!state.showNavbar,\r" +
+    "<div id=viewContainer ng-controller=epShellCtrl my-touchstart=getTouchXPoint() ng-swipe-right=showSwipeLeftSidebar() ng-swipe-left=showSwipeRightSidebar() class=ep-view-container ng-class=\"{ 'ep-with-navbar': !!state.showNavbar,\r" +
     "\n" +
     "                                    'ep-with-footer': !!state.showFooter,\r" +
     "\n" +

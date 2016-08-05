@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.72 built: 04-08-2016
+ * version:1.0.8-dev.73 built: 05-08-2016
 */
 .ep-relative {
   position: relative;
@@ -944,6 +944,26 @@
 #splashContainer {
   width: 100%;
   text-align: center;
+}
+
+.ep-search-list-container {
+  position: relative;
+  width: 100%;
+  background-color: #CAC9CE;
+  z-index: 3;
+  height: 50px;
+  padding-left: 5%;
+}
+.ep-search-list-container input {
+  padding: 10px 10px 10px 30px;
+  border-radius: 5px;
+  width: 90%;
+}
+.ep-search-list-container .glyphicon {
+  position: absolute;
+  left: 10px;
+  top: 17px;
+  padding-left: 5%;
 }
 
 
