@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.73 built: 05-08-2016
+ * version:1.0.8-dev.74 built: 06-08-2016
 */
 (function() {
     'use strict';
@@ -14412,7 +14412,7 @@ angular.module('ep.record.editor').
                     var touchStart = $scope.findXTouch;;
                     var screenWidth = screen.width;
                     var touchStartPercent = (touchStart / screenWidth) * 100;
-                    if (touchStartPercent <= 40 && $scope.state.enableLeftSidebar) {
+                    if (touchStartPercent <= 10 && $scope.state.enableLeftSidebar) {
                         epShellService.toggleLeftSidebar();
                     }
                 };
@@ -14421,7 +14421,7 @@ angular.module('ep.record.editor').
                     var touchStart = $scope.findXTouch;
                     var screenWidth = screen.width;
                     var touchStartPercent = (touchStart / screenWidth) * 100;
-                    if (touchStartPercent >= 80 && $scope.state.enableRightSidebar) {
+                    if (touchStartPercent >= 90 && $scope.state.enableRightSidebar) {
                         epShellService.toggleRightSidebar();
                     }
                 };
