@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.76 built: 08-08-2016
+ * version:1.0.8-dev.77 built: 09-08-2016
 */
 (function() {
     'use strict';
@@ -14435,11 +14435,8 @@ angular.module('ep.record.editor').
     'use strict';
     angular.module('ep.shell').directive('myTouchstart', [function() {
         return function(scope, element, attr) {
-
-            element.on('touchstart', function(event) {
-                scope.$apply(function() {
-                    scope.$eval(attr.myTouchstart);
-                });
+            element.bind('touchstart', function(event) {
+                scope.$apply(attr['myTouchstart']);
             });
         };
     }])
@@ -14474,7 +14471,7 @@ angular.module('ep.record.editor').
                 };
                 //Swipe right 0-20% of the width of screen to pull left sidebar
                 $scope.showSwipeLeftSidebar = function() {
-                    var touchStart = $scope.findXTouch;;
+                    var touchStart = $scope.findXTouch;
                     var screenWidth = screen.width;
                     var touchStartPercent = (touchStart / screenWidth) * 100;
                     if (touchStartPercent <= 10 && $scope.state.enableLeftSidebar) {
@@ -15670,17 +15667,7 @@ angular.module('ep.record.editor').
       * get coordinates for the swipe event 
       */
      function executeLeftSidebar(event) {
-         var touches = event.touches && event.touches.length ? event.touches : [event];
-         var e = (event.changedTouches && event.changedTouches[0]) ||
-             (event.originalEvent && event.originalEvent.changedTouches &&
-                 event.originalEvent.changedTouches[0]) ||
-             touches[0].originalEvent || touches[0];
-
-         return {
-             x: e.clientX,
-             y: e.clientY
-         };
-
+         return event.touches[0].clientX;
      }
 
      /**
