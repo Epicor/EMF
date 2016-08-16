@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.84 built: 16-08-2016
+ * version:1.0.8-dev.86 built: 16-08-2016
 */
 (function() {
     'use strict';
@@ -520,7 +520,7 @@ angular.module('ep.signature', [
     'use strict';
 
     angular.module('ep.token', [
-	    'ep.sysconfig',
+        'ep.sysconfig',
         'ep.utils'
     ]);
 })();
@@ -869,13 +869,13 @@ angular.module('ep.signature', [
         'epMultiLevelMenuConstants',
         function(epLocalStorageService, epMultiLevelMenuService, epMultiLevelMenuConstants) {
             function getAccordionMenuHelper(scope) {
-                return new accordionMenuHelper(scope);
+                return new AccordionMenuHelper(scope);
             }
             return {
                 getAccordionMenuHelper: getAccordionMenuHelper
             };
 
-            function accordionMenuHelper(ctrlScope) {
+            function AccordionMenuHelper(ctrlScope) {
                 var depth = 0;
                 var scope = ctrlScope; // scope from the controller
                 var data = {
@@ -1162,6 +1162,7 @@ angular.module('ep.signature', [
                  * Retrieve the last access for menu item
                  *
                  * @param {object} mi the menu item or menu id
+                 * @param {bool} forceRetrieve retrieves the menu even if the key hasn't changed
                  */
                 function getItemLastAccess(mi, forceRetrieve) {
                     var ret;
@@ -1227,7 +1228,8 @@ angular.module('ep.signature', [
                  * Handles the getFavorites request
                  */
                 function getFavorites() {
-                    var favList = epAccordionMenuService.findAllMenuItems(data.menu, function(i) { return !!i.favorite; });
+                    var favList = epMultiLevelMenuService.findAllMenuItems(data.menu,
+                        function(i) { return !!i.favorite; });
 
                     var userKey = getStoreKey();
                     var savedItems = epLocalStorageService.get(userKey) || {};
@@ -1299,7 +1301,7 @@ angular.module('ep.signature', [
                  * @description
                  * Set sort function to do custom sorting
                  *
-                 * @param {object} function to be called for sorting. Menu object passed to this function.
+                 * @param {object} fnSort function to be called for sorting. Menu object passed to this function.
                  */
                 function setSortFunction(fnSort) {
                     scope.fnSort = fnSort;
@@ -2134,13 +2136,13 @@ angular.module('ep.signature', [
             debugMode: false
         },
         // Application Constructor
-        initialize: function(debugMode) {
+        initialize: function() {
             this.state.moduleId = document.getElementsByTagName('html')[0].getAttribute('ep-ng-app');
             if (this.state.moduleId) {
                 var dbg = document.getElementsByTagName('html')[0].getAttribute('ep-debug');
                 this.state.debugMode = (dbg === '1' || dbg === 'true');
                 document.addEventListener('deviceready', this.onDeviceReady, false);
-                window.addEventListener('load', this.onLoad, false)
+                window.addEventListener('load', this.onLoad, false);
             }
         },
         // deviceready Event Handler
@@ -2152,7 +2154,7 @@ angular.module('ep.signature', [
         // load Event Handler
         onLoad: function() {
             epApplicationLoader.state.contentLoaded = true;
-            epApplicationLoader.state.messages.push('onLoad event is triggered.')
+            epApplicationLoader.state.messages.push('onLoad event is triggered.');
 
             //sometimes this onLoad fires faster than the onDeviceReady so in that case we need to bootstrap angular
             if (epApplicationLoader.state.deviceDetected) {
@@ -2195,12 +2197,12 @@ angular.module('ep.signature', [
             }
         },
 
-        attachFastClick: function () {
+        attachFastClick: function() {
             FastClick.attach(document.body);
             this.state.messages.push('FastClick attached.');
         },
 
-        debugOutput: function (continuation) {
+        debugOutput: function(continuation) {
             if (this.state.debugMode) {
                 angular.element('body').append('<div id="messages"></div>');
                 var messageBlock = angular.element('#messages');
@@ -7899,7 +7901,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         var fileSystem = storageSystems.localStorage;
 
         function failWith(deferred, url) {
-            return function(error){
+            return function(error) {
                 var errDesc;
                 if (error.name) {
                     errDesc = domErrors[error.name];
@@ -7909,7 +7911,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     errDesc = error;
                 }
                 var msg = 'LocalFileSystem failure: ' + errDesc + ' [ ' + url;
-                if(error.name) {
+                if (error.name) {
                     msg += ': ' + error.name;
                 }
                 msg += ' ]';
@@ -7931,7 +7933,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * the data is stored in localStorage. The path parameter is optional, defaulting to the
          */
         function load(path, filename) {
-            return loadText(path, filename).then(function(text){
+            return loadText(path, filename).then(function(text) {
                 return angular.fromJson(text);
             });
         }
@@ -7948,13 +7950,13 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * is loaded from the application's data directory by default. On browser based apps,
          * the data is stored in localStorage. The path parameter is optional, defaulting to the
          */
-        function loadText(path, filename){
+        function loadText(path, filename) {
             var graph;
             var deferred = $q.defer();
             var filePath;
 
             if (fileSystem === storageSystems.localStorage) {
-                if(!filename){
+                if (!filename) {
                     filename = path;
                     path = epFileConstants.namespace;
                 }
@@ -7967,7 +7969,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     deferred.resolve(graph);
                 }
             } else {
-                if(!filename){
+                if (!filename) {
                     filename = path;
                     path = $window.cordova.file.dataDirectory;
                 }
@@ -8020,15 +8022,15 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * is saved in the application's data directory by default. On browser based apps,
          * the data is stored in localStorage.
          */
-        function saveText(text, path, filename, type){
+        function saveText(text, path, filename, type) {
             var deferred = $q.defer();
             try {
                 var filePath = '';
-                if(!type){
+                if (!type) {
                     type = 'text/plain';
                 }
                 if (fileSystem === storageSystems.localStorage) {
-                    if(!filename){
+                    if (!filename) {
                         filename = path;
                         path = epFileConstants.namespace;
                     }
@@ -8037,7 +8039,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     $log.debug('Successfully saved ' + filePath + ' to LocalStorage.');
                     deferred.resolve();
                 } else {
-                    if(!filename){
+                    if (!filename) {
                         filename = path;
                         path = $window.cordova.file.dataDirectory;
                     }
@@ -8084,7 +8086,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             var deferred = $q.defer();
             try {
                 if (fileSystem === storageSystems.fileStorage) {
-                    if(!filename){
+                    if (!filename) {
                         filename = path;
                         path = $window.cordova.file.dataDirectory;
                     }
@@ -8099,7 +8101,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             }
                         });
                 } else {
-                    if(!filename){
+                    if (!filename) {
                         filename = path;
                         path = epFileConstants.namespace;
                     }
@@ -8924,25 +8926,25 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @name ep.hybrid.emailcomposer:epHybridEmailComposerService
  * @description
  * Service for accessing Cordova Email Composer plugin. This provides access to the standard interface that manages the editing and sending an email.
-  *
+ *
  * Note: Include cordova.js script file in html file and add
  * {@link https://www.npmjs.com/package/cordova-plugin-email cordova email plugin} into app
  *
  * @example
-    <example module="TestApp">
+ <example module="TestApp">
      <file name="index.html">
-	     <div ng-controller="SampleCtrl">
-            <div class="panel-body">
+         <div ng-controller="SampleCtrl">
+             <div class="panel-body">
                 <div><button class="btn btn-primary btn-block" ng-click="sendEmail()">Send An Email</button></div>
-            </div>
-	      </div>
+             </div>
+         </div>
      </file>
      <file name="script.js">
-     	angular.module('TestApp', ['ep.hybrid.emailcomposer'])
-     		.controller('SampleCtrl',['$scope', '$log', 'epHybridEmailComposerService',
-	     		function($scope, epHybridEmailComposerService){
-                  $scope.sendEmail = function () {
-                    epHybridEmailComposerService.draftAnEmail('',{
+        angular.module('TestApp', ['ep.hybrid.emailcomposer'])
+        .controller('SampleCtrl',['$scope', '$log', 'epHybridEmailComposerService',
+            function($scope, epHybridEmailComposerService){
+                  $scope.sendEmail = function() {
+                    epHybridEmailComposerService.draftAnEmail('', {
                         to: ['max@mustermann.d'],
                         cc: ['john@doe.com', 'jane@doe.com'],
                         bcc: [],
@@ -8951,10 +8953,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         isHtml: true,
                         attachments: ['file://app/css/EpicApp.css']
                    });
-        };
+                };
             }]);
      </file>
-   </example>
+ </example>
  */
 (function() {
     'use strict';
@@ -8978,10 +8980,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             var emailAvailable;
             try {
                 cordova.plugins.email.isAvailable(
-                   function(isAvailable) {
-                       emailAvailable = isAvailable;
-                   }
-            );
+                    function(isAvailable) {
+                        emailAvailable = isAvailable;
+                    }
+                );
             } catch (ex) {
                 emailAvailable = false;
                 $log.debug('Email service not available' + ex);
@@ -9003,7 +9005,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @param {string} settings.body - Email body (for HTML, set isHtml to true)
          * @param {boolean} settings.isHtml - Indicats if the body is HTML or plain text
          * @param {object} settings.attachments - Array of strings i.e. File paths that needs to be attached
-         * @param {boolean} asText - Set asText true if the file needs to load text from persistent storage. 
+         * @param {boolean} asText - Set asText true if the file needs to load text from persistent storage.
          * If this property is set to false or not set then the file loads an object from the storage(Example: While using Json files).
          * @description
          * Opens an Email draft with the provided inputs. After opening the draft the user can edit, delete or send an email.
@@ -9011,63 +9013,62 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
         function draftAnEmail(filename, settings, asText) {
             cordova.plugins.email.isAvailable(
-                   function(isAvailable) {
-                       function send(file) {
-                           var defaults = {
-                               to: [],
-                               cc: [],
-                               bcc: [],
-                               subject: '[No Subject]',
-                               body: '',
-                               isHtml: false,
-                               attachments: []
-                           };
-                           var emailSettings = angular.extend(defaults, settings);
-                           if (!angular.isArray(emailSettings.attachments)) {
-                               emailSettings.attachments = [emailSettings.attachments];
-                           }
-                           if (file) {
-                               emailSettings.attachments.push(file);
-                           }
-                           cordova.plugins.email.open(emailSettings, function(e) {
-                               $log.error('An error occurred while attempting to launch the email application.' + e);
-                           });
-                           return;
-                       }
+                function() {
+                    function send(file) {
+                        var defaults = {
+                            to: [],
+                            cc: [],
+                            bcc: [],
+                            subject: '[No Subject]',
+                            body: '',
+                            isHtml: false,
+                            attachments: []
+                        };
+                        var emailSettings = angular.extend(defaults, settings);
+                        if (!angular.isArray(emailSettings.attachments)) {
+                            emailSettings.attachments = [emailSettings.attachments];
+                        }
+                        if (file) {
+                            emailSettings.attachments.push(file);
+                        }
+                        cordova.plugins.email.open(emailSettings, function(e) {
+                            $log.error('An error occurred while attempting to launch the email application.' + e);
+                        });
+                    }
 
-                       if (!filename) {
-                           send(null);
-                       } else {
+                    if (!filename) {
+                        send(null);
+                    } else {
 
-                           var features = epFeatureDetectionService.getFeatures();
-                           if (features.platform.os.toLocaleLowerCase() === 'ios') {
-                               send(epFileService.getFilePath(filename));
-                           } else {
-                               // On android, we need to move the file out to an external directory
-                               // so that the email client has the necessary permissions to attach
-                               // it to the draft, so here we load it from the "standard" location
-                               if (asText) {
-                                   epFileService.loadText(filename).then(function(graph) {
-                                       // then save it to the external directory
-                                       return epFileService.saveText(graph, cordova.file.externalRootDirectory, filename);
-                                   }).then(function() {
-                                       // And finally send the email using the new file location
-                                       send(cordova.file.externalRootDirectory + filename);
-                                   });
-                               } else {
-                                   epFileService.load(filename).then(function(graph) {
-                                       // then save it to the external directory
-                                       return epFileService.save(graph, cordova.file.externalRootDirectory, filename);
-                                   }).then(function() {
-                                       // And finally send the email using the new file location
-                                       send(cordova.file.externalRootDirectory + filename);
-                                   });
-                               }
-                           }
-                       }
-                   }, function() {
-                       $log.debug('Email service not available');
-                   });
+                        var features = epFeatureDetectionService.getFeatures();
+                        if (features.platform.os.toLocaleLowerCase() === 'ios') {
+                            send(epFileService.getFilePath(filename));
+                        } else {
+                            // On android, we need to move the file out to an external directory
+                            // so that the email client has the necessary permissions to attach
+                            // it to the draft, so here we load it from the "standard" location
+                            if (asText) {
+                                epFileService.loadText(filename).then(function(graph) {
+                                    // then save it to the external directory
+                                    return epFileService.saveText(graph, cordova.file.externalRootDirectory, filename);
+                                }).then(function() {
+                                    // And finally send the email using the new file location
+                                    send(cordova.file.externalRootDirectory + filename);
+                                });
+                            } else {
+                                epFileService.load(filename).then(function(graph) {
+                                    // then save it to the external directory
+                                    return epFileService.save(graph, cordova.file.externalRootDirectory, filename);
+                                }).then(function() {
+                                    // And finally send the email using the new file location
+                                    send(cordova.file.externalRootDirectory + filename);
+                                });
+                            }
+                        }
+                    }
+                }, function() {
+                    $log.debug('Email service not available');
+                });
         }
 
         //function draftAnEmail(settings) {
@@ -9394,8 +9395,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          */
         function addMultipleMarkers(locations, map) {
 
-            if (!locations || locations.length == 0) {
-                return
+            if (!locations || locations.length === 0) {
+                return;
             }
 
             var infowindow = new google.maps.InfoWindow({
@@ -9411,7 +9412,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     geocoder.geocode({
                         'address': location
                     }, function(results, status) {
-                        if (status == google.maps.GeocoderStatus.OK) {
+                        if (status === google.maps.GeocoderStatus.OK) {
                             var marker = new google.maps.Marker({
                                 position: results[0].geometry.location,
                                 map: map
@@ -9424,7 +9425,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                                     infowindow.setContent(results[0].formatted_address);
                                     // jscs:enable
                                     infowindow.open(map, marker);
-                                }
+                                };
                             })(marker));
 
                             bounds.extend(results[0].geometry.location);
@@ -9437,6 +9438,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 });
             }
 
+            function mapClick(marker, index, locations, map){
+                infowindow.setContent(locations[index][0]);
+                infowindow.open(map, marker);
+            }
             if (angular.isObject(locations[0])) {
                 // Add the markers on map, for the list of locations containing names and respective latitude and longitude
                 for (var i = 0; i < locations.length; i++) {
@@ -9450,12 +9455,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                                 map: map
                             });
 
-                            google.maps.event.addListener(marker, 'click', (function(marker, i) {
-                                return function() {
-                                    infowindow.setContent(locations[i][0]);
-                                    infowindow.open(map, marker);
-                                }
-                            })(marker, i));
+                            google.maps.event.addListener(marker, 'click', mapClick.bind(this, marker, i, locations, map));
 
                             bounds.extend(latLng);
                             //  Fit the bounds to map
@@ -9608,7 +9608,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      </file>
    </example>
  */
-(function() {
+(function(backgroundGeolocation) {
     'use strict';
 
     epHybridGPSTrackerService.$inject = ['$rootScope', '$log'];
@@ -9681,7 +9681,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         }
 
         function startGPSTracking() {
-            var bg = backgroundGeoLocation;
+            var bg = backgroundGeolocation;
             console.log(bg);
             //if (!gpsConfigured && window.backgroundGeoLocation) {
                 $log.info('GPS background tracking started.');
@@ -9705,7 +9705,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         };
     }
 
-})();
+})(backgroundGeolocation);
 
 /**
  *
@@ -15109,18 +15109,17 @@ angular.module('ep.record.editor').
     }]);
 })();
 
-    /**
-     * @ngdoc controller
-     * @name ep.shell.controller:epShellMenuCtrl
-     * @description
-     * Represents shell's menu controller.
-     */
+/**
+ * @ngdoc controller
+ * @name ep.shell.controller:epShellMenuCtrl
+ * @description
+ * Represents shell's menu controller.
+ */
 (function() {
     'use strict';
 
     epShellMenuCtrl.$inject = ['$q', '$scope', 'epEmbeddedAppsService', 'epMultiLevelMenuService'];
-    angular.module('ep.shell').
-        controller('epShellMenuCtrl', epShellMenuCtrl);
+    angular.module('ep.shell').controller('epShellMenuCtrl', epShellMenuCtrl);
 
     /*@ngInject*/
     function epShellMenuCtrl($q, $scope, epEmbeddedAppsService, epMultiLevelMenuService) {
@@ -15141,10 +15140,10 @@ angular.module('ep.record.editor').
                 menuitems: []
             };
 
-            if(!angular.isArray($scope.menuOptions.fnGetMenu)){
+            if (!angular.isArray($scope.menuOptions.fnGetMenu)) {
                 $scope.menuOptions.fnGetMenu = [$scope.menuOptions.fnGetMenu];
             }
-            
+
             $scope.menuGets = $scope.menuOptions.fnGetMenu;
             if ($scope.includeEmbeddedMenu) {
                 $scope.menuGets.push(epEmbeddedAppsService.retrieveAppsMenu);
@@ -15250,12 +15249,12 @@ angular.module('ep.record.editor').
     'use strict';
     angular.module('ep.shell').directive('myTouchstart', [function() {
         return function(scope, element, attr) {
-            element.bind('touchstart', function(event) {
-                scope.$apply(attr['myTouchstart']);
+            element.bind('touchstart', function() {
+                scope.$apply(attr.myTouchstart);
             });
         };
     }])
-    angular.module('ep.shell').controller('epShellCtrl', [
+    .controller('epShellCtrl', [
         '$location',
         '$rootScope',
         '$route',
@@ -15275,7 +15274,7 @@ angular.module('ep.record.editor').
                 // get the epShellService state so it can be used in the views
                 $scope.state = epShellService.__state;
                 $scope.options = epShellConfig.options;
-                $scope.findXTouch;
+                $scope.findXTouch = epShellService.executeLeftSidebar(event);
                 //toggle sidebar event function
                 $scope.toggleLeftSidebar = function() {
                     epShellService.toggleLeftSidebar();
@@ -15560,1725 +15559,1766 @@ angular.module('ep.record.editor').
  *
  */
 (function() {
-  'use strict';
-
-  angular.module('ep.shell').service('epShellService',
-   /*@ngInject*/
-   ['$compile', '$document', '$location', '$q', '$rootScope', '$sce', '$timeout', 'epConsoleService', 'epEmbeddedAppsService', 'epFeatureDetectionService', 'epShellConfig', 'epShellConstants', 'epSidebarService', 'epThemeService', function($compile, $document, $location, $q, $rootScope, $sce, $timeout,
-            epConsoleService, epEmbeddedAppsService, epFeatureDetectionService,
-            epShellConfig, epShellConstants, epSidebarService, epThemeService) {
-
-     epConsoleService.initialize();
-
-     $rootScope.shellServiceInitComplete = false;
-
-     /**
-      * @private
-      * @description
-      * Holds the current shell state. Almost all settings are here
-      */
-     var shellState = {
-       showProgressIndicator: false,
-       progressIndicatorlevel: 0,
-       enableFeedback: false,
-       enableEmbeddedApps: true,
-       fnOnFeedback: undefined,
-       suspend: false,
-       showBrand: true,
-       brandHTML: 'Mobile Access <sup>2.0</sup>',
-       brandTarget: '',
-       footerHTML: '',
-       footerTarget: '',
-       freezeNavButtons: false,
-       viewContainerScope: null,
-       viewSettings: {
-         sidebar: {},
-         small: {
-           animateViewContainer: true,
-           autoActivateSidebar: false,
-           showLeftSidebar: false,
-           enableLeftSidebar: true,
-           showLeftToggleButton: false,
-           showRightToggleButton: false,
-           showNavbar: false,
-           showFooter: false,
-           showHomeButton: false,
-           showBrand: false,
-           centerBrand: true
-         },
-         large: {
-           animateViewContainer: true,
-           autoActivateSidebar: true,
-           showLeftSidebar: false,
-           enableLeftSidebar: true,
-           showLeftToggleButton: false,
-           showRightToggleButton: false,
-           showNavbar: false,
-           showFooter: false,
-           showHomeButton: false,
-           showBrand: false,
-           centerBrand: false
-         }
-       },
-       pageTitle: '',
-       colorScheme: {},
-       mediaMode: epShellConstants.MEDIA_MODE_SMALL,
-       date: {
-         weekday: 'Tuesday',
-         month: 'October',
-         day: 21
-       },
-       viewDimensions: {
-         offset: { top: 0, left: 0 },
-         size: { width: 0, height: 0 }
-       },
-       infoMessage: '',
-       infoIcon: 'fa fa-3x fa-warning',
-       executeButton: function(btn) {
-         shellState.navButtonClicked = null;
-         if (btn.confirm) {
-           btn.confirm(btn.action);
-         } else if (shellState.freezeNavButtons !== true && btn.enabled !== false) {
-           btn.action();
-         }
-       },
-       buttonMouseDown: function(btn) {
-         //record buttonClicked (for ng-blur events). it will be dismissed after real click.
-         shellState.navButtonClicked = btn;
-       },
-       momentumScrollingEnabled: true,
-       allowVerticalScroll: true,
-       //Stores the nav button that is clicked on mouse down event. This state is cleared on actual click event.
-       //Useful for blur processing
-       navButtonClicked: null
-     };
-
-     /**
-      * @private
-      * @description
-      * After saveState() is called, savedState contains certain properties of current shell state
-      * that are needed to restore later.
-      */
-     var savedState = {};
-
-     /**
-      * @private
-      * @description
-      * Contains the navigation buttons array
-      */
-     var navbarButtons = [];
-
-     /**
-      * @private
-      * @description
-      * Contains the bound view events
-      */
-     var boundViewEvents = {};
-
-     /**
-      * @private
-      * @description
-      * Certain things we initialize at the first reference of the service
-      */
-     function initialize() {
-       //setup the epFeatureDetectionService enquireService registration at 800 px so that we can
-       //perform Javascript operations when the UI goes into large / small mode
-       epFeatureDetectionService.registerMediaQuery(epShellConstants.MEDIA_SIZE_BREAKPOINT, function() {
-         shellState.mediaMode = epShellConstants.MEDIA_MODE_LARGE;
-         notifyStateChanged('setMediaMode');
-         toggleLeftSidebarBackdrop();
-       }, function() {
-         shellState.mediaMode = epShellConstants.MEDIA_MODE_SMALL;
-         notifyStateChanged('setMediaMode');
-         toggleLeftSidebarBackdrop();
-       });
-
-       //Any time the size of the shell window changes fire an event to the views
-       function sendResizeEvent() {
-         notifySizeChanged('size');
-       }
-
-       //this is to ensure it only happens one time
-       var lazySendResize = _.debounce(sendResizeEvent, 100);
-       angular.element(window).on('resize', lazySendResize);
-       $timeout(sendResizeEvent, 100);
-       $rootScope.$on('$routeChangeSuccess', sendResizeEvent);
-
-       setPageTitle(epShellConfig.options.pageTitle);
-       setBrandHTML(epShellConfig.options.brandHTML);
-       setFooterHTML(epShellConfig.options.footerHTML);
-
-       if (epShellConfig.options.includeEmbeddedApps !== undefined) {
-         if (epShellConfig.options.includeEmbeddedApps) {
-           $rootScope.$watch('initComplete', function(complete) {
-             if (complete) {
-               //place here whatever needs to be initialized after initComplete
-               epEmbeddedAppsService.initialize();
-             }
-           });
-         }
-       }
-     }
-
-     /**
-      * @private
-      * @description
-      * Set flags depending on current mode (small or large)
-      */
-     function setCurrentModeFlags(viewScope) {
-       var mode = shellState.viewSettings[shellState.mediaMode];
-        mode.autoActivateSidebar = mode.autoActivateSidebar !== false;
-
-       shellState.showLeftToggleButton = mode.enableLeftSidebar;
-       shellState.enableLeftSidebar = mode.enableLeftSidebar;
-       shellState.showRightToggleButton = mode.enableRightSidebar;
-       shellState.enableRightSidebar = mode.enableRightSidebar;
-       shellState.showNavbar = mode.showNavbar;
-       shellState.showFooter = mode.showFooter;
-       shellState.showHomeButton = mode.showHomeButton;
-       shellState.showBrand = mode.showBrand;
-       shellState.centerBrand = mode.centerBrand;
-       shellState.autoActivateSidebar = mode.autoActivateSidebar;
-       shellState.viewContainerScope = viewScope;
-       shellState.enableFeedback = (epShellConfig.options.enableFeedback && mode.enableFeedback === true);
-
-       if (shellState.showBrand && mode.brandHTML) {
-         if (mode.brandHTML) {
-           setBrandHTML(mode.brandHTML, viewScope);
-         }
-         if (mode.brandTarget) {
-           setBrandTarget(mode.brandTarget);
-         }
-       }
-       if (shellState.showFooter) {
-         if (mode.footerHTML) {
-           setFooterHTML(mode.footerHTML, viewScope);
-         }
-         if (mode.footerTarget) {
-           setFooterTarget(mode.footerTarget);
-         }
-       }
-       if (mode.autoActivateSidebar) {
-         if (mode.enableLeftSidebar && (isMediaModeLarge() || shellState.suspend)) {
-           showLeftSidebar();
-         } else {
-           hideLeftSidebar();
-         }
-       }
-       hideRightSidebar(false);
-       shellState.allowVerticalScroll = !!mode.allowVerticalScroll;
-       shellState.animateViewContainer = mode.animateViewContainer !== false;
-       shellState.momentumScrollingEnabled = mode.momentumScrollingEnabled !== false;
-       notifyStateChanged();
-     }
-
-     /**
-      * @private
-      * @description
-      * Set or Get the viewSettings
-      */
-     function viewSettings(settings) {
-       if (settings !== undefined) {
-         shellState.viewSettings = settings;
-       }
-       return shellState.viewSettings;
-     }
-
-     //--------  Public Functions ----------------------->>>>
-
-     /**
-      * @ngdoc method
-      * @name init
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Initialization of the shell. To be called by application upon start-up
-      */
-     function init() {
-       window.addEventListener('load', function() {
-         FastClick.attach(document.body);
-       }, false);
-
-       $timeout(epThemeService.initialize, 200);
-
-       var windowWidth = $(window).width();
-       shellState.mediaMode = windowWidth >= epShellConstants.MEDIA_SIZE_BREAKPOINT ?
-           epShellConstants.MEDIA_MODE_LARGE : epShellConstants.MEDIA_MODE_SMALL;
-       // initialize the sidebar as "shown" if we're in large mode, otherwise false.
-       shellState.showSidebar = isMediaModeLarge();
-       $rootScope.initComplete = true;
-     }
-
-     /**
-      * @ngdoc method
-      * @name saveState
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * save current shell state for later usage by restoreState(). Used by embedded applications to store
-      * shell state when embedded app is started and then to restore back when exiting embedded app
-      * @returns {object} saved state data
-      */
-     function saveState() {
-       savedState = {
-         pageTitle: getPageTitle(),
-         brandHTML: getBrandHTML(),
-         navbarButtons: angular.extend([], navbarButtons)
-       };
-       return savedState;
-     }
-
-     /**
-      * @ngdoc method
-      * @name restoreState
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Used in conjunction with saveState(). This method will restore some properties
-      * of shell state to what they were at the time of saveState() call.
-      * @param {object} state - optional parameter that contains saved state data. If not
-      * provided, internal saved state data will be used
-      */
-     function restoreState(state) {
-       var oldState = (state) ? state : savedState;
-       if (oldState && oldState !== {}) {
-         if (oldState.navbarButtons) {
-           updateNavbarButtons(oldState.navbarButtons);
-         }
-         if (oldState.pageTitle) {
-           setPageTitle(oldState.pageTitle);
-         }
-         if (oldState.brandHTML) {
-           setBrandHTML(oldState.brandHTML, oldState.viewContainerScope);
-         }
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name showProgressIndicator
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Show progress indicator in the middle of the current view of the shell
-      */
-     function showProgressIndicator() {
-       shellState.showProgressIndicator = true;
-       shellState.progressIndicatorlevel++;
-     }
-
-     /**
-      * @ngdoc method
-      * @name hideProgressIndicator
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Hides progress indicator. Since showProgressIndicator() are stackable (queue)
-      * the hideProgressIndicator() will decrement the show calls and will actually hide when bottom of
-      * queue is reached.
-      * @param {boolean} immediate - optional parameter - if true the progress indicator is stopped
-      * immediately, otherwise after a timeout
-      */
-     function hideProgressIndicator(immediate) {
-       shellState.progressIndicatorlevel--;
-       shellState.progressIndicatorlevel = Math.max(shellState.progressIndicatorlevel, 0);
-       if (shellState.progressIndicatorlevel === 0) {
-         if (immediate) {
-           shellState.showProgressIndicator = false;
-         } else {
-           $timeout(function() { shellState.showProgressIndicator = false; });
-         }
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name resetProgressIndicator
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Hides and resets progress indicator. Since showProgressIndicator() are stackable (queue)
-      * the hideProgressIndicator() will decrement the show calls and will actually hide when bottom of
-      * queue is reached. This method allows to hide immediately, reseeting the queue.
-      */
-     function resetProgressIndicator() {
-       shellState.progressIndicatorlevel = 0;
-       hideProgressIndicator(true);
-     }
-
-     /**
-      * @ngdoc method
-      * @name getMediaMode
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Returns the current media mode: MEDIA_MODE_LARGE or MEDIA_MODE_SMALL (epShellConstants)
-      * @returns {string} current media mode: MEDIA_MODE_LARGE or MEDIA_MODE_SMALL (epShellConstants)
-      */
-     function getMediaMode() {
-       return shellState.mediaMode;
-     }
-
-     /**
-      * @ngdoc method
-      * @name isMediaModeLarge
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Checks if the current media mode is MEDIA_MODE_LARGE (epShellConstants)
-      */
-     function isMediaModeLarge() {
-       return shellState.mediaMode === epShellConstants.MEDIA_MODE_LARGE;
-     }
-
-     /**
-      * @ngdoc method
-      * @name themingDisabled
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @param {boolean} onOff - if true theming is turned on, if false set as off
-      * @description
-      * Returns the state of theming flag as set by sysconfig.json. True - if theming is disabled.
-      * Can also be used to turn off and on theming in the shell by passing the disabled parameter
-      * @returns {boolean} current media mode: MEDIA_MODE_LARGE or MEDIA_MODE_SMALL (epShellConstants)
-      */
-     function themingDisabled(onOff) {
-       return epThemeService.disableTheming(onOff);
-     }
-
-     function registerViewEvent(id, eventName, callback) {
-       // clean up the old event if there is one
-       if (boundViewEvents[id]) {
-         boundViewEvents[id]();
-       }
-
-       // register the given event in the boundViewEvents collection.
-       boundViewEvents[id] = $rootScope.$on(eventName, callback);
-     }
-
-     function cleanupViewEvents() {
-       // clean up any events that have been registered.
-       _.each(boundViewEvents, function(unregister) { unregister(); });
-       boundViewEvents = {};
-     }
-
-     /**
-      * @ngdoc method
-      * @name setInfo
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Set the Info Message view overlay, that will cover the current view
-      * @param {string} icon - icon to be displayed
-      * @param {string} message - icon to be displayed
-      */
-     function setInfo(icon, message) {
-       shellState.infoIcon = icon;
-       shellState.infoMessage = message;
-     }
-
-     /**
-      * @ngdoc method
-      * @name clearInfo
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Clears the Info Message view overlay, that covers the current view.
-      */
-     function clearInfo() {
-       shellState.infoIcon = '';
-       shellState.infoMessage = '';
-     }
-
-     /**
-      * @ngdoc method
-      * @name setPageTitle
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Set the title of the page on the browser
-      */
-     function setPageTitle(val) {
-       shellState.pageTitle = val;
-       $document[0].title = shellState.pageTitle;
-     }
-     /**
-     * @ngdoc method
-     * @name initViewBackground
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Set the the background color of the view for an animation
-     */
-     function initViewBackground() {
-       if (epShellConfig.options.enableViewAnimations !== false) {
-         $('#viewStyle').remove();
-         var color = $('body').css('background-color');
-         var opaqueColor = getOpaqueColor(color);
-         var style = '.view { background-color: ' + opaqueColor + '; }';
-         $('head').append('<style id="viewStyle">' + style + '</style>');
-       }
-     }
-     /**
-    * @ngdoc method
-    * @name getOpaqueColor
-    * @methodOf ep.shell.service:epShellService
-    * @public
-    * @description
-    * Get the fully opaque color for the given color
-    */
-     function getOpaqueColor(color) {
-       var newVals;
-       if (color.indexOf('rgb') === 0) {
-         var numbers = color.replace('rgb', '').replace('a', '').replace('(', '').replace(')', '');
-         var vals = numbers.split(',').map(function(v) { return v.trim(); });
-
-         if (vals.length === 4) {
-           vals[3] = '1';
-         } else if (vals.length === 3) {
-           vals.push('1');
-         }
-
-         newVals = vals.join(', ');
-       }
-       //else {
-       //  TODO: support parsing hex code
-       //}
-       return 'rgba(' + newVals + ')';
-     }
-
-     /**
-      * @ngdoc method
-      * @name getPageTitle
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Get the title of the page (from shell state)
-      * @returns {string} page title
-      */
-     function getPageTitle() {
-       return shellState.pageTitle;
-     }
-
-     /**
-      * @ngdoc method
-      * @name toggleBrand
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Toggles the display of the brand in the shell
-      */
-     function toggleBrand() {
-       shellState.showBrand = !shellState.showBrand;
-       shellState.viewSettings[shellState.mediaMode].showBrand = shellState.showBrand;
-     }
-
-     /**
-      * @ngdoc method
-      * @name showBrand
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Turns on and off the display of the brand in the shell
-      * @param {boolean} onOff - if true brand is turned on, if false set as off
-      */
-     function showBrand(onOff) {
-       shellState.showBrand = (onOff === undefined) ? true : onOff;
-       shellState.viewSettings[shellState.mediaMode].showBrand = shellState.showBrand;
-     }
-
-     /**
-      * @ngdoc method
-      * @name setBrandHTML
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Sets the branding HTML.
-      * @param {string} html - branding html
-      * @param {object} viewScope - (optional) The scope to use when compiling the html as a template
-      */
-     function setBrandHTML(html, viewScope) {
-
-         shellState.brandHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;
-         shellState.viewSettings[shellState.mediaMode].brandHTML = shellState.brandHTML;
-
-         if(viewScope){
-             $timeout(function(){
-                 $compile(angular.element('#apptitle').contents())(viewScope);
-             })
-         }
-     }
-     /**
-      * @ngdoc method
-      * @name setBrandTarget
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Sets the branding target url.
-      * @param {string} target - url to follow when clicking on the brand
-      */
-     function setBrandTarget(target) {
-
-       shellState.brandTarget = target;
-       shellState.viewSettings[shellState.mediaMode].brandTarget = shellState.brandTarget;
-     }
-     /**
-      * @ngdoc method
-      * @name centerBrand
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Turns on and off the centering of the brand in the navbar
-      * @param {boolean} onOff - if true brand centering is turned on, if false set as off
-      */
-     function centerBrand(onOff) {
-       shellState.centerBrand = (onOff === undefined) ? true : onOff;
-       shellState.viewSettings[shellState.mediaMode].centerBrand = shellState.centerBrand;
-     }
-     /**
-      * @ngdoc method
-      * @name getBrandHTML
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Returns the branding html. (The html returned is compiled by $sce)
-      * @returns {string} brand html
-      */
-     function getBrandHTML() {
-       return shellState.brandHTML;
-     }
-     /**
-      * @ngdoc method
-      * @name getBrandTarget
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Returns the branding target. (The url followed when clicking on the brand link.)
-      * @returns {string} brand target
-      */
-     function getBrandTarget() {
-       return shellState.brandTarget;
-     }
-     /**
-      * @ngdoc method
-      * @name setFooterHTML
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Sets the footer HTML.
-      * @param {string} html - footer html
-      * @param {object} viewScope - (optional) The scope to use when compiling the html as a template
-      */
-     function setFooterHTML(html, viewScope) {
-         shellState.footerHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;
-         shellState.viewSettings[shellState.mediaMode].footerHTML = shellState.footerHTML;
-
-         if(viewScope) {
-             $timeout(function() {
-                 $compile(angular.element('#footerElement').contents())(viewScope);
-             });
-         }
-     }
-
-     /**
-      * @ngdoc method
-      * @name getBrandHTML
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Returns the branding html. (The html returned is compiled by $sce)
-      * @returns {string} brand html
-      */
-     function getFooterHTML() {
-       return shellState.footerHTML;
-     }
-
-     /**
-      * @ngdoc method
-      * @name setFooterTarget
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Sets the footer target url.
-      * @param {string} target - url to follow when clicking on the footer
-      */
-     function setFooterTarget(target) {
-       shellState.footerTarget = target;
-       shellState.viewSettings[shellState.mediaMode].footerTarget = shellState.footerTarget;
-     }
-
-     /**
-      * @ngdoc method
-      * @name getFooterTarget
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Returns the footer target. (The url followed when clicking on the footer link.)
-      * @returns {string} footer target
-      */
-     function getFooterTarget() {
-       return shellState.footerTarget;
-     }
-
-     function notifyShellButtonsChanged(event) {
-       navbarButtons = _.sortBy(navbarButtons, function(btn) { return btn.index; });
-       $rootScope.$emit(epShellConstants.SHELL_NAV_BUTTONS_CHANGED_EVENT, event);
-
-       $timeout(function() { $rootScope.$apply(); });
-     }
-
-     function suspend() {
-       shellState.suspend = true;
-     }
-
-     function resume() {
-       shellState.suspend = false;
-     }
-
-     /**
-      * @ngdoc method
-      * @name feedbackCallback
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Set the callback function for Feedback which is called after the feedback form is displayed
-      * and user data is entered. The applicatio will then do whatever it nneds to do to forward the
-      * feedback appropriately.
-      */
-     function feedbackCallback(fnOnFeedback) {
-       //set or get feedback callback function which will do actual submission of user data.
-       //Function must return a promise.
-       if (fnOnFeedback !== undefined) {
-         shellState.fnOnFeedback = fnOnFeedback;
-       }
-       return shellState.fnOnFeedback;
-     }
-
-     /**
-      * @ngdoc method
-      * @name enableFeedback
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Enable the feedback button functionality (by default on, can be overriden by sysconfig)
-      * @param {bool} onOff - turn feature on / off
-      */
-     function enableFeedback(onOff) {
-       epShellConfig.options.enableFeedback = onOff;
-     }
-     /**
-      * @ngdoc method
-      * @name enableViewFeedback
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Enable the feedback button on current view
-      * @param {bool} onOff - turn feedback on / off on current view
-      */
-     function enableViewFeedback(onOff) {
-       if (epShellConfig.options.enableFeedback) {
-         shellState.enableFeedback = onOff;
-       }
-     }
-     /**
-      * @ngdoc method
-      * @name toggleViewFeedback
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Toggle the feedback button on current view
-      */
-     function toggleViewFeedback() {
-       if (epShellConfig.options.enableFeedback) {
-         shellState.enableFeedback = !shellState.enableFeedback;
-       }
-     }
-
-     function notifyStateChanged(event) {
-       $rootScope.$emit(epShellConstants.SHELL_STATE_CHANGE_EVENT, event);
-     }
-
-     function notifySizeChanged(event) {
-       // use timeout to wait until the animation is complete before publishing the resize event
-       $timeout(function() {
-         $rootScope.$emit(epShellConstants.SHELL_SIZE_CHANGE_EVENT, event);
-       }, 310);
-     }
-
-     /**
-      * @ngdoc method
-      * @name hideHomeButton
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Hide home button (can be overriden by viewcontainer options)
-      */
-     function hideHomeButton() {
-       if (shellState.showHomeButton) {
-         shellState.showHomeButton = false;
-         notifyShellButtonsChanged('hideHomeButton');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name showHomeButton
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Show home button (can be overriden by viewcontainer options)
-      */
-     function showHomeButton() {
-       if (!shellState.showHomeButton) {
-         shellState.showHomeButton = true;
-         notifyShellButtonsChanged('showHomeButton');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name hideLeftToggleButton
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Hide the left panel toggle button
-      */
-     function hideLeftToggleButton() {
-       if (shellState.showLeftToggleButton) {
-         shellState.showLeftToggleButton = false;
-         notifyShellButtonsChanged('hideLeftToggleButton');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name showLeftToggleButton
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Show the left panel toggle button
-      */
-     function showLeftToggleButton() {
-       if (!shellState.showLeftToggleButton) {
-         shellState.showLeftToggleButton = true;
-         notifyShellButtonsChanged('showLeftToggleButton');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name hideRightToggleButton
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Hide the right panel toggle button
-      */
-     function hideRightToggleButton() {
-       if (shellState.showRightToggleButton) {
-         shellState.showRightToggleButton = false;
-
-         notifyShellButtonsChanged('hideRightToggleButton');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name showLeftToggleButton
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Show the right panel toggle button
-      */
-     function showRightToggleButton() {
-       if (!shellState.showRightToggleButton) {
-         shellState.showRightToggleButton = true;
-
-         notifyShellButtonsChanged('showRightToggleButton');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name toggleLeftSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Toggle left side bar
-      */
-     function toggleLeftSidebar() {
-       shellState.showLeftSidebar = !shellState.showLeftSidebar;
-       shellState.viewSettings[shellState.mediaMode].showLeftSidebar = shellState.showLeftSidebar;
-       toggleLeftSidebarBackdrop();
-
-       notifySizeChanged(shellState.showLeftSidebar ? 'showLeftSidebar' : 'hideLeftSidebar');
-     }
-
-     /**
-      * @ngdoc method
-      * @name showLeftSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Show left side bar
-      */
-     function showLeftSidebar() {
-       if (!shellState.showLeftSidebar) {
-         shellState.showLeftSidebar = true;
-         shellState.viewSettings[shellState.mediaMode].showLeftSidebar = true;
-
-         notifySizeChanged('showLeftSidebar');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name hideLeftSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Hide left side bar
-      */
-     function hideLeftSidebar() {
-       if (shellState.showLeftSidebar) {
-         shellState.showLeftSidebar = false;
-         shellState.viewSettings[shellState.mediaMode].showLeftSidebar = false;
-         shellState.showViewContainerBackdrop = false;
-
-         notifySizeChanged('hideLeftSidebar');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name disableLeftSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Disable left side bar
-      */
-     function disableLeftSidebar() {
-       if (shellState.enableLeftSidebar) {
-         shellState.enableLeftSidebar = false;
-         shellState.viewSettings.large.enableLeftSidebar = false;
-         shellState.viewSettings.small.enableLeftSidebar = false;
-
-         hideLeftSidebar();
-         hideLeftToggleButton();
-         notifyStateChanged('disableLeftSidebar');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name enableLeftSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Enable left side bar
-      */
-     function enableLeftSidebar() {
-       if (!shellState.enableLeftSidebar) {
-         shellState.enableLeftSidebar = true;
-         shellState.viewSettings.large.enableLeftSidebar = true;
-         shellState.viewSettings.small.enableLeftSidebar = true;
-
-         if (isMediaModeLarge()) {
-           showLeftSidebar();
-         }
-         showLeftToggleButton();
-         notifyStateChanged('enableLeftSidebar');
-       }
-     }
-
-        /**
-      * @ngdoc method
-      * @name executeLeftSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * get coordinates for the swipe event
-      */
-     function executeLeftSidebar(event) {
-         return event.touches[0].clientX;
-     }
-
-     /**
-      * @ngdoc method
-      * @name clearLeftSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Clear content of the left side bar
-      */
-     function clearLeftSidebar() {
-       epSidebarService.clearLeftSidebar();
-     }
-
-     /**
-      * @ngdoc method
-      * @name toggleRightSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Toggle the right side bar
-      */
-     function toggleRightSidebar() {
-       shellState.showRightSidebar = !shellState.showRightSidebar;
-       shellState.viewSettings[shellState.mediaMode].showRightSidebar = shellState.showRightSidebar;
-       toggleRightSidebarBackdrop();
-
-       notifySizeChanged(shellState.showRightSidebar ? 'showRightSidebar' : 'hideRightSidebar');
-
-     }
-
-     /**
-      * @ngdoc method
-      * @name showRightSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Show the right side bar
-      */
-     function showRightSidebar() {
-       if (!shellState.showRightSidebar) {
-         shellState.showRightSidebar = true;
-         shellState.viewSettings[shellState.mediaMode].showRightSidebar = true;
-
-         notifyStateChanged('showRightSidebar');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name toggleLeftSidebarBackdrop
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Toggles backdrop on view container while toggling the left sidebar
-      */
-     function toggleLeftSidebarBackdrop() {
-         if (shellState.showLeftSidebar && getMediaMode() === epShellConstants.MEDIA_MODE_SMALL) {
-             hideRightSidebar();
-             shellState.showViewContainerBackdrop = true;
-         } else {
-             if (!shellState.showRightSidebar) {
-                 shellState.showViewContainerBackdrop = false;
-             }
-         }
-     }
-
-     /**
-      * @ngdoc method
-      * @name toggleRightSidebarBackdrop
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Toggles backdrop on view container while toggling the right sidebar
-      */
-     function toggleRightSidebarBackdrop() {
-         if (shellState.showRightSidebar) {
-             if (getMediaMode() === epShellConstants.MEDIA_MODE_SMALL) {
-                 hideLeftSidebar();
-             }
-             shellState.showViewContainerBackdrop = true;
-         } else {
-             shellState.showViewContainerBackdrop = false;
-         }
-     }
-
-     /**
-      * @ngdoc method
-      * @name hideRightSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Hide the right side bar
-      */
-     function hideRightSidebar() {
-       if (shellState.showRightSidebar) {
-         shellState.showRightSidebar = false;
-         shellState.viewSettings[shellState.mediaMode].showRightSidebar = false;
-         shellState.showViewContainerBackdrop = false;
-
-         notifySizeChanged('hideRightSidebar');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name disableRightSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Disable the right side bar
-      */
-     function disableRightSidebar() {
-       if (shellState.enableRightSidebar) {
-         shellState.enableRightSidebar = false;
-         shellState.viewSettings.large.enableRightSidebar = false;
-         shellState.viewSettings.small.enableRightSidebar = false;
-
-         hideRightSidebar();
-         hideRightToggleButton();
-         notifyStateChanged('disableRightSidebar');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name enableRightSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Enable the right side bar
-      */
-     function enableRightSidebar() {
-       if (!shellState.enableRightSidebar) {
-         shellState.enableRightSidebar = true;
-         shellState.viewSettings.large.enableRightSidebar = true;
-         shellState.viewSettings.small.enableRightSidebar = true;
-
-         showRightToggleButton();
-         notifyStateChanged('enableRightSidebar');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name clearRightSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Clear the content of the right side bar
-      */
-     function clearRightSidebar() {
-       epSidebarService.clearRightSidebar();
-     }
-
-     /**
-      * @ngdoc method
-      * @name getShowLeftSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Returns visibility flag of left side bar
-      * @returns {boolean} true if left bar is visible
-      */
-     function getShowLeftSidebar() {
-       return shellState.showLeftSidebar;
-     }
-
-     /**
-      * @ngdoc method
-      * @name getShowRightSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Returns visibility flag of right side bar
-      * @returns {boolean} true if right bar is visible
-      */
-     function getShowRightSidebar() {
-       return shellState.showRightSidebar;
-     }
-
-     /**
-     * @ngdoc method
-     * @name setLeftTemplate
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Set the left sidabar html
-     * @param {string} html - html of template to be loaded in left sidebar
-     */
-     function setLeftTemplate(html) {
-       epSidebarService.setLeftTemplate(html);
-     }
-
-     /**
-     * @ngdoc method
-     * @name setRightTemplate
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Set the right sidabar html
-     * @param {string} html - html of template to be loaded in right sidebar
-     */
-     function setRightTemplate(html) {
-       epSidebarService.setRightTemplate(html);
-     }
-
-     /**
-     * @ngdoc method
-     * @name setLeftTemplateUrl
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Set the left sidabar html
-     * @param {string} url - url of template to be loaded in left sidebar
-     */
-     function setLeftTemplateUrl(url) {
-       epSidebarService.setLeftTemplateUrl(url);
-     }
-
-     /**
-     * @ngdoc method
-     * @name setRightTemplateUrl
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Set the right sidabar html
-     * @param {string} url - url of template to be loaded in right sidebar
-     */
-     function setRightTemplateUrl(url) {
-       epSidebarService.setRightTemplateUrl(url);
-     }
-
-     /**
-     * @ngdoc method
-     * @name hideNavbar
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Hide navigation bar
-     */
-     function hideNavbar() {
-       if (shellState.showNavbar) {
-         shellState.showNavbar = false;
-         notifyStateChanged('hideNavbar');
-       }
-     }
-     /**
-     * @ngdoc method
-     * @name showNavbar
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Show navigation bar
-     */
-     function showNavbar() {
-       if (!shellState.showNavbar) {
-         shellState.showNavbar = true;
-         notifyStateChanged('showNavbar');
-       }
-     }
-     /**
-     * @ngdoc method
-     * @name toggleNavbar
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Toggle show/hide navigation bar
-     */
-     function toggleNavbar() {
-       if (!shellState.showNavbar) {
-         shellState.showNavbar = true;
-         notifyStateChanged('showNavbar');
-       } else {
-         shellState.showNavbar = false;
-         notifyStateChanged('hideNavbar');
-       }
-     }
-     /**
-     * @ngdoc method
-     * @name hideFooter
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Hide Footer
-     */
-     function hideFooter() {
-       if (shellState.showFooter) {
-         shellState.showFooter = false;
-         notifyStateChanged('hideFooter');
-       }
-     }
-     /**
-     * @ngdoc method
-     * @name showFooter
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Show Footer
-     */
-     function showFooter() {
-       if (!shellState.showFooter) {
-         shellState.showFooter = true;
-         notifyStateChanged('showFooter');
-       }
-     }
-     /**
-     * @ngdoc method
-     * @name toggleFooter
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Toggle show/hide Footer
-     */
-     function toggleFooter() {
-       if (!shellState.showFooter) {
-         shellState.showFooter = true;
-         notifyStateChanged('showFooter');
-       } else {
-         shellState.showFooter = false;
-         notifyStateChanged('hideFooter');
-       }
-     }
-
-     //---------> Navbar Buttons--------------->>>>>>
-
-     /**
-     * @ngdoc method
-     * @name iterateNavbarButton
-     * @methodOf ep.shell.service:epShellService
-     * @private
-     * @description
-     * Iterate through buttons and call func(button, index). If func returns
-     * true, then notifyShellButtonsChanged(eventName) is called
-     * @param {array} arrIds - an array of button id's
-     * @param {string} eventName - event name passed to notifyShellButtonsChanged
-     * @param {function} func - function called for each matched button id
-     */
-     function iterateNavbarButton(arrIds, eventName, func) {
-       //you can pass one or more id's seperated by comma
-       var hasFound = false;
-       if (arrIds !== undefined) {
-         _.each(arrIds, function(arg) {
-           var idx = _.findIndex(navbarButtons, function(value) {
-             return value.id === arg;
-           });
-           if (idx !== -1 && func(navbarButtons[idx], idx)) {
-             hasFound = true;
-           }
-         });
-       }
-       if (hasFound) {
-         notifyShellButtonsChanged(eventName);
-       }
-     }
-
-     /**
-     * @ngdoc method
-     * @name clearNavbarButtons
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Clear (delete) navigation buttons
-     */
-     function clearNavbarButtons() {
-       navbarButtons = [];
-       notifyShellButtonsChanged('clearNavbarButtons');
-     }
-     /**
-     * @ngdoc method
-     * @name updateNavbarButtons
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Update navigation buttons. Old buttons are cleared.
-     * @param {array} buttons - an array of button objects
-     */
-     function updateNavbarButtons(buttons) {
-       navbarButtons = [];
-       addNavbarButtons(buttons);
-       notifyShellButtonsChanged('updateNavbarButtons');
-     }
-     /**
-     * @ngdoc method
-     * @name addNavbarButtons
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Add navigation buttons. They will be merged with existing buttons, but without duplication
-     */
-     function addNavbarButtons(buttons) {
-       var btns = _.union(navbarButtons, buttons);
-       _.each(btns, function(btn) {
-         if (!btn.type) {
-           btn.type = 'button';
-         }
-       });
-       navbarButtons = _.uniq(btns, false, function(value) {
-         return value.id || value.title;
-       });
-       notifyShellButtonsChanged('addNavbarButtons');
-     }
-     /**
-     * @ngdoc method
-     * @name deleteNavbarButton
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Delete navigation button(s). Buttons are removed from the list for matched button id's
-     * @param {object} buttons - an array/arguments of button id's
-     * @example
-     * deleteNavbarButton('myButton1', 'myButton2');
-     * deleteNavbarButton(['myButton1', 'myButton2']);
-     */
-     function deleteNavbarButton() {
-       var args = _.flatten(arguments, true);
-       iterateNavbarButton(args, 'deleteNavbarButton', function(b, idx) {
-         navbarButtons.splice(idx, 1);
-         return true;
-       });
-     }
-
-     /**
-     * @ngdoc method
-     * @name getNavbarButtons
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Return all navigation buttons - the current array of buttons is returned
-     * @returns {Array} array of button objects
-     */
-     function getNavbarButtons() {
-       return navbarButtons;
-     }
-
-     /**
-     * @ngdoc method
-     * @name getNavbarButton
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Return navigation button - for matched button id
-     * @returns {object} button object or null
-     */
-     function getNavbarButton(id) {
-       return _.find(navbarButtons, function(btn) { return btn.id === id; });
-     }
-     /**
-     * @ngdoc method
-     * @name hideNavbarButton
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Hide navigation button(s). Buttons are hidden for matched button id's
-     * @param {object} buttons - an array/arguments of button id's
-     * @example
-     * hideNavbarButton('myButton1', 'myButton2');
-     * hideNavbarButton(['myButton1', 'myButton2']);
-     */
-     function hideNavbarButton() {
-       //you can pass one or more id's seperated by comma
-       var args = _.flatten(arguments, true);
-       iterateNavbarButton(args, 'hideNavbarButton', function(b) {
-         b.hidden = true;
-         return true;
-       });
-     }
-
-     /**
-     * @ngdoc method
-     * @name showNavbarButton
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Show navigation button(s). Buttons are made visible for matched button id's
-     * @param {object} buttons - an array/arguments of button id's
-     * @example
-     * showNavbarButton('myButton1', 'myButton2');
-     * showNavbarButton(['myButton1', 'myButton2']);
-     */
-     function showNavbarButton() {
-       //you can pass one or more id's seperated by comma
-       var args = _.flatten(arguments, true);
-       iterateNavbarButton(args, 'showNavbarButton', function(b) {
-         if (b.fnVisible && angular.isFunction(b.fnVisible)) {
-           b.hidden = !b.fnVisible();
-         } else if (b.enabled && angular.isFunction(b.enabled)) {
-           //Obsolete - enabled should not be used for show/hide!!!
-           //Only temporary for EMA
-           b.hidden = !b.enabled();
-         } else {
-           b.hidden = false;
-         }
-         return true;
-       });
-     }
-     /**
-     * @ngdoc method
-     * @name enableNavbarButton
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Enable navigation button(s). Buttons are made visible for matched button id's
-     * @param {object} buttons - an array/arguments of button id's
-     * @example
-     * enableNavbarButton('myButton1', 'myButton2');
-     * enableNavbarButton(['myButton1', 'myButton2']);
-     */
-     function enableNavbarButton() {
-       //you can pass one or more id's seperated by comma
-       var args = _.flatten(arguments, true);
-       iterateNavbarButton(args, 'enableNavbarButton', function(b) {
-         b.enabled = true;
-         return true;
-       });
-     }
-     /**
-     * @ngdoc method
-     * @name disableNavbarButton
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Disable navigation button(s). Buttons are made visible for matched button id's
-     * @param {object} buttons - an array/arguments of button id's
-     * @example
-     * disableNavbarButton('myButton1', 'myButton2');
-     * disableNavbarButton(['myButton1', 'myButton2']);
-     */
-     function disableNavbarButton() {
-       //you can pass one or more id's seperated by comma
-       var args = _.flatten(arguments, true);
-       iterateNavbarButton(args, 'disableNavbarButton', function(b) {
-         b.enabled = false;
-         return true;
-       });
-     }
-     /**
-     * @ngdoc method
-     * @name hideAllNavbarButtons
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Hide all navigation buttons. All user buttons in are made hidden in Navbar
-     */
-     function hideAllNavbarButtons() {
-       _.each(navbarButtons, function(btn) { hideNavbarButton(btn.id); });
-       notifyShellButtonsChanged('hideNavbarButton');
-     }
-     /**
-     * @ngdoc method
-     * @name showAllNavbarButtons
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Show all navigation buttons. All user buttons in are made visible in Navbar
-     */
-     function showAllNavbarButtons() {
-       _.each(navbarButtons, function(btn) { showNavbarButton(btn.id); });
-       notifyShellButtonsChanged('hideNavbarButton');
-     }
-     /**
-     * @ngdoc method
-     * @name disableNavbarButtons
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Disable/Enable all navigation buttons.
-     * @param {boolean} onOff - disable or enable flag
-     */
-     function disableNavbarButtons(onOff) {
-       shellState.freezeNavButtons = onOff;
-     }
-     /**
-     * @ngdoc method
-     * @name navbarButtonClicked
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Get the button that was clicked - it is available in the time interval between the mouse down and
-     * click events. Useful for 'on-blur' processing.
-     */
-     function navbarButtonClicked() {
-       return shellState.navButtonClicked;
-     }
-     //<<<<<--------------- Navbar Buttons --------------------------
-
-     /**
-     * @ngdoc method
-     * @name momentumScrollingEnabled
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Enable/disable momentum scrolling
-     * @param {boolean} onOff - disable or enable flag
-     */
-     function momentumScrollingEnabled(onOff) {
-       if (onOff !== undefined) {
-         shellState.momentumScrollingEnabled = onOff;
-       }
-       return shellState.momentumScrollingEnabled;
-     }
-
-     /**
-     * @ngdoc method
-     * @name allowVerticalScroll
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Enable/disable vertical scrolling
-     * @param {boolean} onOff - disable or enable flag
-     */
-     function allowVerticalScroll(onOff) {
-       if (onOff !== undefined) {
-         shellState.allowVerticalScroll = onOff;
-       }
-       return shellState.allowVerticalScroll;
-     }
-
-     /**
-     * @ngdoc method
-     * @name viewAnimation
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Set the current route to view animation
-     * @param {string} animation - current animation route
-     */
-     function viewAnimation(animation) {
-       if (animation !== undefined) {
-         shellState.viewAnimation = epShellConfig.options.enableViewAnimations ? animation : '';
-       }
-       return shellState.viewAnimation;
-     }
-
-     /**
-     * @ngdoc method
-     * @name getViewDimensions
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Get current view dimensions
-     */
-     function getViewDimensions() {
-       return shellState.viewDimensions;
-     }
-
-     /**
-     * @ngdoc method
-     * @name isHomeLocation
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Returns true if we are on home location
-     */
-     function isHomeLocation() {
-       return (epShellConfig.homeRoute && epShellConfig.homeRoute.route === $location.url());
-     }
-
-     /**
-     * @ngdoc method
-     * @name goHome
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Go to home location
-     */
-     function goHome() {
-       if (epShellConfig.homeRoute) {
-         $location.url(epShellConfig.homeRoute.route);
-       }
-     }
-
-     initialize();
-
-     return {
-       // --- For internal module usage only --->
-       __state: shellState,
-       __setCurrentModeFlags: setCurrentModeFlags,
-       __viewSettings: viewSettings,
-       // <-------------------------------------------
-       init: init,
-       saveState: saveState,
-       restoreState: restoreState,
-       // Progress Indicator
-       showProgressIndicator: showProgressIndicator,
-       hideProgressIndicator: hideProgressIndicator,
-       resetProgressIndicator: resetProgressIndicator,
-       // Events
-       registerViewEvent: registerViewEvent,
-       cleanupViewEvents: cleanupViewEvents,
-       notifyStateChanged: notifyStateChanged,
-       notifyShellButtonsChanged: notifyShellButtonsChanged,
-       notifySizeChanged: notifySizeChanged,
-       // General Settings
-       setPageTitle: setPageTitle,
-       initViewBackground: initViewBackground,
-       getPageTitle: getPageTitle,
-       toggleBrand: toggleBrand,
-       showBrand: showBrand,
-       setBrandHTML: setBrandHTML,
-       getBrandHTML: getBrandHTML,
-       setBrandTarget: setBrandTarget,
-       getBrandTarget: getBrandTarget,
-       centerBrand: centerBrand,
-       setInfo: setInfo,
-       clearInfo: clearInfo,
-       suspend: suspend,
-       resume: resume,
-       getMediaMode: getMediaMode,
-       isMediaModeLarge: isMediaModeLarge,
-       getViewDimensions: getViewDimensions,
-       momentumScrollingEnabled: momentumScrollingEnabled,
-       allowVerticalScroll: allowVerticalScroll,
-       themingDisabled: themingDisabled,
-       enableFeedback: enableFeedback,
-       enableViewFeedback: enableViewFeedback,
-       toggleViewFeedback: toggleViewFeedback,
-       feedbackCallback: feedbackCallback,
-       showHomeButton: showHomeButton,
-       hideHomeButton: hideHomeButton,
-       //Sidebar functions
-       hideLeftToggleButton: hideLeftToggleButton,
-       showLeftToggleButton: showLeftToggleButton,
-       hideRightToggleButton: hideRightToggleButton,
-       showRightToggleButton: showRightToggleButton,
-       toggleLeftSidebar: toggleLeftSidebar,
-       showLeftSidebar: showLeftSidebar,
-       hideLeftSidebar: hideLeftSidebar,
-       disableLeftSidebar: disableLeftSidebar,
-       enableLeftSidebar: enableLeftSidebar,
-       clearLeftSidebar: clearLeftSidebar,
-       toggleRightSidebar: toggleRightSidebar,
-       showRightSidebar: showRightSidebar,
-       hideRightSidebar: hideRightSidebar,
-       enableRightSidebar: enableRightSidebar,
-       disableRightSidebar: disableRightSidebar,
-       clearRightSidebar: clearRightSidebar,
-       getShowLeftSidebar: getShowLeftSidebar,
-       getShowRightSidebar: getShowRightSidebar,
-       setLeftTemplate: setLeftTemplate,
-       setRightTemplate: setRightTemplate,
-       setLeftTemplateUrl: setLeftTemplateUrl,
-       setRightTemplateUrl: setRightTemplateUrl,
-       executeLeftSidebar: executeLeftSidebar,
-       //Navigation bar functions
-       showNavbar: showNavbar,
-       hideNavbar: hideNavbar,
-       toggleNavbar: toggleNavbar,
-       //Footer
-       showFooter: showFooter,
-       hideFooter: hideFooter,
-       toggleFooter: toggleFooter,
-       setFooterHTML: setFooterHTML,
-       getFooterHTML: getFooterHTML,
-       setFooterTarget: setFooterTarget,
-       getFooterTarget: getFooterTarget,
-       //Nav Buttons
-       clearNavbarButtons: clearNavbarButtons,
-       updateNavbarButtons: updateNavbarButtons,
-       addNavbarButtons: addNavbarButtons,
-       deleteNavbarButton: deleteNavbarButton,
-       getNavbarButtons: getNavbarButtons,
-       getNavbarButton: getNavbarButton,
-       showNavbarButton: showNavbarButton,
-       hideNavbarButton: hideNavbarButton,
-       showAllNavbarButtons: showAllNavbarButtons,
-       hideAllNavbarButtons: hideAllNavbarButtons,
-       enableNavbarButton: enableNavbarButton,
-       disableNavbarButton: disableNavbarButton,
-       disableNavbarButtons: disableNavbarButtons,
-       navbarButtonClicked: navbarButtonClicked,
-       viewAnimation: viewAnimation,
-       isHomeLocation: isHomeLocation,
-       goHome: goHome,
-       toggleLeftSidebarBackdrop: toggleRightSidebarBackdrop,
-       toggleRightSidebarBackdrop: toggleRightSidebarBackdrop
-     };
-   }]
-  );
+    'use strict';
+
+    angular.module('ep.shell').service('epShellService',
+        /*@ngInject*/
+        ['$compile', '$document', '$location', '$q', '$rootScope', '$sce', '$timeout', 'epConsoleService', 'epEmbeddedAppsService', 'epFeatureDetectionService', 'epShellConfig', 'epShellConstants', 'epSidebarService', 'epThemeService', function($compile, $document, $location, $q, $rootScope, $sce, $timeout,
+                 epConsoleService, epEmbeddedAppsService, epFeatureDetectionService,
+                 epShellConfig, epShellConstants, epSidebarService, epThemeService) {
+
+            epConsoleService.initialize();
+
+            $rootScope.shellServiceInitComplete = false;
+
+            /**
+             * @private
+             * @description
+             * Holds the current shell state. Almost all settings are here
+             */
+            var shellState = {
+                showProgressIndicator: false,
+                progressIndicatorlevel: 0,
+                enableFeedback: false,
+                enableEmbeddedApps: true,
+                fnOnFeedback: undefined,
+                suspend: false,
+                showBrand: true,
+                brandHTML: 'Mobile Access <sup>2.0</sup>',
+                brandTarget: '',
+                footerHTML: '',
+                footerTarget: '',
+                freezeNavButtons: false,
+                viewContainerScope: null,
+                viewSettings: {
+                    sidebar: {},
+                    small: {
+                        animateViewContainer: true,
+                        autoActivateSidebar: false,
+                        showLeftSidebar: false,
+                        enableLeftSidebar: true,
+                        showLeftToggleButton: false,
+                        showRightToggleButton: false,
+                        showNavbar: false,
+                        showFooter: false,
+                        showHomeButton: false,
+                        showBrand: false,
+                        centerBrand: true
+                    },
+                    large: {
+                        animateViewContainer: true,
+                        autoActivateSidebar: true,
+                        showLeftSidebar: false,
+                        enableLeftSidebar: true,
+                        showLeftToggleButton: false,
+                        showRightToggleButton: false,
+                        showNavbar: false,
+                        showFooter: false,
+                        showHomeButton: false,
+                        showBrand: false,
+                        centerBrand: false
+                    }
+                },
+                pageTitle: '',
+                colorScheme: {},
+                mediaMode: epShellConstants.MEDIA_MODE_SMALL,
+                date: {
+                    weekday: 'Tuesday',
+                    month: 'October',
+                    day: 21
+                },
+                viewDimensions: {
+                    offset: {top: 0, left: 0},
+                    size: {width: 0, height: 0}
+                },
+                infoMessage: '',
+                infoIcon: 'fa fa-3x fa-warning',
+                executeButton: function(btn) {
+                    shellState.navButtonClicked = null;
+                    if (btn.confirm) {
+                        btn.confirm(btn.action);
+                    } else if (shellState.freezeNavButtons !== true && btn.enabled !== false) {
+                        btn.action();
+                    }
+                },
+                buttonMouseDown: function(btn) {
+                    //record buttonClicked (for ng-blur events). it will be dismissed after real click.
+                    shellState.navButtonClicked = btn;
+                },
+                momentumScrollingEnabled: true,
+                allowVerticalScroll: true,
+                //Stores the nav button that is clicked on mouse down event. This state is cleared on actual click event.
+                //Useful for blur processing
+                navButtonClicked: null
+            };
+
+            /**
+             * @private
+             * @description
+             * After saveState() is called, savedState contains certain properties of current shell state
+             * that are needed to restore later.
+             */
+            var savedState = {};
+
+            /**
+             * @private
+             * @description
+             * Contains the navigation buttons array
+             */
+            var navbarButtons = [];
+
+            /**
+             * @private
+             * @description
+             * Contains the bound view events
+             */
+            var boundViewEvents = {};
+
+            /**
+             * @private
+             * @description
+             * Certain things we initialize at the first reference of the service
+             */
+            function initialize() {
+                //setup the epFeatureDetectionService enquireService registration at 800 px so that we can
+                //perform Javascript operations when the UI goes into large / small mode
+                epFeatureDetectionService.registerMediaQuery(epShellConstants.MEDIA_SIZE_BREAKPOINT, function() {
+                    shellState.mediaMode = epShellConstants.MEDIA_MODE_LARGE;
+                    notifyStateChanged('setMediaMode');
+                    toggleLeftSidebarBackdrop();
+                }, function() {
+                    shellState.mediaMode = epShellConstants.MEDIA_MODE_SMALL;
+                    notifyStateChanged('setMediaMode');
+                    toggleLeftSidebarBackdrop();
+                });
+
+                //Any time the size of the shell window changes fire an event to the views
+                function sendResizeEvent() {
+                    notifySizeChanged('size');
+                }
+
+                //this is to ensure it only happens one time
+                var lazySendResize = _.debounce(sendResizeEvent, 100);
+                angular.element(window).on('resize', lazySendResize);
+                $timeout(sendResizeEvent, 100);
+                $rootScope.$on('$routeChangeSuccess', sendResizeEvent);
+
+                setPageTitle(epShellConfig.options.pageTitle);
+                setBrandHTML(epShellConfig.options.brandHTML);
+                setFooterHTML(epShellConfig.options.footerHTML);
+
+                if (epShellConfig.options.includeEmbeddedApps !== undefined) {
+                    if (epShellConfig.options.includeEmbeddedApps) {
+                        $rootScope.$watch('initComplete', function(complete) {
+                            if (complete) {
+                                //place here whatever needs to be initialized after initComplete
+                                epEmbeddedAppsService.initialize();
+                            }
+                        });
+                    }
+                }
+            }
+
+            /**
+             * @private
+             * @description
+             * Set flags depending on current mode (small or large)
+             */
+            function setCurrentModeFlags(viewScope) {
+                var mode = shellState.viewSettings[shellState.mediaMode];
+                mode.autoActivateSidebar = mode.autoActivateSidebar !== false;
+
+                shellState.showLeftToggleButton = mode.enableLeftSidebar;
+                shellState.enableLeftSidebar = mode.enableLeftSidebar;
+                shellState.showRightToggleButton = mode.enableRightSidebar;
+                shellState.enableRightSidebar = mode.enableRightSidebar;
+                shellState.showNavbar = mode.showNavbar;
+                shellState.showFooter = mode.showFooter;
+                shellState.showHomeButton = mode.showHomeButton;
+                shellState.showBrand = mode.showBrand;
+                shellState.centerBrand = mode.centerBrand;
+                shellState.autoActivateSidebar = mode.autoActivateSidebar;
+                shellState.viewContainerScope = viewScope;
+                shellState.enableFeedback = (epShellConfig.options.enableFeedback && mode.enableFeedback === true);
+
+                if (shellState.showBrand && mode.brandHTML) {
+                    if (mode.brandHTML) {
+                        setBrandHTML(mode.brandHTML, viewScope);
+                    }
+                    if (mode.brandTarget) {
+                        setBrandTarget(mode.brandTarget);
+                    }
+                }
+                if (shellState.showFooter) {
+                    if (mode.footerHTML) {
+                        setFooterHTML(mode.footerHTML, viewScope);
+                    }
+                    if (mode.footerTarget) {
+                        setFooterTarget(mode.footerTarget);
+                    }
+                }
+                if (mode.autoActivateSidebar) {
+                    if (mode.enableLeftSidebar && (isMediaModeLarge() || shellState.suspend)) {
+                        showLeftSidebar();
+                    } else {
+                        hideLeftSidebar();
+                    }
+                }
+                hideRightSidebar(false);
+                shellState.allowVerticalScroll = !!mode.allowVerticalScroll;
+                shellState.animateViewContainer = mode.animateViewContainer !== false;
+                shellState.momentumScrollingEnabled = mode.momentumScrollingEnabled !== false;
+                notifyStateChanged();
+            }
+
+            /**
+             * @private
+             * @description
+             * Set or Get the viewSettings
+             */
+            function viewSettings(settings) {
+                if (settings !== undefined) {
+                    shellState.viewSettings = settings;
+                }
+                return shellState.viewSettings;
+            }
+
+            //--------  Public Functions ----------------------->>>>
+
+            /**
+             * @ngdoc method
+             * @name init
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Initialization of the shell. To be called by application upon start-up
+             */
+            function init() {
+                window.addEventListener('load', function() {
+                    FastClick.attach(document.body);
+                }, false);
+
+                $timeout(epThemeService.initialize, 200);
+
+                var windowWidth = $(window).width();
+                shellState.mediaMode = windowWidth >= epShellConstants.MEDIA_SIZE_BREAKPOINT ?
+                    epShellConstants.MEDIA_MODE_LARGE : epShellConstants.MEDIA_MODE_SMALL;
+                // initialize the sidebar as "shown" if we're in large mode, otherwise false.
+                shellState.showSidebar = isMediaModeLarge();
+                $rootScope.initComplete = true;
+            }
+
+            /**
+             * @ngdoc method
+             * @name saveState
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * save current shell state for later usage by restoreState(). Used by embedded applications to store
+             * shell state when embedded app is started and then to restore back when exiting embedded app
+             * @returns {object} saved state data
+             */
+            function saveState() {
+                savedState = {
+                    pageTitle: getPageTitle(),
+                    brandHTML: getBrandHTML(),
+                    navbarButtons: angular.extend([], navbarButtons)
+                };
+                return savedState;
+            }
+
+            /**
+             * @ngdoc method
+             * @name restoreState
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Used in conjunction with saveState(). This method will restore some properties
+             * of shell state to what they were at the time of saveState() call.
+             * @param {object} state - optional parameter that contains saved state data. If not
+             * provided, internal saved state data will be used
+             */
+            function restoreState(state) {
+                var oldState = (state) ? state : savedState;
+                if (oldState && oldState !== {}) {
+                    if (oldState.navbarButtons) {
+                        updateNavbarButtons(oldState.navbarButtons);
+                    }
+                    if (oldState.pageTitle) {
+                        setPageTitle(oldState.pageTitle);
+                    }
+                    if (oldState.brandHTML) {
+                        setBrandHTML(oldState.brandHTML, oldState.viewContainerScope);
+                    }
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name showProgressIndicator
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Show progress indicator in the middle of the current view of the shell
+             */
+            function showProgressIndicator() {
+                shellState.showProgressIndicator = true;
+                shellState.progressIndicatorlevel++;
+            }
+
+            /**
+             * @ngdoc method
+             * @name hideProgressIndicator
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Hides progress indicator. Since showProgressIndicator() are stackable (queue)
+             * the hideProgressIndicator() will decrement the show calls and will actually hide when bottom of
+             * queue is reached.
+             * @param {boolean} immediate - optional parameter - if true the progress indicator is stopped
+             * immediately, otherwise after a timeout
+             */
+            function hideProgressIndicator(immediate) {
+                shellState.progressIndicatorlevel--;
+                shellState.progressIndicatorlevel = Math.max(shellState.progressIndicatorlevel, 0);
+                if (shellState.progressIndicatorlevel === 0) {
+                    if (immediate) {
+                        shellState.showProgressIndicator = false;
+                    } else {
+                        $timeout(function() {
+                            shellState.showProgressIndicator = false;
+                        });
+                    }
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name resetProgressIndicator
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Hides and resets progress indicator. Since showProgressIndicator() are stackable (queue)
+             * the hideProgressIndicator() will decrement the show calls and will actually hide when bottom of
+             * queue is reached. This method allows to hide immediately, reseeting the queue.
+             */
+            function resetProgressIndicator() {
+                shellState.progressIndicatorlevel = 0;
+                hideProgressIndicator(true);
+            }
+
+            /**
+             * @ngdoc method
+             * @name getMediaMode
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Returns the current media mode: MEDIA_MODE_LARGE or MEDIA_MODE_SMALL (epShellConstants)
+             * @returns {string} current media mode: MEDIA_MODE_LARGE or MEDIA_MODE_SMALL (epShellConstants)
+             */
+            function getMediaMode() {
+                return shellState.mediaMode;
+            }
+
+            /**
+             * @ngdoc method
+             * @name isMediaModeLarge
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Checks if the current media mode is MEDIA_MODE_LARGE (epShellConstants)
+             */
+            function isMediaModeLarge() {
+                return shellState.mediaMode === epShellConstants.MEDIA_MODE_LARGE;
+            }
+
+            /**
+             * @ngdoc method
+             * @name themingDisabled
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @param {boolean} onOff - if true theming is turned on, if false set as off
+             * @description
+             * Returns the state of theming flag as set by sysconfig.json. True - if theming is disabled.
+             * Can also be used to turn off and on theming in the shell by passing the disabled parameter
+             * @returns {boolean} current media mode: MEDIA_MODE_LARGE or MEDIA_MODE_SMALL (epShellConstants)
+             */
+            function themingDisabled(onOff) {
+                return epThemeService.disableTheming(onOff);
+            }
+
+            function registerViewEvent(id, eventName, callback) {
+                // clean up the old event if there is one
+                if (boundViewEvents[id]) {
+                    boundViewEvents[id]();
+                }
+
+                // register the given event in the boundViewEvents collection.
+                boundViewEvents[id] = $rootScope.$on(eventName, callback);
+            }
+
+            function cleanupViewEvents() {
+                // clean up any events that have been registered.
+                _.each(boundViewEvents, function(unregister) {
+                    unregister();
+                });
+                boundViewEvents = {};
+            }
+
+            /**
+             * @ngdoc method
+             * @name setInfo
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Set the Info Message view overlay, that will cover the current view
+             * @param {string} icon - icon to be displayed
+             * @param {string} message - icon to be displayed
+             */
+            function setInfo(icon, message) {
+                shellState.infoIcon = icon;
+                shellState.infoMessage = message;
+            }
+
+            /**
+             * @ngdoc method
+             * @name clearInfo
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Clears the Info Message view overlay, that covers the current view.
+             */
+            function clearInfo() {
+                shellState.infoIcon = '';
+                shellState.infoMessage = '';
+            }
+
+            /**
+             * @ngdoc method
+             * @name setPageTitle
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Set the title of the page on the browser
+             */
+            function setPageTitle(val) {
+                shellState.pageTitle = val;
+                $document[0].title = shellState.pageTitle;
+            }
+
+            /**
+             * @ngdoc method
+             * @name initViewBackground
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Set the the background color of the view for an animation
+             */
+            function initViewBackground() {
+                if (epShellConfig.options.enableViewAnimations !== false) {
+                    $('#viewStyle').remove();
+                    var color = $('body').css('background-color');
+                    var opaqueColor = getOpaqueColor(color);
+                    var style = '.view { background-color: ' + opaqueColor + '; }';
+                    $('head').append('<style id="viewStyle">' + style + '</style>');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name getOpaqueColor
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Get the fully opaque color for the given color
+             */
+            function getOpaqueColor(color) {
+                var newVals;
+                if (color.indexOf('rgb') === 0) {
+                    var numbers = color.replace('rgb', '').replace('a', '').replace('(', '').replace(')', '');
+                    var vals = numbers.split(',').map(function(v) {
+                        return v.trim();
+                    });
+
+                    if (vals.length === 4) {
+                        vals[3] = '1';
+                    } else if (vals.length === 3) {
+                        vals.push('1');
+                    }
+
+                    newVals = vals.join(', ');
+                }
+                //else {
+                //  TODO: support parsing hex code
+                //}
+                return 'rgba(' + newVals + ')';
+            }
+
+            /**
+             * @ngdoc method
+             * @name getPageTitle
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Get the title of the page (from shell state)
+             * @returns {string} page title
+             */
+            function getPageTitle() {
+                return shellState.pageTitle;
+            }
+
+            /**
+             * @ngdoc method
+             * @name toggleBrand
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Toggles the display of the brand in the shell
+             */
+            function toggleBrand() {
+                shellState.showBrand = !shellState.showBrand;
+                shellState.viewSettings[shellState.mediaMode].showBrand = shellState.showBrand;
+            }
+
+            /**
+             * @ngdoc method
+             * @name showBrand
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Turns on and off the display of the brand in the shell
+             * @param {boolean} onOff - if true brand is turned on, if false set as off
+             */
+            function showBrand(onOff) {
+                shellState.showBrand = (onOff === undefined) ? true : onOff;
+                shellState.viewSettings[shellState.mediaMode].showBrand = shellState.showBrand;
+            }
+
+            /**
+             * @ngdoc method
+             * @name setBrandHTML
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Sets the branding HTML.
+             * @param {string} html - branding html
+             * @param {object} viewScope - (optional) The scope to use when compiling the html as a template
+             */
+            function setBrandHTML(html, viewScope) {
+
+                shellState.brandHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;
+                shellState.viewSettings[shellState.mediaMode].brandHTML = shellState.brandHTML;
+
+                if (viewScope) {
+                    $timeout(function() {
+                        $compile(angular.element('#apptitle').contents())(viewScope);
+                    })
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name setBrandTarget
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Sets the branding target url.
+             * @param {string} target - url to follow when clicking on the brand
+             */
+            function setBrandTarget(target) {
+
+                shellState.brandTarget = target;
+                shellState.viewSettings[shellState.mediaMode].brandTarget = shellState.brandTarget;
+            }
+
+            /**
+             * @ngdoc method
+             * @name centerBrand
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Turns on and off the centering of the brand in the navbar
+             * @param {boolean} onOff - if true brand centering is turned on, if false set as off
+             */
+            function centerBrand(onOff) {
+                shellState.centerBrand = (onOff === undefined) ? true : onOff;
+                shellState.viewSettings[shellState.mediaMode].centerBrand = shellState.centerBrand;
+            }
+
+            /**
+             * @ngdoc method
+             * @name getBrandHTML
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Returns the branding html. (The html returned is compiled by $sce)
+             * @returns {string} brand html
+             */
+            function getBrandHTML() {
+                return shellState.brandHTML;
+            }
+
+            /**
+             * @ngdoc method
+             * @name getBrandTarget
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Returns the branding target. (The url followed when clicking on the brand link.)
+             * @returns {string} brand target
+             */
+            function getBrandTarget() {
+                return shellState.brandTarget;
+            }
+
+            /**
+             * @ngdoc method
+             * @name setFooterHTML
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Sets the footer HTML.
+             * @param {string} html - footer html
+             * @param {object} viewScope - (optional) The scope to use when compiling the html as a template
+             */
+            function setFooterHTML(html, viewScope) {
+                shellState.footerHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;
+                shellState.viewSettings[shellState.mediaMode].footerHTML = shellState.footerHTML;
+
+                if (viewScope) {
+                    $timeout(function() {
+                        $compile(angular.element('#footerElement').contents())(viewScope);
+                    });
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name getBrandHTML
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Returns the branding html. (The html returned is compiled by $sce)
+             * @returns {string} brand html
+             */
+            function getFooterHTML() {
+                return shellState.footerHTML;
+            }
+
+            /**
+             * @ngdoc method
+             * @name setFooterTarget
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Sets the footer target url.
+             * @param {string} target - url to follow when clicking on the footer
+             */
+            function setFooterTarget(target) {
+                shellState.footerTarget = target;
+                shellState.viewSettings[shellState.mediaMode].footerTarget = shellState.footerTarget;
+            }
+
+            /**
+             * @ngdoc method
+             * @name getFooterTarget
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Returns the footer target. (The url followed when clicking on the footer link.)
+             * @returns {string} footer target
+             */
+            function getFooterTarget() {
+                return shellState.footerTarget;
+            }
+
+            function notifyShellButtonsChanged(event) {
+                navbarButtons = _.sortBy(navbarButtons, function(btn) {
+                    return btn.index;
+                });
+                $rootScope.$emit(epShellConstants.SHELL_NAV_BUTTONS_CHANGED_EVENT, event);
+
+                $timeout(function() {
+                    $rootScope.$apply();
+                });
+            }
+
+            function suspend() {
+                shellState.suspend = true;
+            }
+
+            function resume() {
+                shellState.suspend = false;
+            }
+
+            /**
+             * @ngdoc method
+             * @name feedbackCallback
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Set the callback function for Feedback which is called after the feedback form is displayed
+             * and user data is entered. The applicatio will then do whatever it nneds to do to forward the
+             * feedback appropriately.
+             */
+            function feedbackCallback(fnOnFeedback) {
+                //set or get feedback callback function which will do actual submission of user data.
+                //Function must return a promise.
+                if (fnOnFeedback !== undefined) {
+                    shellState.fnOnFeedback = fnOnFeedback;
+                }
+                return shellState.fnOnFeedback;
+            }
+
+            /**
+             * @ngdoc method
+             * @name enableFeedback
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Enable the feedback button functionality (by default on, can be overriden by sysconfig)
+             * @param {bool} onOff - turn feature on / off
+             */
+            function enableFeedback(onOff) {
+                epShellConfig.options.enableFeedback = onOff;
+            }
+
+            /**
+             * @ngdoc method
+             * @name enableViewFeedback
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Enable the feedback button on current view
+             * @param {bool} onOff - turn feedback on / off on current view
+             */
+            function enableViewFeedback(onOff) {
+                if (epShellConfig.options.enableFeedback) {
+                    shellState.enableFeedback = onOff;
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name toggleViewFeedback
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Toggle the feedback button on current view
+             */
+            function toggleViewFeedback() {
+                if (epShellConfig.options.enableFeedback) {
+                    shellState.enableFeedback = !shellState.enableFeedback;
+                }
+            }
+
+            function notifyStateChanged(event) {
+                $rootScope.$emit(epShellConstants.SHELL_STATE_CHANGE_EVENT, event);
+            }
+
+            function notifySizeChanged(event) {
+                // use timeout to wait until the animation is complete before publishing the resize event
+                $timeout(function() {
+                    $rootScope.$emit(epShellConstants.SHELL_SIZE_CHANGE_EVENT, event);
+                }, 310);
+            }
+
+            /**
+             * @ngdoc method
+             * @name hideHomeButton
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Hide home button (can be overriden by viewcontainer options)
+             */
+            function hideHomeButton() {
+                if (shellState.showHomeButton) {
+                    shellState.showHomeButton = false;
+                    notifyShellButtonsChanged('hideHomeButton');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name showHomeButton
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Show home button (can be overriden by viewcontainer options)
+             */
+            function showHomeButton() {
+                if (!shellState.showHomeButton) {
+                    shellState.showHomeButton = true;
+                    notifyShellButtonsChanged('showHomeButton');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name hideLeftToggleButton
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Hide the left panel toggle button
+             */
+            function hideLeftToggleButton() {
+                if (shellState.showLeftToggleButton) {
+                    shellState.showLeftToggleButton = false;
+                    notifyShellButtonsChanged('hideLeftToggleButton');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name showLeftToggleButton
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Show the left panel toggle button
+             */
+            function showLeftToggleButton() {
+                if (!shellState.showLeftToggleButton) {
+                    shellState.showLeftToggleButton = true;
+                    notifyShellButtonsChanged('showLeftToggleButton');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name hideRightToggleButton
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Hide the right panel toggle button
+             */
+            function hideRightToggleButton() {
+                if (shellState.showRightToggleButton) {
+                    shellState.showRightToggleButton = false;
+
+                    notifyShellButtonsChanged('hideRightToggleButton');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name showLeftToggleButton
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Show the right panel toggle button
+             */
+            function showRightToggleButton() {
+                if (!shellState.showRightToggleButton) {
+                    shellState.showRightToggleButton = true;
+
+                    notifyShellButtonsChanged('showRightToggleButton');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name toggleLeftSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Toggle left side bar
+             */
+            function toggleLeftSidebar() {
+                shellState.showLeftSidebar = !shellState.showLeftSidebar;
+                shellState.viewSettings[shellState.mediaMode].showLeftSidebar = shellState.showLeftSidebar;
+                toggleLeftSidebarBackdrop();
+
+                notifySizeChanged(shellState.showLeftSidebar ? 'showLeftSidebar' : 'hideLeftSidebar');
+            }
+
+            /**
+             * @ngdoc method
+             * @name showLeftSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Show left side bar
+             */
+            function showLeftSidebar() {
+                if (!shellState.showLeftSidebar) {
+                    shellState.showLeftSidebar = true;
+                    shellState.viewSettings[shellState.mediaMode].showLeftSidebar = true;
+
+                    notifySizeChanged('showLeftSidebar');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name hideLeftSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Hide left side bar
+             */
+            function hideLeftSidebar() {
+                if (shellState.showLeftSidebar) {
+                    shellState.showLeftSidebar = false;
+                    shellState.viewSettings[shellState.mediaMode].showLeftSidebar = false;
+                    shellState.showViewContainerBackdrop = false;
+
+                    notifySizeChanged('hideLeftSidebar');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name disableLeftSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Disable left side bar
+             */
+            function disableLeftSidebar() {
+                if (shellState.enableLeftSidebar) {
+                    shellState.enableLeftSidebar = false;
+                    shellState.viewSettings.large.enableLeftSidebar = false;
+                    shellState.viewSettings.small.enableLeftSidebar = false;
+
+                    hideLeftSidebar();
+                    hideLeftToggleButton();
+                    notifyStateChanged('disableLeftSidebar');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name enableLeftSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Enable left side bar
+             */
+            function enableLeftSidebar() {
+                if (!shellState.enableLeftSidebar) {
+                    shellState.enableLeftSidebar = true;
+                    shellState.viewSettings.large.enableLeftSidebar = true;
+                    shellState.viewSettings.small.enableLeftSidebar = true;
+
+                    if (isMediaModeLarge()) {
+                        showLeftSidebar();
+                    }
+                    showLeftToggleButton();
+                    notifyStateChanged('enableLeftSidebar');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name executeLeftSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * get coordinates for the swipe event
+             */
+            function executeLeftSidebar(event) {
+                return event.touches[0].clientX;
+            }
+
+            /**
+             * @ngdoc method
+             * @name clearLeftSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Clear content of the left side bar
+             */
+            function clearLeftSidebar() {
+                epSidebarService.clearLeftSidebar();
+            }
+
+            /**
+             * @ngdoc method
+             * @name toggleRightSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Toggle the right side bar
+             */
+            function toggleRightSidebar() {
+                shellState.showRightSidebar = !shellState.showRightSidebar;
+                shellState.viewSettings[shellState.mediaMode].showRightSidebar = shellState.showRightSidebar;
+                toggleRightSidebarBackdrop();
+
+                notifySizeChanged(shellState.showRightSidebar ? 'showRightSidebar' : 'hideRightSidebar');
+
+            }
+
+            /**
+             * @ngdoc method
+             * @name showRightSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Show the right side bar
+             */
+            function showRightSidebar() {
+                if (!shellState.showRightSidebar) {
+                    shellState.showRightSidebar = true;
+                    shellState.viewSettings[shellState.mediaMode].showRightSidebar = true;
+
+                    notifyStateChanged('showRightSidebar');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name toggleLeftSidebarBackdrop
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Toggles backdrop on view container while toggling the left sidebar
+             */
+            function toggleLeftSidebarBackdrop() {
+                if (shellState.showLeftSidebar && getMediaMode() === epShellConstants.MEDIA_MODE_SMALL) {
+                    hideRightSidebar();
+                    shellState.showViewContainerBackdrop = true;
+                } else {
+                    if (!shellState.showRightSidebar) {
+                        shellState.showViewContainerBackdrop = false;
+                    }
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name toggleRightSidebarBackdrop
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Toggles backdrop on view container while toggling the right sidebar
+             */
+            function toggleRightSidebarBackdrop() {
+                if (shellState.showRightSidebar) {
+                    if (getMediaMode() === epShellConstants.MEDIA_MODE_SMALL) {
+                        hideLeftSidebar();
+                    }
+                    shellState.showViewContainerBackdrop = true;
+                } else {
+                    shellState.showViewContainerBackdrop = false;
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name hideRightSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Hide the right side bar
+             */
+            function hideRightSidebar() {
+                if (shellState.showRightSidebar) {
+                    shellState.showRightSidebar = false;
+                    shellState.viewSettings[shellState.mediaMode].showRightSidebar = false;
+                    shellState.showViewContainerBackdrop = false;
+
+                    notifySizeChanged('hideRightSidebar');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name disableRightSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Disable the right side bar
+             */
+            function disableRightSidebar() {
+                if (shellState.enableRightSidebar) {
+                    shellState.enableRightSidebar = false;
+                    shellState.viewSettings.large.enableRightSidebar = false;
+                    shellState.viewSettings.small.enableRightSidebar = false;
+
+                    hideRightSidebar();
+                    hideRightToggleButton();
+                    notifyStateChanged('disableRightSidebar');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name enableRightSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Enable the right side bar
+             */
+            function enableRightSidebar() {
+                if (!shellState.enableRightSidebar) {
+                    shellState.enableRightSidebar = true;
+                    shellState.viewSettings.large.enableRightSidebar = true;
+                    shellState.viewSettings.small.enableRightSidebar = true;
+
+                    showRightToggleButton();
+                    notifyStateChanged('enableRightSidebar');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name clearRightSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Clear the content of the right side bar
+             */
+            function clearRightSidebar() {
+                epSidebarService.clearRightSidebar();
+            }
+
+            /**
+             * @ngdoc method
+             * @name getShowLeftSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Returns visibility flag of left side bar
+             * @returns {boolean} true if left bar is visible
+             */
+            function getShowLeftSidebar() {
+                return shellState.showLeftSidebar;
+            }
+
+            /**
+             * @ngdoc method
+             * @name getShowRightSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Returns visibility flag of right side bar
+             * @returns {boolean} true if right bar is visible
+             */
+            function getShowRightSidebar() {
+                return shellState.showRightSidebar;
+            }
+
+            /**
+             * @ngdoc method
+             * @name setLeftTemplate
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Set the left sidabar html
+             * @param {string} html - html of template to be loaded in left sidebar
+             */
+            function setLeftTemplate(html) {
+                epSidebarService.setLeftTemplate(html);
+            }
+
+            /**
+             * @ngdoc method
+             * @name setRightTemplate
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Set the right sidabar html
+             * @param {string} html - html of template to be loaded in right sidebar
+             */
+            function setRightTemplate(html) {
+                epSidebarService.setRightTemplate(html);
+            }
+
+            /**
+             * @ngdoc method
+             * @name setLeftTemplateUrl
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Set the left sidabar html
+             * @param {string} url - url of template to be loaded in left sidebar
+             */
+            function setLeftTemplateUrl(url) {
+                epSidebarService.setLeftTemplateUrl(url);
+            }
+
+            /**
+             * @ngdoc method
+             * @name setRightTemplateUrl
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Set the right sidabar html
+             * @param {string} url - url of template to be loaded in right sidebar
+             */
+            function setRightTemplateUrl(url) {
+                epSidebarService.setRightTemplateUrl(url);
+            }
+
+            /**
+             * @ngdoc method
+             * @name hideNavbar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Hide navigation bar
+             */
+            function hideNavbar() {
+                if (shellState.showNavbar) {
+                    shellState.showNavbar = false;
+                    notifyStateChanged('hideNavbar');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name showNavbar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Show navigation bar
+             */
+            function showNavbar() {
+                if (!shellState.showNavbar) {
+                    shellState.showNavbar = true;
+                    notifyStateChanged('showNavbar');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name toggleNavbar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Toggle show/hide navigation bar
+             */
+            function toggleNavbar() {
+                if (!shellState.showNavbar) {
+                    shellState.showNavbar = true;
+                    notifyStateChanged('showNavbar');
+                } else {
+                    shellState.showNavbar = false;
+                    notifyStateChanged('hideNavbar');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name hideFooter
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Hide Footer
+             */
+            function hideFooter() {
+                if (shellState.showFooter) {
+                    shellState.showFooter = false;
+                    notifyStateChanged('hideFooter');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name showFooter
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Show Footer
+             */
+            function showFooter() {
+                if (!shellState.showFooter) {
+                    shellState.showFooter = true;
+                    notifyStateChanged('showFooter');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name toggleFooter
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Toggle show/hide Footer
+             */
+            function toggleFooter() {
+                if (!shellState.showFooter) {
+                    shellState.showFooter = true;
+                    notifyStateChanged('showFooter');
+                } else {
+                    shellState.showFooter = false;
+                    notifyStateChanged('hideFooter');
+                }
+            }
+
+            //---------> Navbar Buttons--------------->>>>>>
+
+            /**
+             * @ngdoc method
+             * @name iterateNavbarButton
+             * @methodOf ep.shell.service:epShellService
+             * @private
+             * @description
+             * Iterate through buttons and call func(button, index). If func returns
+             * true, then notifyShellButtonsChanged(eventName) is called
+             * @param {array} arrIds - an array of button id's
+             * @param {string} eventName - event name passed to notifyShellButtonsChanged
+             * @param {function} func - function called for each matched button id
+             */
+            function iterateNavbarButton(arrIds, eventName, func) {
+                //you can pass one or more id's seperated by comma
+                var hasFound = false;
+                if (arrIds !== undefined) {
+                    _.each(arrIds, function(arg) {
+                        var idx = _.findIndex(navbarButtons, function(value) {
+                            return value.id === arg;
+                        });
+                        if (idx !== -1 && func(navbarButtons[idx], idx)) {
+                            hasFound = true;
+                        }
+                    });
+                }
+                if (hasFound) {
+                    notifyShellButtonsChanged(eventName);
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name clearNavbarButtons
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Clear (delete) navigation buttons
+             */
+            function clearNavbarButtons() {
+                navbarButtons = [];
+                notifyShellButtonsChanged('clearNavbarButtons');
+            }
+
+            /**
+             * @ngdoc method
+             * @name updateNavbarButtons
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Update navigation buttons. Old buttons are cleared.
+             * @param {array} buttons - an array of button objects
+             */
+            function updateNavbarButtons(buttons) {
+                navbarButtons = [];
+                addNavbarButtons(buttons);
+                notifyShellButtonsChanged('updateNavbarButtons');
+            }
+
+            /**
+             * @ngdoc method
+             * @name addNavbarButtons
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Add navigation buttons. They will be merged with existing buttons, but without duplication
+             */
+            function addNavbarButtons(buttons) {
+                var btns = _.union(navbarButtons, buttons);
+                _.each(btns, function(btn) {
+                    if (!btn.type) {
+                        btn.type = 'button';
+                    }
+                });
+                navbarButtons = _.uniq(btns, false, function(value) {
+                    return value.id || value.title;
+                });
+                notifyShellButtonsChanged('addNavbarButtons');
+            }
+
+            /**
+             * @ngdoc method
+             * @name deleteNavbarButton
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Delete navigation button(s). Buttons are removed from the list for matched button id's
+             * @param {object} buttons - an array/arguments of button id's
+             * @example
+             * deleteNavbarButton('myButton1', 'myButton2');
+             * deleteNavbarButton(['myButton1', 'myButton2']);
+             */
+            function deleteNavbarButton() {
+                var args = _.flatten(arguments, true);
+                iterateNavbarButton(args, 'deleteNavbarButton', function(b, idx) {
+                    navbarButtons.splice(idx, 1);
+                    return true;
+                });
+            }
+
+            /**
+             * @ngdoc method
+             * @name getNavbarButtons
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Return all navigation buttons - the current array of buttons is returned
+             * @returns {Array} array of button objects
+             */
+            function getNavbarButtons() {
+                return navbarButtons;
+            }
+
+            /**
+             * @ngdoc method
+             * @name getNavbarButton
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Return navigation button - for matched button id
+             * @returns {object} button object or null
+             */
+            function getNavbarButton(id) {
+                return _.find(navbarButtons, function(btn) {
+                    return btn.id === id;
+                });
+            }
+
+            /**
+             * @ngdoc method
+             * @name hideNavbarButton
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Hide navigation button(s). Buttons are hidden for matched button id's
+             * @param {object} buttons - an array/arguments of button id's
+             * @example
+             * hideNavbarButton('myButton1', 'myButton2');
+             * hideNavbarButton(['myButton1', 'myButton2']);
+             */
+            function hideNavbarButton() {
+                //you can pass one or more id's seperated by comma
+                var args = _.flatten(arguments, true);
+                iterateNavbarButton(args, 'hideNavbarButton', function(b) {
+                    b.hidden = true;
+                    return true;
+                });
+            }
+
+            /**
+             * @ngdoc method
+             * @name showNavbarButton
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Show navigation button(s). Buttons are made visible for matched button id's
+             * @param {object} buttons - an array/arguments of button id's
+             * @example
+             * showNavbarButton('myButton1', 'myButton2');
+             * showNavbarButton(['myButton1', 'myButton2']);
+             */
+            function showNavbarButton() {
+                //you can pass one or more id's seperated by comma
+                var args = _.flatten(arguments, true);
+                iterateNavbarButton(args, 'showNavbarButton', function(b) {
+                    if (b.fnVisible && angular.isFunction(b.fnVisible)) {
+                        b.hidden = !b.fnVisible();
+                    } else if (b.enabled && angular.isFunction(b.enabled)) {
+                        //Obsolete - enabled should not be used for show/hide!!!
+                        //Only temporary for EMA
+                        b.hidden = !b.enabled();
+                    } else {
+                        b.hidden = false;
+                    }
+                    return true;
+                });
+            }
+
+            /**
+             * @ngdoc method
+             * @name enableNavbarButton
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Enable navigation button(s). Buttons are made visible for matched button id's
+             * @param {object} buttons - an array/arguments of button id's
+             * @example
+             * enableNavbarButton('myButton1', 'myButton2');
+             * enableNavbarButton(['myButton1', 'myButton2']);
+             */
+            function enableNavbarButton() {
+                //you can pass one or more id's seperated by comma
+                var args = _.flatten(arguments, true);
+                iterateNavbarButton(args, 'enableNavbarButton', function(b) {
+                    b.enabled = true;
+                    return true;
+                });
+            }
+
+            /**
+             * @ngdoc method
+             * @name disableNavbarButton
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Disable navigation button(s). Buttons are made visible for matched button id's
+             * @param {object} buttons - an array/arguments of button id's
+             * @example
+             * disableNavbarButton('myButton1', 'myButton2');
+             * disableNavbarButton(['myButton1', 'myButton2']);
+             */
+            function disableNavbarButton() {
+                //you can pass one or more id's seperated by comma
+                var args = _.flatten(arguments, true);
+                iterateNavbarButton(args, 'disableNavbarButton', function(b) {
+                    b.enabled = false;
+                    return true;
+                });
+            }
+
+            /**
+             * @ngdoc method
+             * @name hideAllNavbarButtons
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Hide all navigation buttons. All user buttons in are made hidden in Navbar
+             */
+            function hideAllNavbarButtons() {
+                _.each(navbarButtons, function(btn) {
+                    hideNavbarButton(btn.id);
+                });
+                notifyShellButtonsChanged('hideNavbarButton');
+            }
+
+            /**
+             * @ngdoc method
+             * @name showAllNavbarButtons
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Show all navigation buttons. All user buttons in are made visible in Navbar
+             */
+            function showAllNavbarButtons() {
+                _.each(navbarButtons, function(btn) {
+                    showNavbarButton(btn.id);
+                });
+                notifyShellButtonsChanged('hideNavbarButton');
+            }
+
+            /**
+             * @ngdoc method
+             * @name disableNavbarButtons
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Disable/Enable all navigation buttons.
+             * @param {boolean} onOff - disable or enable flag
+             */
+            function disableNavbarButtons(onOff) {
+                shellState.freezeNavButtons = onOff;
+            }
+
+            /**
+             * @ngdoc method
+             * @name navbarButtonClicked
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Get the button that was clicked - it is available in the time interval between the mouse down and
+             * click events. Useful for 'on-blur' processing.
+             */
+            function navbarButtonClicked() {
+                return shellState.navButtonClicked;
+            }
+
+            //<<<<<--------------- Navbar Buttons --------------------------
+
+            /**
+             * @ngdoc method
+             * @name momentumScrollingEnabled
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Enable/disable momentum scrolling
+             * @param {boolean} onOff - disable or enable flag
+             */
+            function momentumScrollingEnabled(onOff) {
+                if (onOff !== undefined) {
+                    shellState.momentumScrollingEnabled = onOff;
+                }
+                return shellState.momentumScrollingEnabled;
+            }
+
+            /**
+             * @ngdoc method
+             * @name allowVerticalScroll
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Enable/disable vertical scrolling
+             * @param {boolean} onOff - disable or enable flag
+             */
+            function allowVerticalScroll(onOff) {
+                if (onOff !== undefined) {
+                    shellState.allowVerticalScroll = onOff;
+                }
+                return shellState.allowVerticalScroll;
+            }
+
+            /**
+             * @ngdoc method
+             * @name viewAnimation
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Set the current route to view animation
+             * @param {string} animation - current animation route
+             */
+            function viewAnimation(animation) {
+                if (animation !== undefined) {
+                    shellState.viewAnimation = epShellConfig.options.enableViewAnimations ? animation : '';
+                }
+                return shellState.viewAnimation;
+            }
+
+            /**
+             * @ngdoc method
+             * @name getViewDimensions
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Get current view dimensions
+             */
+            function getViewDimensions() {
+                return shellState.viewDimensions;
+            }
+
+            /**
+             * @ngdoc method
+             * @name isHomeLocation
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Returns true if we are on home location
+             */
+            function isHomeLocation() {
+                return (epShellConfig.homeRoute && epShellConfig.homeRoute.route === $location.url());
+            }
+
+            /**
+             * @ngdoc method
+             * @name goHome
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Go to home location
+             */
+            function goHome() {
+                if (epShellConfig.homeRoute) {
+                    $location.url(epShellConfig.homeRoute.route);
+                }
+            }
+
+            initialize();
+
+            return {
+                // --- For internal module usage only --->
+                __state: shellState,
+                __setCurrentModeFlags: setCurrentModeFlags,
+                __viewSettings: viewSettings,
+                // <-------------------------------------------
+                init: init,
+                saveState: saveState,
+                restoreState: restoreState,
+                // Progress Indicator
+                showProgressIndicator: showProgressIndicator,
+                hideProgressIndicator: hideProgressIndicator,
+                resetProgressIndicator: resetProgressIndicator,
+                // Events
+                registerViewEvent: registerViewEvent,
+                cleanupViewEvents: cleanupViewEvents,
+                notifyStateChanged: notifyStateChanged,
+                notifyShellButtonsChanged: notifyShellButtonsChanged,
+                notifySizeChanged: notifySizeChanged,
+                // General Settings
+                setPageTitle: setPageTitle,
+                initViewBackground: initViewBackground,
+                getPageTitle: getPageTitle,
+                toggleBrand: toggleBrand,
+                showBrand: showBrand,
+                setBrandHTML: setBrandHTML,
+                getBrandHTML: getBrandHTML,
+                setBrandTarget: setBrandTarget,
+                getBrandTarget: getBrandTarget,
+                centerBrand: centerBrand,
+                setInfo: setInfo,
+                clearInfo: clearInfo,
+                suspend: suspend,
+                resume: resume,
+                getMediaMode: getMediaMode,
+                isMediaModeLarge: isMediaModeLarge,
+                getViewDimensions: getViewDimensions,
+                momentumScrollingEnabled: momentumScrollingEnabled,
+                allowVerticalScroll: allowVerticalScroll,
+                themingDisabled: themingDisabled,
+                enableFeedback: enableFeedback,
+                enableViewFeedback: enableViewFeedback,
+                toggleViewFeedback: toggleViewFeedback,
+                feedbackCallback: feedbackCallback,
+                showHomeButton: showHomeButton,
+                hideHomeButton: hideHomeButton,
+                //Sidebar functions
+                hideLeftToggleButton: hideLeftToggleButton,
+                showLeftToggleButton: showLeftToggleButton,
+                hideRightToggleButton: hideRightToggleButton,
+                showRightToggleButton: showRightToggleButton,
+                toggleLeftSidebar: toggleLeftSidebar,
+                showLeftSidebar: showLeftSidebar,
+                hideLeftSidebar: hideLeftSidebar,
+                disableLeftSidebar: disableLeftSidebar,
+                enableLeftSidebar: enableLeftSidebar,
+                clearLeftSidebar: clearLeftSidebar,
+                toggleRightSidebar: toggleRightSidebar,
+                showRightSidebar: showRightSidebar,
+                hideRightSidebar: hideRightSidebar,
+                enableRightSidebar: enableRightSidebar,
+                disableRightSidebar: disableRightSidebar,
+                clearRightSidebar: clearRightSidebar,
+                getShowLeftSidebar: getShowLeftSidebar,
+                getShowRightSidebar: getShowRightSidebar,
+                setLeftTemplate: setLeftTemplate,
+                setRightTemplate: setRightTemplate,
+                setLeftTemplateUrl: setLeftTemplateUrl,
+                setRightTemplateUrl: setRightTemplateUrl,
+                executeLeftSidebar: executeLeftSidebar,
+                //Navigation bar functions
+                showNavbar: showNavbar,
+                hideNavbar: hideNavbar,
+                toggleNavbar: toggleNavbar,
+                //Footer
+                showFooter: showFooter,
+                hideFooter: hideFooter,
+                toggleFooter: toggleFooter,
+                setFooterHTML: setFooterHTML,
+                getFooterHTML: getFooterHTML,
+                setFooterTarget: setFooterTarget,
+                getFooterTarget: getFooterTarget,
+                //Nav Buttons
+                clearNavbarButtons: clearNavbarButtons,
+                updateNavbarButtons: updateNavbarButtons,
+                addNavbarButtons: addNavbarButtons,
+                deleteNavbarButton: deleteNavbarButton,
+                getNavbarButtons: getNavbarButtons,
+                getNavbarButton: getNavbarButton,
+                showNavbarButton: showNavbarButton,
+                hideNavbarButton: hideNavbarButton,
+                showAllNavbarButtons: showAllNavbarButtons,
+                hideAllNavbarButtons: hideAllNavbarButtons,
+                enableNavbarButton: enableNavbarButton,
+                disableNavbarButton: disableNavbarButton,
+                disableNavbarButtons: disableNavbarButtons,
+                navbarButtonClicked: navbarButtonClicked,
+                viewAnimation: viewAnimation,
+                isHomeLocation: isHomeLocation,
+                goHome: goHome,
+                toggleLeftSidebarBackdrop: toggleRightSidebarBackdrop,
+                toggleRightSidebarBackdrop: toggleRightSidebarBackdrop
+            };
+        }]
+    );
 })();
 
 /**

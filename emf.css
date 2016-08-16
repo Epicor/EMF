@@ -1,8 +1,8 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.84 built: 16-08-2016
+ * version:1.0.8-dev.86 built: 16-08-2016
 */
-.list-group.panel > .list-group-item {
+.accordion-menu .list-group.panel > .list-group-item {
   background-color: #0a6ebd;
   color: white;
   border-bottom-left-radius: 0 !important;
@@ -10,7 +10,7 @@
   border-top-left-radius: 0 !important;
   border-top-right-radius: 0 !important;
 }
-.list-group-item {
+.accordion-menu .list-group-item {
   color: white;
   border-bottom-left-radius: 0 !important;
   border-bottom-right-radius: 0 !important;
@@ -19,16 +19,16 @@
   border-left: none;
   border-right: none;
 }
-.list-group-submenu {
+.accordion-menu .list-group-submenu {
   padding-left: 5px;
 }
-.list-group-item:last-child {
+.accordion-menu .list-group-item:last-child {
   border-bottom: none;
 }
-.list-group-item:first-child {
+.accordion-menu .list-group-item:first-child {
   border-top-color: #0a6ebd;
 }
-a.list-group-item,
+.accordion-menu a.list-group-item,
 button.list-group-item {
   border-bottom: none;
 }
