@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.83 built: 15-08-2016
+ * version:1.0.8-dev.84 built: 16-08-2016
 */
 (function() {
     'use strict';
@@ -2642,6 +2642,7 @@ app.directive('epCardTitle',
     function epContactsListDirective($filter, $timeout, epContactsListService, epContactsListConstants) {
         return {
             restrict: 'EA',
+            replace: true,
             scope: {
                 data: '=',
                 handler: '='
@@ -2662,14 +2663,14 @@ app.directive('epCardTitle',
                     if (id === '.') {
                         return;
                     }
-                    var container = $('.ep-contacts-list-container');
+                    var container = $('.ep-contacts-list');
 
                     //hash index will scroll to numbers list
                     id = (id === '#') ? '1' : id;
                     var scrollToElem = $('#list-group-' + id);
                     if (scrollToElem.length) {
                         container.animate({
-                            scrollTop: scrollToElem.offset().top - container.offset().top + container.scrollTop()
+                            scrollTop: scrollToElem.offset().top - container.offset().top + container.scrollTop() - 50
                         });
                     }
                 };
@@ -2744,16 +2745,23 @@ app.directive('epCardTitle',
          */
         function toggleIndexes() {
             $timeout(function() {
-                var mainContainerHeight = $('.ep-contacts-list-container').height();
+                var mainContainerHeight = $('.ep-contacts-list').height();
+                var indexesLength = 0;
+                var indexItemHeight = 0;
                 if (mainContainerHeight < epContactsListConstants.CONTACTS_LIST_INDEXES_HIDDEN_BREAKPOINT) {
                     $('.ep-index-list').hide();
                 } else if (mainContainerHeight < epContactsListConstants.CONTACTS_LIST_INDEXES_BREAKPOINT) {
-                    $('.ep-index-list').hide();
+                    $('.ep-index-list.large-index-list').hide();
                     $('.ep-index-list.small-index-list').show();
+                    indexesLength = $('.ep-index-list.small-index-list li').length;
                 } else {
-                    $('.ep-index-list').show();
                     $('.ep-index-list.small-index-list').hide();
+                    $('.ep-index-list.large-index-list').show();
+                    indexesLength = $('.ep-index-list.large-index-list li').length;
                 }
+                //adjust index list height based on the list container height
+                indexItemHeight = parseInt(mainContainerHeight / indexesLength);
+                $('.ep-index-list li').css('line-height', indexItemHeight + 'px');
             });
         }
 
@@ -15556,9 +15564,9 @@ angular.module('ep.record.editor').
 
   angular.module('ep.shell').service('epShellService',
    /*@ngInject*/
-   ['$q', '$rootScope', '$timeout', '$sce', '$document', '$location', 'epFeatureDetectionService', 'epSidebarService', 'epThemeService', 'epShellConfig', 'epShellConstants', 'epConsoleService', 'epUtilsService', 'epEmbeddedAppsService', function($q, $rootScope, $timeout, $sce, $document, $location,
-       epFeatureDetectionService, epSidebarService, epThemeService, epShellConfig,
-       epShellConstants, epConsoleService, epUtilsService, epEmbeddedAppsService) {
+   ['$compile', '$document', '$location', '$q', '$rootScope', '$sce', '$timeout', 'epConsoleService', 'epEmbeddedAppsService', 'epFeatureDetectionService', 'epShellConfig', 'epShellConstants', 'epSidebarService', 'epThemeService', function($compile, $document, $location, $q, $rootScope, $sce, $timeout,
+            epConsoleService, epEmbeddedAppsService, epFeatureDetectionService,
+            epShellConfig, epShellConstants, epSidebarService, epThemeService) {
 
      epConsoleService.initialize();
 
@@ -15582,6 +15590,7 @@ angular.module('ep.record.editor').
        footerHTML: '',
        footerTarget: '',
        freezeNavButtons: false,
+       viewContainerScope: null,
        viewSettings: {
          sidebar: {},
          small: {
@@ -15716,7 +15725,7 @@ angular.module('ep.record.editor').
       * @description
       * Set flags depending on current mode (small or large)
       */
-     function setCurrentModeFlags() {
+     function setCurrentModeFlags(viewScope) {
        var mode = shellState.viewSettings[shellState.mediaMode];
         mode.autoActivateSidebar = mode.autoActivateSidebar !== false;
 
@@ -15730,12 +15739,12 @@ angular.module('ep.record.editor').
        shellState.showBrand = mode.showBrand;
        shellState.centerBrand = mode.centerBrand;
        shellState.autoActivateSidebar = mode.autoActivateSidebar;
-
+       shellState.viewContainerScope = viewScope;
        shellState.enableFeedback = (epShellConfig.options.enableFeedback && mode.enableFeedback === true);
 
        if (shellState.showBrand && mode.brandHTML) {
          if (mode.brandHTML) {
-           setBrandHTML(mode.brandHTML);
+           setBrandHTML(mode.brandHTML, viewScope);
          }
          if (mode.brandTarget) {
            setBrandTarget(mode.brandTarget);
@@ -15743,7 +15752,7 @@ angular.module('ep.record.editor').
        }
        if (shellState.showFooter) {
          if (mode.footerHTML) {
-           setFooterHTML(mode.footerHTML);
+           setFooterHTML(mode.footerHTML, viewScope);
          }
          if (mode.footerTarget) {
            setFooterTarget(mode.footerTarget);
@@ -15840,7 +15849,7 @@ angular.module('ep.record.editor').
            setPageTitle(oldState.pageTitle);
          }
          if (oldState.brandHTML) {
-           setBrandHTML(oldState.brandHTML);
+           setBrandHTML(oldState.brandHTML, oldState.viewContainerScope);
          }
        }
      }
@@ -16086,10 +16095,18 @@ angular.module('ep.record.editor').
       * @description
       * Sets the branding HTML.
       * @param {string} html - branding html
+      * @param {object} viewScope - (optional) The scope to use when compiling the html as a template
       */
-     function setBrandHTML(html) {
-       shellState.brandHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;
-       shellState.viewSettings[shellState.mediaMode].brandHTML = shellState.brandHTML;
+     function setBrandHTML(html, viewScope) {
+
+         shellState.brandHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;
+         shellState.viewSettings[shellState.mediaMode].brandHTML = shellState.brandHTML;
+
+         if(viewScope){
+             $timeout(function(){
+                 $compile(angular.element('#apptitle').contents())(viewScope);
+             })
+         }
      }
      /**
       * @ngdoc method
@@ -16101,6 +16118,7 @@ angular.module('ep.record.editor').
       * @param {string} target - url to follow when clicking on the brand
       */
      function setBrandTarget(target) {
+
        shellState.brandTarget = target;
        shellState.viewSettings[shellState.mediaMode].brandTarget = shellState.brandTarget;
      }
@@ -16149,10 +16167,17 @@ angular.module('ep.record.editor').
       * @description
       * Sets the footer HTML.
       * @param {string} html - footer html
+      * @param {object} viewScope - (optional) The scope to use when compiling the html as a template
       */
-     function setFooterHTML(html) {
-       shellState.footerHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;
-       shellState.viewSettings[shellState.mediaMode].footerHTML = shellState.footerHTML;
+     function setFooterHTML(html, viewScope) {
+         shellState.footerHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;
+         shellState.viewSettings[shellState.mediaMode].footerHTML = shellState.footerHTML;
+
+         if(viewScope) {
+             $timeout(function() {
+                 $compile(angular.element('#footerElement').contents())(viewScope);
+             });
+         }
      }
 
      /**
@@ -16471,7 +16496,7 @@ angular.module('ep.record.editor').
       * @methodOf ep.shell.service:epShellService
       * @public
       * @description
-      * get coordinates for the swipe event 
+      * get coordinates for the swipe event
       */
      function executeLeftSidebar(event) {
          return event.touches[0].clientX;
@@ -16904,7 +16929,7 @@ angular.module('ep.record.editor').
      * @public
      * @description
      * Return all navigation buttons - the current array of buttons is returned
-     * @returns {array} array of button objects
+     * @returns {Array} array of button objects
      */
      function getNavbarButtons() {
        return navbarButtons;
@@ -17055,7 +17080,6 @@ angular.module('ep.record.editor').
      * @description
      * Get the button that was clicked - it is available in the time interval between the mouse down and
      * click events. Useful for 'on-blur' processing.
-     * @param {boolean} onOff - disable or enable flag
      */
      function navbarButtonClicked() {
        return shellState.navButtonClicked;
@@ -17560,9 +17584,9 @@ angular.module('ep.shell').service('epSidebarService', [
                             viewSettings = epShellService.__viewSettings(viewSettings);
 
                             if (viewSettings[currentMode]) {
-                                epShellService.__setCurrentModeFlags();
+                                epShellService.__setCurrentModeFlags($scope);
                             }
-                            
+
                             if (viewSettings.sidebar) {
                                 setSidebarSettings(viewSettings.sidebar, false);
                             }
@@ -21080,7 +21104,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.contacts.list/contacts_list.html',
-    "<div class=\"ep-list-search-container vertical-align\"><input ng-model=contactListSearch placeholder=Search class=form-control id=ep-contacts-list-search><label for=ep-contacts-list-search class=\"glyphicon glyphicon-search\" rel=tooltip title=search></label></div><div class=ep-contacts-list-container><div class=ep-contacts-list><div ng-repeat=\"(key, value) in nameList\"><div class=ep-group-heading ng-if=\"filterVal.length > 0\" id=\"list-group-{{key == '#' ? 1 : (key | uppercase)}}\">{{key | uppercase}}</div><ul><li ng-repeat=\"name in filterVal = (value | filter: contactListSearch)\" ng-click=handler(name)>{{ name }}</li></ul></div></div></div><ul class=ep-index-list ng-hide=contactListSearch><li ng-repeat=\"key in indexKeys\" ng-click=goToLink(key)>{{key}}</li></ul><ul class=\"ep-index-list small-index-list\" ng-hide=contactListSearch><li ng-repeat=\"key in smallIndexKeys track by $index\" ng-click=goToLink(key)><span ng-if=\"key == '.'\" class=\"fa fa-circle\"></span> <span ng-if=\"key !='.'\">{{key}}</span></li></ul>"
+    "<div class=ep-contacts-list-container><div class=\"ep-list-search-container vertical-align\"><input ng-model=contactListSearch placeholder=Search class=form-control id=ep-contacts-list-search><label for=ep-contacts-list-search class=\"glyphicon glyphicon-search\" rel=tooltip title=search></label></div><div class=ep-contacts-list><div class=ep-contacts-list-inner><div ng-repeat=\"(key, value) in nameList\"><div class=ep-group-heading ng-if=\"filterVal.length > 0\" id=\"list-group-{{key == '#' ? 1 : (key | uppercase)}}\">{{key | uppercase}}</div><ul><li ng-repeat=\"name in filterVal = (value | filter: contactListSearch)\" ng-click=handler(name)>{{ name }}</li></ul></div></div></div><ul class=\"ep-index-list large-index-list\" ng-hide=contactListSearch><li ng-repeat=\"key in indexKeys\" ng-click=goToLink(key)>{{key}}</li></ul><ul class=\"ep-index-list small-index-list\" ng-hide=contactListSearch><li ng-repeat=\"key in smallIndexKeys track by $index\" ng-click=goToLink(key)><span ng-if=\"key == '.'\" class=\"fa fa-circle\"></span> <span ng-if=\"key !='.'\">{{key}}</span></li></ul></div>"
   );
 
 
@@ -21234,7 +21258,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/shell.html',
-    "<div><section ng-controller=epShellCtrl class=ep-shell ng-cloak><div ng-show=state.showProgressIndicator class=ep-progress-idicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\"></a></li><li ng-repeat=\"button in leftNavButtons | orderBy:'index':true\" index={{button.index}} ng-class=\"{'hidden': button.hidden}\"><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"pull-left fa {{button.icon}} fa-2x ep-navbar-button left-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button) ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"pull-left ep-navbar-button left-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"><i class=\"fa {{button.icon}} fa-2x\"></i><span ng-bind=button.title></span><span class=caret></span></a><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\"><a ng-click=opt.action() ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa {{opt.icon}}\"></i><span class=ep-navmenu-item-text>{{opt.title}}</span></span></a></li></ul></li><li ng-if=\"{hidden: !state.showBrand}\" ng-class=\"{'ep-center-brand': state.centerBrand}\"><a id=apptitle ng-if=state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-href=#{{(state.brandTarget)}} ng-bind-html=state.brandHTML></a> <span id=apptitle ng-if=!state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-bind-html=state.brandHTML></span></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in rightNavButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.enabled === false}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button)></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false><i class=\"fa {{button.icon}} fa-2x\"></i><span ng-bind=button.title></span><span class=caret></span></a><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\"><a ng-click=opt.action() ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa {{opt.icon}}\"></i><span class=ep-navmenu-item-text ng-bind=opt.title></span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div class=ep-fullscreen><div ng-view class=\"ep-fullscreen ep-view{{options.enableViewAnimations? ' ep-view-transition' : ''}}\" ng-class=state.viewAnimation></div></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" ng-if=state.footerTarget ng-href={{state.footerTarget}}><sup ng-bind-html=state.footerHTML></sup></a> <sup ng-if=!state.footerTarget ng-bind-html=state.footerHTML></sup></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.enableFeedback ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
+    "<div><section ng-controller=epShellCtrl class=ep-shell ng-cloak><div ng-show=state.showProgressIndicator class=ep-progress-idicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\"></a></li><li ng-repeat=\"button in leftNavButtons | orderBy:'index':true\" index={{button.index}} ng-class=\"{'hidden': button.hidden}\"><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"pull-left fa {{button.icon}} fa-2x ep-navbar-button left-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button) ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"pull-left ep-navbar-button left-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"><i class=\"fa {{button.icon}} fa-2x\"></i><span ng-bind=button.title></span><span class=caret></span></a><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\"><a ng-click=opt.action() ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa {{opt.icon}}\"></i><span class=ep-navmenu-item-text>{{opt.title}}</span></span></a></li></ul></li><li id=brandItem ng-if=\"{hidden: !state.showBrand}\" ng-class=\"{'ep-center-brand': state.centerBrand}\"><a id=apptitle ng-cloak=\"\" ng-if=state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-href=#{{(state.brandTarget)}} ng-bind-html=state.brandHTML></a> <span id=apptitle ng-cloak=\"\" ng-if=!state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-bind-html=state.brandHTML></span></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in rightNavButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.enabled === false}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button)></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false><i class=\"fa {{button.icon}} fa-2x\"></i><span ng-bind=button.title></span><span class=caret></span></a><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\"><a ng-click=opt.action() ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa {{opt.icon}}\"></i><span class=ep-navmenu-item-text ng-bind=opt.title></span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div class=ep-fullscreen><div ng-view class=\"ep-fullscreen ep-view{{options.enableViewAnimations? ' ep-view-transition' : ''}}\" ng-class=state.viewAnimation></div></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" ng-if=state.footerTarget ng-href={{state.footerTarget}}><sup id=footerElement ng-bind-html=state.footerHTML></sup></a> <sup ng-if=!state.footerTarget id=footerElement ng-bind-html=state.footerHTML></sup></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.enableFeedback ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
   );
 
 
