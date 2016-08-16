@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.86 built: 16-08-2016
+ * version:1.0.8-dev.87 built: 16-08-2016
 */
 (function() {
     'use strict';
@@ -9705,7 +9705,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         };
     }
 
-})(backgroundGeolocation);
+})(window.backgroundGeolocation);
 
 /**
  *
