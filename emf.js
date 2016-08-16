@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.87 built: 16-08-2016
+ * version:1.0.8-dev.88 built: 16-08-2016
 */
 (function() {
     'use strict';
@@ -15249,10 +15249,14 @@ angular.module('ep.record.editor').
     'use strict';
     angular.module('ep.shell').directive('myTouchstart', [function() {
         return function(scope, element, attr) {
-            element.bind('touchstart', function() {
-                scope.$apply(attr.myTouchstart);
+            element.bind('touchstart', function(event) {
+                scope.$apply(function() {
+                    if (attr.myTouchstart) {
+                        attr.myTouchstart(event)
+                    }
+                });
             });
-        };
+        }
     }])
     .controller('epShellCtrl', [
         '$location',
@@ -15274,7 +15278,7 @@ angular.module('ep.record.editor').
                 // get the epShellService state so it can be used in the views
                 $scope.state = epShellService.__state;
                 $scope.options = epShellConfig.options;
-                $scope.findXTouch = epShellService.executeLeftSidebar(event);
+                $scope.findXTouch = function(event){ epShellService.executeLeftSidebar(event)};
                 //toggle sidebar event function
                 $scope.toggleLeftSidebar = function() {
                     epShellService.toggleLeftSidebar();
@@ -15302,9 +15306,10 @@ angular.module('ep.record.editor').
                     }
                 };
                 $scope.getTouchXPoint = function() {
-                    $scope.findXTouch = epShellService.executeLeftSidebar(event);
+                    $scope.findXTouch = function(event){ epShellService.executeLeftSidebar(event)};
                     return $scope.findXTouch;
-                }
+                };
+                
                 //Close left sidebar on swipping right on left sidebar
                 $scope.closeLeftSidebar = function() {
                     epShellService.hideLeftSidebar();
@@ -21308,7 +21313,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/view-container/view-container.html',
-    "<div id=viewContainer ng-controller=epShellCtrl my-touchstart=getTouchXPoint() ng-swipe-right=showSwipeLeftSidebar() ng-swipe-left=showSwipeRightSidebar() class=ep-view-container ng-class=\"{ 'ep-with-navbar': !!state.showNavbar,\r" +
+    "<div id=viewContainer ng-controller=epShellCtrl my-touchstart=getTouchXPoint($event) ng-swipe-right=showSwipeLeftSidebar() ng-swipe-left=showSwipeRightSidebar() class=ep-view-container ng-class=\"{ 'ep-with-navbar': !!state.showNavbar,\r" +
     "\n" +
     "                                    'ep-with-footer': !!state.showFooter,\r" +
     "\n" +
