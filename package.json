@@ -2,7 +2,7 @@
   "name": "emf",
   "description": "Epicor Mobile Framework",
   "author": "Epicor Software Corporation",
-  "version": "1.0.8-dev.20",
+  "version": "1.0.8-dev.85",
   "publishConfig": {
     "registry": "http://epichub.americas.epicor.net:4873"
   },
@@ -31,12 +31,14 @@
     "grunt-ng-annotate": "^1.0.1",
     "grunt-ngdocs": "0.*.*",
     "grunt-project-update": "0.*.*",
+    "grunt-publish": "^1.0.0",
     "grunt-shell": "^1.1.2",
     "grunt-sync": "0.*.*",
     "grunt-tfs-unlock": "0.*.*",
     "grunt-tocdoc": "0.*.*",
     "grunt-version": "^1.0.0",
-    "jasmine-core": "^2.3.4",
+    "jasmine": "^2.4.1",
+    "jasmine-core": "^2.4.1",
     "karma": "0.*.*",
     "karma-chrome-launcher": "0.*.*",
     "karma-coverage": "0.*.*",
@@ -46,14 +48,14 @@
     "karma-iebrowsers-launcher": "0.*.*",
     "karma-jasmine": "0.*.*",
     "karma-ng-html2js-preprocessor": "0.*.*",
-    "karma-phantomjs-launcher": "0.*.*",
+    "karma-phantomjs-launcher": "^1.0.1",
     "karma-safari-launcher": "0.*.*",
     "karma-xml-reporter": "0.*.*",
     "load-grunt-config": "0.*.*",
     "load-grunt-tasks": "~3.3.0",
     "marked": "0.*.*",
     "marked-toc": "0.*.*",
-    "phantomjs": "^1.9.18",
+    "phantomjs": "^2.1.7",
     "time-grunt": "^1.0.0"
   }
 }

@@ -1,7 +1,38 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.20 built: 23-06-2016
+ * version:1.0.8-dev.85 built: 16-08-2016
 */
+.accordion-menu .list-group.panel > .list-group-item {
+  background-color: #0a6ebd;
+  color: white;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+}
+.accordion-menu .list-group-item {
+  color: white;
+  border-bottom-left-radius: 0 !important;
+  border-bottom-right-radius: 0 !important;
+  border-top-left-radius: 0 !important;
+  border-top-right-radius: 0 !important;
+  border-left: none;
+  border-right: none;
+}
+.accordion-menu .list-group-submenu {
+  padding-left: 5px;
+}
+.accordion-menu .list-group-item:last-child {
+  border-bottom: none;
+}
+.accordion-menu .list-group-item:first-child {
+  border-top-color: #0a6ebd;
+}
+.accordion-menu a.list-group-item,
+button.list-group-item {
+  border-bottom: none;
+}
+
 .ep-relative {
   position: relative;
 }
@@ -363,6 +394,14 @@
 .ep-padding-horizontal {
   padding-left: 10px;
 }
+/**Overriding font-awesome to work in windows devices*/
+@font-face {
+  font-family: 'FontAwesome';
+  src: url('../font-awesome/fonts/fontawesome-webfont.eot');
+  src: url('../font-awesome/fonts/fontawesome-webfont.eot?#iefix') format('embedded-opentype'), url('../font-awesome/fonts/fontawesome-webfont.woff2') format('woff2'), url('../font-awesome/fonts/fontawesome-webfont.woff') format('woff'), url('../font-awesome/fonts/fontawesome-webfont.ttf') format('truetype'), url('../font-awesome/fonts/fontawesome-webfont.svg?#fontawesomeregular') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
 /* Custom Icon font */
 @font-face {
   font-family: 'ep-custom-icon';
@@ -419,6 +458,15 @@
 .ep-ci-calendar:before {
   content: "\e90a";
 }
+.ep-ci-offline-storage:before {
+  content: "\e90c";
+}
+.ep-ci-gps-tracker:before {
+  content: "\e90d";
+}
+.ep-ci-email-composer:before {
+  content: "\e90e";
+}
 
 .ep-console-warning {
   color: orange;
@@ -428,6 +476,98 @@
 }
 .ep-console-info {
   color: blue;
+}
+
+.ep-contacts-list-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+.ep-contacts-list-container li {
+  list-style-type: none;
+}
+.ep-contacts-list {
+  overflow-x: hidden;
+  overflow-y: scroll;
+  -webkit-overflow-scrolling: touch;
+  height: 100%;
+  position: absolute;
+  width: 100%;
+  padding-left: 5%;
+  padding-top: 50px;
+  top: 0;
+}
+.ep-contacts-list-inner {
+  width: 100%;
+  height: calc(100% + 1px);
+}
+.ep-contacts-list li {
+  border-bottom: 1px solid #eee;
+  line-height: 44px;
+  height: 44px;
+}
+.ep-index-list {
+  position: absolute;
+  right: 0;
+  font-size: 12px;
+  text-align: center;
+  display: inline-block;
+  z-index: 998;
+  padding: 0;
+  margin: 0;
+  background-color: #fafafa;
+  width: 20px;
+  top: 0;
+  padding-top: 50px;
+  height: 100%;
+}
+.ep-index-list a {
+  text-decoration: none !important;
+  font-weight: bold;
+}
+.ep-index-list li {
+  color: #129ff4;
+  font-weight: bold;
+}
+.ep-index-list.small-index-list {
+  display: none;
+}
+.ep-index-list.small-index-list li {
+  line-height: 4vh;
+}
+.ep-index-list .fa-circle {
+  font-size: 8px;
+}
+.ep-group-heading {
+  font-weight: bold;
+  background: #fafafa;
+  box-shadow: -60px 0 0 #fafafa;
+  line-height: 28px;
+  height: 28px;
+}
+.ep-contacts-list ul {
+  padding: 0;
+  margin: 0;
+}
+#ep-contacts-list-search {
+  padding: 10px 10px 10px 30px;
+  border-radius: 5px;
+  width: 90%;
+}
+.ep-list-search-container {
+  position: absolute;
+  width: 100%;
+  background-color: #CAC9CE;
+  z-index: 999;
+  height: 50px;
+  padding-left: 5%;
+  top: 0;
+}
+.ep-list-search-container .glyphicon {
+  position: absolute;
+  left: 10px;
+  top: 17px;
+  padding-left: 5%;
 }
 
 /* ----->>>> Pagination styling taken from dataTables.jqueryui.css -------------->>>>*/
@@ -841,6 +981,73 @@
   text-align: center;
 }
 
+.ep-search-list-container {
+  position: relative;
+  width: 100%;
+  background-color: #CAC9CE;
+  z-index: 3;
+  height: 50px;
+  padding-left: 5%;
+}
+.ep-search-list-container input {
+  padding: 10px 10px 10px 30px;
+  border-radius: 5px;
+  width: 90%;
+}
+.ep-search-list-container .glyphicon {
+  position: absolute;
+  left: 10px;
+  top: 17px;
+  padding-left: 5%;
+}
+
+
+.ep-context-menu {
+  /*properties can be specified if needed*/
+}
+.ep-hover-context-menu {
+  /* parent class for the context menu.
+	To be supplied in case context menu has to be displayed on hover */
+}
+.ep-hover-context-menu:hover .ep-actionset {
+  display: inline-block;
+}
+.ep-interactivity-context-menu {
+  text-align: center;
+  line-height: 100% !important;
+}
+@media only screen and (max-width: 768px) {
+  .ep-context-menu-owner {
+    display: block;
+    line-height: inherit !important;
+  }
+}
+
+@media only screen and (max-width: 768px) {
+  #ep-dynamic-menu,
+  .edd-overlay-ctr {
+    position: fixed !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100%;
+    height: 100%;
+    color: black;
+    z-index: 3000;
+    background-color: rgba(48, 60, 67, 0.7);
+  }
+}
+@media only screen and (min-width: 768px) {
+  #ep-dynamic-menu {
+    position: absolute;
+    color: black;
+    z-index: 1000;
+  }
+}
+#ep-dynamic-menu .dropdown-menu {
+  display: block !important;
+}
 
 .ep-modaldialog .ep-dlg-buttons {
   width: 100%;
@@ -1269,6 +1476,50 @@
   opacity: 1;
 }
 
+.ep-record-editor {
+  margin-left: 10px;
+  /*margin-right: 30px;*/
+  overflow-y: auto;
+  overflow-x: hidden;
+}
+@media screen and (max-width: 500px) {
+  .ep-record-editor {
+    margin-left: 0;
+  }
+}
+.ep-record-editor-column {
+  min-width: 250px;
+}
+/* in modal dialogs (parameters) allow lesser size */
+.ep-modal-window .ep-record-editor-column {
+  min-width: 50px;
+}
+.ep-record-editor .ep-record-editor-container {
+  /* width: 300px; */
+  padding: 10px;
+  margin-top: 8px;
+  margin-right: 8px;
+}
+.ep-editor-control .ep-record-editor-container .input-group {
+  width: 100%;
+}
+.ep-editor-control .ep-record-editor-container .ep-editor-label {
+  display: block;
+}
+.ep-editor-control .ep-editor-checkbox {
+  width: 100%;
+  cursor: pointer;
+}
+.ep-editor-control .ep-editor-checkbox > span {
+  padding: 14px;
+}
+.ep-editor-control textarea.form-control.editor {
+  height: 145px;
+}
+.ep-editor-control .form-control.editor[disabled] {
+  cursor: default;
+}
+
 .ep-shell .ep-shell-feedback-btn {
   position: absolute;
   bottom: 0;
@@ -1532,24 +1783,28 @@ View Animation
   transition: all 200ms ease-out;
 }
 /* Slide animations */
+.ep-slide-left-add,
 .ep-slide-left.ep-view.ng-enter {
   left: 100%;
 }
 .ep-slide-left.ep-view.ng-enter.ng-enter-active {
   left: 0;
 }
+.ep-slide-right-add,
 .ep-slide-right.ep-view.ng-enter {
   left: -100%;
 }
 .ep-slide-right.ep-view.ng-enter.ng-enter-active {
   left: 0;
 }
+.ep-slide-down-add,
 .ep-slide-down.ep-view.ng-enter {
   top: -100%;
 }
 .ep-slide-down.ep-view.ng-enter.ng-enter-active {
   top: 0;
 }
+.ep-slide-up-add,
 .ep-slide-up.ep-view.ng-enter {
   top: 100%;
 }
@@ -1598,7 +1853,7 @@ SIDEBAR
 .ep-shell .ep-sidebar-nav-right {
   right: 0;
 }
-.ep-shell .ep-shell-container.ep-hide-left-sidebar .ep-sidebar-nav-left {
+.ep-shell .ep-shell-container .ep-sidebar-nav-left.ng-hide {
   -moz-transform: translateX(-250px);
   -ms-transform: translateX(-250px);
   -o-transform: translateX(-250px);
@@ -1615,7 +1870,7 @@ SIDEBAR
   -webkit-transform: translate3d(-250px, 0, 0);
   transform: translate3d(-250px, 0, 0);
 }
-.ep-shell .ep-shell-container.ep-hide-right-sidebar .ep-sidebar-nav-right {
+.ep-shell .ep-shell-container .ep-sidebar-nav-right.ng-hide {
   -moz-transform: translateX(250px);
   -ms-transform: translateX(250px);
   -o-transform: translateX(250px);
@@ -1631,12 +1886,6 @@ SIDEBAR
   -o-transform: translate3d(250px, 0, 0);
   -webkit-transform: translate3d(250px, 0, 0);
   transform: translate3d(250px, 0, 0);
-}
-.ep-shell .ep-shell-container.ep-disable-left-sidebar .ep-sidebar-nav-left {
-  visibility: hidden;
-}
-.ep-shell .ep-shell-container.ep-disable-right-sidebar .ep-sidebar-nav-right {
-  visibility: hidden;
 }
 .ep-shell .ep-sidebar-nav div.callout {
   width: 10px;
@@ -1723,7 +1972,8 @@ VIEW CONTAINER [ep-view-container]
     width: 100%;
   }
 }
-.ep-shell .ep-shell-container.ep-hide-left-sidebar .ep-view-container {
+/* This transition ensures that view shifts together with left sidebar */
+.ep-shell .ep-sidebar-nav-left.ng-hide ~ .ep-view-placeholder .ep-view-container {
   /* The order is important on these rules, proceed with care */
   -moz-transform: translateX(0);
   -ms-transform: translateX(0);
@@ -1741,6 +1991,15 @@ VIEW CONTAINER [ep-view-container]
   -webkit-transform: translate3d(0, 0, 0);
   transform: translate3d(0, 0, 0);
   width: 100%;
+}
+.ep-shell .ep-shell-container .ep-view-container-backdrop {
+  background-color: rgba(0, 0, 0, 0.3);
+  bottom: 0;
+  left: 0;
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 999;
 }
 
 
