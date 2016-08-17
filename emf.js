@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.90 built: 16-08-2016
+ * version:1.0.8-dev.91 built: 17-08-2016
 */
 (function() {
     'use strict';
@@ -8926,46 +8926,70 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @name ep.hybrid.emailcomposer:epHybridEmailComposerService
  * @description
  * Service for accessing Cordova Email Composer plugin. This provides access to the standard interface that manages the editing and sending an email.
- *
+  *
  * Note: Include cordova.js script file in html file and add
  * {@link https://www.npmjs.com/package/cordova-plugin-email cordova email plugin} into app
  *
  * @example
- <example module="TestApp">
+    <example module="TestApp">
      <file name="index.html">
-         <div ng-controller="SampleCtrl">
-             <div class="panel-body">
+	     <div ng-controller="SampleCtrl">
+            <div class="panel-body">
                 <div><button class="btn btn-primary btn-block" ng-click="sendEmail()">Send An Email</button></div>
-             </div>
-         </div>
+            </div>
+	      </div>
      </file>
      <file name="script.js">
-        angular.module('TestApp', ['ep.hybrid.emailcomposer'])
-        .controller('SampleCtrl',['$scope', '$log', 'epHybridEmailComposerService',
-            function($scope, epHybridEmailComposerService){
-                  $scope.sendEmail = function() {
-                    epHybridEmailComposerService.draftAnEmail('', {
-                        to: ['max@mustermann.d'],
-                        cc: ['john@doe.com', 'jane@doe.com'],
-                        bcc: [],
-                        subject: 'EpicApp',
-                        body: 'EpicApp Common CSS File Attached',
-                        isHtml: true,
-                        attachments: ['file://app/css/EpicApp.css']
-                   });
-                };
-            }]);
+     	angular.module('TestApp', ['ep.hybrid.emailcomposer'])
+     		.controller('SampleCtrl',['$scope', '$log', 'epHybridEmailComposerService',
+	     		function($scope, epHybridEmailComposerService){
+
+                    $scope.sendEmail = function() {
+                        try {
+                            epHybridPhotoService.getPicture(
+                                onSuccess,
+                                onFail,
+                                {
+                                    quality: 50,
+                                    destinationType: Camera.DestinationType.DATA_URL, sourceType: Camera.PictureSourceType.PHOTOLIBRARY,
+                                    correctOrientation: true
+                                }
+                            );
+                        }
+                        catch (err) {
+                            console.log(err.message);
+                        }
+                    }
+
+                    function onSuccess(imageData) {
+                        try {
+                            epHybridEmailComposerService.draftAnEmail({
+                                subject: 'EpicApp',
+                                body: '<h3>EpicApp Test File Attached</h3>' +
+                                '<p>EpicApp Test: ' + '</p>',
+                                isHtml: true,
+                                attachments: ['base64:image.png//' + imageData]
+                            });
+                        }
+                        catch (ex) {
+                            console.log(ex);
+                        }
+                    }
+
+                    function onFail(message) {
+                        console.log("Failed because: " + message);
+                    }
      </file>
- </example>
+   </example>
  */
 (function() {
     'use strict';
 
-    epHybridEmailComposerService.$inject = ['$log', 'epFeatureDetectionService', 'epFileService'];
+    epHybridEmailComposerService.$inject = ['$log'];
     angular.module('ep.hybrid.emailcomposer')
         .service('epHybridEmailComposerService', /*@ngInject*/ epHybridEmailComposerService);
 
-    function epHybridEmailComposerService($log, epFeatureDetectionService, epFileService) {
+    function epHybridEmailComposerService($log) {
 
         /**
          * @ngdoc method
@@ -8980,10 +9004,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             var emailAvailable;
             try {
                 cordova.plugins.email.isAvailable(
-                    function(isAvailable) {
-                        emailAvailable = isAvailable;
-                    }
-                );
+                   function(isAvailable) {
+                       emailAvailable = isAvailable;
+                   }
+            );
             } catch (ex) {
                 emailAvailable = false;
                 $log.debug('Email service not available' + ex);
@@ -8996,7 +9020,6 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @name draftAnEmail
          * @methodOf ep.hybrid.emailcomposer:epHybridEmailComposerService
          * @public
-         * @param {string} filename - File that needs to be attached
          * @param {object} settings - Options to configure the Action Sheet
          * @param {object} settings.to - Array of strings i.e. Email addresses for TO field
          * @param {object} settings.cc - Array of strings i.e. Email addresses for CC field
@@ -9005,93 +9028,39 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @param {string} settings.body - Email body (for HTML, set isHtml to true)
          * @param {boolean} settings.isHtml - Indicats if the body is HTML or plain text
          * @param {object} settings.attachments - Array of strings i.e. File paths that needs to be attached
-         * @param {boolean} asText - Set asText true if the file needs to load text from persistent storage.
-         * If this property is set to false or not set then the file loads an object from the storage(Example: While using Json files).
          * @description
          * Opens an Email draft with the provided inputs. After opening the draft the user can edit, delete or send an email.
          */
 
-        function draftAnEmail(filename, settings, asText) {
-            cordova.plugins.email.isAvailable(
-                function() {
-                    function send(file) {
-                        var defaults = {
-                            to: [],
-                            cc: [],
-                            bcc: [],
-                            subject: '[No Subject]',
-                            body: '',
-                            isHtml: false,
-                            attachments: []
-                        };
-                        var emailSettings = angular.extend(defaults, settings);
-                        if (!angular.isArray(emailSettings.attachments)) {
-                            emailSettings.attachments = [emailSettings.attachments];
-                        }
-                        if (file) {
-                            emailSettings.attachments.push(file);
-                        }
-                        cordova.plugins.email.open(emailSettings, function(e) {
-                            $log.error('An error occurred while attempting to launch the email application.' + e);
-                        });
-                    }
-
-                    if (!filename) {
-                        send(null);
-                    } else {
-
-                        var features = epFeatureDetectionService.getFeatures();
-                        if (features.platform.os.toLocaleLowerCase() === 'ios') {
-                            send(epFileService.getFilePath(filename));
-                        } else {
-                            // On android, we need to move the file out to an external directory
-                            // so that the email client has the necessary permissions to attach
-                            // it to the draft, so here we load it from the "standard" location
-                            if (asText) {
-                                epFileService.loadText(filename).then(function(graph) {
-                                    // then save it to the external directory
-                                    return epFileService.saveText(graph, cordova.file.externalRootDirectory, filename);
-                                }).then(function() {
-                                    // And finally send the email using the new file location
-                                    send(cordova.file.externalRootDirectory + filename);
-                                });
-                            } else {
-                                epFileService.load(filename).then(function(graph) {
-                                    // then save it to the external directory
-                                    return epFileService.save(graph, cordova.file.externalRootDirectory, filename);
-                                }).then(function() {
-                                    // And finally send the email using the new file location
-                                    send(cordova.file.externalRootDirectory + filename);
-                                });
-                            }
-                        }
-                    }
-                }, function() {
-                    $log.debug('Email service not available');
-                });
+        function draftAnEmail(settings) {
+            try {
+                cordova.plugins.email.isAvailable(
+                       function(isAvailable) {
+                           var defaults = {
+                               to: [],
+                               cc: [],
+                               bcc: [],
+                               subject: '[No Subject]',
+                               body: '',
+                               isHtml: false,
+                               attachments: [],
+                               app: 'gmail'
+                           };
+                           var emailSettings = angular.extend(defaults, settings);
+                           if (!angular.isArray(emailSettings.attachments)) {
+                               emailSettings.attachments = [emailSettings.attachments];
+                           }
+                           cordova.plugins.email.open(emailSettings, function(e) {
+                               $log.error('An error occurred while attempting to launch the email application.' + e);
+                           });
+                       }, function() {
+                           $log.debug('Email service not available');
+                       });
+            }
+            catch (ex) {
+                $log.error('An error occurred while attempting to launch the email application. ' + ex)
+            }
         }
-
-        //function draftAnEmail(settings) {
-        //    cordova.plugins.email.isAvailable(
-        //           function(isAvailable) {
-        //               var defaults = {
-        //                   to: [],
-        //                   cc: [],
-        //                   bcc: [],
-        //                   subject: '[No Subject]',
-        //                   body: '',
-        //                   isHtml: false,
-        //                   attachments: []
-        //               };
-        //               var emailSettings = angular.extend(defaults, settings);
-
-        //               cordova.plugins.email.open(emailSettings, function(e) {
-        //                   $log.error('An error occurred while attempting to launch the email application.' + e);
-        //               });
-        //           }, function() {
-        //               $log.debug('Email service not available');
-        //           });
-        //}
 
         return {
             isEmailAvailable: isEmailAvailable,
