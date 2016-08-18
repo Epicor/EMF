@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.93 built: 18-08-2016
+ * version:1.0.8-dev.94 built: 18-08-2016
 */
 (function() {
     'use strict';
@@ -601,12 +601,19 @@ angular.module('ep.signature', [
                     menu: '=',             // we take the menu as input parameter on the directive
                     onMenuInit: '&',       // this get fired upon menu initialization to provide factory
                     onFavoriteChange: '&', // fired upon favorite menu change
-                    onTopMenuClick: '='    // event for topmost menu item click
+                    onTopMenuClick: '=',    // event for topmost menu item click
+                    searchResultsHeader: '@',
+                    favoritesHeader: '@',
+                    mainHeader: '@'
                 },
                 compile: function() {
                     return {
                         pre: function() { },
                         post: function($scope) {
+                            $scope.searchResultsHeader = $scope.searchResultsHeader || 'Search Results';
+                            $scope.favoritesHeader = $scope.favoritesHeader || 'Favorites';
+                            $scope.mainHeader = $scope.mainHeader || '';
+
                             $timeout(function() {
                                 $scope.initializeMenus();
                             });
@@ -20438,7 +20445,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.accordion.menu/ep-accordion-menu_template.html',
-    "<div id={{menu.id}} class=\"accordion-menu ep-mlm-container\"><form class=ep-mlm-search ng-hide=searchDisabled><input class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-focus=\"isRightToLeft = false\"></form><div class=ep-mlm-content><div ng-show=state.searchTerm class=ep-mlm-header><span>Search Results</span></div><ul ng-show=state.searchTerm><ep-accordion-menu-item ng-repeat=\"item in currentItems | orderBy:orderByMenu\" id={{item.id}} item=item parent=menu navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></ul><ul ng-show=!state.searchTerm><ep-accordion-menu-item ng-repeat=\"item in data.favorites | orderBy:orderByMenu\" id={{item.id}} item=item parent=menu navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></ul><ul ng-show=!state.searchTerm><ep-accordion-menu-item ng-repeat=\"item in menu.menuitems | orderBy:orderByMenu\" id={{item.id}} item=item parent=menu navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></ul></div></div>"
+    "<div id={{menu.id}} class=\"accordion-menu ep-mlm-container\"><form class=ep-mlm-search ng-hide=searchDisabled><input class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-focus=\"isRightToLeft = false\"></form><div class=ep-mlm-content><div ng-show=state.searchTerm><div class=ep-mlm-header><span ng-bind=searchResultsHeader></span></div><ul><ep-accordion-menu-item ng-repeat=\"item in currentItems | orderBy:orderByMenu\" id={{item.id}} item=item parent=menu navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></ul></div><div ng-show=!state.searchTerm><div class=ep-mlm-header ng-if=\"data.favorites && data.favorites.length\"><span ng-bind=favoritesHeader></span></div><ul><ep-accordion-menu-item ng-repeat=\"item in data.favorites | orderBy:orderByMenu\" id={{item.id}} item=item parent=menu navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></ul><div class=ep-mlm-header><span ng-bind=mainHeader></span></div><ul><ep-accordion-menu-item ng-repeat=\"item in menu.menuitems | orderBy:orderByMenu\" id={{item.id}} item=item parent=menu navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></ul></div></div></div>"
   );
 
 
