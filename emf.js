@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.92 built: 17-08-2016
+ * version:1.0.8-dev.93 built: 18-08-2016
 */
 (function() {
     'use strict';
@@ -556,240 +556,6 @@ angular.module('ep.signature', [
 })();
 
 /**
- * @ngdoc controller
- * @name ep.accordion.menu.controller:epAccordionMenuCtrl
- * @description
- * Represents the epAccordionMenu controller for the
- * ep.accordion.menu module, or specific for directive ep-multi-level-menu
- *
- * @example
- *
- */
-(function() {
-    'use strict';
-
-    angular.module('ep.accordion.menu').controller('epAccordionMenuCtrl', [
-        '$rootScope',
-        '$scope',
-        '$timeout',
-        'epAccordionMenuFactory',
-        'epMultiLevelMenuConstants',
-        'epAccordionMenuService',
-        function($rootScope, $scope, $timeout, epAccordionMenuFactory,
-                 epMultiLevelMenuConstants, epAccordionMenuService) {
-            // init the scope properties
-            $scope.state = {
-                searchTerm: '',
-                searchType: 'item',
-                lastSearchTerm: ''
-            };
-            $scope.searchResults = [];  //Current search results
-            $scope.currentItems = [];   //Current items to display (can be menu or search results)
-            $scope.accordionMenuHelper = null;
-
-            var searchTimeout;
-
-            // private clear controller results
-            function clear() {
-                $scope.searchResults = [];
-                $scope.currentItems = [];
-                $scope.state.lastSearchTerm = '';
-            }
-
-            // private set current items (search or menu)
-            function setCurrentItems() {
-                if ($scope.state.searchTerm) {
-                    $scope.currentItems = $scope.searchResults;
-                } else if ($scope.data && $scope.data.next) {
-                    $scope.currentItems = $scope.data.next.menuitems;
-                } else {
-                    $scope.currentItems = [];
-                }
-            }
-
-            /**
-             * @ngdoc method
-             * @name search
-             * @methodOf ep.multilevel.menu.controller:epAccordionMenuCtrl
-             * @public
-             * @description
-             * Handles the search request.   this will take the $scope.state.searchTerm from the
-             * input box on the form populates local $scope.searchResults [] collection.
-             * if $scope.state.searchType is provided, the menu.type can be used to refine the search
-             * results by type, here 'menu' or 'item' can be used.
-             */
-            function search() {
-                $scope.isRightToLeft = false;
-                if (searchTimeout) {
-                    $timeout.cancel(searchTimeout);
-                }
-
-                if (!$scope.menu || !$scope.menu.menuitems || !$scope.state.searchTerm) {
-                    $scope.searchResults = [];
-                    $scope.state.lastSearchTerm = '';
-                    setCurrentItems();
-                    return;
-                }
-
-                searchTimeout = $timeout(function() {
-                    var results = [];
-
-                    var term = $scope.state.searchTerm.toLowerCase();
-                    var type = $scope.state.searchType ? $scope.state.searchType.toLowerCase() : '';
-
-                    if ($scope.state.lastSearchTerm && term.indexOf($scope.state.lastSearchTerm) === 0) {
-                        //search in our prior result set
-                        searchKids($scope.searchResults, term, type, false, results);
-                    } else {
-                        searchKids($scope.menu.menuitems, term, type, true, results);
-                    }
-                    $scope.searchResults = results;
-                    setCurrentItems();
-                    $scope.state.lastSearchTerm = term;
-                }, 250); // delay 250 ms in case user types too fast...
-            }
-
-            // private enum to search kids for local searchTerm
-            function searchKids(menuitems, term, type, recursive, results) {
-                angular.forEach(menuitems, function(kid) {
-                    if (kid && kid.caption.toLowerCase().indexOf(term) !== -1) {
-                        // if we are type checking, also check the system-set _type
-                        if (type === '' || kid.type === type || kid._type === type) {
-                            results.push(kid);
-                        }
-                    }
-                    if (recursive && kid.menuitems) {
-                        searchKids(kid.menuitems, term, type, recursive, results);
-                    }
-                });
-            }
-
-            /**
-             * @ngdoc method
-             * @name navigate
-             * @methodOf ep.multilevel.menu.controller:epAccordionMenuCtrl
-             * @public
-             * @description
-             * Handles the navigate request.
-             *
-             * @param {object} mi the menu item
-             * @param {bool} isHeader - is header clicked (backwards or top menu, otherwise triggered from item)
-             * @param {object} ev - event object from UI
-             */
-            function navigate(mi, isHeader, ev) {
-                if (!mi) {
-                    return;
-                }
-                if (mi._type === 'menu') {
-                    if (mi._id === 'topmenu') {
-                        return;
-                    }
-                    //going to back to parent set 'left-to-right' animation,
-                    //otherwise 'right-to-left'
-                    $scope.isRightToLeft = (isHeader !== true);
-                    $scope.data.next = mi;
-                    $timeout(function() {
-                        setCurrentItems();
-                        $scope.$apply();
-                    });
-                }
-                if (mi._type === 'item' && mi.action && typeof mi.action === 'function') {
-                    $scope.accordionMenuHelper.stampLastAccess(mi);
-                    emitMenuEvent(epMultiLevelMenuConstants.MLM_ITEM_CLICKED, mi);
-                    mi.action(mi);
-                }
-                if (mi.isTop && isHeader && ev && $scope.onTopMenuClick) {
-                    $scope.onTopMenuClick();
-                }
-            }
-
-            /**
-             * @ngdoc method
-             * @name toggleFavorite
-             * @methodOf ep.multilevel.menu.controller:epAccordionMenuCtrl
-             * @public
-             * @description
-             * Handles the toggleFavorite request
-             *
-             * @param {object} mi the menu item
-             */
-            function toggleFavorite(mi) {
-                $scope.accordionMenuHelper.toggleFavorite(mi);
-            }
-
-            function emitMenuEvent(eventId, menuItem) {
-                $rootScope.$emit(eventId, {
-                    eventId: eventId,
-                    menuId: $scope.menuId,
-                    factory: $scope.accordionMenuHelper,
-                    scope: $scope,
-                    menuItem: menuItem
-                });
-            }
-
-            // initialize the menus using the directive properties
-            function initializeMenus() {
-                // if they pass in the search-type directive property, set it on $scope.state
-                // override the default searchType = 'item'
-                if ($scope.searchType) {
-                    $scope.state.searchType = $scope.searchType;
-                }
-                // now the transitionEnd event is wired up, we use the local mlmService to populate()
-                // AKA, walk up and down the menu setting the _parent and _depth properties
-                $scope.accordionMenuHelper = epAccordionMenuFactory.getAccordionMenuHelper($scope);
-                $scope.accordionMenuHelper.populate($scope.menu);
-                // now we set the data (with _parent and _depth properties) on scope and set the 'next' panel
-                $scope.data = $scope.accordionMenuHelper.data;
-                $scope.data.next = $scope.accordionMenuHelper.data.menu;
-                // when we invoke navigate, this will add the animation class setting the initial
-                // animation into effect
-                $scope.navigate($scope.data.next);
-
-                if ($scope.onMenuInit) {
-                    //a callback to the outside to provide factory if needed...
-                    $scope.onMenuInit({ factory: $scope.accordionMenuHelper });
-                }
-
-                emitMenuEvent(epMultiLevelMenuConstants.MLM_INITIALIZED_EVENT);
-
-                $scope.$watch('menu', function(newValue, oldValue) {
-                    if (newValue && (!angular.equals(newValue, oldValue) || !$scope.data || !$scope.data.menu)) {
-                        $scope.accordionMenuHelper.populate($scope.menu, true);
-                        $scope.data = $scope.accordionMenuHelper.data;
-                        $scope.data.next = $scope.accordionMenuHelper.data.menu;
-                        setCurrentItems();
-                        emitMenuEvent(epMultiLevelMenuConstants.MLM_MENU_DATA_CHANGED);
-                    }
-                });
-
-                epAccordionMenuService.registerMenuFactory($scope.accordionMenuHelper);
-                //TO DO: on scope destroy unregister
-            }
-
-            function doOrderByMenu(menu) {
-                var sortFnValue = $scope.fnSort ? $scope.fnSort(menu) : undefined;
-                return sortFnValue || menu.sort || menu.caption;
-            }
-
-            $scope.$watch('sortDisabled', function(newValue, oldValue) {
-                if ((newValue === true || newValue === false) && !angular.equals(newValue, oldValue)) {
-                    $scope.orderByMenu = (newValue === true) ? undefined : doOrderByMenu;
-                }
-            });
-
-            $scope.orderByMenu = ($scope.sortDisabled === true) ? undefined : doOrderByMenu;
-            $scope.clear = clear;
-            $scope.setCurrentItems = setCurrentItems;
-            $scope.navigate = navigate;
-            $scope.toggleFavorite = toggleFavorite;
-            $scope.search = search;
-            $scope.initializeMenus = initializeMenus;
-            $scope.emitMenuEvent = emitMenuEvent;
-        }
-    ]);
-})();
-
-/**
  * @ngdoc directive
  * @name ep.multi.level.menu.directive:epMultiLevelMenu
  * @restrict E
@@ -817,14 +583,14 @@ angular.module('ep.signature', [
 (function() {
     'use strict';
 
-    angular.module('ep.accordion.menu').directive('epAccordionMenu', [
-        '$timeout',
-        function($timeout) {
+    angular.module('ep.accordion.menu').directive('epAccordionMenu',
+        /*@ngInclude*/
+        ['$timeout', function($timeout) {
             return {
                 restrict: 'E',
                 replace: true,
-                controller: 'epAccordionMenuCtrl',
-                templateUrl: 'src/components/ep.accordion.menu/accordion-menu.html',
+                controller: 'epMultiLevelMenuCtrl',
+                templateUrl: 'src/components/ep.accordion.menu/ep-accordion-menu_template.html',
                 scope: {
                     menuId: '=',           // menuId used to save favorites to local storage
                     searchType: '=',
@@ -848,485 +614,23 @@ angular.module('ep.signature', [
                     };
                 }
             };
-        }]);
-})();
-
-/**
- * @ngdoc service
- * @name ep.accordion.menu.factory:epAccordionMenuFactory
- * @description
- * Service for the ep.accordion.menu module
- * Represents the accordion menu
- *
- * @example
- *
- */
-(function() {
-    'use strict';
-    angular.module('ep.accordion.menu').factory('epAccordionMenuFactory', [
-        'epLocalStorageService',
-        'epMultiLevelMenuService',
-        'epMultiLevelMenuConstants',
-        function(epLocalStorageService, epMultiLevelMenuService, epMultiLevelMenuConstants) {
-            function getAccordionMenuHelper(scope) {
-                return new AccordionMenuHelper(scope);
-            }
-            return {
-                getAccordionMenuHelper: getAccordionMenuHelper
-            };
-
-            function AccordionMenuHelper(ctrlScope) {
-                var depth = 0;
-                var scope = ctrlScope; // scope from the controller
-                var data = {
-                    menu: null, // all of the menu data
-                    favorites: null
-                };
-
-                /**
-                 * @ngdoc method
-                 * @name buildTree
-                 * @methodOf ep.accordion.menu.factory:epAccordionMenuFactory
-                 * @private
-                 * @description
-                 * enumerate/walk up and down the menu.menuitems collection of
-                 * child menus and decorate the _parent/_depth properties
-                 * @param {array} menu - array of menu items
-                 */
-                function buildTree(menu) {
-                    if (!menu.menuitems) {
-                        menu.menuitems = [];
-                    }
-                    if (!menu._type) {
-                        menu._type = menu.menuitems === null || menu.menuitems.length <= 0 ? 'item' : 'menu';
-                        if (menu._type === 'item' && !menu._lastAccessed) {
-                            menu._lastAccessed = getItemLastAccess(menu);
-                        }
-                    }
-
-                    menu._depth = depth;
-                    angular.forEach(menu.menuitems, function(kid) {
-                        kid._parent = menu;
-                        depth++;
-                        buildTree(kid);
-                        depth--;
-                    });
-                }
-
-                /**
-                 * @ngdoc method
-                 * @name populate
-                 * @methodOf ep.accordion.menu.factory:epAccordionMenuFactory
-                 * @public
-                 * @description
-                 * walk up and down the menu.menuitems and set _depth/_parent properties
-                 * @param {object} menu - menu json source
-                 * @param {boolean} refresh - optional parameter if need to redraw the menu
-                 */
-                function populate(menu, refresh) {
-                    if (menu) {
-                        data.menu = angular.extend({}, menu);
-                    }
-                    if (data.menu) {
-                        // mock up a "_parent" for the top most menu so our html can set the proper pointers.
-                        data.menu._parent = { _id: 'topmenu', isTop: true };
-                        // walk up and down the menu.menuitems and set _depth/_parent properties
-                        buildTree(data.menu);
-                        data.favorites = getFavorites();
-                        data.next = data.menu;
-
-                        if (!epLocalStorageService.get(getStoreKey())) {
-                            //set initial favorites if this is the very first time running menu
-                            epMultiLevelMenuService.findAllMenuItems(data.menu, function(m) {
-                                if (!m.hideFavorite && (m.initFavorite || scope.initFavorites)) {
-                                    toggleFavorite(m);
-                                }
-                            });
-                        }
-
-                        if (refresh) {
-                            scope.navigate(data.menu);
-                        }
-                    }
-                }
-
-                /**
-                 * @ngdoc method
-                 * @name mergeMenu
-                 * @methodOf ep.accordion.menu.factory:epAccordionMenuFactory
-                 * @public
-                 * @description
-                 * merge menu items to top level children
-                 * @param {array} menuItems - array of menu items
-                 * @param {boolean} refresh - optional parameter if need to redraw the menu
-                 */
-                function mergeMenu(menuItems, refresh) {
-                    data.menu = data.menu || {};
-                    mergeMenuItems(data.menu, menuItems);
-                    populate();
-                    if (refresh) {
-                        scope.navigate(data.menu);
-                    }
-                }
-
-                /**
-                 * @ngdoc method
-                 * @name mergeMenuItems
-                 * @methodOf ep.accordion.menu.factory:epAccordionMenuFactory
-                 * @public
-                 * @description
-                 * merge menu items to top level children of menu object. Helper function which
-                 * does not affect internal data
-                 * @param {object} menu - main menu object
-                 * @param {array} menuItems - array of menu items to merge
-                 * @returns {object} merged menu object
-                 */
-                function mergeMenuItems(menu, menuItems) {
-                    menu = menu || {};
-                    if (!menu.menuitems) {
-                        menu.menuitems = [];
-                    }
-
-                    //avoid duplicates check by id or caption
-                    angular.forEach(menuItems, function(m) {
-                        if (m.id) {
-                            if (!findMenuItemById(m.id, menu)) {
-                                menu.menuitems.push(m);
-                            }
-                        } else {
-                            if (!epMultiLevelMenuService.findFirstMenuItem(menu, function(mm) {
-                                    return mm.caption === m.caption;
-                                })) {
-                                menu.menuitems.push(m);
-                            }
-                        }
-                    });
-                    return menu;
-                }
-
-                /**
-                 * @ngdoc method
-                 * @name setCurrentMenuParent
-                 * @methodOf ep.accordion.menu.factory:epAccordionMenuFactory
-                 * @public
-                 * @description
-                 * Handles the setCurrentMenuParent request
-                 *
-                 * @param {object} menuItem the menu item to set as current
-                 */
-                function setCurrentMenuParent(menuItem) {
-                    if (menuItem) {
-                        data.next = menuItem;
-                    }
-                }
-                /**
-                 * @ngdoc method
-                 * @name setCurrentMenuParentById
-                 * @methodOf ep.accordion.menu.factory:epAccordionMenuFactory
-                 * @public
-                 * @description
-                 * Handles the setCurrentMenuParentById request
-                 *
-                 * @param {object} id the menu item id to set as current
-                 */
-                function setCurrentMenuParentById(id) {
-                    var mi = findMenuItemById(id);
-                    if (mi) {
-                        setCurrentMenuParent(mi);
-                    }
-                }
-                /**
-                 * @ngdoc method
-                 * @name findMenuItemById
-                 * @methodOf ep.accordion.menu.factory:epAccordionMenuFactory
-                 * @public
-                 * @description
-                 * Handles the findMenuItemById request
-                 *
-                 * @param {object} id the id to search for
-                 * @param {object} root the parent menu to start the search
-                 */
-                function findMenuItemById(id, root) {
-                    var fn = function(item) {
-                        return (item.id === id);
-                    };
-                    return epMultiLevelMenuService.findFirstMenuItem((!root) ? data.menu : root, fn);
-                }
-                /**
-                 * @ngdoc method
-                 * @name resetCache
-                 * @methodOf ep.accordion.menu.factory:epAccordionMenuFactory
-                 * @public
-                 * @description
-                 * Resets only the menu content by clearing and re-populating.
-                 */
-                function resetCache() {
-                    data.menu = null;
-                    data.favorites = null;
-                    data.next = null;
-                    scope.clear();
-                    return populate();
-                }
-                /**
-                 * @ngdoc method
-                 * @name clear
-                 * @methodOf ep.accordion.menu.factory:epAccordionMenuFactory
-                 * @public
-                 * @description
-                 * Clears all data - does not re-populate
-                 */
-                function clear() {
-                    data.menu = null;
-                    data.favorites = null;
-                    data.next = null;
-                    scope.clear();
-                }
-                /**
-                 * @ngdoc method
-                 * @name toggleFavorite
-                 * @methodOf ep.accordion.menu.factory:epAccordionMenuFactory
-                 * @public
-                 * @description
-                 * Handles the toggleFavorite request
-                 *
-                 * @param {object} mi the menu item or menu id
-                 */
-                function toggleFavorite(mi) {
-                    var item = getMenuItemFromObj(mi);
-                    if (!item) {
-                        return;
-                    }
-
-                    item.favorite = !item.favorite;
-
-                    var menuKey = getStoreKey(item);
-                    if (item.favorite) {
-                        epLocalStorageService.update(menuKey, (mi._id || mi.id));
-                    } else {
-                        epLocalStorageService.clear(menuKey);
-                    }
-
-                    data.favorites = getFavorites();
-
-                    if (scope.onFavoriteChange) {
-                        scope.onFavoriteChange({ menuItem: mi, favorites: data.favorites });
-                    }
-                    scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_FAVORITES_CHANGED);
-                }
-                /**
-                 * @ngdoc method
-                 * @name triggerAction
-                 * @methodOf ep.accordion.menu.factory:epAccordionMenuFactory
-                 * @public
-                 * @description
-                 * Trigger menu item's action
-                 *
-                 * @param {object} mi the menu item or menu id
-                 */
-                function triggerAction(mi) {
-                    var item = getMenuItemFromObj(mi);
-                    if (!item) {
-                        return;
-                    }
-                    if (item.action && typeof item.action === 'function') {
-                        stampLastAccess(item);
-                        scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_ITEM_CLICKED, item);
-                        item.action(item);
-                    }
-                }
-                /**
-                 * @ngdoc method
-                 * @name stampLastAccess
-                 * @methodOf ep.accordion.menu.factory:epAccordionMenuFactory
-                 * @public
-                 * @description
-                 * Stamp the last access for menu item
-                 *
-                 * @param {object} mi the menu item or menu id
-                 */
-                function stampLastAccess(mi) {
-                    var item = getMenuItemFromObj(mi);
-                    if (!item) {
-                        return;
-                    }
-                    var menuKey = getStoreKey(item, true);
-                    mi._lastAccessed = moment().toISOString();
-                    epLocalStorageService.update(menuKey, mi._lastAccessed);
-                }
-                /**
-                 * @ngdoc method
-                 * @name getItemLastAccess
-                 * @methodOf ep.accordion.menu.factory:epAccordionMenuFactory
-                 * @public
-                 * @description
-                 * Retrieve the last access for menu item
-                 *
-                 * @param {object} mi the menu item or menu id
-                 * @param {bool} forceRetrieve retrieves the menu even if the key hasn't changed
-                 */
-                function getItemLastAccess(mi, forceRetrieve) {
-                    var ret;
-                    var item = getMenuItemFromObj(mi);
-                    if (!item) {
-                        return;
-                    }
-
-                    if (forceRetrieve !== true && item._lastAccessed) {
-                        return item._lastAccessed;
-                    }
-
-                    var menuKey = getStoreKey(item, true);
-                    var date = epLocalStorageService.get(menuKey);
-                    if (date) {
-                        var m = moment(date);
-                        if (m.isValid()) {
-                            ret = m.toDate();
-                        }
-                    }
-                    return ret;
-                }
-
-                /**
-                 * @ngdoc method
-                 * @name getMenuItemFromObj
-                 * @methodOf ep.accordion.menu.factory:epAccordionMenuFactory
-                 * @private
-                 * @description
-                 * Get menu item from object or menu id
-                 *
-                 * @param {object} mi the menu item or menu id
-                 */
-                function getMenuItemFromObj(mi) {
-                    var item = mi;
-                    if (angular.isString(mi)) {
-                        item = findMenuItemById(mi);
-                    }
-                    return item;
-                }
-
-                /**
-                 * @ngdoc method
-                 * @name findByIdFavorites
-                 * @methodOf ep.accordion.menu.factory:epAccordionMenuFactory
-                 * @private
-                 * @description
-                 * Finds id for favorites (matching id or _id)
-                 */
-                function findByIdFavorites(id) {
-                    return epAccordionMenuService.findFirstMenuItem(data.menu,
-                        function fnMatchId(item) {
-                            return item._id ? (item._id === id) : (item.id === id);
-                        });
-                }
-
-                /**
-                 * @ngdoc method
-                 * @name getFavorites
-                 * @methodOf ep.accordion.menu.factory:epAccordionMenuFactory
-                 * @public
-                 * @description
-                 * Handles the getFavorites request
-                 */
-                function getFavorites() {
-                    var favList = epMultiLevelMenuService.findAllMenuItems(data.menu,
-                        function(i) { return !!i.favorite; });
-
-                    var userKey = getStoreKey();
-                    var savedItems = epLocalStorageService.get(userKey) || {};
-
-                    angular.forEach(savedItems, function(itemId) {
-                        if (!_.find(favList, function(listItem) {
-                                return listItem.id === itemId;
-                            })) {
-                            var savedFav = findByIdFavorites(itemId);
-                            if (savedFav) {
-                                savedFav.favorite = true;
-                                favList.push(savedFav);
-                            }
-                        }
-                    });
-                    return favList;
-                }
-                /**
-                 * @ngdoc method
-                 * @name clearFavorites
-                 * @methodOf ep.accordion.menu.factory:epAccordionMenuFactory
-                 * @public
-                 * @description
-                 * Handles the clearFavorites request
-                 */
-                function clearFavorites() {
-                    data.favorites = null;
-                    var userKey = getStoreKey();
-                    epLocalStorageService.clear(userKey);
-                    scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_FAVORITES_CHANGED);
-                }
-
-                /**
-                 * @ngdoc method
-                 * @name getStoreKey
-                 * @methodOf ep.accordion.menu.factory:epAccordionMenuFactory
-                 * @private
-                 * @description
-                 * Get storage key for the whole menu or menu item
-                 */
-                function getStoreKey(item, lastAccess) {
-                    //we have to replace '.' in menuId or itemId for local storage
-                    var userKey = 'emf.accordion-menu.' + (scope.menuId || '').replace(/\./g, '-');
-                    userKey += lastAccess ? '.lastaccess' : '.favorite';
-                    if (item) {
-                        var mId = ((item._id ? item._id : item.id) || '').replace(/\./g, '-');
-                        userKey = userKey + '.' + mId;
-                    }
-                    return userKey;
-                }
-
-                /**
-                 * @ngdoc method
-                 * @name getMenuId
-                 * @methodOf ep.accordion.menu.factory:epAccordionMenuFactory
-                 * @public
-                 * @description
-                 * Get menu ID of the menu list
-                 */
-                function getMenuId() {
-                    return scope.menuId;
-                }
-
-                /**
-                 * @ngdoc method
-                 * @name setSortFunction
-                 * @methodOf ep.accordion.menu.factory:epAccordionMenuFactory
-                 * @public
-                 * @description
-                 * Set sort function to do custom sorting
-                 *
-                 * @param {object} fnSort function to be called for sorting. Menu object passed to this function.
-                 */
-                function setSortFunction(fnSort) {
-                    scope.fnSort = fnSort;
-                }
-
+        }])
+        .directive('epAccordionMenuItem',
+            /*@ngInclude*/
+            ['recursiveCompiler', function(recursiveCompiler) {
                 return {
-                    getMenuId: getMenuId,
-                    data: data,
-                    populate: populate,
-                    resetCache: resetCache,
-                    clearFavorites: clearFavorites,
-                    setCurrentMenuParent: setCurrentMenuParent,
-                    setCurrentMenuParentById: setCurrentMenuParentById,
-                    findMenuItemById: findMenuItemById,
-                    toggleFavorite: toggleFavorite,
-                    stampLastAccess: stampLastAccess,
-                    getItemLastAccess: getItemLastAccess,
-                    triggerAction: triggerAction,
-                    clear: clear,
-                    mergeMenu: mergeMenu,
-                    mergeMenuItems: mergeMenuItems,
-                    setSortFunction: setSortFunction
+                    restrict: 'E',
+                    replace: true,
+                    templateUrl: 'src/components/ep.accordion.menu/ep-accordion-menu-item_template.html',
+                    scope: {
+                        item: '=', // menuId used to save favorites to local storage
+                        parent: '=',
+                        navigate: '=',
+                        toggleFavorite: '='
+                    },
+                    compile: recursiveCompiler.compile
                 };
-            }
-        }]);
+            }])
 })();
 
 /**
@@ -11837,225 +11141,220 @@ angular.module('ep.menu.builder').
 (function() {
     'use strict';
 
-    angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl', [
-    '$rootScope',
-    '$scope',
-    '$timeout',
-    'epMultiLevelMenuFactory',
-    'epMultiLevelMenuConstants',
-    'epMultiLevelMenuService',
-    function($rootScope, $scope, $timeout, epMultiLevelMenuFactory,
-        epMultiLevelMenuConstants, epMultiLevelMenuService) {
-        // init the scope properties
-        $scope.state = {
-            searchTerm: '',
-            searchType: 'item',
-            lastSearchTerm: ''
-        };
-        $scope.searchResults = [];  //Current search results
-        $scope.currentItems = [];   //Current items to display (can be menu or search results)
-        $scope.multiLevelMenuHelper = null;
+    angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl',
+        /*@ngInject*/
+        ['$rootScope', '$scope', '$timeout', 'epMultiLevelMenuFactory', 'epMultiLevelMenuConstants', 'epMultiLevelMenuService', function($rootScope, $scope, $timeout, epMultiLevelMenuFactory,
+                 epMultiLevelMenuConstants, epMultiLevelMenuService) {
+            // init the scope properties
+            $scope.state = {
+                searchTerm: '',
+                searchType: 'item',
+                lastSearchTerm: ''
+            };
+            $scope.searchResults = [];  //Current search results
+            $scope.currentItems = [];   //Current items to display (can be menu or search results)
+            $scope.multiLevelMenuHelper = null;
 
-        var searchTimeout;
+            var searchTimeout;
 
-        // private clear controller results
-        function clear() {
-            $scope.searchResults = [];
-            $scope.currentItems = [];
-            $scope.state.lastSearchTerm = '';
-        }
-
-        // private set current items (search or menu)
-        function setCurrentItems() {
-            if ($scope.state.searchTerm) {
-                $scope.currentItems = $scope.searchResults;
-            } else if ($scope.data && $scope.data.next) {
-                $scope.currentItems = $scope.data.next.menuitems;
-            } else {
-                $scope.currentItems = [];
-            }
-        }
-
-        /**
-         * @ngdoc method
-         * @name search
-         * @methodOf ep.multilevel.menu.controller:epMultiLevelMenuCtrl
-         * @public
-         * @description
-         * Handles the search request.   this will take the $scope.state.searchTerm from the
-         * input box on the form populates local $scope.searchResults [] collection.
-         * if $scope.state.searchType is provided, the menu.type can be used to refine the search
-         * results by type, here 'menu' or 'item' can be used.
-         */
-        function search() {
-            $scope.isRightToLeft = false;
-            if (searchTimeout) {
-                $timeout.cancel(searchTimeout);
-            }
-
-            if (!$scope.menu || !$scope.menu.menuitems || !$scope.state.searchTerm) {
+            // private clear controller results
+            function clear() {
                 $scope.searchResults = [];
+                $scope.currentItems = [];
                 $scope.state.lastSearchTerm = '';
-                setCurrentItems();
-                return;
             }
 
-            searchTimeout = $timeout(function() {
-                var results = [];
-
-                var term = $scope.state.searchTerm.toLowerCase();
-                var type = $scope.state.searchType ? $scope.state.searchType.toLowerCase() : '';
-
-                if ($scope.state.lastSearchTerm && term.indexOf($scope.state.lastSearchTerm) === 0) {
-                    //search in our prior result set
-                    searchKids($scope.searchResults, term, type, false, results);
+            // private set current items (search or menu)
+            function setCurrentItems() {
+                if ($scope.state.searchTerm) {
+                    $scope.currentItems = $scope.searchResults;
+                } else if ($scope.data && $scope.data.next) {
+                    $scope.currentItems = $scope.data.next.menuitems;
                 } else {
-                    searchKids($scope.menu.menuitems, term, type, true, results);
+                    $scope.currentItems = [];
                 }
-                $scope.searchResults = results;
-                setCurrentItems();
-                $scope.state.lastSearchTerm = term;
-            }, 250); // delay 250 ms in case user types too fast...
-        }
-
-        // private enum to search kids for local searchTerm
-        function searchKids(menuitems, term, type, recursive, results) {
-            angular.forEach(menuitems, function(kid) {
-                if (kid && kid.caption.toLowerCase().indexOf(term) !== -1) {
-                    // if we are type checking, also check the system-set _type
-                    if (type === '' || kid.type === type || kid._type === type) {
-                        results.push(kid);
-                    }
-                }
-                if (recursive && kid.menuitems) {
-                    searchKids(kid.menuitems, term, type, recursive, results);
-                }
-            });
-        }
-
-        /**
-        * @ngdoc method
-        * @name navigate
-        * @methodOf ep.multilevel.menu.controller:epMultiLevelMenuCtrl
-        * @public
-        * @description
-        * Handles the navigate request.
-        *
-        * @param {object} mi the menu item
-        * @param {bool} isHeader - is header clicked (backwards or top menu, otherwise triggered from item)
-        * @param {object} ev - event object from UI
-        */
-        function navigate(mi, isHeader, ev) {
-            if (!mi) {
-                return;
             }
-            if (mi._type === 'menu') {
-                if (mi._id === 'topmenu') {
+
+            /**
+             * @ngdoc method
+             * @name search
+             * @methodOf ep.multilevel.menu.controller:epMultiLevelMenuCtrl
+             * @public
+             * @description
+             * Handles the search request.   this will take the $scope.state.searchTerm from the
+             * input box on the form populates local $scope.searchResults [] collection.
+             * if $scope.state.searchType is provided, the menu.type can be used to refine the search
+             * results by type, here 'menu' or 'item' can be used.
+             */
+            function search() {
+                $scope.isRightToLeft = false;
+                if (searchTimeout) {
+                    $timeout.cancel(searchTimeout);
+                }
+
+                if (!$scope.menu || !$scope.menu.menuitems || !$scope.state.searchTerm) {
+                    $scope.searchResults = [];
+                    $scope.state.lastSearchTerm = '';
+                    setCurrentItems();
                     return;
                 }
-                //going to back to parent set 'left-to-right' animation,
-                //otherwise 'right-to-left'
-                $scope.isRightToLeft = (isHeader !== true);
-                $scope.data.next = mi;
-                $timeout(function() {
+
+                searchTimeout = $timeout(function() {
+                    var results = [];
+
+                    var term = $scope.state.searchTerm.toLowerCase();
+                    var type = $scope.state.searchType ? $scope.state.searchType.toLowerCase() : '';
+
+                    if ($scope.state.lastSearchTerm && term.indexOf($scope.state.lastSearchTerm) === 0) {
+                        //search in our prior result set
+                        searchKids($scope.searchResults, term, type, false, results);
+                    } else {
+                        searchKids($scope.menu.menuitems, term, type, true, results);
+                    }
+                    $scope.searchResults = results;
                     setCurrentItems();
-                    $scope.$apply();
+                    $scope.state.lastSearchTerm = term;
+                }, 250); // delay 250 ms in case user types too fast...
+            }
+
+            // private enum to search kids for local searchTerm
+            function searchKids(menuitems, term, type, recursive, results) {
+                angular.forEach(menuitems, function(kid) {
+                    if (kid && kid.caption.toLowerCase().indexOf(term) !== -1) {
+                        // if we are type checking, also check the system-set _type
+                        if (type === '' || kid.type === type || kid._type === type) {
+                            results.push(kid);
+                        }
+                    }
+                    if (recursive && kid.menuitems) {
+                        searchKids(kid.menuitems, term, type, recursive, results);
+                    }
                 });
             }
-            if (mi._type === 'item' && mi.action && typeof mi.action === 'function') {
-                $scope.multiLevelMenuHelper.stampLastAccess(mi);
-                emitMenuEvent(epMultiLevelMenuConstants.MLM_ITEM_CLICKED, mi);
-                mi.action(mi);
-            }
-            if (mi.isTop && isHeader && ev && $scope.onTopMenuClick) {
-                $scope.onTopMenuClick();
-            }
-        }
 
-        /**
-         * @ngdoc method
-         * @name toggleFavorite
-         * @methodOf ep.multilevel.menu.controller:epMultiLevelMenuCtrl
-         * @public
-         * @description
-         * Handles the toggleFavorite request
-         *
-         * @param {object} mi the menu item
-         */
-        function toggleFavorite(mi) {
-            $scope.multiLevelMenuHelper.toggleFavorite(mi);
-        }
-
-        function emitMenuEvent(eventId, menuItem) {
-            $rootScope.$emit(eventId, {
-                eventId: eventId,
-                menuId: $scope.menuId,
-                factory: $scope.multiLevelMenuHelper,
-                scope: $scope,
-                menuItem: menuItem
-            });
-        }
-
-        // initialize the menus using the directive properties
-        function initializeMenus() {
-            // if they pass in the search-type directive property, set it on $scope.state
-            // override the default searchType = 'item'
-            if ($scope.searchType) {
-                $scope.state.searchType = $scope.searchType;
-            }
-            // now the transitionEnd event is wired up, we use the local mlmService to populate()
-            // AKA, walk up and down the menu setting the _parent and _depth properties
-            $scope.multiLevelMenuHelper = epMultiLevelMenuFactory.getMultiLevelMenuHelper($scope);
-            $scope.multiLevelMenuHelper.populate($scope.menu);
-            // now we set the data (with _parent and _depth properties) on scope and set the 'next' panel
-            $scope.data = $scope.multiLevelMenuHelper.data;
-            $scope.data.next = $scope.multiLevelMenuHelper.data.menu;
-            // when we invoke navigate, this will add the animation class setting the initial
-            // animation into effect
-            $scope.navigate($scope.data.next);
-
-            if ($scope.onMenuInit) {
-                //a callback to the outside to provide factory if needed...
-                $scope.onMenuInit({ factory: $scope.multiLevelMenuHelper });
+            /**
+             * @ngdoc method
+             * @name navigate
+             * @methodOf ep.multilevel.menu.controller:epMultiLevelMenuCtrl
+             * @public
+             * @description
+             * Handles the navigate request.
+             *
+             * @param {object} mi the menu item
+             * @param {bool} isHeader - is header clicked (backwards or top menu, otherwise triggered from item)
+             * @param {object} ev - event object from UI
+             */
+            function navigate(mi, isHeader, ev) {
+                if (!mi) {
+                    return;
+                }
+                if (mi._type === 'menu') {
+                    if (mi._id === 'topmenu') {
+                        return;
+                    }
+                    //going to back to parent set 'left-to-right' animation,
+                    //otherwise 'right-to-left'
+                    $scope.isRightToLeft = (isHeader !== true);
+                    $scope.data.next = mi;
+                    $timeout(function() {
+                        setCurrentItems();
+                        $scope.$apply();
+                    });
+                }
+                if (mi._type === 'item' && mi.action && typeof mi.action === 'function') {
+                    $scope.multiLevelMenuHelper.stampLastAccess(mi);
+                    emitMenuEvent(epMultiLevelMenuConstants.MLM_ITEM_CLICKED, mi);
+                    mi.action(mi);
+                }
+                if (mi.isTop && isHeader && ev && $scope.onTopMenuClick) {
+                    $scope.onTopMenuClick();
+                }
             }
 
-            emitMenuEvent(epMultiLevelMenuConstants.MLM_INITIALIZED_EVENT);
+            /**
+             * @ngdoc method
+             * @name toggleFavorite
+             * @methodOf ep.multilevel.menu.controller:epMultiLevelMenuCtrl
+             * @public
+             * @description
+             * Handles the toggleFavorite request
+             *
+             * @param {object} mi the menu item
+             */
+            function toggleFavorite(mi) {
+                $scope.multiLevelMenuHelper.toggleFavorite(mi);
+            }
 
-            $scope.$watch('menu', function(newValue, oldValue) {
-                if (newValue && (!angular.equals(newValue, oldValue) || !$scope.data || !$scope.data.menu)) {
-                    $scope.multiLevelMenuHelper.populate($scope.menu, true);
-                    $scope.data = $scope.multiLevelMenuHelper.data;
-                    $scope.data.next = $scope.multiLevelMenuHelper.data.menu;
-                    setCurrentItems();
-                    emitMenuEvent(epMultiLevelMenuConstants.MLM_MENU_DATA_CHANGED);
+            function emitMenuEvent(eventId, menuItem) {
+                $rootScope.$emit(eventId, {
+                    eventId: eventId,
+                    menuId: $scope.menuId,
+                    factory: $scope.multiLevelMenuHelper,
+                    scope: $scope,
+                    menuItem: menuItem
+                });
+            }
+
+            // initialize the menus using the directive properties
+            function initializeMenus() {
+                // if they pass in the search-type directive property, set it on $scope.state
+                // override the default searchType = 'item'
+                if ($scope.searchType) {
+                    $scope.state.searchType = $scope.searchType;
+                }
+                // now the transitionEnd event is wired up, we use the local mlmService to populate()
+                // AKA, walk up and down the menu setting the _parent and _depth properties
+                $scope.multiLevelMenuHelper = epMultiLevelMenuFactory.getMultiLevelMenuHelper($scope);
+                $scope.multiLevelMenuHelper.populate($scope.menu);
+                // now we set the data (with _parent and _depth properties) on scope and set the 'next' panel
+                $scope.data = $scope.multiLevelMenuHelper.data;
+                $scope.data.next = $scope.multiLevelMenuHelper.data.menu;
+                // when we invoke navigate, this will add the animation class setting the initial
+                // animation into effect
+                $scope.navigate($scope.data.next);
+
+                if ($scope.onMenuInit) {
+                    //a callback to the outside to provide factory if needed...
+                    $scope.onMenuInit({factory: $scope.multiLevelMenuHelper});
+                }
+
+                emitMenuEvent(epMultiLevelMenuConstants.MLM_INITIALIZED_EVENT);
+
+                $scope.$watch('menu', function(newValue, oldValue) {
+                    if (newValue && (!angular.equals(newValue, oldValue) || !$scope.data || !$scope.data.menu)) {
+                        $scope.multiLevelMenuHelper.populate($scope.menu, true);
+                        $scope.data = $scope.multiLevelMenuHelper.data;
+                        $scope.data.next = $scope.multiLevelMenuHelper.data.menu;
+                        setCurrentItems();
+                        emitMenuEvent(epMultiLevelMenuConstants.MLM_MENU_DATA_CHANGED);
+                    }
+                });
+
+                epMultiLevelMenuService.registerMenuFactory($scope.multiLevelMenuHelper);
+                //TO DO: on scope destroy unregister
+            }
+
+            function doOrderByMenu(menu) {
+                var sortFnValue = $scope.fnSort ? $scope.fnSort(menu) : undefined;
+                return sortFnValue || menu.sort || menu.caption;
+            }
+
+            $scope.$watch('sortDisabled', function(newValue, oldValue) {
+                if ((newValue === true || newValue === false) && !angular.equals(newValue, oldValue)) {
+                    $scope.orderByMenu = (newValue === true) ? undefined : doOrderByMenu;
                 }
             });
 
-            epMultiLevelMenuService.registerMenuFactory($scope.multiLevelMenuHelper);
-            //TO DO: on scope destroy unregister
-        }
-
-        function doOrderByMenu(menu) {
-            var sortFnValue = $scope.fnSort ? $scope.fnSort(menu) : undefined;
-            return sortFnValue || menu.sort || menu.caption;
-        }
-
-        $scope.$watch('sortDisabled', function(newValue, oldValue) {
-            if ((newValue === true || newValue === false) && !angular.equals(newValue, oldValue)) {
-                $scope.orderByMenu = (newValue === true) ? undefined : doOrderByMenu;
-            }
-        });
-
-        $scope.orderByMenu = ($scope.sortDisabled === true) ? undefined : doOrderByMenu;
-        $scope.clear = clear;
-        $scope.setCurrentItems = setCurrentItems;
-        $scope.navigate = navigate;
-        $scope.toggleFavorite = toggleFavorite;
-        $scope.search = search;
-        $scope.initializeMenus = initializeMenus;
-        $scope.emitMenuEvent = emitMenuEvent;
-    }
-    ]);
+            $scope.orderByMenu = ($scope.sortDisabled === true) ? undefined : doOrderByMenu;
+            $scope.clear = clear;
+            $scope.setCurrentItems = setCurrentItems;
+            $scope.navigate = navigate;
+            $scope.toggleFavorite = toggleFavorite;
+            $scope.search = search;
+            $scope.initializeMenus = initializeMenus;
+            $scope.emitMenuEvent = emitMenuEvent;
+        }]
+    );
 })();
 
 /**
@@ -20720,8 +20019,9 @@ function epTilesMenuFavoritesDirective() {
  */
 (function() {
     'use strict';
-    angular.module('ep.utils').service('epUtilsService', ['$document', '$log', '$q', '$timeout',
-        function($document, $log, $q, $timeout) {
+    angular.module('ep.utils').service('epUtilsService',
+        /*@ngInject*/
+        ['$document', '$log', '$q', '$timeout', function($document, $log, $q, $timeout) {
 
             /**
              * @ngdoc method
@@ -21084,6 +20384,47 @@ function epTilesMenuFavoritesDirective() {
                 wait: wait,
                 getService: getService
             };
+        }])
+        .factory('recursiveCompiler', ['$compile', function ($compile) {
+            return {
+                /**
+                 * Manually compiles the element, fixing the recursion loop.
+                 * @param element
+                 * @param [link] A post-link function, or an object with function(s) registered via pre and post properties.
+                 * @returns An object containing the linking functions.
+                 */
+                compile: function (element, link) {
+                    // Normalize the link parameter
+                    if (angular.isFunction(link)) {
+                        link = { post: link };
+                    }
+
+                    // Break the recursion loop by removing the contents
+                    var contents = element.contents().remove();
+                    var compiledContents;
+                    return {
+                        pre: (link && link.pre) ? link.pre : null,
+                        /**
+                         * Compiles and re-adds the contents
+                         */
+                        post: function (scope, element) {
+                            // Compile the contents
+                            if (!compiledContents) {
+                                compiledContents = $compile(contents);
+                            }
+                            // Re-add the compiled contents to the element
+                            compiledContents(scope, function (clone) {
+                                element.append(clone);
+                            });
+
+                            // Call the post-linking function, if any
+                            if (link && link.post) {
+                                link.post.apply(null, arguments);
+                            }
+                        }
+                    };
+                }
+            };
         }]);
 })();
 
@@ -21092,12 +20433,12 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   'use strict';
 
   $templateCache.put('src/components/ep.accordion.menu/ep-accordion-menu-item_template.html',
-    "<a ng-repeat-start=\"item in menu.items\" data-target=#{{menu.id}} class=list-group-item ng-class=item.type data-toggle=collapse data-parent=#MainMenu>{{item.caption}}</a><div ng-repeat-end class=collapse id={{item.id}}></div>"
+    "<li class=\"clearfix ep-mlm-item\"><div data-target=#{{item.id}}_children data-toggle=collapse><div ng-if=\"item.separator && !item.separator.isBottom\" class=\"ep-mlm-separator ep-mlm-separator-top {{item.separator.class}}\"><i ng-if=item.separator.icon class=\"ep-mlm-separator-icon fa fa-lg pull-left {{item.separator.icon}}\"></i><div ng-if=item.separator.text class=ep-mlm-separator-text>{{item.separator.text}}</div></div><i ng-if=\"item.icon && !iconDisabled\" class=\"ep-mlm-icon fa fa-lg pull-left {{item.icon}}\"></i><div class=\"pull-left clearfix ep-mlm-item-div\" ng-class=\"{ 'ep-mlm-item-div-icon': item.icon }\" ng-click=\"navigate(item, false, $event)\"><div class=\"ep-mlm-item-text pull-left {{item.captionClass}}\" title={{item.caption}}>{{item.caption}}</div></div><i ng-if=\"(item._type === 'item' && item.hideFavorite !== true)\" class=\"ep-mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(item) ng-class=\"{ 'fa-star-o': !item.favorite, 'fa-star text-warning': item.favorite}\"></i> <i ng-if=\"item._type === 'menu'\" class=\"ep-mlm-submenu fa fa-lg fa-caret-down pull-right\"></i><div ng-if=\"item.separator && item.separator.isBottom\"><br><div class=\"ep-mlm-separator ep-mlm-separator-top {{item.separator.class}}\"><i ng-if=item.separator.icon class=\"ep-mlm-separator-icon fa fa-lg pull-left {{item.separator.icon}}\"></i><div ng-if=item.separator.text class=ep-mlm-separator-text>{{item.separator.text}}</div></div></div></div><div class=\"collapse list-group-submenu\" id={{item.id}}_children ng-show=\"item._type === 'menu'\"><ul><ep-accordion-menu-item ng-repeat=\"child in item.menuitems | orderBy:orderByMenu\" item=child parent=item navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></ul></div></li>"
   );
 
 
   $templateCache.put('src/components/ep.accordion.menu/ep-accordion-menu_template.html',
-    "<div id={{menu.id}}><div class=\"list-group panel\"><a ng-repeat-start=\"item in menu.items\" data-target=#{{menu.id}} class=list-group-item ng-class=item.type data-toggle=collapse data-parent=#MainMenu>{{item.caption}}</a><div ng-repeat-end class=collapse id={{item.id}} ng-show=\"item.children && item.children.length\" ng-include=\"'src/components/ep.accordion.menu/accordion-menu-item.html'\"></div></div></div>"
+    "<div id={{menu.id}} class=\"accordion-menu ep-mlm-container\"><form class=ep-mlm-search ng-hide=searchDisabled><input class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-focus=\"isRightToLeft = false\"></form><div class=ep-mlm-content><div ng-show=state.searchTerm class=ep-mlm-header><span>Search Results</span></div><ul ng-show=state.searchTerm><ep-accordion-menu-item ng-repeat=\"item in currentItems | orderBy:orderByMenu\" id={{item.id}} item=item parent=menu navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></ul><ul ng-show=!state.searchTerm><ep-accordion-menu-item ng-repeat=\"item in data.favorites | orderBy:orderByMenu\" id={{item.id}} item=item parent=menu navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></ul><ul ng-show=!state.searchTerm><ep-accordion-menu-item ng-repeat=\"item in menu.menuitems | orderBy:orderByMenu\" id={{item.id}} item=item parent=menu navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></ul></div></div>"
   );
 
 
