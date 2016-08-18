@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.94 built: 18-08-2016
+ * version:1.0.8-dev.95 built: 18-08-2016
 */
 (function() {
     'use strict';
@@ -377,20 +377,21 @@ angular.module('ep.record.editor', [
     'use strict';
 
     angular.module('ep.shell', [
-    'ngRoute',
-    'ngAnimate',
-    'ui.bootstrap',
-    'ep.templates',
-    'ep.feature.detection',
-    'ep.local.storage',
-    'ep.theme',
-    'ep.utils',
-    'ep.sysconfig',
-    'ep.application',
-    'ep.console',
-    'ep.multi.level.menu',
-    'ep.embedded.apps',
-    'ep.tiles.panel'
+        'ngRoute',
+        'ngAnimate',
+        'ui.bootstrap',
+        'ep.templates',
+        'ep.feature.detection',
+        'ep.local.storage',
+        'ep.theme',
+        'ep.utils',
+        'ep.sysconfig',
+        'ep.application',
+        'ep.console',
+        'ep.multi.level.menu',
+        'ep.accordion.menu',
+        'ep.embedded.apps',
+        'ep.tiles.panel'
     ]);
 })();
 
@@ -20629,7 +20630,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/menu/ep-shell-menu.html',
-    "<div ng-controller=epShellMenuCtrl><ep-multi-level-menu menu=menuOptions.menu menu-id=menuId search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu></div>"
+    "<div ng-controller=epShellMenuCtrl><ep-multi-level-menu ng-if=\"menuOptions.menuType !== 'accordion'\" menu=menuOptions.menu menu-id=menuId search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu><ep-accordion-menu ng-if=\"menuOptions.menuType === 'accordion'\" menu=menuOptions.menu menu-id=menuId main-header={{menuOptions.title}} search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-accordion-menu></div>"
   );
 
 
