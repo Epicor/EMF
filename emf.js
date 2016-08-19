@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.95 built: 18-08-2016
+ * version:1.0.8-dev.95 built: 19-08-2016
 */
 (function() {
     'use strict';
@@ -603,9 +603,9 @@ angular.module('ep.signature', [
                     onMenuInit: '&',       // this get fired upon menu initialization to provide factory
                     onFavoriteChange: '&', // fired upon favorite menu change
                     onTopMenuClick: '=',    // event for topmost menu item click
-                    searchResultsHeader: '@',
-                    favoritesHeader: '@',
-                    mainHeader: '@'
+                    searchResultsHeader: '=',
+                    favoritesHeader: '=',
+                    mainHeader: '='
                 },
                 compile: function() {
                     return {
@@ -20441,12 +20441,12 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   'use strict';
 
   $templateCache.put('src/components/ep.accordion.menu/ep-accordion-menu-item_template.html',
-    "<li class=\"clearfix ep-mlm-item\"><div data-target=#{{item.id}}_children data-toggle=collapse><div ng-if=\"item.separator && !item.separator.isBottom\" class=\"ep-mlm-separator ep-mlm-separator-top {{item.separator.class}}\"><i ng-if=item.separator.icon class=\"ep-mlm-separator-icon fa fa-lg pull-left {{item.separator.icon}}\"></i><div ng-if=item.separator.text class=ep-mlm-separator-text>{{item.separator.text}}</div></div><i ng-if=\"item.icon && !iconDisabled\" class=\"ep-mlm-icon fa fa-lg pull-left {{item.icon}}\"></i><div class=\"pull-left clearfix ep-mlm-item-div\" ng-class=\"{ 'ep-mlm-item-div-icon': item.icon }\" ng-click=\"navigate(item, false, $event)\"><div class=\"ep-mlm-item-text pull-left {{item.captionClass}}\" title={{item.caption}}>{{item.caption}}</div></div><i ng-if=\"(item._type === 'item' && item.hideFavorite !== true)\" class=\"ep-mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(item) ng-class=\"{ 'fa-star-o': !item.favorite, 'fa-star text-warning': item.favorite}\"></i> <i ng-if=\"item._type === 'menu'\" class=\"ep-mlm-submenu fa fa-lg fa-caret-down pull-right\"></i><div ng-if=\"item.separator && item.separator.isBottom\"><br><div class=\"ep-mlm-separator ep-mlm-separator-top {{item.separator.class}}\"><i ng-if=item.separator.icon class=\"ep-mlm-separator-icon fa fa-lg pull-left {{item.separator.icon}}\"></i><div ng-if=item.separator.text class=ep-mlm-separator-text>{{item.separator.text}}</div></div></div></div><div class=\"collapse list-group-submenu\" id={{item.id}}_children ng-show=\"item._type === 'menu'\"><ul><ep-accordion-menu-item ng-repeat=\"child in item.menuitems | orderBy:orderByMenu\" item=child parent=item navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></ul></div></li>"
+    "<div class=\"clearfix list-group-item\"><div class=clearfix ng-class=\"{ 'ep-accordion-expanded': item.isExpanded }\" ng-click=\"item.isExpanded = !item.isExpanded\"><div ng-if=\"!(item.menuitems && item.menuitems.length)\"><!-- Menu item caption/text --><div class=\"pull-left clearfix ep-menu-item-div\" ng-click=\"navigate(item, false, $event)\"><div class=\"ep-menu-item-text pull-left {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></div></div><!-- Favorite icon --><i ng-if=\"(item.hideFavorite !== true)\" class=\"ep-menu-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(item) ng-class=\"{ 'fa-star-o': !item.favorite, 'fa-star text-warning': item.favorite}\"></i></div><div ng-if=item.menuitems.length><!-- Menu item caption/text --><div class=\"pull-left clearfix ep-menu-item-div\"><strong class=\"ep-submenu-text pull-left {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></strong></div><!-- Expand icon --><i class=\"ep-menu-submenu fa fa-lg fa-caret-down pull-right\"></i></div></div><sup class=text-info ng-if=\"item.description && !item.isExpanded\" ng-bind=item.description></sup><!-- Sub-menu --><div class=list-group-submenu ng-class=\"{'collapsed': !item.isExpanded }\" id={{item.id}}_children ng-if=item.menuitems.length><ep-accordion-menu-item ng-repeat=\"child in item.menuitems | orderBy:orderByMenu\" item=child parent=item navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div>"
   );
 
 
   $templateCache.put('src/components/ep.accordion.menu/ep-accordion-menu_template.html',
-    "<div id={{menu.id}} class=\"accordion-menu ep-mlm-container\"><form class=ep-mlm-search ng-hide=searchDisabled><input class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-focus=\"isRightToLeft = false\"></form><div class=ep-mlm-content><div ng-show=state.searchTerm><div class=ep-mlm-header><span ng-bind=searchResultsHeader></span></div><ul><ep-accordion-menu-item ng-repeat=\"item in currentItems | orderBy:orderByMenu\" id={{item.id}} item=item parent=menu navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></ul></div><div ng-show=!state.searchTerm><div class=ep-mlm-header ng-if=\"data.favorites && data.favorites.length\"><span ng-bind=favoritesHeader></span></div><ul><ep-accordion-menu-item ng-repeat=\"item in data.favorites | orderBy:orderByMenu\" id={{item.id}} item=item parent=menu navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></ul><div class=ep-mlm-header><span ng-bind=mainHeader></span></div><ul><ep-accordion-menu-item ng-repeat=\"item in menu.menuitems | orderBy:orderByMenu\" id={{item.id}} item=item parent=menu navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></ul></div></div></div>"
+    "<div id={{menu.id}} class=ep-accordion-menu><form class=ep-mlm-search ng-hide=searchDisabled><input class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-focus=\"isRightToLeft = false\"></form><div ng-show=state.searchTerm><div class=\"bg-primary ep-menu-header\"><span ng-bind=searchResultsHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in currentItems | orderBy:orderByMenu\" id={{item.id}} item=item parent=menu navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div><div ng-show=!state.searchTerm><div class=\"bg-primary ep-menu-header\" ng-if=\"data.favorites && data.favorites.length\"><span ng-bind=favoritesHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in data.favorites | orderBy:orderByMenu\" id={{item.id}} item=item parent=menu navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div><div class=\"bg-primary ep-menu-header\"><span ng-bind=mainHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in menu.menuitems | orderBy:orderByMenu\" id={{item.id}} item=item parent=menu navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div></div>"
   );
 
 
@@ -20630,7 +20630,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/menu/ep-shell-menu.html',
-    "<div ng-controller=epShellMenuCtrl><ep-multi-level-menu ng-if=\"menuOptions.menuType !== 'accordion'\" menu=menuOptions.menu menu-id=menuId search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu><ep-accordion-menu ng-if=\"menuOptions.menuType === 'accordion'\" menu=menuOptions.menu menu-id=menuId main-header={{menuOptions.title}} search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-accordion-menu></div>"
+    "<div ng-controller=epShellMenuCtrl><ep-multi-level-menu ng-if=\"menuOptions.menuType !== 'accordion'\" menu=menuOptions.menu menu-id=menuId search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu><ep-accordion-menu ng-if=\"menuOptions.menuType === 'accordion'\" menu=menuOptions.menu menu-id=menuId main-header=\"menuOptions.title || 'Menu'\" favorites-header=\"menuOptions.favoritesHeader || 'Favorites'\" search-results-header=\"menuOptions.searchResultsHeader || 'Search Results'\" search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-accordion-menu></div>"
   );
 
 

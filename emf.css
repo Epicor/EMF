@@ -1,38 +1,50 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.95 built: 18-08-2016
+ * version:1.0.8-dev.95 built: 19-08-2016
 */
-.accordion-menu .list-group.panel > .list-group-item {
-  background-color: #0a6ebd;
+.ep-accordion-menu .list-group .panel > .list-group-item {
   color: white;
-  border-bottom-left-radius: 0 !important;
-  border-bottom-right-radius: 0 !important;
-  border-top-left-radius: 0 !important;
-  border-top-right-radius: 0 !important;
-  cursor: hand;
+  border-radius: 0;
+  cursor: pointer;
 }
-.accordion-menu .list-group-item {
+.ep-accordion-menu .ep-menu-header {
   color: white;
-  border-bottom-left-radius: 0 !important;
-  border-bottom-right-radius: 0 !important;
-  border-top-left-radius: 0 !important;
-  border-top-right-radius: 0 !important;
+  border-radius: 0 !important;
+  cursor: hand;
+  padding: 10px;
+}
+.ep-accordion-menu .list-group-item {
+  border-radius: 0 !important;
   border-left: none;
   border-right: none;
-  cursor: hand;
+  cursor: pointer;
+  padding: 10px 0 10px 0;
 }
-.accordion-menu .list-group-submenu {
-  padding-left: 5px;
-}
-.accordion-menu .list-group-item:last-child {
+.ep-accordion-menu .list-group-item .list-group-item:last-child {
   border-bottom: none;
+}
+.ep-accordion-menu .list-group-item .list-group-item:first-child {
+  border-top: none;
+}
+.ep-accordion-menu .panel {
+  margin-bottom: 0;
+  padding: 0 10px 0 10px;
+}
+.ep-accordion-menu .ep-accordion-expanded {
+  padding-bottom: 10px;
+  border-bottom: 1px solid #0a6ebd;
+}
+.ep-accordion-menu .list-group-submenu {
+  transition: 0.5s linear all;
+  overflow: hidden;
+  margin-left: 5px;
+  max-height: 5000px;
+}
+.ep-accordion-menu .list-group-submenu.collapsed {
+  max-height: 0px;
 }
 .accordion-menu .list-group-item:first-child {
-  border-top-color: #0a6ebd;
-}
-.accordion-menu a.list-group-item,
-button.list-group-item {
-  border-bottom: none;
+  border-top: none;
 }
 
 .ep-relative {
