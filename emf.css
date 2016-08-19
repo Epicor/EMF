@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.95 built: 19-08-2016
+ * version:1.0.8-dev.96 built: 19-08-2016
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: white;
@@ -20,10 +20,10 @@
   cursor: pointer;
   padding: 10px 0 10px 0;
 }
-.ep-accordion-menu .list-group-item .list-group-item:last-child {
+.ep-accordion-menu .list-group-item:last-child {
   border-bottom: none;
 }
-.ep-accordion-menu .list-group-item .list-group-item:first-child {
+.ep-accordion-menu .list-group-item:first-child {
   border-top: none;
 }
 .ep-accordion-menu .panel {
@@ -35,16 +35,19 @@
   border-bottom: 1px solid #0a6ebd;
 }
 .ep-accordion-menu .list-group-submenu {
-  transition: 0.5s linear all;
+  transition: 0.3s linear all;
   overflow: hidden;
   margin-left: 5px;
-  max-height: 5000px;
+  max-height: 2500px;
+}
+.ep-accordion-menu sup {
+  margin-left: 3px;
 }
 .ep-accordion-menu .list-group-submenu.collapsed {
   max-height: 0px;
 }
-.accordion-menu .list-group-item:first-child {
-  border-top: none;
+.ep-accordion-menu form {
+  padding: 5px;
 }
 
 .ep-relative {
