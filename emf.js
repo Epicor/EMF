@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.102 built: 24-08-2016
+ * version:1.0.8-dev.103 built: 24-08-2016
 */
 (function() {
     'use strict';
@@ -586,7 +586,7 @@ angular.module('ep.signature', [
 
     angular.module('ep.accordion.menu').directive('epAccordionMenu',
         /*@ngInclude*/
-        ['$timeout', function($timeout) {
+        ['$timeout', 'recursiveCompiler', function($timeout, recursiveCompiler) {
             return {
                 restrict: 'E',
                 replace: true,
@@ -602,44 +602,53 @@ angular.module('ep.signature', [
                     menu: '=',             // we take the menu as input parameter on the directive
                     onMenuInit: '&',       // this get fired upon menu initialization to provide factory
                     onFavoriteChange: '&', // fired upon favorite menu change
+                    onExpand: '=',         // fired when the menu item is expanded/collapsed
                     onTopMenuClick: '=',    // event for topmost menu item click
                     searchResultsHeader: '=',
                     favoritesHeader: '=',
                     mainHeader: '='
                 },
-                compile: function() {
-                    return {
-                        pre: function() { },
+                compile: function(element) {
+                    return recursiveCompiler.compile(element, {
+                        pre: function() {
+                        },
                         post: function($scope) {
                             $scope.searchResultsHeader = $scope.searchResultsHeader || 'Search Results';
                             $scope.favoritesHeader = $scope.favoritesHeader || 'Favorites';
                             $scope.mainHeader = $scope.mainHeader || '';
-
                             $timeout(function() {
                                 $scope.initializeMenus();
                             });
                         }
-                    };
+                    })
                 }
-            };
+            }
         }])
         .directive('epAccordionMenuItem',
             /*@ngInclude*/
-            ['recursiveCompiler', function(recursiveCompiler) {
+            function() {
                 return {
                     restrict: 'E',
                     replace: true,
                     templateUrl: 'src/components/ep.accordion.menu/ep-accordion-menu-item_template.html',
                     scope: {
-                        item: '=', // menuId used to save favorites to local storage
+                        item: '=',
                         parent: '=',
                         navigate: '=',
                         toggleFavorite: '=',
-                        hideDescription: '='
+                        hideDescription: '=',
+                        onExpand: '='
                     },
-                    compile: recursiveCompiler.compile
+                    /*ngInject*/
+                    controller: ['$scope', function($scope) {
+                        $scope.$watch('item.isExpanded', function(val) {
+                            if (val !== undefined && $scope.onExpand) {
+                                $scope.onExpand($scope.item);
+                            }
+                        });
+                    }]
                 };
-            }])
+            })
 })();
 
 /**
@@ -14395,17 +14404,17 @@ angular.module('ep.record.editor').
 (function() {
     'use strict';
 
-    epShellMenuCtrl.$inject = ['$q', '$scope', 'epEmbeddedAppsService', 'epMultiLevelMenuService'];
+    epShellMenuCtrl.$inject = ['$q', '$scope', 'epEmbeddedAppsService', 'epLocalStorageService', 'epMultiLevelMenuService'];
     angular.module('ep.shell').controller('epShellMenuCtrl', epShellMenuCtrl);
 
     /*@ngInject*/
-    function epShellMenuCtrl($q, $scope, epEmbeddedAppsService, epMultiLevelMenuService) {
-
+    function epShellMenuCtrl($q, $scope, epEmbeddedAppsService, epLocalStorageService, epMultiLevelMenuService) {
+        $scope.cache = {};
         $scope.onMenuOptions = function onMenuOptions() {
             $scope.menuOptions.onMenuInit = function(factory) {
                 $scope.menuOptions.factory = factory;
             };
-            $scope.onTopMenuClick = function() {
+            $scope.onTopMenuClick = function topMenuClicked() {
                 if ($scope.menuOptions.onTopMenuClick) {
                     $scope.menuOptions.onTopMenuClick();
                 }
@@ -14417,25 +14426,74 @@ angular.module('ep.record.editor').
                 menuitems: []
             };
 
-            if (!angular.isArray($scope.menuOptions.fnGetMenu)) {
+            if (angular.isFunction($scope.menuOptions.fnGetMenu)) {
                 $scope.menuOptions.fnGetMenu = [$scope.menuOptions.fnGetMenu];
             }
 
             $scope.menuGets = $scope.menuOptions.fnGetMenu;
-            if ($scope.includeEmbeddedMenu) {
-                $scope.menuGets.push(epEmbeddedAppsService.retrieveAppsMenu);
-            }
-            $scope.count = $scope.menuGets.length;
+            if(angular.isArray($scope.menuGets)) {
+                if ($scope.includeEmbeddedMenu) {
+                    $scope.menuGets.push(epEmbeddedAppsService.retrieveAppsMenu);
+                }
+                $scope.count = $scope.menuGets.length;
+                angular.forEach($scope.menuGets, function(fn) {
+                    $q.when(fn()).then(function(m) {
+                        epMultiLevelMenuService.mergeMenus($scope.menu, m);
+                        if (--$scope.count === 0) {
+                            $scope.menuOptions.menu = $scope.menu;
+                        }
+                    });
+                });
+            } else if(angular.isObject($scope.menuGets)){
+                // If the "menuGets" property is an object, then we enable cacheing automatically
+                // If the ""
+                var menuKeys = Object.keys($scope.menuGets);
+                $scope.count = menuKeys.length;
 
-            angular.forEach($scope.menuGets, function(fn) {
-                $q.when(fn()).then(function(m) {
-                    epMultiLevelMenuService.mergeMenus($scope.menu, m);
-                    if (--$scope.count === 0) {
-                        $scope.menuOptions.menu = $scope.menu;
+                var interval = ($scope.menuOptions.refreshInterval || 0) * 1000;
+                var now = new Date().valueOf();
+
+                angular.forEach(menuKeys, function(key) {
+                    var cached = $scope.cache[key];
+                    if(cached) {
+                        // If we've read the menu out of memory, it doesn't need to be restored
+                        merge(cached);
+                    } else {
+                        cached = epLocalStorageService.get('menu.'+key);
+                        if(cached && cached._timestamp + interval > now) {
+                            // If we've read the menu out of localStorage, then we need to restore
+                            // the menu actions, but we can't do it on the items that are stored in
+                            // localStorage, or it will cause a circular structure, so we clone the object.
+                            var m = angular.merge({}, cached);
+                            $scope.menuOptions.fnRestoreMenu[key](m);
+                            $scope.cache[key] = m;
+                            merge(m);
+                        } else {
+                            var fetch = $scope.menuGets[key];
+                            if(fetch) {
+                                fetch().then(function(m) {
+                                    m._timestamp = now;
+                                    $scope.cache[key] = m;
+                                    // We need to deep-clone the menu to save into local storage, because
+                                    // the items get double-linked to facilitate navigation and cause a circular
+                                    // structure that cannot be serialized.
+                                    var serializableMenu = angular.merge({}, m);
+                                    epLocalStorageService.update('menu.' + key, serializableMenu);
+                                    $scope.menuOptions.fnRestoreMenu[key](m);
+                                    merge(m)
+                                });
+                            }
+                        }
                     }
                 });
-            });
+            }
         };
+        function merge(m){
+            epMultiLevelMenuService.mergeMenus($scope.menu, m);
+            if (--$scope.count === 0) {
+                $scope.menuOptions.menu = $scope.menu;
+            }
+        }
     }
 })();
 
@@ -20395,44 +20453,48 @@ function epTilesMenuFavoritesDirective() {
             };
         }])
         .factory('recursiveCompiler', ['$compile', function ($compile) {
-            return {
-                /**
-                 * Manually compiles the element, fixing the recursion loop.
-                 * @param element
-                 * @param [link] A post-link function, or an object with function(s) registered via pre and post properties.
-                 * @returns An object containing the linking functions.
-                 */
-                compile: function (element, link) {
-                    // Normalize the link parameter
-                    if (angular.isFunction(link)) {
-                        link = { post: link };
-                    }
+            /**
+             * Manually compiles the element, fixing the recursion loop.
+             * @param element
+             * @param [link] A post-link function, or an object with function(s) registered via pre and post properties.
+             * @returns An object containing the linking functions.
+             */
 
-                    // Break the recursion loop by removing the contents
-                    var contents = element.contents().remove();
-                    var compiledContents;
-                    return {
-                        pre: (link && link.pre) ? link.pre : null,
-                        /**
-                         * Compiles and re-adds the contents
-                         */
-                        post: function (scope, element) {
-                            // Compile the contents
-                            if (!compiledContents) {
-                                compiledContents = $compile(contents);
-                            }
-                            // Re-add the compiled contents to the element
-                            compiledContents(scope, function (clone) {
-                                element.append(clone);
-                            });
-
-                            // Call the post-linking function, if any
-                            if (link && link.post) {
-                                link.post.apply(null, arguments);
-                            }
-                        }
-                    };
+            function compile(element, link) {
+                // Normalize the link parameter
+                if (angular.isFunction(link)) {
+                    link = { post: link };
                 }
+
+                // Break the recursion loop by removing the contents
+                var contents = element.contents().remove();
+                var compiledContents;
+                return {
+                    pre: (link && link.pre) ? link.pre : null,
+                    /**
+                     * Compiles and re-adds the contents
+                     */
+                    post: function (scope, element) {
+                        // Compile the contents
+                        if (!compiledContents) {
+                            compiledContents = $compile(contents);
+                        }
+                        // Re-add the compiled contents to the element
+                        compiledContents(scope, function (clone) {
+                            element.append(clone);
+                        });
+
+                        // Call the post-linking function, if any
+                        if (link && link.post) {
+                            link.post.apply(null, arguments);
+                        }
+                    }
+                }
+            }
+
+            return {
+
+                compile: compile
             };
         }]);
 })();
@@ -20447,7 +20509,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.accordion.menu/ep-accordion-menu_template.html',
-    "<div id=MainMenu class=ep-accordion-menu><form class=ep-mlm-search ng-hide=searchDisabled><input type=search class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-focus=\"isRightToLeft = false\"></form><div ng-show=state.searchTerm><div class=\"bg-primary ep-menu-header\"><span ng-bind=searchResultsHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in currentItems | orderBy:orderByMenu\" id={{item.id}} hide-description=false item=item parent=menu navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div><div ng-show=!state.searchTerm><div class=\"bg-primary ep-menu-header\" ng-if=\"data.favorites && data.favorites.length\"><span ng-bind=favoritesHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in data.favorites | orderBy:orderByMenu\" id={{item.id}} hide-description=false item=item parent=menu navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div><div class=\"bg-primary ep-menu-header\"><span ng-bind=mainHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in menu.menuitems | orderBy:orderByMenu\" id={{item.id}} hide-description=true item=item parent=menu navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div></div>"
+    "<div id=MainMenu class=ep-accordion-menu><form class=ep-mlm-search ng-hide=searchDisabled><input type=search class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-focus=\"isRightToLeft = false\"></form><div ng-show=state.searchTerm><div class=\"bg-primary ep-menu-header\"><span ng-bind=searchResultsHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in currentItems | orderBy:orderByMenu\" id={{item.id}} hide-description=false item=item parent=menu navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div><div ng-show=!state.searchTerm><div class=\"bg-primary ep-menu-header\" ng-if=\"data.favorites && data.favorites.length\"><span ng-bind=favoritesHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in data.favorites | orderBy:orderByMenu\" id={{item.id}} hide-description=false item=item parent=menu navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div><div class=\"bg-primary ep-menu-header\"><span ng-bind=mainHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in menu.menuitems | orderBy:orderByMenu\" id={{item.id}} hide-description=true item=item parent=menu navigate=navigate toggle-favorite=toggleFavorite on-expand=onExpand></ep-accordion-menu-item></div></div></div>"
   );
 
 
@@ -20631,7 +20693,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/menu/ep-shell-menu.html',
-    "<div ng-controller=epShellMenuCtrl><ep-multi-level-menu ng-if=\"menuOptions.menuType !== 'accordion'\" menu=menuOptions.menu menu-id=menuId search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu><ep-accordion-menu ng-if=\"menuOptions.menuType === 'accordion'\" menu=menuOptions.menu menu-id=menuId main-header=\"menuOptions.title || 'Menu'\" favorites-header=\"menuOptions.favoritesHeader || 'Favorites'\" search-results-header=\"menuOptions.searchResultsHeader || 'Search Results'\" search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-accordion-menu></div>"
+    "<div ng-controller=epShellMenuCtrl><ep-multi-level-menu ng-if=\"menuOptions.menuType !== 'accordion'\" menu=menuOptions.menu menu-id=menuId search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu><ep-accordion-menu ng-if=\"menuOptions.menuType === 'accordion'\" menu=menuOptions.menu menu-id=menuId main-header=\"menuOptions.title || 'Menu'\" favorites-header=\"menuOptions.favoritesHeader || 'Favorites'\" search-results-header=\"menuOptions.searchResultsHeader || 'Search Results'\" search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-expand=menuOptions.onExpand on-menu-init=menuOptions.onMenuInit(factory)></ep-accordion-menu></div>"
   );
 
 
