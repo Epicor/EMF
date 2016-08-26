@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.105 built: 26-08-2016
+ * version:1.0.8-dev.106 built: 26-08-2016
 */
 (function() {
     'use strict';
@@ -586,7 +586,7 @@ angular.module('ep.signature', [
 
     angular.module('ep.accordion.menu').directive('epAccordionMenu',
         /*@ngInclude*/
-        ['$timeout', 'recursiveCompiler', function($timeout, recursiveCompiler) {
+        ['$timeout', function($timeout) {
             return {
                 restrict: 'E',
                 replace: true,
@@ -608,19 +608,17 @@ angular.module('ep.signature', [
                     favoritesHeader: '=',
                     mainHeader: '='
                 },
-                compile: function(element) {
-                    return recursiveCompiler.compile(element, {
-                        pre: function() {
-                        },
-                        post: function($scope) {
-                            $scope.searchResultsHeader = $scope.searchResultsHeader || 'Search Results';
-                            $scope.favoritesHeader = $scope.favoritesHeader || 'Favorites';
-                            $scope.mainHeader = $scope.mainHeader || '';
-                            $timeout(function() {
-                                $scope.initializeMenus();
-                            });
-                        }
-                    })
+                link: {
+                    pre: function() {
+                    },
+                    post: function($scope) {
+                        $scope.searchResultsHeader = $scope.searchResultsHeader || 'Search Results';
+                        $scope.favoritesHeader = $scope.favoritesHeader || 'Favorites';
+                        $scope.mainHeader = $scope.mainHeader || '';
+                        $timeout(function() {
+                            $scope.initializeMenus();
+                        });
+                    }
                 }
             }
         }])
@@ -20451,51 +20449,6 @@ function epTilesMenuFavoritesDirective() {
                 wait: wait,
                 getService: getService
             };
-        }])
-        .factory('recursiveCompiler', ['$compile', function ($compile) {
-            /**
-             * Manually compiles the element, fixing the recursion loop.
-             * @param element
-             * @param [link] A post-link function, or an object with function(s) registered via pre and post properties.
-             * @returns An object containing the linking functions.
-             */
-
-            function compile(element, link) {
-                // Normalize the link parameter
-                if (angular.isFunction(link)) {
-                    link = { post: link };
-                }
-
-                // Break the recursion loop by removing the contents
-                var contents = element.contents().remove();
-                var compiledContents;
-                return {
-                    pre: (link && link.pre) ? link.pre : null,
-                    /**
-                     * Compiles and re-adds the contents
-                     */
-                    post: function (scope, element) {
-                        // Compile the contents
-                        if (!compiledContents) {
-                            compiledContents = $compile(contents);
-                        }
-                        // Re-add the compiled contents to the element
-                        compiledContents(scope, function (clone) {
-                            element.append(clone);
-                        });
-
-                        // Call the post-linking function, if any
-                        if (link && link.post) {
-                            link.post.apply(null, arguments);
-                        }
-                    }
-                }
-            }
-
-            return {
-
-                compile: compile
-            };
         }]);
 })();
 
@@ -20504,7 +20457,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   'use strict';
 
   $templateCache.put('src/components/ep.accordion.menu/ep-accordion-menu-item_template.html',
-    "<div class=\"clearfix list-group-item\"><div class=clearfix id=mnu_{{item.id}} ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length }\" ng-click=\"item.isExpanded = !item.isExpanded\"><div ng-if=\"!(item.menuitems && item.menuitems.length)\"><!-- Menu item caption/text --><div class=\"pull-left clearfix ep-menu-item-div\" ng-click=\"navigate(item, false, $event)\"><div class=\"ep-menu-item-text pull-left {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></div></div><!-- Favorite icon --><i ng-if=\"(item.hideFavorite !== true)\" class=\"ep-menu-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(item) ng-class=\"{ 'fa-star-o': !item.favorite, 'fa-star text-warning': item.favorite}\"></i></div><div ng-if=item.menuitems.length><!-- Menu item caption/text --><div class=\"pull-left clearfix ep-menu-item-div\"><strong class=\"ep-submenu-text pull-left {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></strong></div><!-- Expand icon --><i class=\"ep-menu-submenu fa fa-lg pull-right\" ng-class=\"{ 'fa-caret-down': !item.isExpanded, 'fa-caret-right': item.isExpanded }\"></i></div></div><sup class=text-info ng-if=\"item.description && (!item.menuitems.length || !item.isExpanded) && !hideDescription\" ng-bind=item.description></sup><!-- Sub-menu --><div class=list-group-submenu ng-class=\"{'collapsed': !item.isExpanded }\" id=mnu_children ng-if=item.menuitems.length><ep-accordion-menu-item ng-repeat=\"child in item.menuitems | orderBy:orderByMenu\" item=child parent=item hide-description=hideDescription navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div>"
+    "<div class=\"clearfix list-group-item\"><div class=clearfix id=mnu_{{item.id}} ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length }\" ng-click=\"item.isExpanded = !item.isExpanded\"><div ng-if=\"!(item.menuitems && item.menuitems.length)\"><!-- Menu item caption/text --><div class=\"pull-left clearfix ep-menu-item-div\" ng-click=\"navigate(item, false, $event)\"><div class=\"ep-menu-item-text pull-left {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></div></div><!-- Favorite icon --><i ng-if=\"(item.hideFavorite !== true)\" class=\"ep-menu-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(item) ng-class=\"{ 'fa-star-o': !item.favorite, 'fa-star text-warning': item.favorite}\"></i></div><div ng-if=item.menuitems.length><!-- Menu item caption/text --><div class=\"pull-left clearfix ep-menu-item-div\"><strong class=\"ep-submenu-text pull-left {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></strong></div><!-- Expand icon --><i class=\"ep-menu-submenu fa fa-lg pull-right\" ng-class=\"{ 'fa-caret-down': !item.isExpanded, 'fa-caret-right': item.isExpanded }\"></i></div></div><sup class=text-info ng-if=\"item.description && (!item.menuitems.length || !item.isExpanded) && !hideDescription\" ng-bind=item.description></sup><!-- Sub-menu --><div class=list-group-submenu ng-class=\"{'collapsed': !item.isExpanded }\" id=mnu_children ng-if=\"item.isExpanded && item.menuitems.length\"><ep-accordion-menu-item ng-repeat=\"child in item.menuitems | orderBy:orderByMenu\" item=child parent=item hide-description=hideDescription navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div>"
   );
 
 
