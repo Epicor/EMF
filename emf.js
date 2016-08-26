@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.106 built: 26-08-2016
+ * version:1.0.8-dev.107 built: 26-08-2016
 */
 (function() {
     'use strict';
@@ -14408,7 +14408,9 @@ angular.module('ep.record.editor').
     /*@ngInject*/
     function epShellMenuCtrl($q, $scope, epEmbeddedAppsService, epLocalStorageService, epMultiLevelMenuService) {
         $scope.cache = {};
+
         $scope.onMenuOptions = function onMenuOptions() {
+
             $scope.menuOptions.onMenuInit = function(factory) {
                 $scope.menuOptions.factory = factory;
             };
@@ -14424,12 +14426,13 @@ angular.module('ep.record.editor').
                 menuitems: []
             };
 
-            if (angular.isFunction($scope.menuOptions.fnGetMenu)) {
-                $scope.menuOptions.fnGetMenu = [$scope.menuOptions.fnGetMenu];
-            }
 
-            $scope.menuGets = $scope.menuOptions.fnGetMenu;
-            if(angular.isArray($scope.menuGets)) {
+            if($scope.menuOptions.menuType !== 'accordion') {
+                $scope.menuGets = $scope.menuOptions.fnGetMenu;
+                if (angular.isFunction($scope.menuOptions.fnGetMenu)) {
+                    $scope.menuOptions.fnGetMenu = [$scope.menuOptions.fnGetMenu];
+                }
+
                 if ($scope.includeEmbeddedMenu) {
                     $scope.menuGets.push(epEmbeddedAppsService.retrieveAppsMenu);
                 }
@@ -14442,16 +14445,26 @@ angular.module('ep.record.editor').
                         }
                     });
                 });
-            } else if(angular.isObject($scope.menuGets)){
-                // If the "menuGets" property is an object, then we enable cacheing automatically
-                // If the ""
-                var menuKeys = Object.keys($scope.menuGets);
-                $scope.count = menuKeys.length;
+            } else {
+               // The accordion menu passes a list of menu providers instead of a list of functions
+                // Ensure that the prociders object is an array
+                if(!angular.isArray($scope.menuOptions.providers)){
+                    $scope.menuOptions.providers = [$scope.menuOptions.providers];
+                }
+
+                var providers = $scope.menuOptions.providers;
+                $scope.count = providers.length;
 
                 var interval = ($scope.menuOptions.refreshInterval || 0) * 1000;
                 var now = new Date().valueOf();
 
-                angular.forEach(menuKeys, function(key) {
+                providers.forEach(function(provider){
+
+                    var key = provider.getCacheKey();
+                    provider.register(function(){
+                        $scope.cache[key] = null;
+                        epLocalStorageService.update('menu.' + key, null);
+                    });
                     var cached = $scope.cache[key];
                     if(cached) {
                         // If we've read the menu out of memory, it doesn't need to be restored
@@ -14463,11 +14476,11 @@ angular.module('ep.record.editor').
                             // the menu actions, but we can't do it on the items that are stored in
                             // localStorage, or it will cause a circular structure, so we clone the object.
                             var m = angular.merge({}, cached);
-                            $scope.menuOptions.fnRestoreMenu[key](m);
+                            provider.restore(m);
                             $scope.cache[key] = m;
                             merge(m);
                         } else {
-                            var fetch = $scope.menuGets[key];
+                            var fetch = provider.get;
                             if(fetch) {
                                 fetch().then(function(m) {
                                     m._timestamp = now;
@@ -14477,7 +14490,7 @@ angular.module('ep.record.editor').
                                     // structure that cannot be serialized.
                                     var serializableMenu = angular.merge({}, m);
                                     epLocalStorageService.update('menu.' + key, serializableMenu);
-                                    $scope.menuOptions.fnRestoreMenu[key](m);
+                                    provider.restore(m);
                                     merge(m)
                                 });
                             }
@@ -20107,7 +20120,7 @@ function epTilesMenuFavoritesDirective() {
                 var ret = str;
                 if (arguments.length > 1) {
                     var tempArgs = arguments;
-                    ret = ret.replace(/\{\d+\}/g, function(match) {
+                    ret = ret.replace(/\{\d+}/g, function(match) {
                         var index = +match.slice(1, -1);
                         var arg = null;
 
@@ -20166,27 +20179,27 @@ function epTilesMenuFavoritesDirective() {
              * @methodOf ep.utils.service:epUtilsService
              * @public
              * @description
-             * Copies properties from source to dest
+             * Copies properties from source to destination
              * The property is copied only if source property is not null
              * This is useful to copy new properties values over default object
              * but only when new property is provided.
              * @returns {object} copied object
              */
-            function copyProperties(source, dest) {
-                if (!source || !dest) {
-                    return;
+            function copyProperties(source, destination) {
+                if (!source || !destination) {
+                    return source || destination;
                 }
                 angular.forEach(source, function(value, propName) {
                     if (source[propName] !== null) {
                         if (angular.isArray(source[propName])) {
-                            dest[propName] = source[propName];
+                            destination[propName] = source[propName];
                         } else if (angular.isObject(source[propName])) {
-                            if (!angular.isObject(dest[propName])) {
-                                dest[propName] = {};
+                            if (!angular.isObject(destination[propName])) {
+                                destination[propName] = {};
                             }
-                            copyProperties(source[propName], dest[propName]);
+                            copyProperties(source[propName], destination[propName]);
                         } else {
-                            dest[propName] = source[propName];
+                            destination[propName] = source[propName];
                         }
                     }
                 });
@@ -20238,7 +20251,7 @@ function epTilesMenuFavoritesDirective() {
              * @methodOf ep.utils.service:epUtilsService
              * @public
              * @description
-             * Creates path by concatination of input arguments which can be strings, array of
+             * Creates path by concatenation of input arguments which can be strings, array of
              * strings or arguments object passed from another function
              * @returns {string} path
              * @example
@@ -20335,22 +20348,22 @@ function epTilesMenuFavoritesDirective() {
              * @description
              * Wait for a condition to be accomplished by performing iterative calls at
              * given interval. Alternative to deferred results.
-             * @param {object} fnCondtion - function that represents condition. Must return true/false
+             * @param {function} fnCondition - function that represents condition. Must return true/false
              * @param {int} attempts - how many max attempts can be performed
              * @param {int} interval - interval in ms between each new attempt
-             * @param {object} fnExecute - function that is executed when condition is met
-             * @param {object} fnFail - optional function that is executed when condition is not met after all attempts
+             * @param {function} fnExecute - function that is executed when condition is met
+             * @param {function} fnFail - optional function that is executed when condition is not met after all attempts
              * @example
              *   wait( function() { return state; }, 10, 250, function() { alert('complete'); });
              */
-            function wait(fnCondtion, attempts, interval, fnExecute, fnFail) {
+            function wait(fnCondition, attempts, interval, fnExecute, fnFail) {
                 attempts--;
                 if (attempts >= 0) {
-                    if (fnCondtion()) {
+                    if (fnCondition()) {
                         fnExecute();
                     } else {
                         $timeout(function() {
-                            wait(fnCondtion, attempts, interval, fnExecute);
+                            wait(fnCondition, attempts, interval, fnExecute, fnFail);
                         }, interval);
                     }
                 } else if (fnFail) {
@@ -20409,7 +20422,6 @@ function epTilesMenuFavoritesDirective() {
 
              *
              * @param {Object} dst Destination object.
-             * @param {...Object} src Source object(s).
              * @returns {Object} Reference to `dst`.
              */
             function merge(dst) {
