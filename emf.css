@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.111 built: 30-08-2016
+ * version:1.0.8-dev.112 built: 31-08-2016
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: white;
@@ -48,6 +48,14 @@
 }
 .ep-accordion-menu form {
   padding: 5px;
+}
+.ep-vertical-align-center {
+  display: flex;
+  align-items: center;
+}
+.ep-padding-left-none {
+  padding-left: 0 !important;
+  margin-left: 0 !important;
 }
 
 .ep-relative {
@@ -2020,6 +2028,68 @@ VIEW CONTAINER [ep-view-container]
   right: 0;
   top: 0;
   z-index: 999;
+}
+.ep-slide-left-in,
+.ep-slide-left-out,
+.ep-slide-right-in,
+.ep-slide-right-out,
+.ep-slide-up-in,
+.ep-slide-up-out,
+.ep-slide-down-in,
+.ep-slide-down-up {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+  -webkit-transition: all 1s ease;
+  transition: all 1s ease;
+}
+.ep-slide-left-in.ng-enter {
+  left: 100%;
+}
+.ep-slide-left-in.ng-enter.ng-enter-active {
+  left: 0;
+}
+.ep-slide-left-out.ng-leave {
+  left: 0;
+}
+.ep-slide-left-out.ng-leave.ng-leave-active {
+  left: -100%;
+}
+.ep-slide-right-in.ng-enter {
+  left: -100%;
+}
+.ep-slide-right-in.ng-enter.ng-enter-active {
+  left: 0;
+}
+.ep-slide-right-out.ng-leave {
+  left: 0;
+}
+.ep-slide-right-out.ng-leave.ng-leave-active {
+  left: 100%;
+}
+.ep-slide-up-in.ng-enter {
+  top: 100%;
+}
+.ep-slide-up-in.ng-enter-active {
+  top: 0;
+}
+.ep-slide-up-out.ng-leave {
+  top: 0;
+}
+.ep-slide-up-out.ng-leave-active {
+  top: -100%;
+}
+.ep-slide-down-in.ng-enter {
+  top: -100%;
+}
+.ep-slide-down-in.ng-enter-active {
+  top: 0;
+}
+.ep-slide-down-out.ng-leave {
+  top: 0;
+}
+.ep-slide-down-out.ng-leave-active {
+  top: 100%;
 }
 
 

@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.111 built: 30-08-2016
+ * version:1.0.8-dev.112 built: 31-08-2016
 */
 (function() {
     'use strict';
@@ -606,7 +606,8 @@ angular.module('ep.signature', [
                     onTopMenuClick: '=',    // event for topmost menu item click
                     searchResultsHeader: '=',
                     favoritesHeader: '=',
-                    mainHeader: '='
+                    mainHeader: '=',
+                    commitMenuState: '='
                 },
                 link: {
                     pre: function() {
@@ -616,7 +617,7 @@ angular.module('ep.signature', [
                         $scope.favoritesHeader = $scope.favoritesHeader || 'Favorites';
                         $scope.mainHeader = $scope.mainHeader || '';
                         $timeout(function() {
-                            $scope.initializeMenus();
+                            $scope.initializeMenus('epAccordionMenu');
                         });
                     }
                 }
@@ -631,17 +632,18 @@ angular.module('ep.signature', [
                     templateUrl: 'src/components/ep.accordion.menu/ep-accordion-menu-item_template.html',
                     scope: {
                         item: '=',
-                        parent: '=',
                         navigate: '=',
                         toggleFavorite: '=',
                         hideDescription: '=',
-                        onExpand: '='
+                        onExpand: '=',
+                        commitMenuState: '='
                     },
                     /*ngInject*/
-                    controller: ['$scope', function($scope) {
+                    controller: ['$rootScope', '$scope', function($rootScope, $scope) {
                         $scope.$watch('item.isExpanded', function(val) {
-                            if (val !== undefined && $scope.onExpand) {
-                                $scope.onExpand($scope.item);
+                            if (val !== undefined) {
+                                $scope.onExpand && $scope.onExpand($scope.item);
+                                $scope.commitMenuState && $scope.commitMenuState();
                             }
                         });
                     }]
@@ -11140,7 +11142,8 @@ angular.module('ep.menu.builder').
         MLM_INITIALIZED_EVENT: 'MLM_INITIALIZED_EVENT',
         MLM_MENU_DATA_CHANGED: 'MLM_MENU_DATA_CHANGED',
         MLM_FAVORITES_CHANGED: 'MLM_FAVORITES_CHANGED',
-        MLM_ITEM_CLICKED: 'MLM_ITEM_CLICKED'
+        MLM_ITEM_CLICKED: 'MLM_ITEM_CLICKED',
+        MLM_ITEM_EXPANDED: 'MLM_ITEM_EXPANDED'
     });
 })();
 
@@ -11296,9 +11299,10 @@ angular.module('ep.menu.builder').
              * Handles the toggleFavorite request
              *
              * @param {object} mi the menu item
+             * @param {object} event the click event that invoked toggleFavorite
              */
-            function toggleFavorite(mi) {
-                $scope.multiLevelMenuHelper.toggleFavorite(mi);
+            function toggleFavorite(mi, event) {
+                $scope.multiLevelMenuHelper.toggleFavorite(mi, event);
             }
 
             function emitMenuEvent(eventId, menuItem) {
@@ -11312,7 +11316,7 @@ angular.module('ep.menu.builder').
             }
 
             // initialize the menus using the directive properties
-            function initializeMenus() {
+            function initializeMenus(componentType) {
                 // if they pass in the search-type directive property, set it on $scope.state
                 // override the default searchType = 'item'
                 if ($scope.searchType) {
@@ -11320,8 +11324,9 @@ angular.module('ep.menu.builder').
                 }
                 // now the transitionEnd event is wired up, we use the local mlmService to populate()
                 // AKA, walk up and down the menu setting the _parent and _depth properties
-                $scope.multiLevelMenuHelper = epMultiLevelMenuFactory.getMultiLevelMenuHelper($scope);
+                $scope.multiLevelMenuHelper = epMultiLevelMenuFactory.getMultiLevelMenuHelper($scope, componentType);
                 $scope.multiLevelMenuHelper.populate($scope.menu);
+
                 // now we set the data (with _parent and _depth properties) on scope and set the 'next' panel
                 $scope.data = $scope.multiLevelMenuHelper.data;
                 $scope.data.next = $scope.multiLevelMenuHelper.data.menu;
@@ -11426,7 +11431,7 @@ angular.module('ep.menu.builder').
                      pre: function() { },
                      post: function($scope) {
                          $timeout(function() {
-                             $scope.initializeMenus();
+                             $scope.initializeMenus('epMultiLevelMenu');
                          });
                      }
                  };
@@ -11453,14 +11458,14 @@ angular.module('ep.menu.builder').
     'epMultiLevelMenuService',
     'epMultiLevelMenuConstants',
     function(epLocalStorageService, epMultiLevelMenuService, epMultiLevelMenuConstants) {
-        function getMultiLevelMenuHelper(scope) {
-            return new multiLevelMenuHelper(scope);
+        function getMultiLevelMenuHelper(scope, type) {
+            return new multiLevelMenuHelper(scope, type);
         }
         return {
             getMultiLevelMenuHelper: getMultiLevelMenuHelper
         };
 
-        function multiLevelMenuHelper(ctrlScope) {
+        function multiLevelMenuHelper(ctrlScope, componentType) {
             var depth = 0;
             var scope = ctrlScope; // scope from the controller
             var data = {
@@ -11491,7 +11496,11 @@ angular.module('ep.menu.builder').
 
                 menu._depth = depth;
                 angular.forEach(menu.menuitems, function(kid) {
-                    kid._parent = menu;
+                    if(componentType !== 'epAccordionMenu') {
+                        // we cannot set the parent with the accordion menu because the menu data is serialized
+                        // as JSON, and setting the parent causes a circular structure
+                        kid._parent = menu;
+                    }
                     depth++;
                     buildTree(kid);
                     depth--;
@@ -11675,8 +11684,9 @@ angular.module('ep.menu.builder').
              * Handles the toggleFavorite request
              *
              * @param {object} mi the menu item or menu id
+             * @param {object} event the click event that invoked the toggleFavorite method
             */
-            function toggleFavorite(mi) {
+            function toggleFavorite(mi, event) {
                 var item = getMenuItemFromObj(mi);
                 if (!item) {
                     return;
@@ -11696,6 +11706,7 @@ angular.module('ep.menu.builder').
                 if (scope.onFavoriteChange) {
                     scope.onFavoriteChange({ menuItem: mi, favorites: data.favorites });
                 }
+                event && event.stopPropagation();
                 scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_FAVORITES_CHANGED);
             }
             /**
@@ -14405,9 +14416,9 @@ angular.module('ep.record.editor').
     epShellMenuCtrl.$inject = ['$q', '$scope', 'epEmbeddedAppsService', 'epLocalStorageService', 'epMultiLevelMenuService'];
     angular.module('ep.shell').controller('epShellMenuCtrl', epShellMenuCtrl);
 
+    var cache = {};
     /*@ngInject*/
     function epShellMenuCtrl($q, $scope, epEmbeddedAppsService, epLocalStorageService, epMultiLevelMenuService) {
-        $scope.cache = {};
 
         $scope.onMenuOptions = function onMenuOptions() {
 
@@ -14447,49 +14458,47 @@ angular.module('ep.record.editor').
                 });
             } else {
                // The accordion menu passes a list of menu providers instead of a list of functions
-                // Ensure that the prociders object is an array
+                // Ensure that the providers object is an array
                 if(!angular.isArray($scope.menuOptions.providers)){
                     $scope.menuOptions.providers = [$scope.menuOptions.providers];
                 }
 
                 var providers = $scope.menuOptions.providers;
                 $scope.count = providers.length;
-
+                var keys = providers.map(function(p){ return p.getCacheKey()});
+                $scope.commitMenuState = function commitMenuState(){
+                    keys
+                        .forEach(function(key){
+                            var m = cache[key];
+                            epLocalStorageService.update('menu.' + key, m);
+                        });
+                };
                 var interval = ($scope.menuOptions.refreshInterval || 0) * 1000;
                 var now = new Date().valueOf();
-
                 providers.forEach(function(provider){
 
                     var key = provider.getCacheKey();
                     provider.register(function(){
-                        $scope.cache[key] = null;
+                        cache[key] = null;
                         epLocalStorageService.update('menu.' + key, null);
                     });
-                    var cached = $scope.cache[key];
+                    var cached = cache[key];
                     if(cached) {
                         // If we've read the menu out of memory, it doesn't need to be restored
                         merge(cached);
                     } else {
                         cached = epLocalStorageService.get('menu.'+key);
                         if(cached && cached._timestamp + interval > now) {
-                            // If we've read the menu out of localStorage, then we need to restore
-                            // the menu actions, but we can't do it on the items that are stored in
-                            // localStorage, or it will cause a circular structure, so we clone the object.
-                            var m = angular.merge({}, cached);
-                            provider.restore(m);
-                            $scope.cache[key] = m;
-                            merge(m);
+                            provider.restore(cached);
+                            cache[key] = cached;
+                            merge(cached);
                         } else {
                             var fetch = provider.get;
                             if(fetch) {
                                 fetch().then(function(m) {
                                     m._timestamp = now;
-                                    $scope.cache[key] = m;
-                                    // We need to deep-clone the menu to save into local storage, because
-                                    // the items get double-linked to facilitate navigation and cause a circular
-                                    // structure that cannot be serialized.
-                                    var serializableMenu = angular.merge({}, m);
-                                    epLocalStorageService.update('menu.' + key, serializableMenu);
+                                    cache[key] = m;
+                                    epLocalStorageService.update('menu.' + key, m);
                                     provider.restore(m);
                                     merge(m)
                                 });
@@ -15091,6 +15100,8 @@ angular.module('ep.record.editor').
                 shellState.autoActivateSidebar = mode.autoActivateSidebar;
                 shellState.viewContainerScope = viewScope;
                 shellState.enableFeedback = (epShellConfig.options.enableFeedback && mode.enableFeedback === true);
+                shellState.animationIn = mode.animationIn;
+                shellState.animationOut = mode.animationOut;
 
                 if (shellState.showBrand && mode.brandHTML) {
                     if (mode.brandHTML) {
@@ -16898,6 +16909,20 @@ angular.module('ep.shell').service('epSidebarService', [
  *  <br/>
  *  largemodesettings='{"allowVerticalScroll"=true/false}'
 
+ * @property {string} modesetting:animationIn:string
+ * This mode setting sets an animation to the page when it is displayed. Allowed valued are slide-left, slide-right, slide-up and slide-down
+ *  <br/><br/>
+ *  smallmodesettings='{"animationIn"="slide-left/slide-right/slide-up/slide-down"}'
+ *  <br/>
+ *  largemodesettings='{"animationIn"="slide-left/slide-right/slide-up/slide-down"}'
+
+ * @property {string} modesetting:animationOut:string
+ * This mode setting sets an animation to the page when it goes off from display. Allowed valued are slide-left, slide-right, slide-up and slide-down
+ *  <br/><br/>
+ *  smallmodesettings='{"animationOut"="slide-left/slide-right/slide-up/slide-down"}'
+ *  <br/>
+ *  largemodesettings='{"animationOut"="slide-left/slide-right/slide-up/slide-down"}'
+
  */
 (function() {
     'use strict';
@@ -16987,6 +17012,10 @@ angular.module('ep.shell').service('epSidebarService', [
                             if (epViewContainerService.state.cleanup) {
                                 epViewContainerService.state.cleanup();
                             }
+
+                            //setting classes for animation in and out
+                            $scope.state.animationIn = 'ep-' + $scope.state.animationIn + '-in';
+                            $scope.state.animationOut = 'ep-' + $scope.state.animationOut + '-out';
 
                             epViewContainerService.state.cleanup =
                                 $rootScope.$on(epShellConstants.SHELL_STATE_CHANGE_EVENT, function() {
@@ -20469,12 +20498,12 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   'use strict';
 
   $templateCache.put('src/components/ep.accordion.menu/ep-accordion-menu-item_template.html',
-    "<div class=\"clearfix list-group-item\"><div class=clearfix id=mnu_{{item.id}} ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length }\" ng-click=\"item.isExpanded = !item.isExpanded\"><div ng-if=\"!(item.menuitems && item.menuitems.length)\"><!-- Menu item caption/text --><div class=\"pull-left clearfix ep-menu-item-div\" ng-click=\"navigate(item, false, $event)\"><div class=\"ep-menu-item-text pull-left {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></div></div><!-- Favorite icon --><i ng-if=\"(item.hideFavorite !== true)\" class=\"ep-menu-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(item) ng-class=\"{ 'fa-star-o': !item.favorite, 'fa-star text-warning': item.favorite}\"></i></div><div ng-if=item.menuitems.length><!-- Menu item caption/text --><div class=\"pull-left clearfix ep-menu-item-div\"><strong class=\"ep-submenu-text pull-left {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></strong></div><!-- Expand icon --><i class=\"ep-menu-submenu fa fa-lg pull-right\" ng-class=\"{ 'fa-caret-down': !item.isExpanded, 'fa-caret-right': item.isExpanded }\"></i></div></div><sup class=text-info ng-if=\"item.description && (!item.menuitems.length || !item.isExpanded) && !hideDescription\" ng-bind=item.description></sup><!-- Sub-menu --><div class=list-group-submenu ng-class=\"{'collapsed': !item.isExpanded }\" id=mnu_children ng-if=\"item.isExpanded && item.menuitems.length\"><ep-accordion-menu-item ng-repeat=\"child in item.menuitems | orderBy:orderByMenu\" item=child parent=item hide-description=hideDescription navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div>"
+    "<div class=\"clearfix list-group-item\"><div class=clearfix id=mnu_{{item.id}} ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length }\" ng-click=\"item.isExpanded = !item.isExpanded\"><div class=\"col-xs-12 ep-padding-left-none\" ng-if=\"!(item.menuitems && item.menuitems.length)\" ng-click=\"navigate(item, false, $event)\"><!-- Menu item caption/text --><div class=\"clearfix row ep-menu-item-div ep-vertical-align-center\"><div class=\"ep-menu-item-text pull-left col-xs-10 {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></div><!-- Favorite icon --><i ng-if=\"(item.hideFavorite !== true)\" class=\"ep-menu-favorite fa fa-lg pull-left col-xs-2\" ng-click=\"toggleFavorite(item, $event)\" ng-class=\"{ 'fa-star-o': !item.favorite, 'fa-star text-warning': item.favorite}\"></i></div></div><div class=\"col-xs-12 ep-padding-left-none\" ng-if=item.menuitems.length><!-- Menu item caption/text --><div class=\"clearfix row ep-menu-item-div ep-vertical-align-center\"><strong class=\"ep-submenu-text pull-left col-xs-10 {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></strong><!-- Expand icon --> <i class=\"ep-menu-submenu fa fa-lg pull-left col-xs-2\" ng-class=\"{ 'fa-caret-down': !item.isExpanded, 'fa-caret-right': item.isExpanded }\"></i></div></div><div class=\"row col-xs-10\" ng-click=\"navigate(item, false, $event)\" ng-if=\"item.description && (!item.menuitems.length || !item.isExpanded) && !hideDescription\"><sup class=text-info ng-bind=item.description></sup></div></div><!-- Sub-menu --><div class=list-group-submenu ng-class=\"{'collapsed': !item.isExpanded }\" id=mnu_children ng-if=\"item.isExpanded && item.menuitems.length\"><ep-accordion-menu-item ng-repeat=\"child in item.menuitems | orderBy:orderByMenu\" item=child hide-description=hideDescription commit-menu-state=commitMenuState navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div>"
   );
 
 
   $templateCache.put('src/components/ep.accordion.menu/ep-accordion-menu_template.html',
-    "<div id=MainMenu class=ep-accordion-menu><form class=ep-mlm-search ng-hide=searchDisabled><input type=search class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-focus=\"isRightToLeft = false\"></form><div ng-show=state.searchTerm><div class=\"bg-primary ep-menu-header\"><span ng-bind=searchResultsHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in currentItems | orderBy:orderByMenu\" id={{item.id}} hide-description=false item=item parent=menu navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div><div ng-show=!state.searchTerm><div class=\"bg-primary ep-menu-header\" ng-if=\"data.favorites && data.favorites.length\"><span ng-bind=favoritesHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in data.favorites | orderBy:orderByMenu\" id={{item.id}} hide-description=false item=item parent=menu navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div><div class=\"bg-primary ep-menu-header\"><span ng-bind=mainHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in menu.menuitems | orderBy:orderByMenu\" id={{item.id}} hide-description=true item=item parent=menu navigate=navigate toggle-favorite=toggleFavorite on-expand=onExpand></ep-accordion-menu-item></div></div></div>"
+    "<div id=MainMenu class=ep-accordion-menu><form class=ep-mlm-search ng-hide=searchDisabled><input type=search class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-focus=\"isRightToLeft = false\"></form><div ng-show=state.searchTerm><div class=\"bg-primary ep-menu-header\"><span ng-bind=searchResultsHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in currentItems | orderBy:orderByMenu\" id={{item.id}} hide-description=false item=item navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div><div ng-show=!state.searchTerm><div class=\"bg-primary ep-menu-header\" ng-if=\"data.favorites && data.favorites.length\"><span ng-bind=favoritesHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in data.favorites | orderBy:orderByMenu\" id={{item.id}} hide-description=false item=item navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div><div class=\"bg-primary ep-menu-header\"><span ng-bind=mainHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in menu.menuitems | orderBy:orderByMenu\" id={{item.id}} hide-description=true commit-menu-state=commitMenuState item=item navigate=navigate toggle-favorite=toggleFavorite on-expand=onExpand></ep-accordion-menu-item></div></div></div>"
   );
 
 
@@ -20584,7 +20613,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.multi.level.menu/multi-level-menu.html',
-    "<div class=ep-mlm-container ng-class=\"{'ep-left-to-right': !isRightToLeft, 'ep-right-to-left': isRightToLeft}\"><form class=ep-mlm-search ng-hide=searchDisabled><input class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-focus=\"isRightToLeft = false\"></form><div ng-if=data.next class=\"ep-mlm-content ep-fadein-animation\"><div ng-hide=state.searchTerm class=ep-mlm-header ng-class=\"{ 'pointer': data.next._parent._id !== 'topmenu'}\" ng-click=\"navigate(data.next._parent, true, $event)\"><span ng-if=\"data.next._parent._id !== 'topmenu'\" class=\"ep-mlm-back-button pull-left fa fa-lg fa-caret-left\"></span> <span>{{data.next.caption}}</span></div><div ng-show=state.searchTerm class=ep-mlm-header><span>Search Results</span></div><ul><li ng-repeat=\"mi in currentItems | orderBy:orderByMenu\" class=\"ep-mlm-item clearfix ep-repeat-animation\"><div ng-if=\"mi.separator && !mi.separator.isBottom\" class=\"ep-mlm-separator ep-mlm-separator-top {{mi.separator.class}}\"><i ng-if=mi.separator.icon class=\"ep-mlm-separator-icon fa fa-lg pull-left {{mi.separator.icon}}\"></i><div ng-if=mi.separator.text class=ep-mlm-separator-text>{{mi.separator.text}}</div></div><i ng-if=\"mi.icon && !iconDisabled\" class=\"ep-mlm-icon fa fa-lg pull-left {{mi.icon}}\"></i><div class=\"pull-left clearfix ep-mlm-item-div\" ng-class=\"{ 'ep-mlm-item-div-icon': mi.icon }\" ng-click=\"navigate(mi, false, $event)\"><div class=\"ep-mlm-item-text pull-left {{mi.captionClass}}\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"(mi._type === 'item' && mi.hideFavorite !== true)\" class=\"ep-mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star text-warning': mi.favorite}\"></i> <i ng-if=\"mi._type === 'menu'\" class=\"ep-mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=\"navigate(mi, false, $event)\"></i><div ng-if=\"mi.separator && mi.separator.isBottom\"><br><div class=\"ep-mlm-separator ep-mlm-separator-top {{mi.separator.class}}\"><i ng-if=mi.separator.icon class=\"ep-mlm-separator-icon fa fa-lg pull-left {{mi.separator.icon}}\"></i><div ng-if=mi.separator.text class=ep-mlm-separator-text>{{mi.separator.text}}</div></div></div></li></ul><uib-alert class=\"ep-mlm-alert ep-fadein-animation\" ng-show=\"state.searchTerm && (!currentItems || currentItems.length === 0)\" type=warning>The term \"{{state.searchTerm}}\" did not match any menu items.</uib-alert></div></div>"
+    "<div class=ep-mlm-container ng-class=\"{'ep-left-to-right': !isRightToLeft, 'ep-right-to-left': isRightToLeft}\"><form class=ep-mlm-search ng-hide=searchDisabled><input class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-focus=\"isRightToLeft = false\"></form><div ng-if=data.next class=\"ep-mlm-content ep-fadein-animation\"><div ng-hide=state.searchTerm class=ep-mlm-header ng-class=\"{ 'pointer': data.next._parent._id !== 'topmenu'}\" ng-click=\"navigate(data.next._parent, true, $event)\"><span ng-if=\"data.next._parent._id !== 'topmenu'\" class=\"ep-mlm-back-button pull-left fa fa-lg fa-caret-left\"></span> <span>{{data.next.caption}}</span></div><div ng-show=state.searchTerm class=ep-mlm-header><span>Search Results</span></div><ul><li ng-repeat=\"mi in currentItems | orderBy:orderByMenu\" class=\"ep-mlm-item clearfix ep-repeat-animation\"><div ng-if=\"mi.separator && !mi.separator.isBottom\" class=\"ep-mlm-separator ep-mlm-separator-top {{mi.separator.class}}\"><i ng-if=mi.separator.icon class=\"ep-mlm-separator-icon fa fa-lg pull-left {{mi.separator.icon}}\"></i><div ng-if=mi.separator.text class=ep-mlm-separator-text>{{mi.separator.text}}</div></div><i ng-if=\"mi.icon && !iconDisabled\" class=\"ep-mlm-icon fa fa-lg pull-left {{mi.icon}}\"></i><div class=\"pull-left clearfix ep-mlm-item-div\" ng-class=\"{ 'ep-mlm-item-div-icon': mi.icon }\" ng-click=\"navigate(mi, false, $event)\"><div class=\"ep-mlm-item-text pull-left {{mi.captionClass}}\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"(mi._type === 'item' && mi.hideFavorite !== true)\" class=\"ep-mlm-favorite fa fa-lg pull-right\" ng-click=\"toggleFavorite(mi, $event)\" ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star text-warning': mi.favorite}\"></i> <i ng-if=\"mi._type === 'menu'\" class=\"ep-mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=\"navigate(mi, false, $event)\"></i><div ng-if=\"mi.separator && mi.separator.isBottom\"><br><div class=\"ep-mlm-separator ep-mlm-separator-top {{mi.separator.class}}\"><i ng-if=mi.separator.icon class=\"ep-mlm-separator-icon fa fa-lg pull-left {{mi.separator.icon}}\"></i><div ng-if=mi.separator.text class=ep-mlm-separator-text>{{mi.separator.text}}</div></div></div></li></ul><uib-alert class=\"ep-mlm-alert ep-fadein-animation\" ng-show=\"state.searchTerm && (!currentItems || currentItems.length === 0)\" type=warning>The term \"{{state.searchTerm}}\" did not match any menu items.</uib-alert></div></div>"
   );
 
 
@@ -20658,12 +20687,12 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/menu/ep-shell-menu.html',
-    "<div ng-controller=epShellMenuCtrl><ep-multi-level-menu ng-if=\"menuOptions.menuType !== 'accordion'\" menu=menuOptions.menu menu-id=menuId search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu><ep-accordion-menu ng-if=\"menuOptions.menuType === 'accordion'\" menu=menuOptions.menu menu-id=menuId main-header=\"menuOptions.title || 'Menu'\" favorites-header=\"menuOptions.favoritesHeader || 'Favorites'\" search-results-header=\"menuOptions.searchResultsHeader || 'Search Results'\" search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-expand=menuOptions.onExpand on-menu-init=menuOptions.onMenuInit(factory)></ep-accordion-menu></div>"
+    "<div ng-controller=epShellMenuCtrl><ep-multi-level-menu ng-if=\"menuOptions.menuType !== 'accordion'\" menu=menuOptions.menu menu-id=menuId search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu><ep-accordion-menu ng-if=\"menuOptions.menuType === 'accordion'\" menu=menuOptions.menu menu-id=menuId main-header=\"menuOptions.title || 'Menu'\" favorites-header=\"menuOptions.favoritesHeader || 'Favorites'\" search-results-header=\"menuOptions.searchResultsHeader || 'Search Results'\" search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-expand=menuOptions.onExpand commit-menu-state=commitMenuState on-menu-init=menuOptions.onMenuInit(factory)></ep-accordion-menu></div>"
   );
 
 
   $templateCache.put('src/components/ep.shell/shell.html',
-    "<div><section ng-controller=epShellCtrl class=ep-shell ng-cloak><div ng-show=state.showProgressIndicator class=ep-progress-idicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\"></a></li><li ng-repeat=\"button in leftNavButtons | orderBy:'index':true\" index={{button.index}} ng-class=\"{'hidden': button.hidden}\"><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"pull-left fa {{button.icon}} fa-2x ep-navbar-button left-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button) ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"pull-left ep-navbar-button left-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"><i class=\"fa {{button.icon}} fa-2x\"></i><span ng-bind=button.title style=\"padding-right: 5px\"></span><span class=caret></span></a><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator'\" ng-click=state.executeButton(opt) ng-mousedown=state.buttonMouseDown(opt)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i><span class=ep-navmenu-item-text>{{opt.title}}</span></span></a></li></ul></li><li id=brandItem ng-if=\"{hidden: !state.showBrand}\" ng-class=\"{'ep-center-brand': state.centerBrand}\"><a id=apptitle ng-cloak=\"\" ng-if=state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-href=#{{(state.brandTarget)}} ng-bind-html=state.brandHTML></a> <span id=apptitle ng-cloak=\"\" ng-if=!state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-bind-html=state.brandHTML></span></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in rightNavButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.enabled === false}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button)></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false><i class=\"fa {{button.icon}} fa-2x\"></i><span ng-bind=button.title style=\"padding-right: 5px\"></span><span class=caret></span></a><ul ng-if=\"button.type === 'select'\" class=\"dropdown-menu dropdown-menu-right\" ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator'\" ng-click=state.executeButton(opt) ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i><span class=ep-navmenu-item-text ng-bind=opt.title></span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div class=ep-fullscreen><div ng-view class=\"ep-fullscreen ep-view{{options.enableViewAnimations? ' ep-view-transition' : ''}}\" ng-class=state.viewAnimation></div></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" ng-if=state.footerTarget ng-href={{state.footerTarget}}><sup id=footerElement ng-bind-html=state.footerHTML></sup></a> <sup ng-if=!state.footerTarget id=footerElement ng-bind-html=state.footerHTML></sup></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.enableFeedback ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
+    "<div><section ng-controller=epShellCtrl class=ep-shell ng-cloak><div ng-show=state.showProgressIndicator class=ep-progress-idicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\"></a></li><li ng-repeat=\"button in leftNavButtons | orderBy:'index':true\" index={{button.index}} ng-class=\"{'hidden': button.hidden}\"><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"pull-left fa {{button.icon}} fa-2x ep-navbar-button left-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button) ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"pull-left ep-navbar-button left-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"><i class=\"fa {{button.icon}} fa-2x\"></i><span ng-bind=button.title style=\"padding-right: 5px\"></span><span class=caret></span></a><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator'\" ng-click=state.executeButton(opt) ng-mousedown=state.buttonMouseDown(opt)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i><span class=ep-navmenu-item-text>{{opt.title}}</span></span></a></li></ul></li><li id=brandItem ng-if=\"{hidden: !state.showBrand}\" ng-class=\"{'ep-center-brand': state.centerBrand}\"><a id=apptitle ng-cloak=\"\" ng-if=state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-href=#{{(state.brandTarget)}} ng-bind-html=state.brandHTML></a> <span id=apptitle ng-cloak=\"\" ng-if=!state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-bind-html=state.brandHTML></span></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in rightNavButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.enabled === false}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button)></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false><i class=\"fa {{button.icon}} fa-2x\"></i><span ng-bind=button.title style=\"padding-right: 5px\"></span><span class=caret></span></a><ul ng-if=\"button.type === 'select'\" class=\"dropdown-menu dropdown-menu-right\" ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator'\" ng-click=state.executeButton(opt) ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i><span class=ep-navmenu-item-text ng-bind=opt.title></span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div class=ep-fullscreen><div ng-view class=\"ep-fullscreen {{state.animationIn}} {{state.animationOut}} ep-view{{options.enableViewAnimations? ' ep-view-transition' : ''}}\" ng-class=state.viewAnimation></div></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" ng-if=state.footerTarget ng-href={{state.footerTarget}}><sup id=footerElement ng-bind-html=state.footerHTML></sup></a> <sup ng-if=!state.footerTarget id=footerElement ng-bind-html=state.footerHTML></sup></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.enableFeedback ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
   );
 
 
