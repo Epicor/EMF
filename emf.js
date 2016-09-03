@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.114 built: 02-09-2016
+ * version:1.0.8-dev.115 built: 03-09-2016
 */
 (function() {
     'use strict';
@@ -4938,7 +4938,9 @@ angular.module('ep.datagrid').
                     //dragged item's base object. For example OLAPEntity
                     dragItem: '=dragItem',
                     //used for deciding whether the dropArea should handle drop with this kind of dragged item
-                    dragItemType: '=dragItemType'
+                    dragItemType: '=dragItemType',
+                    //by default enabled. You can disable by setting false
+                    dragEnabled: '='
                 },
                 compile: function(elem, attrs) {
                     if (!attrs.draggable) {
@@ -4948,6 +4950,13 @@ angular.module('ep.datagrid').
                         if (!scope.dragItemType) {
                             throw new Error('Dragged item type is not specified!');
                         }
+
+                        scope.$watch('dragEnabled', function(newValue) {
+                            if (newValue !== undefined) {
+                                ele.attr('draggable', newValue === false ? 'false': 'true');
+                            }
+                        });
+
                         ele.on('dragstart', function(evt) {
                             evt.stopPropagation();
                             evt.originalEvent.dataTransfer.setData('Text', evt.target.textContent);
@@ -14441,7 +14450,7 @@ angular.module('ep.record.editor').
             if($scope.menuOptions.menuType !== 'accordion') {
                 $scope.menuGets = $scope.menuOptions.fnGetMenu;
                 if (angular.isFunction($scope.menuOptions.fnGetMenu)) {
-                    $scope.menuOptions.fnGetMenu = [$scope.menuOptions.fnGetMenu];
+                    $scope.menuGets = [$scope.menuOptions.fnGetMenu];
                 }
 
                 if ($scope.includeEmbeddedMenu) {
@@ -20212,9 +20221,12 @@ function epTilesMenuFavoritesDirective() {
              * The property is copied only if source property is not null
              * This is useful to copy new properties values over default object
              * but only when new property is provided.
+             * @param {object} source - object source from which properties are copied
+             * @param {object} destination - object target to which properties are copied
+             * @param {bool} override - if false, then existing properties in source are not overriden
              * @returns {object} copied object
              */
-            function copyProperties(source, destination) {
+            function copyProperties(source, destination, override) {
                 if (!source || !destination) {
                     return source || destination;
                 }
@@ -20228,7 +20240,9 @@ function epTilesMenuFavoritesDirective() {
                             }
                             copyProperties(source[propName], destination[propName]);
                         } else {
-                            destination[propName] = source[propName];
+                            if (override !== false || (destination[propName] === undefined)) {
+                                destination[propName] = source[propName];
+                            }
                         }
                     }
                 });
