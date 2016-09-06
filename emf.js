@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.119 built: 06-09-2016
+ * version:1.0.8-dev.120 built: 06-09-2016
 */
 (function() {
     'use strict';
@@ -3827,7 +3827,12 @@ angular.module('ep.datagrid').directive('epDataGrid', [
             scope.state.linkElement = element;
 
             scope.state.tableElement = element.find('.ep-dg-grid-table:first-child');
+
             scope.state.$table = angular.element(scope.state.tableElement);
+            // We need to set the table id property explicitly instead of waiting for it to get
+            // set as part of the compilation process because the datatables library gets confused
+            // by identical ids otherwise.
+            scope.state.$table.attr('id', 'tbl_' + scope.state.dataGridId);
             scope.viewState = scope.state;
 
             scope.$on('$destroy', scope.onScopeDestroy);
