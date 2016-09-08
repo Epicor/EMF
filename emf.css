@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.121 built: 07-09-2016
+ * version:1.0.8-dev.122 built: 08-09-2016
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: white;
@@ -35,10 +35,12 @@
   border-bottom: 1px solid #0a6ebd;
 }
 .ep-accordion-menu .list-group-item #menuItem:hover {
-  background-color: ButtonShadow;
+  background-color: #0083D0;
+  color: white;
 }
 .ep-accordion-menu .list-group-item #subMenuHeader:hover {
-  background-color: ButtonShadow;
+  background-color: #0083D0;
+  color: white;
 }
 .ep-accordion-menu-animate {
   -webkit-transition: .5s linear all;
@@ -46,11 +48,8 @@
   transition: .5s linear all;
 }
 .ep-accordion-menu .list-group-submenu {
-  margin-left: 5px;
+  /*margin-left: 5px;*/
   max-height: 2500px;
-}
-.ep-accordion-menu sup {
-  margin-left: 3px;
 }
 .ep-accordion-menu .list-group-submenu.collapsed {
   max-height: 0px;
@@ -62,10 +61,10 @@
   display: flex;
   align-items: center;
 }
-.ep-padding-left-none {
-  padding-left: 0 !important;
-  margin-left: 0 !important;
-}
+/*.ep-padding-left-none {
+    padding-left: 0 !important;
+    margin-left: 0 !important;
+}*/
 
 .ep-relative {
   position: relative;
@@ -2049,8 +2048,8 @@ VIEW CONTAINER [ep-view-container]
   position: absolute;
   width: 100%;
   height: 100%;
-  -webkit-transition: all 1s ease;
-  transition: all 1s ease;
+  -webkit-transition: all 750ms ease;
+  transition: all 750ms ease;
 }
 .ep-slide-left-in.ng-enter {
   left: 100%;
