@@ -1,14 +1,13 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.122 built: 08-09-2016
+ * version:1.0.8-dev.123 built: 09-09-2016
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
-  color: white;
+  color: transparent;
   border-radius: 0;
   cursor: pointer;
 }
 .ep-accordion-menu .ep-menu-header {
-  color: white;
   border-radius: 0 !important;
   cursor: hand;
   padding: 10px;
@@ -18,27 +17,52 @@
   border-left: none;
   border-right: none;
   cursor: pointer;
-  padding: 5px 0 5px 0;
+  padding: 3px 0 3px 0;
 }
 .ep-accordion-menu .list-group-item:last-child {
   border-bottom: none;
 }
+.ep-accordion-menu .container-fluid {
+  padding-left: 0;
+}
 .ep-accordion-menu .list-group-item:first-child {
   border-top: none;
 }
+.ep-accordion-menu .list-group-item {
+  margin-left: 4px;
+}
+.ep-accordion-menu .list-group > .list-group-item {
+  margin-left: 0px;
+}
 .ep-accordion-menu .panel {
   margin-bottom: 0;
-  padding: 0 10px 0 10px;
+}
+.ep-accordion-menu .ep-accordion-menu-desc {
+  margin-left: 5px;
 }
 .ep-accordion-menu .ep-accordion-expanded {
-  padding-bottom: 10px;
-  border-bottom: 1px solid #0a6ebd;
+  padding-bottom: 6px;
+}
+.ep-accordion-menu .ep-submenu-header.ep-accordion-expanded {
+  font-weight: bold;
+}
+.ep-accordion-menu .list-group-submenu.ep-accordion-expanded.ep-accordion-expanded-odd {
+  background-color: gainsboro;
+}
+.ep-accordion-menu .ep-accordion-expanded.ep-accordion-expanded-odd {
+  background-color: gainsboro;
+}
+.ep-accordion-menu .list-group-submenu.ep-accordion-expanded.ep-accordion-expanded-even {
+  background-color: aliceblue;
+}
+.ep-accordion-menu .ep-accordion-expanded.ep-accordion-expanded-even {
+  background-color: aliceblue;
 }
 .ep-accordion-menu .list-group-item #menuItem:hover {
   background-color: #0083D0;
   color: white;
 }
-.ep-accordion-menu .list-group-item #subMenuHeader:hover {
+.ep-accordion-menu .list-group-item .ep-submenu-header:hover {
   background-color: #0083D0;
   color: white;
 }
@@ -53,6 +77,10 @@
 }
 .ep-accordion-menu .list-group-submenu.collapsed {
   max-height: 0px;
+}
+.ep-accordion-menu .col-xs-10,
+.ep-accordion-menu .col-xs-12 {
+  padding-left: 0 !important;
 }
 .ep-accordion-menu form {
   padding: 5px;
