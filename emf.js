@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.125 built: 09-09-2016
+ * version:1.0.8-dev.126 built: 09-09-2016
 */
 (function() {
     'use strict';
@@ -12828,7 +12828,8 @@ angular.module('ep.menu.builder').
                 isInvalid: false,
                 placeholder: col.placeholder,
                 size: col.size,
-                style: col.style
+                style: col.style,
+                checkBoxSize: checkBoxSize
             };
 
             if (col.style && angular.isString(col.style)) {
@@ -13428,6 +13429,7 @@ angular.module('ep.menu.builder').
         # visible {bool}  - visible
         # updatable {bool}  - updatable
         # nullable {bool}  - nullable
+        # list {array}  - array of items for drop down (editor = 'select' ) [{ label, value }]
         # sizeClass {string} - editor size class (bootstrap column sizes like col-md-6, col-lg-8, etc)
         # checkBoxSize {string}  - applicable to checkbox only (for now). Can be '1x', '2x', '3x'
         # oFormat {object}
