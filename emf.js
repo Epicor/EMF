@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.124 built: 09-09-2016
+ * version:1.0.8-dev.125 built: 09-09-2016
 */
 (function() {
     'use strict';
@@ -4973,12 +4973,14 @@ angular.module('ep.datagrid').
                             if (angular.isFunction(dragOperation.dragStart)) {
                                 dragOperation.dragStart(evt, dragOperation.dragItem);
                             }
+                            $(evt.target).addClass('ep-drag-active');
                             scope.$root.$broadcast('startDraging', getDragOperation);
                         });
 
                         ele.on('dragend', function(evt) {
                             evt.stopPropagation();
                             evt.preventDefault();
+                            $(evt.target).removeClass('ep-drag-active');
                             var dragOperation = dragOperationFactory.getDragOperation(scope);
                             if (angular.isFunction(dragOperation.dropCallback)) {
                                 dragOperation.dropCallback();
@@ -12734,10 +12736,13 @@ angular.module('ep.menu.builder').
     * @description
     * Represents the ep.editor.control directive
     * This directive allows using editors standalone without ep-record-editor
+    * Please note that the controls must be under class="row" for proper sizing
     *
     * @example
     *   HTML:
-    *   <ep-editor-control column="columnText" value="valueText"></ep-editor-control>
+    *   <div class="row">
+    *       <ep-editor-control column="columnText" value="valueText"></ep-editor-control>
+    *   </div>
     *
     *   Script:
     *   $scope.columnText = {
@@ -12794,9 +12799,10 @@ angular.module('ep.menu.builder').
             var col = scope.column;
             col.oFormat = col.oFormat || defaultFormat;
 
-            var name = col.name || col.caption;
+            var name = col.name || col.caption || col.columnIndex;
             var editor = (col.editor || 'text').trim().toLowerCase();
             var ctx = {
+                recordEditorState: undefined,
                 editorContainer: scope.state.iElement,
                 control: {
                     scope: scope
@@ -12808,7 +12814,7 @@ angular.module('ep.menu.builder').
                 required: col.required || (editor === 'number' && !col.nullable), //all number's except Nullable are required
                 requiredFlag: col.requiredFlag,  //to display the required flag
                 bizType: col.bizType,
-                label: col.caption || '',
+                label: col.caption || name || '',
                 maxlength: col.oFormat.MaxLength,
                 justification: col.justification,
                 hidden: col.hidden,
@@ -12821,8 +12827,20 @@ angular.module('ep.menu.builder').
                 imageHeight: (col.imageHeight ? col.imageHeight : 0),
                 isInvalid: false,
                 placeholder: col.placeholder,
-                size: col.size
+                size: col.size,
+                style: col.style
             };
+
+            if (col.style && angular.isString(col.style)) {
+                try{
+                    var xStyle;
+                    eval("xStyle = " + col.style);
+                    ctx.style = xStyle;
+                } catch (err) {
+
+                }
+            }
+
 
             //TO DO - validate buttons pre/post seq etc
             var directive = ctx.editor === 'custom' ? col.editorDirective : ('ep-' + ctx.editor + '-editor');
@@ -12874,13 +12892,15 @@ angular.module('ep.menu.builder').
 
             ctx.fnOnChange = function($event) {
                 if (ctx.col.fnOnChange) {
-                    ctx.col.fnOnChange($event, ctx);
+                    $timeout(function() {
+                        ctx.col.fnOnChange($event, ctx);
+                    })
                 }
             };
 
             ctx.fnBlur = function onBlur(ev) {
-                if (getRecordEditorState(scope)) {
-                    var state = getRecordEditorState(scope);
+                var state = scope.ctx.recordEditorState;
+                if (state) {
                     state.lastFocused = { Col: ctx.col, Ctx: ctx, Event: ev };
                 }
                 if (ctx.updatable) {
@@ -12898,7 +12918,7 @@ angular.module('ep.menu.builder').
             ctx.fnDoValidations = function() {
                 ctx.invalidFlag = false;
                 if (ctx.displayInvalid && ctx.editorContainer) {
-                    var state = getRecordEditorState(scope);
+                    var state = scope.ctx.recordEditorState;
                     var showAllInvalidFields = (state && state.showAllInvalidFields);
                     var editor = angular.element(ctx.editorContainer).find('.form-control.editor');
                     if (editor.length) {
@@ -13005,6 +13025,8 @@ angular.module('ep.menu.builder').
                 var state = getRecordEditorState(scope);
                 var ctrl = state.controls[ctx.columnIndex];
                 ctrl.controlCtx = ctx;
+                ctx.recordEditorState = state;
+                ctx.seq = ctrl.seq;
             }
 
             var target = angular.element(scope.state.iElement).find('#xtemplate');
@@ -13034,11 +13056,59 @@ angular.module('ep.menu.builder').
                         createContext(scope);
                     }
                 });
+
+                scope.handleDrop = function(drop) {
+                    var state = scope.ctx.recordEditorState;
+                    if (state) {
+                        var ctrlThis = state.controls[scope.ctx.columnIndex];
+                        var ctrlDropped = state.controls[drop.dragItem.columnIndex];
+                        if (ctrlThis != ctrlDropped) {
+                            //var indexThis = ctrlThis.visibleIndex;
+                            //var indexDropped = ctrlDropped.visibleIndex;
+                            ////swap
+                            //ctrlThis.visibleIndex = indexDropped;
+                            //ctrlDropped.visibleIndex = indexThis;
+
+                            var indexThis = ctrlThis.seq;
+                            var indexDropped = ctrlDropped.seq;
+                            //save
+                            if (ctrlThis.origSeq === undefined) {
+                                ctrlThis.origSeq = indexThis;
+                            }
+                            if (ctrlDropped.origSeq === undefined) {
+                                ctrlDropped.origSeq = indexDropped;
+                            }
+                            if (ctrlThis.origSeq !== ctrlThis.seq) {
+                                delete ctrlThis.origSeq;
+                            }
+                            if (ctrlDropped.origSeq !== ctrlDropped.seq) {
+                                delete ctrlDropped.origSeq;
+                            }
+
+                            //swap
+                            ctrlThis.seq = indexDropped;
+                            ctrlDropped.seq = indexThis;
+
+                            if (state.fnOnDragDrop) {
+                                state.fnOnDragDrop(scope.ctx, drop.dragItem);
+                            }
+
+                            scope.$apply();
+                        }
+                    }
+                };
+                scope.leaveHandler = function(drop) {
+                    //alert('leave 111')
+                };
+                scope.overHandler = function(drop) {
+                    //alert('over ')
+                };
             },
             scope: {
                 column: '=',
                 value: '=',
-                options: '='
+                options: '=',
+                dragEnabled: '='
             }
         };
     }
@@ -13235,6 +13305,9 @@ angular.module('ep.menu.builder').
 
                         // add an 'empty' value for fields that are not required.
                         if (!ctx.required && !_.find(ctx.options, function(o) { return !o.value; })) {
+                            if (!ctx.options) {
+                                ctx.options = [];
+                            }
                             ctx.options.unshift({
                                 label: '', value: null, getIsSelected: function() {
                                     return !$scope.value;
@@ -13334,9 +13407,9 @@ angular.module('ep.menu.builder').
 
         scope.recordEditorOptions = {
             columns: columns,       //metadata for columns - array of columns
+            columnTemplate: {}      //properties to be applied on all columns
             factory: null,          //after directive initialization will expose factory to this control
             flagInvalid: false      //flag controls when invalid (changes border color)
-            isDataArray: true       //data in activeRecors is an array (default). Otherwise a collection
         };
 
 
@@ -13376,12 +13449,12 @@ angular.module('ep.menu.builder').
     *
     * @example
     */
-    epRecordEditorDirective.$inject = ['$timeout', '$q', 'epRecordEditorFactory'];
+    epRecordEditorDirective.$inject = ['$timeout', '$q', 'epRecordEditorFactory', 'epUtilsService'];
     angular.module('ep.record.editor').
         directive('epRecordEditor', epRecordEditorDirective);
 
     /*@ngInject*/
-    function epRecordEditorDirective($timeout, $q, epRecordEditorFactory) {
+    function epRecordEditorDirective($timeout, $q, epRecordEditorFactory, epUtilsService) {
         // Private methods ------------------>
 
         function getNewState() {
@@ -13393,7 +13466,6 @@ angular.module('ep.menu.builder').
                 activeRecord: undefined,
                 rowData: {},
                 isReadOnly: false,
-                boundEvents: {},
                 lastInputs: {},
                 isDataArray: false
             };
@@ -13463,15 +13535,72 @@ angular.module('ep.menu.builder').
             }
         }
 
-        function doDraw(scope, bForceRedraw) {
-            if (scope.options === undefined) {
-                return;
+        function getEditorByValue(v) {
+            var tp = typeof v;
+            if (tp === 'number') {
+                return 'number';
+            } else if (tp === 'boolean') {
+                return 'checkbox';
+            } else if (tp === 'date') {
+                return 'date';
+            } else if (tp === 'string') {
+                var reg = /\d{4}-\d{2}-\d{2}['T']/;
+                if (v && v.match(reg)) {
+                    return 'date';
+                }
             }
+            return 'text';
+        }
+
+        function doDraw(scope, bForceRedraw) {
             if (scope.state.controls !== null && !bForceRedraw) {
                 return; //unless force redraw, we should not recreate
             }
 
-            scope.state.columns = scope.options.columns; //needed for editor's scope
+            //Prepare columns
+            var hasCols = scope.options && angular.isArray(scope.options.columns);
+            if (!scope.state.isDataArray && !hasCols && scope.record) {
+                var columns = [];
+                if (scope.options && scope.options.columns && angular.isString(scope.options.columns)) {
+                    var colNames = scope.options.columns.split(',');
+                    angular.forEach(colNames, function(c) {
+                        columns.push({
+                            columnIndex: c,
+                            editor: getEditorByValue(scope.record[c]),
+                            updatable: true
+                        });
+                    });
+                } else {
+                    angular.forEach(scope.record, function(v, n) {
+                        columns.push({
+                            columnIndex: n,
+                            editor: getEditorByValue(v),
+                            updatable: true
+                        });
+                    });
+                }
+                scope.state.columns = columns;
+            } else {
+                scope.state.columns = hasCols ? scope.options.columns : [];
+            }
+            if (scope.options && scope.options.columnTemplate && scope.state.columns) {
+                angular.forEach(scope.state.columns, function(c) {
+                    epUtilsService.copyProperties(scope.options.columnTemplate, c, false);
+                });
+            }
+
+            if (scope.state.columns && scope.record) {
+                angular.forEach(scope.state.columns, function(c) {
+                    if (!c.editor && c.columnIndex) {
+                        c.editor = getEditorByValue(scope.record[c.columnIndex]);
+                    }
+                });
+            }
+
+            if (!scope.state.columns || !scope.state.columns.length) {
+                return;
+            }
+
             createContext(scope);
 
             // TODO: Fix this ugly hack
@@ -13511,6 +13640,7 @@ angular.module('ep.menu.builder').
                 var ctrl = {
                     col: col,
                     editor: editor,
+                    seq: iVisibleIndex,
                     visibleIndex: ('000' + iVisibleIndex).substr(-3, 3), // <- so that it's sortable as a string
                     columnIndex: col.columnIndex,
                     options: scope.state.options
@@ -13588,19 +13718,25 @@ angular.module('ep.menu.builder').
                         //store a copy for reset
                         scope.state.rowData = scope.extendRecord(scope.state.activeRecord);
 
-                        if (oldValue === undefined) {
+                        if (!scope.state.columns || !scope.state.columns.length) {
                             doDraw(scope, false);
                         }
-                        scope.state.factory.setPristine();
+                        if (scope.state.columns && scope.state.columns.length) {
+                            scope.state.factory.setPristine();
+                        }
                     }
                 });
 
-                scope.$watch('options', function(newValue) {
+                scope.$watch('options', function(newValue, oldValue) {
                     if (newValue) {
                         //Expose this directive's scope to outside caller
                         newValue.factory = scope.state.factory;
-                        checkRecordType(scope);
-                        doDraw(scope, false);
+                        if (angular.equals(newValue, oldValue)) {
+                            if (!scope.state.columns || !scope.state.columns.length) {
+                                checkRecordType(scope);
+                                doDraw(scope, false);
+                            }
+                        }
                     }
                 });
 
@@ -13629,10 +13765,6 @@ angular.module('ep.menu.builder').
                     function() {
                         //clean up events and buffers
                         scope.state.controls = null;
-                        _.each(scope.state.boundEvents, function(unbind) {
-                            unbind();
-                        });
-                        scope.state.boundEvents = {};
                     }
                 );
 
@@ -13675,6 +13807,7 @@ angular.module('ep.menu.builder').
                 }
 
                 scope.compareValues = compareValues;
+
             },
             scope: {
                 options: '=',
@@ -13727,8 +13860,8 @@ angular.module('ep.record.editor').
                     record: scope.state.activeRecord
                 };
 
-                if (scope.options.columns) {
-                    var columns = scope.options.columns;
+                if (scope.state.columns) {
+                    var columns = scope.state.columns;
                     for (var idx = 0; idx < columns.length; idx++) {
                         var col = columns[idx];
                         var dataColumn = col.columnIndex;
@@ -13771,7 +13904,7 @@ angular.module('ep.record.editor').
              * Reset the editors to original values
             */
             function resetEditors() {
-                var columns = scope.options.columns;
+                var columns = scope.state.columns;
                 for (var idx = 0; idx < columns.length; idx++) {
                     var col = columns[idx];
                     scope.state.activeRecord[col.columnIndex] = scope.state.rowData[col.columnIndex];
@@ -13822,7 +13955,9 @@ angular.module('ep.record.editor').
                 if (scope.state.controls) {
                     angular.forEach(scope.state.controls, function(ctrl) {
                         var ctx = ctrl.getControlCtx();
-                        ctx.isInvalid = false;
+                        if (ctx) {
+                            ctx.isInvalid = false;
+                        }
                     });
                 }
             }
@@ -13989,27 +14124,34 @@ angular.module('ep.record.editor').
              * @param {object} column - column name or column index
             */
             function getColumnContext(column) {
-                if (column === null || !scope.options.columns)
+                if (column === null || !scope.state.columns)
                 {
                     return null;
                 }
-                var ctrl = null;
-                if (typeof column !== 'string') {
-                    //assume that this is columnIndex
-                    ctrl = _.find(scope.state.controls, function(ctrl) {
-                        var ctx = ctrl.getControlCtx();
-                        return (ctx.col && ctx.columnIndex === column);
-                    });
-                } else {
-                    ctrl = _.find(scope.state.controls, function(ctrl) {
-                        var ctx = ctrl.getControlCtx();
-                        return (ctx.col && ctx.name === column);
-                    });
-                }
+                var ctrl = _.find(scope.state.controls, function(ctrl) {
+                    var ctx = ctrl.getControlCtx();
+                    return (ctx.col && ctx.columnIndex === column);
+                });
                 if (ctrl) {
                     return ctrl.getControlCtx();
                 }
                 return null;
+            }
+
+            function getColumns() {
+                return scope.state.columns;
+            }
+
+            function getOptions() {
+                return scope.options;
+            }
+
+            function getState() {
+                return scope.state;
+            }
+
+            function enableEditorsDrag(enable) {
+                scope.state.dragEnabled = enable;
             }
 
             return {
@@ -14025,7 +14167,11 @@ angular.module('ep.record.editor').
                 selectControl: selectControl,
                 validate: validate,
                 resetCombo: resetCombo,
-                getColumnContext: getColumnContext
+                getColumnContext: getColumnContext,
+                getColumns: getColumns,
+                getOptions: getOptions,
+                getState: getState,
+                enableEditorsDrag: enableEditorsDrag
             };
         };
         return epRecordEditorFactoryInstance;
@@ -18062,6 +18208,7 @@ angular.module('ep.signature').directive('epSignature',
         var _theme;
         var _themes;
         var _initialized;
+        var _initializedProvider;
         var _defaultTheme;
 
         /**
@@ -18078,33 +18225,33 @@ angular.module('ep.signature').directive('epSignature',
             if ((!_initialized || refresh) && epThemeConfig.disableTheming !== true) {
                 _initialized = true;
 
-                var curTheme = isPersisting() ? epLocalStorageService.get(_localStorageId) : _theme;
-
+                var storedTheme = epLocalStorageService.get(_localStorageId);
                 var provider = epThemeConfig.provider;
                 if (provider && provider !== 'sysconfig' && sysconfig !== true) {
                     try {
                         var customProvider = epUtilsService.getService(provider);
-                        var th = customProvider.getThemes(refresh);
-                        if (th.then) {
-                            th.then(function(themes) {
-                                if (!themes || themes.length === 0) {
-                                    _initialized = false;
-                                } else {
-                                    _themes = themes;
-                                    setItemsFullPath();
-                                    theme(curTheme);
+
+                        var th = $q.when(customProvider.getThemes(refresh));
+                        th.then(function(themes) {
+                            if (!themes || themes.length === 0) {
+                                _initialized = false;
+                            } else {
+                                if (!_initializedProvider) {
+                                    _initializedProvider = true;
+                                    init(themes);
                                 }
-                            });
-                            return th;
-                        } else {
-                            _themes = th;
-                        }
+                                _themes = themes;
+                                setItemsFullPath();
+                                theme(isPersisting() ? storedTheme : _theme);
+                            }
+                        });
+                        return th;
                     } catch (e) {
                         $log.warn('Custom themes provider not found or failed: ' + provider);
                     }
                 }
                 setItemsFullPath();
-                theme(curTheme);
+                theme(isPersisting() ? storedTheme : _theme);
             }
             var deferred = $q.defer();
             deferred.resolve(_themes);
@@ -18150,7 +18297,9 @@ angular.module('ep.signature').directive('epSignature',
             if (newTheme) {
                 var _old = _theme;
                 var _key = angular.isObject(newTheme) ? newTheme.name : newTheme;
-                _theme = _.find(_themes, function(t) { return t.name.toLowerCase() === _key.toLowerCase(); });
+                if (_key) {
+                    _theme = _.find(_themes, function(t) { return t.name.toLowerCase() === _key.toLowerCase(); });
+                }
 
                 // if the one that is set is not found then default it back
                 if (!_theme) {
@@ -18299,9 +18448,10 @@ angular.module('ep.signature').directive('epSignature',
         * @description
         * Some things to do at startup
         */
-        function init() {
+        function init(themeList) {
             _localStorageId = (epThemeConfig.id || 'emf') + '.theme.current';
-            _themes = epThemeConfig.themes;
+            //_themes = epThemeConfig.themes;
+            _themes = (themeList && themeList.length) ? themeList : epThemeConfig.themes;
 
             if (_themes.length > 1) {
                 _theme = _.find(_themes, function(t) {
@@ -18309,22 +18459,24 @@ angular.module('ep.signature').directive('epSignature',
                 });
             }
 
+            _defaultTheme = {};
             if (!_theme) {
                 _theme = _themes[0];
+            } else {
+                angular.copy(_theme, _defaultTheme);
             }
-
-            _defaultTheme = {};
-            angular.copy(_theme, _defaultTheme);
 
             if (isPersisting()) {
                 _theme = epLocalStorageService.getOrAdd(_localStorageId, _defaultTheme);
             }
-            if (!_theme) {
+            if (!_theme && _defaultTheme && _defaultTheme.name) {
                 _theme = _defaultTheme;
             }
 
             setItemsFullPath(); //make sure path is set
-            setItemFullPath(_theme);
+            if (_theme) {
+                setItemFullPath(_theme);
+            }
         }
 
         /**
@@ -20647,7 +20799,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-editor-control.html',
-    "<div class=\"ep-editor-control {{ctx.sizeClass}}\"><fieldset class=\"form-group ep-record-editor-container\" ng-class=\"{'has-error': ctx.invalidFlag}\" ng-hide=ctx.hidden><label class=ep-editor-label for={{ctx.name}}>{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label><section id=xtemplate></section></fieldset></div>"
+    "<div class=\"ep-editor-control {{ctx.sizeClass}}\" ng-hide=ctx.hidden ep-drop-area drop-handler=handleDrop drop-item-types=typeEditorCtrl leave-handler=leaveHandler over-handler=overHandler ng-style=ctx.style><fieldset class=\"form-group ep-record-editor-container\" ng-class=\"{'has-error': ctx.invalidFlag}\" ep-draggable drag-enabled=\"dragEnabled === true\" drag-item=ctx drag-item-type=\"'typeEditorCtrl'\"><label class=ep-editor-label for={{ctx.name}}>{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label><section id=xtemplate></section></fieldset></div>"
   );
 
 
@@ -20691,7 +20843,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/ep-record-editor.html',
-    "<div class=ep-record-editor><div ng-repeat=\"(key, ctrl) in state.controls | epOrderObjectBy:'visibleIndex'\" class=ep-record-editor-column><ep-editor-control column=ctrl.col value=state.activeRecord[ctrl.columnIndex] options=ctrl.options></ep-editor-control></div></div>"
+    "<div class=ep-record-editor><div ng-repeat=\"(key, ctrl) in state.controls | epOrderObjectBy:'seq'\" class=ep-record-editor-column><ep-editor-control column=ctrl.col value=state.activeRecord[ctrl.columnIndex] options=ctrl.options drag-enabled=state.dragEnabled></ep-editor-control></div></div>"
   );
 
 
@@ -20711,7 +20863,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/shell.html',
-    "<div><section ng-controller=epShellCtrl class=ep-shell ng-cloak><div ng-show=state.showProgressIndicator class=ep-progress-idicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\"></a></li><li ng-repeat=\"button in leftNavButtons | orderBy:'index':true\" index={{button.index}} ng-class=\"{'hidden': button.hidden}\"><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"pull-left fa {{button.icon}} fa-2x ep-navbar-button left-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button) ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"pull-left ep-navbar-button left-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"><i class=\"fa {{button.icon}} fa-2x\"></i><span ng-bind=button.title style=\"padding-right: 5px\"></span><span class=caret></span></a><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator'\" ng-click=state.executeButton(opt) ng-mousedown=state.buttonMouseDown(opt)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i><span class=ep-navmenu-item-text>{{opt.title}}</span></span></a></li></ul></li><li id=brandItem ng-if=\"{hidden: !state.showBrand}\" ng-class=\"{'ep-center-brand': state.centerBrand}\"><a id=apptitle ng-cloak=\"\" ng-if=state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-href=#{{(state.brandTarget)}} ng-bind-html=state.brandHTML></a> <span id=apptitle ng-cloak=\"\" ng-if=!state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-bind-html=state.brandHTML></span></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in rightNavButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.enabled === false}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button)></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false><i class=\"fa {{button.icon}} fa-2x\"></i><span ng-bind=button.title style=\"padding-right: 5px\"></span><span class=caret></span></a><ul ng-if=\"button.type === 'select'\" class=\"dropdown-menu dropdown-menu-right\" ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator'\" ng-click=state.executeButton(opt) ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i><span class=ep-navmenu-item-text ng-bind=opt.title></span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div class=ep-fullscreen><div ng-view class=\"ep-fullscreen {{state.animationIn}} {{state.animationOut}} ep-view{{options.enableViewAnimations? ' ep-view-transition' : ''}}\" ng-class=state.viewAnimation></div></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" ng-if=state.footerTarget ng-href={{state.footerTarget}}><sup id=footerElement ng-bind-html=state.footerHTML></sup></a> <sup ng-if=!state.footerTarget id=footerElement ng-bind-html=state.footerHTML></sup></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.enableFeedback ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
+    "<div><section ng-controller=epShellCtrl class=ep-shell ng-cloak><div ng-show=state.showProgressIndicator class=ep-progress-idicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\"></a></li><li ng-repeat=\"button in leftNavButtons | orderBy:'index':true\" index={{button.index}} ng-class=\"{'hidden': button.hidden}\"><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"pull-left fa {{button.icon}} fa-2x ep-navbar-button left-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button) ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"pull-left ep-navbar-button left-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"><i class=\"fa {{button.icon}} fa-2x\"></i><span ng-bind=button.title style=\"padding-right: 5px\"></span><span class=caret></span></a><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator'\" ng-click=state.executeButton(opt) ng-mousedown=state.buttonMouseDown(opt)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i><span class=ep-navmenu-item-text>{{opt.title}}</span></span></a></li></ul></li><li id=brandItem ng-hide=\"state.showBrand === false\" ng-class=\"{'ep-center-brand': state.centerBrand}\"><a id=apptitle ng-cloak=\"\" ng-if=state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-href=#{{(state.brandTarget)}} ng-bind-html=state.brandHTML></a> <span id=apptitle ng-cloak=\"\" ng-if=!state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-bind-html=state.brandHTML></span></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in rightNavButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.enabled === false}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button)></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false><i class=\"fa {{button.icon}} fa-2x\"></i><span ng-bind=button.title style=\"padding-right: 5px\"></span><span class=caret></span></a><ul ng-if=\"button.type === 'select'\" class=\"dropdown-menu dropdown-menu-right\" ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator'\" ng-click=state.executeButton(opt) ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i><span class=ep-navmenu-item-text ng-bind=opt.title></span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div class=ep-fullscreen><div ng-view class=\"ep-fullscreen {{state.animationIn}} {{state.animationOut}} ep-view{{options.enableViewAnimations? ' ep-view-transition' : ''}}\" ng-class=state.viewAnimation></div></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" ng-if=state.footerTarget ng-href={{state.footerTarget}}><sup id=footerElement ng-bind-html=state.footerHTML></sup></a> <sup ng-if=!state.footerTarget id=footerElement ng-bind-html=state.footerHTML></sup></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.enableFeedback ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
   );
 
 
