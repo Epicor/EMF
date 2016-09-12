@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.134 built: 11-09-2016
+ * version:1.0.8-dev.135 built: 12-09-2016
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -63,8 +63,20 @@
   background-color: #0083D0;
   color: white;
 }
+.ep-accordion-menu .list-group-item #menuItem:focus {
+  background-color: #0083D0;
+  outline: none;
+  color: white;
+}
 .ep-accordion-menu .list-group-item .ep-submenu-header:hover {
   background-color: #0083D0;
+  color: white;
+  /*background-color:#00568A;*/
+  /*background-color:#64C5FF;*/
+}
+.ep-accordion-menu .list-group-item .ep-submenu-header:focus {
+  background-color: #0083D0;
+  outline: none;
   color: white;
 }
 .ep-accordion-menu-animate {

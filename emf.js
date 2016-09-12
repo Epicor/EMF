@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.134 built: 11-09-2016
+ * version:1.0.8-dev.135 built: 12-09-2016
 */
 (function() {
     'use strict';
@@ -581,12 +581,12 @@ angular.module('ep.signature', [
  *
  * @example
  */
-(function() {
+(function () {
     'use strict';
 
     angular.module('ep.accordion.menu').directive('epAccordionMenu',
         /*@ngInclude*/
-        ['$timeout', function($timeout) {
+        ['$timeout', function ($timeout) {
             return {
                 restrict: 'E',
                 replace: true,
@@ -610,13 +610,13 @@ angular.module('ep.signature', [
                     commitMenuState: '='
                 },
                 link: {
-                    pre: function() {
+                    pre: function () {
                     },
-                    post: function($scope) {
+                    post: function ($scope) {
                         $scope.searchResultsHeader = $scope.searchResultsHeader || 'Search Results';
                         $scope.favoritesHeader = $scope.favoritesHeader || 'Favorites';
                         $scope.mainHeader = $scope.mainHeader || '';
-                        $timeout(function() {
+                        $timeout(function () {
                             $scope.initializeMenus('epAccordionMenu');
                         });
                     }
@@ -625,7 +625,7 @@ angular.module('ep.signature', [
         }])
         .directive('epAccordionMenuItem',
             /*@ngInclude*/
-            function() {
+            function () {
                 return {
                     restrict: 'E',
                     replace: true,
@@ -639,13 +639,30 @@ angular.module('ep.signature', [
                         commitMenuState: '='
                     },
                     /*ngInject*/
-                    controller: ['$rootScope', '$scope', function($rootScope, $scope) {
-                        $scope.$watch('item.isExpanded', function(val) {
+                    controller: ['$rootScope', '$scope', function ($rootScope, $scope) {
+                        $scope.$watch('item.isExpanded', function (val) {
                             if (val !== undefined) {
                                 $scope.onExpand && $scope.onExpand($scope.item);
                                 $scope.commitMenuState && $scope.commitMenuState();
                             }
                         });
+
+                        $scope.onKeydown = function (item, e) {
+                            var key = e.keyCode;
+                            var target = $(e.target);
+
+                            switch (key) {
+                                case 13: // Enter key
+                                    item.isExpanded = !item.isExpanded;
+                                    break;
+                                case 37: // Left key
+                                    item.isExpanded = false;
+                                    break;
+                                case 39: // Right key
+                                    item.isExpanded = true;
+                                    break;
+                            }
+                        };
                     }]
                 };
             })
@@ -20671,7 +20688,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   'use strict';
 
   $templateCache.put('src/components/ep.accordion.menu/ep-accordion-menu-item_template.html',
-    "<div class=\"clearfix list-group-item\" ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\"><div class=\"clearfix container-fluid ep-accordion-menu-animate\" id=mnu_{{item.id}} ng-click=\"item.isExpanded = !item.isExpanded\"><div id=menuItem class=\"list-group-item row\" ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\" ng-if=\"!(item.menuitems && item.menuitems.length)\" ng-click=\"navigate(item, false, $event)\"><!-- Menu item caption/text --><span class=\"clearfix ep-vertical-align-center\"><span class=\"pull-left col-xs-10 {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></span><!-- Favorite icon --> <i ng-if=\"(item.hideFavorite !== true)\" class=\"fa fa-lg col-xs-2 pull-left\" ng-click=\"toggleFavorite(item, $event)\" ng-class=\"{ 'fa-star-o': !item.favorite, 'fa-star text-warning': item.favorite }\"></i></span></div><div class=\"ep-submenu-header list-group-item row\" ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\" ng-if=item.menuitems.length><!-- Menu item caption/text --><span class=\"clearfix ep-vertical-align-center\"><span class=\"pull-left col-xs-10 {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></span><!-- Expand icon --> <i class=\"fa fa-lg col-xs-2\" ng-class=\"{ 'fa-caret-right': !item.isExpanded, 'fa-caret-down': item.isExpanded }\"></i></span></div></div><div class=col-xs-12 ng-click=\"navigate(item, false, $event)\" ng-if=\"item.description && (!item.menuitems.length || !item.isExpanded) && !hideDescription\"><div class=ep-accordion-menu-desc><sup class=text-info ng-bind=item.description></sup></div></div><!-- Sub-menu --><div class=list-group-submenu ng-class=\"{'collapsed': !item.isExpanded }\" id=mnu_children ng-if=\"item.isExpanded && item.menuitems.length\"><ep-accordion-menu-item ng-repeat=\"child in item.menuitems | orderBy:orderByMenu\" item=child hide-description=hideDescription commit-menu-state=commitMenuState navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div>"
+    "<div class=\"clearfix list-group-item\" ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\"><div class=\"clearfix container-fluid ep-accordion-menu-animate\" id=mnu_{{item.id}} ng-keydown=\"onKeydown(item, $event)\" role=group tabindex=-1 ng-click=\"item.isExpanded = !item.isExpanded\"><div id=menuItem class=\"list-group-item row\" tabindex=0 ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\" ng-if=\"!(item.menuitems && item.menuitems.length)\" ng-click=\"navigate(item, false, $event)\"><!-- Menu item caption/text --><span class=\"clearfix ep-vertical-align-center\"><span class=\"pull-left col-xs-10 {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></span><!-- Favorite icon --> <i ng-if=\"(item.hideFavorite !== true)\" class=\"fa fa-lg col-xs-2 pull-left\" ng-click=\"toggleFavorite(item, $event)\" ng-class=\"{ 'fa-star-o': !item.favorite, 'fa-star text-warning': item.favorite }\"></i></span></div><div class=\"ep-submenu-header list-group-item row\" tabindex=0 ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\" ng-if=item.menuitems.length><!-- Menu item caption/text --><span class=\"clearfix ep-vertical-align-center\"><span class=\"pull-left col-xs-10 {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></span><!-- Expand icon --> <i class=\"fa fa-lg col-xs-2\" ng-class=\"{ 'fa-caret-right': !item.isExpanded, 'fa-caret-down': item.isExpanded }\"></i></span></div></div><div class=col-xs-12 ng-click=\"navigate(item, false, $event)\" ng-if=\"item.description && (!item.menuitems.length || !item.isExpanded) && !hideDescription\"><div class=ep-accordion-menu-desc><sup class=text-info ng-bind=item.description></sup></div></div><!-- Sub-menu --><div class=list-group-submenu ng-class=\"{'collapsed': !item.isExpanded }\" id=mnu_children ng-if=\"item.isExpanded && item.menuitems.length\"><ep-accordion-menu-item ng-repeat=\"child in item.menuitems | orderBy:orderByMenu\" item=child hide-description=hideDescription commit-menu-state=commitMenuState navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div>"
   );
 
 
