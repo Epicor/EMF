@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.136 built: 12-09-2016
+ * version:1.0.8-dev.137 built: 12-09-2016
 */
 (function() {
     'use strict';
@@ -5899,434 +5899,438 @@ angular.module('ep.embedded.apps')
         }])
 
     .provider('epEmbeddedAppsProvider', [
-    '$controllerProvider',
-    '$provide',
-    '$compileProvider',
-    '$filterProvider',
-    function($controllerProvider, $provide, $compileProvider, $filterProvider) {
-        var regModules = ['ng'];
+        '$controllerProvider',
+        '$provide',
+        '$compileProvider',
+        '$filterProvider',
+        function($controllerProvider, $provide, $compileProvider, $filterProvider) {
+            var regModules = ['ng'];
 
-        var sysconfig = {
-            rootRoute: 'app',
-            path: 'apps',
-            provider: 'sysconfig',
-            applications: [],
-            hostAppModule: ''
-        };
+            var sysconfig = {
+                rootRoute: 'app',
+                path: 'apps',
+                provider: 'sysconfig',
+                applications: [],
+                hostAppModule: ''
+            };
 
-        var modules = {};
-        var providers = {
-            $controllerProvider: $controllerProvider,
-            $compileProvider: $compileProvider,
-            $filterProvider: $filterProvider,
-            $provide: $provide
-        };
-        var moduleCache = [];
+            var modules = {};
+            var providers = {
+                $controllerProvider: $controllerProvider,
+                $compileProvider: $compileProvider,
+                $filterProvider: $filterProvider,
+                $provide: $provide
+            };
+            var moduleCache = [];
 
-        moduleCache.push = function(value) {
-            if (this.indexOf(value) === -1) {
-                Array.prototype.push.apply(this, arguments);
+            moduleCache.push = function(value) {
+                if (this.indexOf(value) === -1) {
+                    Array.prototype.push.apply(this, arguments);
+                }
+            };
+
+            function moduleExists(moduleName) {
+                try {
+                    angular.module(moduleName);
+                } catch (e) {
+                    if (/No module/.test(e)) {
+                        return false;
+                    }
+                }
+                return true;
             }
-        };
 
-        function moduleExists(moduleName) {
-            try {
-                angular.module(moduleName);
-            } catch (e) {
-                if (/No module/.test(e)) {
-                    return false;
+            function getRequires(module) {
+                var requires = [];
+                angular.forEach(module.requires, function(requireModule) {
+                    if (regModules.indexOf(requireModule) === -1) {
+                        requires.push(requireModule);
+                    }
+                });
+                return requires;
+            }
+
+            function invoke($log, queue, providers){
+                var i;
+                var ii;
+                var invokeQueue;
+                for (invokeQueue = queue, i = 0, ii = queue.length; i < ii; i++) {
+                    var invokeArgs = queue[i];
+                    var provider;
+
+                    if (providers.hasOwnProperty(invokeArgs[0])) {
+                        provider = providers[invokeArgs[0]];
+                    } else {
+                        return $log.error('unsupported provider ' + invokeArgs[0]);
+                    }
+                    var entityRegistrar = provider[invokeArgs[1]];
+                    var entityArgs = invokeArgs[2];
+
+                    entityRegistrar.apply(provider, entityArgs);
                 }
             }
-            return true;
-        }
 
-        function getRequires(module) {
-            var requires = [];
-            angular.forEach(module.requires, function(requireModule) {
-                if (regModules.indexOf(requireModule) === -1) {
-                    requires.push(requireModule);
-                }
-            });
-            return requires;
-        }
+            function register($log, $injector, providers, registerModules) {
+                var k;
+                var moduleName;
+                var moduleFn;
+                if (registerModules) {
+                    var runBlocks = [];
 
-        function register($log, $injector, providers, registerModules) {
-            var i;
-            var ii;
-            var k;
-            var invokeQueue;
-            var moduleName;
-            var moduleFn;
-            var invokeArgs;
-            var provider;
-            if (registerModules) {
-                var runBlocks = [];
-                var configBlocks = [];
-
-                var hostAppDependencies = [];
-                if (sysconfig.hostAppModule) {
-                    hostAppDependencies = getRequires(angular.module(sysconfig.hostAppModule));
-                }
-                for (k = registerModules.length - 1; k >= 0; k--) {
-                    moduleName = registerModules[k];
-                    if (angular.moduleRequiresLoading[moduleName] ||
-                        (hostAppDependencies.length && hostAppDependencies.indexOf(moduleName) === -1)) {
-                        regModules.push(moduleName);
-                        moduleFn = angular.module(moduleName);
-                        configBlocks = configBlocks.concat(moduleFn._configBlocks);
-                        runBlocks = runBlocks.concat(moduleFn._runBlocks);
-                        try {
-                            for (invokeQueue = moduleFn._invokeQueue, i = 0, ii = invokeQueue.length; i < ii; i++) {
-                                invokeArgs = invokeQueue[i];
-
-                                if (providers.hasOwnProperty(invokeArgs[0])) {
-                                    provider = providers[invokeArgs[0]];
-                                } else {
-                                    return $log.error('unsupported provider ' + invokeArgs[0]);
+                    var hostAppDependencies = [];
+                    if (sysconfig.hostAppModule) {
+                        hostAppDependencies = getRequires(angular.module(sysconfig.hostAppModule));
+                    }
+                    providers.$injector = $injector;
+                    for (k = registerModules.length - 1; k >= 0; k--) {
+                        moduleName = registerModules[k];
+                        if (angular.moduleRequiresLoading[moduleName] ||
+                            (hostAppDependencies.length && hostAppDependencies.indexOf(moduleName) === -1)) {
+                            regModules.push(moduleName);
+                            moduleFn = angular.module(moduleName);
+                            runBlocks = runBlocks.concat(moduleFn._runBlocks);
+                            try {
+                                invoke($log, moduleFn._invokeQueue, providers);
+                                invoke($log, moduleFn._configBlocks, providers);
+                            } catch (e) {
+                                if (e.message) {
+                                    e.message += ' from ' + moduleName;
                                 }
-                                var entityRegistrar = provider[invokeArgs[1]];
-                                var entityArgs = invokeArgs[2];
+                                $log.error(e.message);
+                                throw e;
+                            }
 
-                                entityRegistrar.apply(provider, entityArgs);
-                            }
-                        } catch (e) {
-                            if (e.message) {
-                                e.message += ' from ' + moduleName;
-                            }
-                            $log.error(e.message);
-                            throw e;
+                            angular.moduleRequiresLoading[moduleName] = false;
                         }
-                        angular.moduleRequiresLoading[moduleName] = false;
+                        registerModules.pop();
                     }
-                    registerModules.pop();
+
+                    angular.forEach(runBlocks, function(fn) {
+                        try {
+                            $injector.invoke(fn);
+                        } catch (e) {
+                            $log.error(e);
+                        }
+                    });
                 }
-                angular.forEach(configBlocks, function(fn) {
-                    try {
-                        $injector.invoke(fn);
-                    } catch (e) {
-                        $log.error(e);
-                    }
-                });
-                angular.forEach(runBlocks, function(fn) {
-                    try {
-                        $injector.invoke(fn);
-                    } catch (e) {
-                        $log.error(e);
-                    }
-                });
+                return null;
             }
-            return null;
-        }
 
-        function getAppPath() {
-            var _args = _.flatten(arguments, true);
-            var path = sysconfig.path;
-            angular.forEach(_args, function(arg) {
-                path += '/' + arg;
-            });
-            return path;
-        }
+            function getAppPath() {
+                var _args = _.flatten(arguments, true);
+                var path = sysconfig.path;
+                angular.forEach(_args, function(arg) {
+                    path += '/' + arg;
+                });
+                return path;
+            }
 
-        function getAppRoute() {
-            var _args = _.flatten(arguments, true);
-            var route = '/' + sysconfig.rootRoute;
-            angular.forEach(_args, function(arg) {
-                route += '/' + arg;
-            });
-            return route;
-        }
+            function getAppRoute() {
+                var _args = _.flatten(arguments, true);
+                var route = '/' + sysconfig.rootRoute;
+                angular.forEach(_args, function(arg) {
+                    route += '/' + arg;
+                });
+                return route;
+            }
 
-        var activeConfig;
-        function getAppPackageService(config, $timeout) {
-            // this active config switching needs work-- it's causing a problem where the wrong application is routed to. see EMA-855
-            activeConfig = config;
-            return ['$location', function appPackageService($location) {
-                var data = {};
+            var activeConfig;
 
-                function getLocalAppPath() {
-                    return getAppPath(activeConfig.id, arguments);
-                }
+            function getAppPackageService(config, $timeout) {
+                // this active config switching needs work-- it's causing a problem where the wrong application is routed to. see EMA-855
+                activeConfig = config;
+                return ['$location', function appPackageService($location) {
+                    var data = {};
 
-                function getLocalAppRoute() {
-                    return getAppRoute(activeConfig.id, arguments);
-                }
-
-                function goToView(viewId) {
-                    $location.url(getLocalAppRoute(viewId));
-                }
-
-                function executeResource(method, name, value, cacheKey, reload) {
-                    if (cacheKey !== undefined && cacheKey !== null && !reload && data[cacheKey]) {
-                        return $timeout(function() {
-                            return data[cacheKey];
-                        });
-                    }
-                    //var url = settings.appServerUrl + 'api/' + name;
-                    //return $http[method](url, value).then(function(result) {
-                    //    if (cacheKey !== undefined && cacheKey !== null) {
-                    //        data[cacheKey] = result.data;
-                    //    }
-                    //    return result.data;
-                    //});
-                }
-
-                var resource = {
-                    get: function(name, cacheKey, reload) {
-                        return executeResource('get', name, '', cacheKey, reload);
-                    },
-
-                    post: function(name, value, cacheKey, reload) {
-                        return executeResource('post', name, value, cacheKey, reload);
-                    },
-
-                    put: function(name, value, cacheKey, reload) {
-                        return executeResource('put', name, value, cacheKey, reload);
-                    },
-
-                    'delete': function(name, value, cacheKey, reload) {
-                        return executeResource('delete', name, '', cacheKey, reload);
-                    }
-                };
-
-                function getConfig() {
-                    return activeConfig;
-                }
-
-                return {
-                    getConfig: getConfig,
-                    resource: resource,
-                    data: data,
-                    goToView: goToView,
-                    getAppPath: getLocalAppPath,
-                    getAppRoute: getLocalAppRoute
-                };
-
-            }];
-        }
-
-        var state = {
-            loadComplete: false
-        };
-
-        this.$get = [
-            '$timeout', '$document', '$http', '$injector', '$log', '$q',
-            'epEmbeddedAppsCacheService', 'epSysConfig', 'epUtilsService',
-            function($timeout, $document, $http, $injector, $log, $q,
-                epEmbeddedAppsCacheService, epSysConfig, epUtilsService) {
-
-                function load(config) {
-                    var deferredLoad = $q.defer();
-                    var resourceId = 'module: ' + config.id;
-                    modules[config.id] = config;
-
-                    if (!config) {
-                        var errorText = 'Module not configured';
-                        $log.error(errorText);
-                        throw errorText;
+                    function getLocalAppPath() {
+                        return getAppPath(activeConfig.id, arguments);
                     }
 
-                    function loadLinks(urls, onLoadLink) {
-                        urls.forEach(function(url, idx) {
-                            var linkId = 'link_' + idx;
-                            if (url && !epEmbeddedAppsCacheService.linkCache.get(linkId)) {
-                                var linkElement = $document[0].createElement('link');
-                                linkElement.setAttribute('id', linkId);
-                                linkElement.rel = 'stylesheet';
-                                linkElement.href = url;
-                                linkElement.type = 'text/css';
-                                $document[0].head.appendChild(linkElement);
-                                epEmbeddedAppsCacheService.linkCache.put(linkId, 1);
-
-                                $timeout(function() {
-                                    onLoadLink('Link: ' + url);
-                                });
-                            }
-                        });
+                    function getLocalAppRoute() {
+                        return getAppRoute(activeConfig.id, arguments);
                     }
 
-                    // Load all of the resources required by the app package
-                    function loadResources(onLoadScript, onLoadLink, onLoadComplete) {
-                        state.loadComplete = false;
+                    function goToView(viewId) {
+                        $location.url(getLocalAppRoute(viewId));
+                    }
 
-                        // loads a list of scripts and resolves once they have all completed loading
-                        function loadScriptList(list) {
-                            var deferred = $q.defer();
-                            var remaining = list.length;
-                            if (remaining === 0) {
-                                deferred.resolve();
-                            }
-                            // decrement the remaining # of scripts and resolves once it reaches 0;
-                            function dec() {
-                                remaining--;
-                                if (remaining < 1) {
+                    function executeResource(method, name, value, cacheKey, reload) {
+                        if (cacheKey !== undefined && cacheKey !== null && !reload && data[cacheKey]) {
+                            return $timeout(function() {
+                                return data[cacheKey];
+                            });
+                        }
+                        //var url = settings.appServerUrl + 'api/' + name;
+                        //return $http[method](url, value).then(function(result) {
+                        //    if (cacheKey !== undefined && cacheKey !== null) {
+                        //        data[cacheKey] = result.data;
+                        //    }
+                        //    return result.data;
+                        //});
+                    }
+
+                    var resource = {
+                        get: function(name, cacheKey, reload) {
+                            return executeResource('get', name, '', cacheKey, reload);
+                        },
+
+                        post: function(name, value, cacheKey, reload) {
+                            return executeResource('post', name, value, cacheKey, reload);
+                        },
+
+                        put: function(name, value, cacheKey, reload) {
+                            return executeResource('put', name, value, cacheKey, reload);
+                        },
+
+                        'delete': function(name, value, cacheKey, reload) {
+                            return executeResource('delete', name, '', cacheKey, reload);
+                        }
+                    };
+
+                    function getConfig() {
+                        return activeConfig;
+                    }
+
+                    return {
+                        getConfig: getConfig,
+                        resource: resource,
+                        data: data,
+                        goToView: goToView,
+                        getAppPath: getLocalAppPath,
+                        getAppRoute: getLocalAppRoute
+                    };
+
+                }];
+            }
+
+            var state = {
+                loadComplete: false
+            };
+
+            this.$get = [
+                '$timeout', '$document', '$http', '$injector', '$log', '$q',
+                'epEmbeddedAppsCacheService', 'epSysConfig', 'epUtilsService',
+                function($timeout, $document, $http, $injector, $log, $q,
+                         epEmbeddedAppsCacheService, epSysConfig, epUtilsService) {
+
+                    function load(config) {
+                        var deferredLoad = $q.defer();
+                        var resourceId = 'module: ' + config.id;
+                        modules[config.id] = config;
+
+                        if (!config) {
+                            var errorText = 'Module not configured';
+                            $log.error(errorText);
+                            throw errorText;
+                        }
+
+                        function loadLinks(urls, onLoadLink) {
+                            urls.forEach(function(url, idx) {
+                                var linkId = 'link_' + idx;
+                                if (url && !epEmbeddedAppsCacheService.linkCache.get(linkId)) {
+                                    var linkElement = $document[0].createElement('link');
+                                    linkElement.setAttribute('id', linkId);
+                                    linkElement.rel = 'stylesheet';
+                                    linkElement.href = url;
+                                    linkElement.type = 'text/css';
+                                    $document[0].head.appendChild(linkElement);
+                                    epEmbeddedAppsCacheService.linkCache.put(linkId, 1);
+
+                                    $timeout(function() {
+                                        onLoadLink('Link: ' + url);
+                                    });
+                                }
+                            });
+                        }
+
+                        // Load all of the resources required by the app package
+                        function loadResources(onLoadScript, onLoadLink, onLoadComplete) {
+                            state.loadComplete = false;
+
+                            // loads a list of scripts and resolves once they have all completed loading
+                            function loadScriptList(list) {
+                                var deferred = $q.defer();
+                                var remaining = list.length;
+                                if (remaining === 0) {
                                     deferred.resolve();
                                 }
-                            }
-                            // queue up each script in the list
-                            list.forEach(function(url) {
-                                epUtilsService.loadScript(url, epEmbeddedAppsCacheService.scriptCache).
-                                    then(function(id) {
+                                // decrement the remaining # of scripts and resolves once it reaches 0;
+                                function dec() {
+                                    remaining--;
+                                    if (remaining < 1) {
+                                        deferred.resolve();
+                                    }
+                                }
+
+                                // queue up each script in the list
+                                list.forEach(function(url) {
+                                    epUtilsService.loadScript(url, epEmbeddedAppsCacheService.scriptCache).then(function(id) {
                                         onLoadScript(id);
                                     }).then(dec, dec);
-                            });
-                            return deferred.promise;
-                        }
-                        (function(orig) {
-                            angular.moduleRequiresLoading = {};
-                            angular.module = function() {
-                                if (arguments.length > 1) {
-                                    angular.moduleRequiresLoading[arguments[0]] = true;
-                                }
-                                return orig.apply(null, arguments);
-                            };
-                        })(angular.module);
-                        // Load all of the third party scripts first
-                        var thirdPartyScripts = (config.resources.scripts.thirdParty || []).map(function(url) {
-                            return getAppPath(config.id, url);
-                        });
-                        loadScriptList(thirdPartyScripts).then(function() {
-                            // next get the module script syncronously
-                            var url = config.resources.scripts.module;
-                            return epUtilsService.loadScript(
-                                getAppPath(config.id, url), epEmbeddedAppsCacheService.scriptCache).
-                                then(function(id) { onLoadScript(id);
-                        });
-                        }).then(function() {
-                            // finally load the rest of the app's scripts
-                            var appScripts = config.resources.scripts.app.map(function(url) {
+                                });
+                                return deferred.promise;
+                            }
+
+                            (function(orig) {
+                                angular.moduleRequiresLoading = {};
+                                angular.module = function() {
+                                    if (arguments.length > 1) {
+                                        angular.moduleRequiresLoading[arguments[0]] = true;
+                                    }
+                                    return orig.apply(null, arguments);
+                                };
+                            })(angular.module);
+                            // Load all of the third party scripts first
+                            var thirdPartyScripts = (config.resources.scripts.thirdParty || []).map(function(url) {
                                 return getAppPath(config.id, url);
                             });
-                            return loadScriptList(appScripts);
-                        }).then(onLoadComplete);
+                            loadScriptList(thirdPartyScripts).then(function() {
+                                // next get the module script syncronously
+                                var url = config.resources.scripts.module;
+                                return epUtilsService.loadScript(
+                                    getAppPath(config.id, url), epEmbeddedAppsCacheService.scriptCache).then(function(id) {
+                                    onLoadScript(id);
+                                });
+                            }).then(function() {
+                                // finally load the rest of the app's scripts
+                                var appScripts = config.resources.scripts.app.map(function(url) {
+                                    return getAppPath(config.id, url);
+                                });
+                                return loadScriptList(appScripts);
+                            }).then(onLoadComplete);
 
-                        // load all of the css
-                        var urls = config.resources.links.map(function(url) {
-                            return getAppPath(config.id, url);
-                        });
-                        loadLinks(urls, onLoadLink);
-                    }
-
-                    function loadDependencies(moduleId, allDependencyLoad) {
-
-                        if (regModules.indexOf(moduleId) > -1) {
-                            return allDependencyLoad();
+                            // load all of the css
+                            var urls = config.resources.links.map(function(url) {
+                                return getAppPath(config.id, url);
+                            });
+                            loadLinks(urls, onLoadLink);
                         }
 
-                        var loadedModule = angular.module(moduleId);
-                        var requires = getRequires(loadedModule);
+                        function loadDependencies(moduleId, allDependencyLoad) {
 
-                        function onModuleLoad(moduleLoaded) {
-                            if (moduleLoaded) {
+                            if (regModules.indexOf(moduleId) > -1) {
+                                return allDependencyLoad();
+                            }
 
-                                var index = requires.indexOf(moduleLoaded);
-                                if (index > -1) {
-                                    requires.splice(index, 1);
+                            var loadedModule = angular.module(moduleId);
+                            var requires = getRequires(loadedModule);
+
+                            function onModuleLoad(moduleLoaded) {
+                                if (moduleLoaded) {
+
+                                    var index = requires.indexOf(moduleLoaded);
+                                    if (index > -1) {
+                                        requires.splice(index, 1);
+                                    }
+                                }
+                                if (requires.length === 0) {
+                                    $timeout(function() {
+                                        allDependencyLoad(moduleId);
+                                    });
                                 }
                             }
-                            if (requires.length === 0) {
-                                $timeout(function() {
-                                    allDependencyLoad(moduleId);
-                                });
-                            }
-                        }
 
-                        var requireNeeded = getRequires(loadedModule);
-                        angular.forEach(requireNeeded, function(requireModule) {
+                            var requireNeeded = getRequires(loadedModule);
+                            angular.forEach(requireNeeded, function(requireModule) {
 
-                            moduleCache.push(requireModule);
+                                moduleCache.push(requireModule);
 
-                            if (moduleExists(requireModule)) {
-                                return onModuleLoad(requireModule);
-                            }
+                                if (moduleExists(requireModule)) {
+                                    return onModuleLoad(requireModule);
+                                }
 
-                            var requireModuleConfig = modules[requireModule];
-                            if (requireModuleConfig) {
-                                loadResources(function() {
+                                var requireModuleConfig = modules[requireModule];
+                                if (requireModuleConfig) {
+                                    loadResources(function() {
 
-                                }, function() {
+                                    }, function() {
 
-                                }, function() {
-                                    loadDependencies(requireModule, function requireModuleLoaded(name) {
-                                        onModuleLoad(name);
+                                    }, function() {
+                                        loadDependencies(requireModule, function requireModuleLoaded(name) {
+                                            onModuleLoad(name);
+                                        });
                                     });
-                                });
-                            } else {
-                                $log.warn('module [' + requireModule + '] not loaded and not configured');
-                                onModuleLoad(requireModule);
+                                } else {
+                                    $log.warn('module [' + requireModule + '] not loaded and not configured');
+                                    onModuleLoad(requireModule);
+                                }
+                                return null;
+                            });
+
+                            if (requireNeeded.length === 0) {
+                                onModuleLoad();
                             }
                             return null;
-                        });
-
-                        if (requireNeeded.length === 0) {
-                            onModuleLoad();
                         }
-                        return null;
-                    }
 
-                    if (epEmbeddedAppsCacheService.scriptCache.get(resourceId)) {
-                        $log.debug('AppPackage ' + config.id + ' already loaded.');
-                        activeConfig = config;
-                        deferredLoad.resolve(config.id);
-                        // load all of the css links
-                        // even though the module has already been loaded, we still need to reload the css
-                        // since it gets removed from the page when the package is unloaded.
-                        var urls = config.resources.links.map(function(url) {
-                            return getAppPath(config.id, url);
-                        });
-                        loadLinks(urls, function(id) {
-                            $log.debug('Loaded ' + id);
-                        });
-                    } else {
+                        if (epEmbeddedAppsCacheService.scriptCache.get(resourceId)) {
+                            $log.debug('AppPackage ' + config.id + ' already loaded.');
+                            activeConfig = config;
+                            deferredLoad.resolve(config.id);
+                            // load all of the css links
+                            // even though the module has already been loaded, we still need to reload the css
+                            // since it gets removed from the page when the package is unloaded.
+                            var urls = config.resources.links.map(function(url) {
+                                return getAppPath(config.id, url);
+                            });
+                            loadLinks(urls, function(id) {
+                                $log.debug('Loaded ' + id);
+                            });
+                        } else {
 
-                        loadResources(
-                            // onLoadScript
-                            function(id) { $log.debug('Loaded ' + id); },
+                            loadResources(
+                                // onLoadScript
+                                function(id) {
+                                    $log.debug('Loaded ' + id);
+                                },
 
-                            //onLoadLink
-                            function(id) { $log.debug('Loaded ' + id); },
+                                //onLoadLink
+                                function(id) {
+                                    $log.debug('Loaded ' + id);
+                                },
 
-                            //onLoadComplete
-                            function() {
-                                moduleCache.push(config.id);
-                                loadDependencies(config.id, function() {
-                                    angular.module(config.id).factory('appPackageService',
-                                        getAppPackageService(config, $timeout, $http));
-                                    register($log, $injector, providers, angular.copy(moduleCache));
-                                    epEmbeddedAppsCacheService.scriptCache.put(resourceId, config);
-                                    $timeout(function() {
-                                        deferredLoad.resolve(config.id);
-                                        state.loadComplete = true;
+                                //onLoadComplete
+                                function() {
+                                    moduleCache.push(config.id);
+                                    loadDependencies(config.id, function() {
+                                        angular.module(config.id).factory('appPackageService',
+                                            getAppPackageService(config, $timeout, $http));
+                                        register($log, $injector, providers, angular.copy(moduleCache));
+                                        epEmbeddedAppsCacheService.scriptCache.put(resourceId, config);
+                                        $timeout(function() {
+                                            deferredLoad.resolve(config.id);
+                                            state.loadComplete = true;
+                                        });
                                     });
                                 });
-                            });
+                        }
+                        return deferredLoad.promise;
                     }
-                    return deferredLoad.promise;
-                }
 
-                function getConfig() {
-                    epSysConfig.mergeSection('ep.embedded.apps', sysconfig);
+                    function getConfig() {
+                        epSysConfig.mergeSection('ep.embedded.apps', sysconfig);
 
-                    if (!sysconfig.path) {
-                        sysconfig.path = 'apps';
+                        if (!sysconfig.path) {
+                            sysconfig.path = 'apps';
+                        }
+                        if (!sysconfig.rootRoute) {
+                            sysconfig.rootRoute = 'app';
+                        }
+                        return sysconfig;
                     }
-                    if (!sysconfig.rootRoute) {
-                        sysconfig.rootRoute = 'app';
-                    }
-                    return sysconfig;
-                }
 
-                sysconfig = getConfig();
+                    sysconfig = getConfig();
 
-                return {
-                    settings: sysconfig,
-                    load: load,
-                    modules: modules,
-                    getAppPath: getAppPath,
-                    getAppRoute: getAppRoute,
-                    state: state
-                };
-            }];
-    }
+                    return {
+                        settings: sysconfig,
+                        load: load,
+                        modules: modules,
+                        getAppPath: getAppPath,
+                        getAppRoute: getAppRoute,
+                        state: state
+                    };
+                }];
+        }
     ]);
 
 'use strict';
