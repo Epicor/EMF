@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.137 built: 12-09-2016
+ * version:1.0.8-dev.138 built: 12-09-2016
 */
 (function() {
     'use strict';
@@ -12774,12 +12774,12 @@ angular.module('ep.menu.builder').
     *   };
     *   $scope.valueText = 'My Text';
     */
-    epEditorControlDirective.$inject = ['$timeout', '$window', '$compile', '$q', 'epUtilsService'];
+    epEditorControlDirective.$inject = ['$log', '$timeout', '$window', '$compile', '$q', 'epUtilsService'];
     angular.module('ep.record.editor').
         directive('epEditorControl', epEditorControlDirective);
 
     /*@ngInject*/
-    function epEditorControlDirective($timeout, $window, $compile, $q, epUtilsService) {
+    function epEditorControlDirective($log, $timeout, $window, $compile, $q, epUtilsService) {
 
         var defaultSizeClass = 'col-xs-12 col-sm-8 col-md-6 col-lg-3';
 
@@ -12815,13 +12815,41 @@ angular.module('ep.menu.builder').
             });
         }
 
+        function getEditorByValue(v) {
+            var tp = typeof v;
+            if (tp === 'number') {
+                return 'number';
+            } else if (tp === 'boolean') {
+                return 'checkbox';
+            } else if (tp === 'date') {
+                return 'date';
+            } else if (tp === 'string') {
+                var reg = /\d{4}-\d{2}-\d{2}['T']/;
+                if (v && v.match(reg)) {
+                    return 'date';
+                }
+            }
+            return 'text';
+        }
+
         function createContext(scope) {
             //creates editor context based on metadata
             var col = scope.column;
             col.oFormat = col.oFormat || defaultFormat;
 
+            //determine editor
+            var edt = 'text';
+            if (!col.editor || col.editor === 'auto') {
+                if (scope.value !== undefined && scope.value !== null) {
+                    edt = getEditorByValue(scope.value);
+                    scope.editorValueType = typeof scope.value;
+                }
+            } else {
+                edt = col.editor;
+            }
+            var editor = (edt || 'text').trim().toLowerCase();
+
             var name = col.name || col.caption || col.columnIndex;
-            var editor = (col.editor || 'text').trim().toLowerCase();
             var ctx = {
                 recordEditorState: undefined,
                 editorContainer: scope.state.iElement,
@@ -12850,19 +12878,18 @@ angular.module('ep.menu.builder').
                 placeholder: col.placeholder,
                 size: col.size,
                 style: col.style,
-                checkBoxSize: checkBoxSize
+                checkBoxSize: col.checkBoxSize
             };
 
             if (col.style && angular.isString(col.style)) {
-                try{
+                try {
                     var xStyle;
-                    eval("xStyle = " + col.style);
+                    eval('xStyle = ' + col.style);
                     ctx.style = xStyle;
                 } catch (err) {
-
+                    $log.error('Error in ep-editor-control styling. Error: ' + err.message + '\nStyle: ' + col.style);
                 }
             }
-
 
             //TO DO - validate buttons pre/post seq etc
             var directive = ctx.editor === 'custom' ? col.editorDirective : ('ep-' + ctx.editor + '-editor');
@@ -12916,7 +12943,7 @@ angular.module('ep.menu.builder').
                 if (ctx.col.fnOnChange) {
                     $timeout(function() {
                         ctx.col.fnOnChange($event, ctx);
-                    })
+                    });
                 }
             };
 
@@ -13079,17 +13106,22 @@ angular.module('ep.menu.builder').
                     }
                 });
 
+                scope.$watch('value', function(newValue) {
+                    if (newValue !== undefined) {
+                        if (scope.column && !scope.editorValueType &&
+                            (!scope.column.editor || scope.column.editor === 'auto'))
+                        {
+                            createContext(scope);
+                        }
+                    }
+                });
+
                 scope.handleDrop = function(drop) {
                     var state = scope.ctx.recordEditorState;
                     if (state) {
                         var ctrlThis = state.controls[scope.ctx.columnIndex];
                         var ctrlDropped = state.controls[drop.dragItem.columnIndex];
-                        if (ctrlThis != ctrlDropped) {
-                            //var indexThis = ctrlThis.visibleIndex;
-                            //var indexDropped = ctrlDropped.visibleIndex;
-                            ////swap
-                            //ctrlThis.visibleIndex = indexDropped;
-                            //ctrlDropped.visibleIndex = indexThis;
+                        if (ctrlThis !== ctrlDropped) {
 
                             var indexThis = ctrlThis.seq;
                             var indexDropped = ctrlDropped.seq;
@@ -13119,12 +13151,10 @@ angular.module('ep.menu.builder').
                         }
                     }
                 };
-                scope.leaveHandler = function(drop) {
-                    //alert('leave 111')
-                };
-                scope.overHandler = function(drop) {
-                    //alert('over ')
-                };
+                //scope.leaveHandler = function(drop) {
+                //};
+                //scope.overHandler = function(drop) {
+                //};
             },
             scope: {
                 column: '=',
@@ -13315,27 +13345,32 @@ angular.module('ep.menu.builder').
             compile: function() {
                 return {
                     pre: function($scope) {
-                        var ctx = $scope.ctx;
-                        if (ctx.col.list) {
-                            ctx.options = angular.extend([], ctx.col.list);
-                            angular.forEach(ctx.options, function(item) {
-                                item.getIsSelected = function() {
-                                    return item.value === $scope.value;
-                                };
-                            });
-                        }
+                        $scope.$watch('ctx.col.list', function() {
 
-                        // add an 'empty' value for fields that are not required.
-                        if (!ctx.required && !_.find(ctx.options, function(o) { return !o.value; })) {
-                            if (!ctx.options) {
-                                ctx.options = [];
+                            var ctx = $scope.ctx;
+                            ctx.options = [];
+                            if (ctx.col.list) {
+                                ctx.options = angular.extend([], ctx.col.list);
+                                angular.forEach(ctx.options, function(item) {
+                                    item.getIsSelected = function() {
+                                        return item.value === $scope.value;
+                                    };
+                                });
                             }
-                            ctx.options.unshift({
-                                label: '', value: null, getIsSelected: function() {
-                                    return !$scope.value;
+
+                            // add an 'empty' value for fields that are not required.
+                            if (!ctx.required && !_.find(ctx.options, function(o) { return !o.value; })) {
+                                if (!ctx.options) {
+                                    ctx.options = [];
                                 }
-                            });
-                        }
+                                ctx.options.unshift({
+                                    label: '', value: null, getIsSelected: function() {
+                                        return !$scope.value;
+                                    }
+                                });
+                            }
+
+                        });
                     }
                 };
             }
@@ -13436,7 +13471,8 @@ angular.module('ep.menu.builder').
 
 
     The following are attributes (parameters) for the a editor control defined in metadata columns:
-        # editor {string} - 'number'| 'text' | 'multiline' | 'date' | 'checkbox' | 'select' | 'image' | 'custom'
+        # editor {string} - 'number' | 'text' | 'multiline' | 'date' | 'checkbox' | 'select' | 'image' | 'custom'
+            if 'auto' or blank then editor will be detected from value
         # editorDirective {string} - directive name as in html for custom editor
         # bizType {string} - 'phone' | 'address' | 'email' | 'url' | 'password'
         # columnIndex - data ordinal index (data array index) or property name
@@ -13589,7 +13625,7 @@ angular.module('ep.menu.builder').
                     angular.forEach(colNames, function(c) {
                         columns.push({
                             columnIndex: c,
-                            editor: getEditorByValue(scope.record[c]),
+                            editor: 'auto', // getEditorByValue(scope.record[c]),
                             updatable: true
                         });
                     });
@@ -13597,7 +13633,7 @@ angular.module('ep.menu.builder').
                     angular.forEach(scope.record, function(v, n) {
                         columns.push({
                             columnIndex: n,
-                            editor: getEditorByValue(v),
+                            editor: 'auto', //getEditorByValue(v),
                             updatable: true
                         });
                     });
@@ -13732,7 +13768,7 @@ angular.module('ep.menu.builder').
                     }
                 });
 
-                scope.$watch('record', function(newValue, oldValue) {
+                scope.$watch('record', function(newValue) {
                     if (newValue && scope.state.activeRecord !== newValue) {
                         checkRecordType(scope);
                         scope.state.lastInputs = {};
@@ -20822,7 +20858,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-editor-control.html',
-    "<div class=\"ep-editor-control {{ctx.sizeClass}}\" ng-hide=ctx.hidden ep-drop-area drop-handler=handleDrop drop-item-types=typeEditorCtrl leave-handler=leaveHandler over-handler=overHandler ng-style=ctx.style><fieldset class=\"form-group ep-record-editor-container\" ng-class=\"{'has-error': ctx.invalidFlag}\" ep-draggable drag-enabled=\"dragEnabled === true\" drag-item=ctx drag-item-type=\"'typeEditorCtrl'\"><label class=ep-editor-label for={{ctx.name}}>{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label><section id=xtemplate></section></fieldset></div>"
+    "<div class=\"ep-editor-control {{ctx.sizeClass}}\" ng-hide=ctx.hidden ep-drop-area drop-handler=handleDrop drop-item-types=typeEditorCtrl ng-style=ctx.style><fieldset class=\"form-group ep-record-editor-container\" ng-class=\"{'has-error': ctx.invalidFlag}\" ep-draggable drag-enabled=\"dragEnabled === true\" drag-item=ctx drag-item-type=\"'typeEditorCtrl'\"><label class=ep-editor-label for={{ctx.name}}>{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label><section id=xtemplate></section></fieldset></div>"
   );
 
 
