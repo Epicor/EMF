@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.138 built: 12-09-2016
+ * version:1.0.8-dev.139 built: 14-09-2016
 */
 (function() {
     'use strict';
@@ -236,6 +236,18 @@ angular.module('ep.embedded.apps', ['ep.templates', 'ep.sysconfig', 'ep.utils'])
     'use strict';
 
     angular.module('ep.filter.list', []);
+})();
+
+/**
+ * @ngdoc overview
+ * @name ep.icon.selector
+ * @description
+ * Provides the font awsome icon selector
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.icon.selector', []);
 })();
 
 'use strict';
@@ -660,6 +672,14 @@ angular.module('ep.signature', [
                                     break;
                                 case 39: // Right key
                                     item.isExpanded = true;
+                                    break;
+                                case 38: // arrow up
+                                    var target = $(e.target);
+                                    target.parents('div').prevAll('div').filter(':visible').first().find('div').first().focus();
+                                    break;
+                                case 40: // arrow down
+                                    var target = $(e.target);
+                                    target.parents('div').nextAll('div').filter(':visible').first().find('div').first().focus();
                                     break;
                             }
                         };
@@ -9427,6 +9447,112 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
 })();
 
+/**
+ * @ngdoc directive
+ * @name ep.icon.selector:epIconSelector
+ * @restrict EA
+ *
+ * @description
+ * Represents fontawesome icon selector
+ *
+ * @property {string} width:string
+ * This is the width of entire icon selector component. Example values 500px, 80% etc...Default is 100%.
+ *
+ * @property {string} iconListWidth:string
+ * This is the width of icon selector drop down menu. Example values 200px, 300px etc...Default is 295px.
+ *
+ * @property {string} iconListHeight:string
+ * This is the maximum height of icon selector list in the drop down menu. Example values 200px, 300px etc...Default is 400px.
+ *
+ * @example
+ *  <pre>
+ *      <ep-icon-selector></ep-icon-selector>
+ *  </pre>
+ */
+(function() {
+    'use strict';
+
+    epIconSelectorDirective.$inject = ['epIconSelectorService'];
+    angular.module('ep.icon.selector').directive('epIconSelector', epIconSelectorDirective);
+
+    function epIconSelectorDirective(epIconSelectorService) {
+        return {
+            restrict: 'EA',
+            replace: true,
+            scope: {
+                ngModel: '=',
+                width: '@',
+                iconListWidth: '@',
+                iconListHeight: '@'
+            },
+            templateUrl: 'src/components/ep.icon.selector/icon_selector.html',
+            link: function(scope) {
+
+                //read icons from fontawesome css file
+                scope.icons = epIconSelectorService.getIconList();
+
+                scope.getIconClass = function(name) {
+                    scope.ngModel = 'fa-' + name;
+                };
+
+            }
+        };
+    }
+})();
+
+/**
+ * @ngdoc service
+ * @name ep.icon.selector:epIconSelectorService
+ * @description
+ * Provides methods for getting the icon classes from icon css file.
+ *
+ * @example
+ *
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.icon.selector').factory('epIconSelectorService', epIconSelectorService);
+
+    function epIconSelectorService() {
+
+        /**
+         * @ngdoc method
+         * @name getIconList         *
+         * @description
+         * To read the icon classes from icon css file.
+         */
+        function getIconList() {
+            var icons = $.map($.map(document.styleSheets, function (s) {
+                if (s.href && s.href.endsWith('font-awesome.min.css')) {
+                    return s;
+                }
+                return null;
+            })[0].rules, function (r) {
+                if (r.cssText.indexOf('::before { content: ') > 0) {
+                    var multipleCSS = [];
+                    var count = (r.cssText.match(/::before/g) || []).length;
+                    if (count > 1) {
+                        multipleCSS = r.cssText.split(',');
+                        for (var i = 0; i < multipleCSS.length; i++) {
+                            var css = multipleCSS[i].trim();
+                            multipleCSS[i] = css.substring(4, css.indexOf('::'));
+                        }
+                        return multipleCSS;
+                    }
+                    return r.cssText.substring(4, r.cssText.indexOf('::'));
+                }
+                return null;
+            });
+
+            return icons;
+        }
+        return {
+            getIconList: getIconList
+        };
+    }
+})();
+
 (function() {
     'use strict';
     /**
@@ -12834,7 +12960,7 @@ angular.module('ep.menu.builder').
 
         function createContext(scope) {
             //creates editor context based on metadata
-            var col = scope.column;
+            var col = scope.column || {};
             col.oFormat = col.oFormat || defaultFormat;
 
             //determine editor
@@ -13108,8 +13234,8 @@ angular.module('ep.menu.builder').
 
                 scope.$watch('value', function(newValue) {
                     if (newValue !== undefined) {
-                        if (scope.column && !scope.editorValueType &&
-                            (!scope.column.editor || scope.column.editor === 'auto'))
+                        if (!scope.editorValueType &&
+                            (!scope.column || !scope.column.editor || scope.column.editor === 'auto'))
                         {
                             createContext(scope);
                         }
@@ -14821,137 +14947,145 @@ angular.module('ep.record.editor').
  */
 (function() {
     'use strict';
-    angular.module('ep.shell').directive('myTouchstart', [function() {
-        return function(scope, element, attr) {
-            element.bind('touchstart', function(event) {
-                scope.$apply(function() {
-                    if (attr.myTouchstart) {
-                        attr.myTouchstart(event)
-                    }
-                });
-            });
-        }
-    }])
-    .controller('epShellCtrl', [
-        '$location',
-        '$rootScope',
-        '$route',
-        '$scope',
-        'epShellConfig',
-        'epShellService',
-        'epLocalStorageService',
-        'epShellFeedbackService',
-        'epShellConstants',
-        'epThemeConstants',
-        function($location, $rootScope, $route, $scope, epShellConfig, epShellService, epLocalStorageService,
-                  epShellFeedbackService, epShellConstants, epThemeConstants) {
+    angular.module('ep.shell').directive('touchHandler',
+        /* @ngInject */
+        function() {
+            return {
+                restrict: 'A',
+                link: function(scope, element, attrs) {
+                    scope.$watch('touchHandler', function(val){
+                        element.bind('touchstart', function(event) {
+                            scope[attrs.touchHandler] && scope[attrs.touchHandler](event);
+                        });
+                    })
 
-            // Any logic that requires the immediate use of the emaService or the EmaRestService needs to be executed inside the "init" call in the controller.
-            // If the logic is already inside an event handler
-            function init() {
-                // get the epShellService state so it can be used in the views
-                $scope.state = epShellService.__state;
-                $scope.options = epShellConfig.options;
-                $scope.findXTouch = function(event){ epShellService.executeLeftSidebar(event)};
-                //toggle sidebar event function
-                $scope.toggleLeftSidebar = function() {
-                    epShellService.toggleLeftSidebar();
-                };
-                //toggle sidebar event function
-                $scope.toggleRightSidebar = function() {
-                    epShellService.toggleRightSidebar();
-                };
-                //Swipe right 0-20% of the width of screen to pull left sidebar
-                $scope.showSwipeLeftSidebar = function() {
-                    var touchStart = $scope.findXTouch;
-                    var screenWidth = screen.width;
-                    var touchStartPercent = (touchStart / screenWidth) * 100;
-                    if (touchStartPercent <= 10 && $scope.state.enableLeftSidebar) {
-                        epShellService.toggleLeftSidebar();
-                    }
-                };
-                //Swipe left 80-100% of the width of screen to pull right sidebar
-                $scope.showSwipeRightSidebar = function() {
-                    var touchStart = $scope.findXTouch;
-                    var screenWidth = screen.width;
-                    var touchStartPercent = (touchStart / screenWidth) * 100;
-                    if (touchStartPercent >= 90 && $scope.state.enableRightSidebar) {
-                        epShellService.toggleRightSidebar();
-                    }
-                };
-                $scope.getTouchXPoint = function() {
-                    $scope.findXTouch = function(event){ epShellService.executeLeftSidebar(event)};
-                    return $scope.findXTouch;
-                };
-                
-                //Close left sidebar on swipping right on left sidebar
-                $scope.closeLeftSidebar = function() {
-                    epShellService.hideLeftSidebar();
-                };
-                //Close right sidebar on swipping left on right sidebar
-                $scope.closeRightSidebar = function() {
-                    epShellService.hideRightSidebar();
-                };
-
-                if (epShellConfig.options.enableViewAnimations) {
-                    epShellService.initViewBackground();
                 }
-                $scope.rightNavButtons = epShellService.getNavbarButtons().filter(function(b) {
-                    return !b.left;
-                });
-                $scope.leftNavButtons = epShellService.getNavbarButtons().filter(function(b) {
-                    return b.left;
-                });
+            }
+        })
+        .controller('epShellCtrl', [
+            '$location',
+            '$rootScope',
+            '$route',
+            '$scope',
+            'epShellConfig',
+            'epShellService',
+            'epLocalStorageService',
+            'epShellFeedbackService',
+            'epShellConstants',
+            'epThemeConstants',
+            function($location, $rootScope, $route, $scope, epShellConfig, epShellService, epLocalStorageService,
+                     epShellFeedbackService, epShellConstants, epThemeConstants) {
 
-                $rootScope.$on(epShellConstants.SHELL_NAV_BUTTONS_CHANGED_EVENT, function() {
+                // Any logic that requires the immediate use of the emaService or the EmaRestService needs to be executed inside the "init" call in the controller.
+                // If the logic is already inside an event handler
+                function init() {
+                    // get the epShellService state so it can be used in the views
+                    $scope.state = epShellService.__state;
+                    $scope.options = epShellConfig.options;
+                    $scope.findXTouch = function(event) {
+                        epShellService.executeLeftSidebar(event)
+                    };
+                    //toggle sidebar event function
+                    $scope.toggleLeftSidebar = function() {
+                        epShellService.toggleLeftSidebar();
+                    };
+                    //toggle sidebar event function
+                    $scope.toggleRightSidebar = function() {
+                        epShellService.toggleRightSidebar();
+                    };
+                    //Swipe right 0-20% of the width of screen to pull left sidebar
+                    $scope.showSwipeLeftSidebar = function() {
+                        var touchStart = $scope.findXTouch;
+                        var screenWidth = screen.width;
+                        var touchStartPercent = (touchStart / screenWidth) * 100;
+                        if (touchStartPercent <= 10 && $scope.state.enableLeftSidebar) {
+                            epShellService.toggleLeftSidebar();
+                        }
+                    };
+                    //Swipe left 80-100% of the width of screen to pull right sidebar
+                    $scope.showSwipeRightSidebar = function() {
+                        var touchStart = $scope.findXTouch;
+                        var screenWidth = screen.width;
+                        var touchStartPercent = (touchStart / screenWidth) * 100;
+                        if (touchStartPercent >= 90 && $scope.state.enableRightSidebar) {
+                            epShellService.toggleRightSidebar();
+                        }
+                    };
+                    $scope.getTouchXPoint = function() {
+                        $scope.findXTouch = function(event) {
+                            epShellService.executeLeftSidebar(event)
+                        };
+                        return $scope.findXTouch;
+                    };
+
+                    //Close left sidebar on swipping right on left sidebar
+                    $scope.closeLeftSidebar = function() {
+                        epShellService.hideLeftSidebar();
+                    };
+                    //Close right sidebar on swipping left on right sidebar
+                    $scope.closeRightSidebar = function() {
+                        epShellService.hideRightSidebar();
+                    };
+
+                    if (epShellConfig.options.enableViewAnimations) {
+                        epShellService.initViewBackground();
+                    }
                     $scope.rightNavButtons = epShellService.getNavbarButtons().filter(function(b) {
                         return !b.left;
                     });
                     $scope.leftNavButtons = epShellService.getNavbarButtons().filter(function(b) {
                         return b.left;
                     });
-                });
-                if (epShellConfig.options.enableViewAnimations) {
-                    $rootScope.$on(epThemeConstants.THEME_CHANGE_EVENT, function() {
-                        epShellService.initViewBackground();
+
+                    $rootScope.$on(epShellConstants.SHELL_NAV_BUTTONS_CHANGED_EVENT, function() {
+                        $scope.rightNavButtons = epShellService.getNavbarButtons().filter(function(b) {
+                            return !b.left;
+                        });
+                        $scope.leftNavButtons = epShellService.getNavbarButtons().filter(function(b) {
+                            return b.left;
+                        });
                     });
-                }
-                $rootScope.$on('$routeChangeStart', function(event, currRoute, prevRoute) {
-                    epShellService.clearInfo();
-                    epShellService.cleanupViewEvents();
+                    if (epShellConfig.options.enableViewAnimations) {
+                        $rootScope.$on(epThemeConstants.THEME_CHANGE_EVENT, function() {
+                            epShellService.initViewBackground();
+                        });
+                    }
+                    $rootScope.$on('$routeChangeStart', function(event, currRoute, prevRoute) {
+                        epShellService.clearInfo();
+                        epShellService.cleanupViewEvents();
 
-                    if (epShellConfig.options.enableViewAnimations && currRoute &&
-                        currRoute.$$route && prevRoute && prevRoute.$$route) {
-                        if (currRoute.$$route.index > prevRoute.$$route.index) {
-                            epShellService.viewAnimation('ep-slide-left');
-                        } else if (prevRoute.$$route.index > currRoute.$$route.index) {
-                            epShellService.viewAnimation('ep-slide-right');
+                        if (epShellConfig.options.enableViewAnimations && currRoute &&
+                            currRoute.$$route && prevRoute && prevRoute.$$route) {
+                            if (currRoute.$$route.index > prevRoute.$$route.index) {
+                                epShellService.viewAnimation('ep-slide-left');
+                            } else if (prevRoute.$$route.index > currRoute.$$route.index) {
+                                epShellService.viewAnimation('ep-slide-right');
+                            }
+
                         }
+                    });
 
-                    }
-                });
+                    //launch help event function
+                    $scope.launchHelp = function() {
+                        $location.url('/help');
+                    };
 
-                //launch help event function
-                $scope.launchHelp = function() {
-                    $location.url('/help');
-                };
+                    $scope.sendFeedback = function() {
+                        epShellFeedbackService.showForm($scope.state.fnOnFeedback);
+                    };
+                }
 
-                $scope.sendFeedback = function() {
-                    epShellFeedbackService.showForm($scope.state.fnOnFeedback);
-                };
+                try {
+                    $rootScope.$watch('initComplete', function(complete) {
+                        if (complete) {
+                            init();
+                        }
+                    });
+                } catch (ex) {
+                    console.log(ex);
+                }
             }
-
-            try {
-                $rootScope.$watch('initComplete', function(complete) {
-                    if (complete) {
-                        init();
-                    }
-                });
-            } catch (ex) {
-                console.log(ex);
-            }
-        }
-    ]);
+        ]);
 })();
 
 /**
@@ -15321,6 +15455,7 @@ angular.module('ep.record.editor').
                 shellState.enableFeedback = (epShellConfig.options.enableFeedback && mode.enableFeedback === true);
                 shellState.animationIn = mode.animationIn;
                 shellState.animationOut = mode.animationOut;
+                shellState.animationSpeed = mode.animationSpeed;
 
                 if (shellState.showBrand && mode.brandHTML) {
                     if (mode.brandHTML) {
@@ -17131,16 +17266,23 @@ angular.module('ep.shell').service('epSidebarService', [
  * @property {string} modesetting:animationIn:string
  * This mode setting sets an animation to the page when it is displayed. Allowed valued are slide-left, slide-right, slide-up and slide-down
  *  <br/><br/>
- *  smallmodesettings='{"animationIn"="slide-left/slide-right/slide-up/slide-down"}'
+ *  smallmodesettings='{"animationIn"="slide-left/slide-right/slide-up/slide-down/fade-in"}'
  *  <br/>
- *  largemodesettings='{"animationIn"="slide-left/slide-right/slide-up/slide-down"}'
+ *  largemodesettings='{"animationIn"="slide-left/slide-right/slide-up/slide-down/fade-in"}'
 
  * @property {string} modesetting:animationOut:string
  * This mode setting sets an animation to the page when it goes off from display. Allowed valued are slide-left, slide-right, slide-up and slide-down
  *  <br/><br/>
- *  smallmodesettings='{"animationOut"="slide-left/slide-right/slide-up/slide-down"}'
+ *  smallmodesettings='{"animationOut"="slide-left/slide-right/slide-up/slide-down/fade-out"}'
  *  <br/>
- *  largemodesettings='{"animationOut"="slide-left/slide-right/slide-up/slide-down"}'
+ *  largemodesettings='{"animationOut"="slide-left/slide-right/slide-up/slide-down/fade-out"}'
+
+ * @property {string} modesetting:animationSpeed:string
+ * This mode setting sets an animation speed. Allowed valued are 250, 500, 750, 1000, 1250. All values are in milliseconds
+ *  <br/><br/>
+ *  smallmodesettings='{"animationSpeed"="250/500/750/1000/1250"}'
+ *  <br/>
+ *  largemodesettings='{"animationSpeed"="250/500/750/1000/1250"}'
 
  */
 (function() {
@@ -17235,6 +17377,9 @@ angular.module('ep.shell').service('epSidebarService', [
                             //setting classes for animation in and out
                             $scope.state.animationIn = 'ep-' + $scope.state.animationIn + '-in';
                             $scope.state.animationOut = 'ep-' + $scope.state.animationOut + '-out';
+                            //setting animation speed to ng-view dynamically 
+                            $scope.state.animationSpeed = $scope.state.animationSpeed || '500';
+
 
                             epViewContainerService.state.cleanup =
                                 $rootScope.$on(epShellConstants.SHELL_STATE_CHANGE_EVENT, function() {
@@ -20728,7 +20873,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   'use strict';
 
   $templateCache.put('src/components/ep.accordion.menu/ep-accordion-menu-item_template.html',
-    "<div class=\"clearfix list-group-item\" ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\"><div class=\"clearfix container-fluid ep-accordion-menu-animate\" id=mnu_{{item.id}} ng-keydown=\"onKeydown(item, $event)\" role=group tabindex=-1 ng-click=\"item.isExpanded = !item.isExpanded\"><div id=menuItem class=\"list-group-item row\" tabindex=0 ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\" ng-if=\"!(item.menuitems && item.menuitems.length)\" ng-click=\"navigate(item, false, $event)\"><!-- Menu item caption/text --><span class=\"clearfix ep-vertical-align-center\"><span class=\"pull-left col-xs-10 {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></span><!-- Favorite icon --> <i ng-if=\"(item.hideFavorite !== true)\" class=\"fa fa-lg col-xs-2 pull-left\" ng-click=\"toggleFavorite(item, $event)\" ng-class=\"{ 'fa-star-o': !item.favorite, 'fa-star text-warning': item.favorite }\"></i></span></div><div class=\"ep-submenu-header list-group-item row\" tabindex=0 ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\" ng-if=item.menuitems.length><!-- Menu item caption/text --><span class=\"clearfix ep-vertical-align-center\"><span class=\"pull-left col-xs-10 {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></span><!-- Expand icon --> <i class=\"fa fa-lg col-xs-2\" ng-class=\"{ 'fa-caret-right': !item.isExpanded, 'fa-caret-down': item.isExpanded }\"></i></span></div></div><div class=col-xs-12 ng-click=\"navigate(item, false, $event)\" ng-if=\"item.description && (!item.menuitems.length || !item.isExpanded) && !hideDescription\"><div class=ep-accordion-menu-desc><sup class=text-info ng-bind=item.description></sup></div></div><!-- Sub-menu --><div class=list-group-submenu ng-class=\"{'collapsed': !item.isExpanded }\" id=mnu_children ng-if=\"item.isExpanded && item.menuitems.length\"><ep-accordion-menu-item ng-repeat=\"child in item.menuitems | orderBy:orderByMenu\" item=child hide-description=hideDescription commit-menu-state=commitMenuState navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div>"
+    "<div class=\"clearfix list-group-item\" ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\"><div class=\"clearfix container-fluid ep-accordion-menu-animate\" id=mnu_{{item.id}} ng-keydown=\"onKeydown(item, $event)\" role=group tabindex=0 ng-click=\"item.isExpanded = !item.isExpanded\"><div id=menuItem class=\"list-group-item row\" tabindex=1 ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\" ng-if=\"!(item.menuitems && item.menuitems.length)\" ng-click=\"navigate(item, false, $event)\"><!-- Menu item caption/text --><span class=\"clearfix ep-vertical-align-center\"><span class=\"pull-left col-xs-10 {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></span><!-- Favorite icon --> <i ng-if=\"(item.hideFavorite !== true)\" class=\"fa fa-lg col-xs-2 pull-left\" ng-click=\"toggleFavorite(item, $event)\" ng-class=\"{ 'fa-star-o': !item.favorite, 'fa-star text-warning': item.favorite }\"></i></span></div><div class=\"ep-submenu-header list-group-item row\" tabindex=1 ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\" ng-if=item.menuitems.length><!-- Menu item caption/text --><span class=\"clearfix ep-vertical-align-center\"><span class=\"pull-left col-xs-10 {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></span><!-- Expand icon --> <i class=\"fa fa-lg col-xs-2\" ng-class=\"{ 'fa-caret-right': !item.isExpanded, 'fa-caret-down': item.isExpanded }\"></i></span></div></div><div class=col-xs-12 ng-click=\"navigate(item, false, $event)\" ng-if=\"item.description && (!item.menuitems.length || !item.isExpanded) && !hideDescription\"><div class=ep-accordion-menu-desc><sup class=text-info ng-bind=item.description></sup></div></div><!-- Sub-menu --><div class=list-group-submenu ng-class=\"{'collapsed': !item.isExpanded }\" id=mnu_children ng-if=\"item.isExpanded && item.menuitems.length\"><ep-accordion-menu-item ng-repeat=\"child in item.menuitems | orderBy:orderByMenu\" item=child hide-description=hideDescription commit-menu-state=commitMenuState navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div>"
   );
 
 
@@ -20809,6 +20954,11 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
   $templateCache.put('src/components/ep.filter.list/filter_list.html',
     "<div class=\"ep-search-list-container vertical-align\"><input ng-model=searchBy placeholder=Search class=form-control id=ep-search-list><label for=ep-search-list class=\"glyphicon glyphicon-search\" rel=tooltip title=search></label></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.icon.selector/icon_selector.html',
+    "<div class=ep-icon-selector-container style=\"width: {{width}}\"><div class=input-group><input class=form-control ng-model=ngModel><div class=input-group-btn><button type=button class=\"btn btn-default dropdown-toggle\" data-toggle=dropdown aria-expanded=false><span class=\"fa {{selectedIcon}}\"></span></button><div class=\"dropdown-menu dropdown-menu-right\" role=menu style=\"width: {{iconListWidth}}\"><div class=\"icon-filter-field vertical-align text-center\"><input class=form-control placeholder=\"Type to filter\" ng-model=filteredIcon></div><ul class=icon-list style=\"max-height: {{iconListHeight}}\"><li ng-repeat=\"icon in icons | orderBy | filter: filteredIcon\" ng-click=\"getIconClass('{{icon}}')\"><span class=\"fa fa-{{icon}}\"></span>{{icon}}</li></ul></div></div></div></div>"
   );
 
 
@@ -20922,7 +21072,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/shell.html',
-    "<div><section ng-controller=epShellCtrl class=ep-shell ng-cloak><div ng-show=state.showProgressIndicator class=ep-progress-idicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\"></a></li><li ng-repeat=\"button in leftNavButtons | orderBy:'index':true\" index={{button.index}} ng-class=\"{'hidden': button.hidden}\"><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"pull-left fa {{button.icon}} fa-2x ep-navbar-button left-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button) ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"pull-left ep-navbar-button left-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"><i class=\"fa {{button.icon}} fa-2x\"></i><span ng-bind=button.title style=\"padding-right: 5px\"></span><span class=caret></span></a><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator'\" ng-click=state.executeButton(opt) ng-mousedown=state.buttonMouseDown(opt)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i><span class=ep-navmenu-item-text>{{opt.title}}</span></span></a></li></ul></li><li id=brandItem ng-hide=\"state.showBrand === false\" ng-class=\"{'ep-center-brand': state.centerBrand}\"><a id=apptitle ng-cloak=\"\" ng-if=state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-href=#{{(state.brandTarget)}} ng-bind-html=state.brandHTML></a> <span id=apptitle ng-cloak=\"\" ng-if=!state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-bind-html=state.brandHTML></span></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in rightNavButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.enabled === false}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button)></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false><i class=\"fa {{button.icon}} fa-2x\"></i><span ng-bind=button.title style=\"padding-right: 5px\"></span><span class=caret></span></a><ul ng-if=\"button.type === 'select'\" class=\"dropdown-menu dropdown-menu-right\" ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator'\" ng-click=state.executeButton(opt) ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i><span class=ep-navmenu-item-text ng-bind=opt.title></span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div class=ep-fullscreen><div ng-view class=\"ep-fullscreen {{state.animationIn}} {{state.animationOut}} ep-view{{options.enableViewAnimations? ' ep-view-transition' : ''}}\" ng-class=state.viewAnimation></div></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" ng-if=state.footerTarget ng-href={{state.footerTarget}}><sup id=footerElement ng-bind-html=state.footerHTML></sup></a> <sup ng-if=!state.footerTarget id=footerElement ng-bind-html=state.footerHTML></sup></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.enableFeedback ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
+    "<div><section ng-controller=epShellCtrl class=ep-shell ng-cloak><div ng-show=state.showProgressIndicator class=ep-progress-idicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\"></a></li><li ng-repeat=\"button in leftNavButtons | orderBy:'index':true\" index={{button.index}} ng-class=\"{'hidden': button.hidden}\"><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"pull-left fa {{button.icon}} fa-2x ep-navbar-button left-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button) ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"pull-left ep-navbar-button left-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"><i class=\"fa {{button.icon}} fa-2x\"></i><span ng-bind=button.title style=\"padding-right: 5px\"></span><span class=caret></span></a><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator'\" ng-click=state.executeButton(opt) ng-mousedown=state.buttonMouseDown(opt)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i><span class=ep-navmenu-item-text>{{opt.title}}</span></span></a></li></ul></li><li id=brandItem ng-hide=\"state.showBrand === false\" ng-class=\"{'ep-center-brand': state.centerBrand}\"><a id=apptitle ng-cloak=\"\" ng-if=state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-href=#{{(state.brandTarget)}} ng-bind-html=state.brandHTML></a> <span id=apptitle ng-cloak=\"\" ng-if=!state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-bind-html=state.brandHTML></span></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in rightNavButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.enabled === false}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button)></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false><i class=\"fa {{button.icon}} fa-2x\"></i><span ng-bind=button.title style=\"padding-right: 5px\"></span><span class=caret></span></a><ul ng-if=\"button.type === 'select'\" class=\"dropdown-menu dropdown-menu-right\" ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator'\" ng-click=state.executeButton(opt) ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i><span class=ep-navmenu-item-text ng-bind=opt.title></span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div class=ep-fullscreen><div ng-view class=\"ep-fullscreen ep-anim-speed-{{state.animationSpeed}} {{state.animationIn}} {{state.animationOut}} ep-view{{options.enableViewAnimations? ' ep-view-transition' : ''}}\" ng-class=state.viewAnimation></div></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" ng-if=state.footerTarget ng-href={{state.footerTarget}}><sup id=footerElement ng-bind-html=state.footerHTML></sup></a> <sup ng-if=!state.footerTarget id=footerElement ng-bind-html=state.footerHTML></sup></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.enableFeedback ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
   );
 
 
@@ -20932,7 +21082,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/view-container/view-container.html',
-    "<div id=viewContainer ng-controller=epShellCtrl my-touchstart=getTouchXPoint($event) ng-swipe-right=showSwipeLeftSidebar() ng-swipe-left=showSwipeRightSidebar() class=ep-view-container ng-class=\"{ 'ep-with-navbar': !!state.showNavbar,\r" +
+    "<div id=viewContainer ng-controller=epShellCtrl touch-handler=getTouchXPoint ng-swipe-right=showSwipeLeftSidebar() ng-swipe-left=showSwipeRightSidebar() class=ep-view-container ng-class=\"{ 'ep-with-navbar': !!state.showNavbar,\r" +
     "\n" +
     "                                    'ep-with-footer': !!state.showFooter,\r" +
     "\n" +

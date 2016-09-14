@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.138 built: 12-09-2016
+ * version:1.0.8-dev.139 built: 14-09-2016
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -39,7 +39,6 @@
 }
 .ep-accordion-menu .ep-accordion-menu-desc {
   margin-left: 5px;
-  margin-top: 5px;
 }
 .ep-accordion-menu .ep-accordion-expanded {
   padding-bottom: 6px;
@@ -63,20 +62,11 @@
   background-color: #0083D0;
   color: white;
 }
-.ep-accordion-menu .list-group-item #menuItem:focus {
+.ep-accordion-menu .list-group-item div:focus {
   background-color: #0083D0;
-  outline: none;
-  color: white;
 }
 .ep-accordion-menu .list-group-item .ep-submenu-header:hover {
   background-color: #0083D0;
-  color: white;
-  /*background-color:#00568A;*/
-  /*background-color:#64C5FF;*/
-}
-.ep-accordion-menu .list-group-item .ep-submenu-header:focus {
-  background-color: #0083D0;
-  outline: none;
   color: white;
 }
 .ep-accordion-menu-animate {
@@ -85,7 +75,6 @@
   transition: .5s linear all;
 }
 .ep-accordion-menu .list-group-submenu {
-  /*margin-left: 5px;*/
   max-height: 2500px;
 }
 .ep-accordion-menu .list-group-submenu.collapsed {
@@ -1069,6 +1058,40 @@
   left: 10px;
   top: 17px;
   padding-left: 5%;
+}
+
+.ep-icon-selector-container .icon-filter-field {
+  width: 100%;
+  position: absolute;
+  height: 40px;
+  padding: 0 10%;
+  background-color: #ddd;
+}
+.ep-icon-selector-container .dropdown-menu {
+  width: 295px;
+}
+.ep-icon-selector-container .icon-list {
+  margin-top: 40px;
+  max-height: 300px;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0;
+}
+.ep-icon-selector-container .icon-list li {
+  list-style-type: none;
+  padding: 5px 25px 5px 15px;
+}
+.ep-icon-selector-container .icon-list li:hover {
+  cursor: pointer;
+  background-color: #F5F5F5;
+  font-weight: bold;
+}
+.ep-icon-selector-container .icon-list li span {
+  padding-right: 5px;
+}
+.ep-icon-selector-container .input-group-btn .btn {
+  background-color: #F5F5F5;
 }
 
 
@@ -2074,6 +2097,26 @@ VIEW CONTAINER [ep-view-container]
   top: 0;
   z-index: 999;
 }
+.ep-anim-speed-250 {
+  -webkit-transition: all 250ms ease;
+  transition: all 250ms ease;
+}
+.ep-anim-speed-500 {
+  -webkit-transition: all 500ms ease;
+  transition: all 500ms ease;
+}
+.ep-anim-speed-750 {
+  -webkit-transition: all 750ms ease;
+  transition: all 750ms ease;
+}
+.ep-anim-speed-1000 {
+  -webkit-transition: all 1000ms ease;
+  transition: all 1000ms ease;
+}
+.ep-anim-speed-1250 {
+  -webkit-transition: all 1250ms ease;
+  transition: all 1250ms ease;
+}
 .ep-slide-left-in,
 .ep-slide-left-out,
 .ep-slide-right-in,
@@ -2085,8 +2128,6 @@ VIEW CONTAINER [ep-view-container]
   position: absolute;
   width: 100%;
   height: 100%;
-  -webkit-transition: all 750ms ease;
-  transition: all 750ms ease;
 }
 .ep-slide-left-in.ng-enter {
   left: 100%;
@@ -2115,26 +2156,38 @@ VIEW CONTAINER [ep-view-container]
 .ep-slide-up-in.ng-enter {
   top: 100%;
 }
-.ep-slide-up-in.ng-enter-active {
+.ep-slide-up-in.ng-enter.ng-enter-active {
   top: 0;
 }
 .ep-slide-up-out.ng-leave {
   top: 0;
 }
-.ep-slide-up-out.ng-leave-active {
+.ep-slide-up-out.ng-leave.ng-leave-active {
   top: -100%;
 }
 .ep-slide-down-in.ng-enter {
   top: -100%;
 }
-.ep-slide-down-in.ng-enter-active {
+.ep-slide-down-in.ng-enter.ng-enter-active {
   top: 0;
 }
 .ep-slide-down-out.ng-leave {
   top: 0;
 }
-.ep-slide-down-out.ng-leave-active {
+.ep-slide-down-out.ng-leave.ng-leave-active {
   top: 100%;
+}
+.ep-fade-in-in.ng-enter {
+  opacity: 0;
+}
+.ep-fade-in-in.ng-enter.ng-enter-active {
+  opacity: 1;
+}
+.ep-fade-out-out.ng-leave {
+  opacity: 1;
+}
+.ep-fade-out-out.ng-leave.ng-leave-active {
+  opacity: 0;
 }
 
 
