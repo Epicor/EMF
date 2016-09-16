@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.141 built: 14-09-2016
+ * version:1.0.8-dev.142 built: 16-09-2016
 */
 (function() {
     'use strict';
@@ -4456,21 +4456,23 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                 /// <summary>
                 ///   Resizes the table and invokes the DataTables api to retrieve more records, if necessary.
                 /// </summary>
+                if(scope.state.$table && scope.state.$table.is(':visible')) {
+                    $timeout.cancel(scope.resizeTimeout);
+                    scope.resizeTimeout = $timeout(function() {
+                        if (scope.state.dataTable) {
+                            var tableHeight = scope.calcTableHeight();
 
-                $timeout(function() {
-                    if (scope.state.dataTable) {
-                        var tableHeight = scope.calcTableHeight();
+                            var settings = scope.state.dataTable.fnSettings();
+                            var tableHeightPx = tableHeight + 'px';
 
-                        var settings = scope.state.dataTable.fnSettings();
-                        var tableHeightPx = tableHeight + 'px';
-
-                        //only trigger this if the vertical height has changed to load rows.
-                        if (settings && settings.oScroll && (force || settings.oScroll.sY !== tableHeightPx)) {
-                            settings.oScroll.sY = tableHeightPx;
-                            scope.findElement('.dataTables_scrollBody').height(tableHeight);
+                            //only trigger this if the vertical height has changed to load rows.
+                            if (settings && settings.oScroll && (force || settings.oScroll.sY !== tableHeightPx)) {
+                                settings.oScroll.sY = tableHeightPx;
+                                scope.findElement('.dataTables_scrollBody').height(tableHeight);
+                            }
                         }
-                    }
-                }, 300);
+                    }, 300);
+                }
             };
 
             scope.refreshData = function() {
@@ -9491,8 +9493,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 //read icons from fontawesome css file
                 scope.icons = epIconSelectorService.getIconList();
 
-                scope.getIconClass = function(name) {
-                    scope.ngModel = 'fa-' + name;
+                scope.selectIcon = function(icon) {
+                    scope.ngModel = 'fa-' + icon;
                 };
 
             }
@@ -9568,6 +9570,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
     *   # templateUrl {string} - file link to HTML that is to be included
     *   # templateCtrl {function} - controller function
     *   # templateScope {object} - scope to be applied for the template
+    *   # templateStyle {string} - sets inline styling. eg. '{ "color" : "red", "margin" : "0px" }
     *   # userData {object} - pass anything you want here to consume by the template. Will be set as userData on the template scope
     *   # options {object} - an object containing all of the above properties. Note: if options are used then
     *       the other attributes are not applied.
@@ -9596,6 +9599,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 templateUrl: '=',
                 templateCtrl: '=',
                 templateScope: '=',
+                templateStyle: '=',
                 userData: '='
             },
             compile: function() {
@@ -9614,6 +9618,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         sDiv = '<div ng-controller="' + ctrlName + '"';
                     }
                     var html = sDiv;
+                    if (options.templateStyle) {
+                        html += ' ng-style="' + options.templateStyle + '" ';
+                    }
                     if (options.template) {
                         html += '>' + options.template + '</div>';
                     } else if (options.templateUrl) {
@@ -12879,20 +12886,57 @@ angular.module('ep.menu.builder').
     * @ngdoc directive
     * @name ep.editor.directive:epEditorControl
     * @restrict E
+    * @scope
     *
     * @description
     * Represents the ep.editor.control directive
     * This directive allows using editors standalone without ep-record-editor
     * Please note that the controls must be under class="row" for proper sizing
     *
+    * @param {object} column - the following are properties of the column:
+        # editor {string} - 'number' | 'text' | 'multiline' | 'date' | 'checkbox' | 'select' | 'image' | 'custom'
+            if 'auto' or blank then editor will be detected from value
+        # editorDirective {string} - directive name as in html for custom editor
+        # bizType {string} - 'phone' | 'address' | 'email' | 'url' | 'password'
+        # columnIndex - data ordinal index (data array index) or property name
+        # seq {int} - (optional) sequence index for ordering
+        # required {bool} - is entry required
+        # requiredFlag {bool} - should we display required flag
+        # name {string} - column name (optional)
+        # caption {string} - caption
+        # placeholder {string} - applicable to text input
+        # justification {string} - 'right' | 'left' | 'center'
+        # visible {bool}  - visible
+        # updatable {bool}  - updatable
+        # nullable {bool}  - nullable
+        # list {array}  - array of items for drop down (editor = 'select' ) [{ label, value }]
+        # sizeClass {string} - editor size class (bootstrap column sizes like col-md-6, col-lg-8, etc)
+        # checkBoxSize {string}  - applicable to checkbox only (for now). Can be '1x', '2x', '3x'
+        # style {string} - sets inline styling. eg. '{ "color" : "red", "margin" : "0px" }
+        # oFormat {object}
+        #   - MaxLength {int}
+        #   -
+        # buttons {array} - array of button objects that conatin properties:
+            text {string} - button text
+            style {string} - button class
+            position {string} - 'pre' or 'post'
+            seq {int} - button sequence
+            action {function} - function action that is invoked on click
+            type {string} - 'btn' - if button, otherwise a link
+        # imageHeight {int} - image height for image editor
+        # imageWidth {int} - image width for image editor
+        # fnOnFldValidate(ctx, event, inputValue, originalValue) - callback function on validation
+        # fnOnChange(ctx, event) - callback function on change
+        # fnOnBlur(ctx, event) - callback function on change    
+    *
     * @example
     *   HTML:
     *   <div class="row">
-    *       <ep-editor-control column="columnText" value="valueText"></ep-editor-control>
+    *       <ep-editor-control column="column" value="valueText"></ep-editor-control>
     *   </div>
     *
     *   Script:
-    *   $scope.columnText = {
+    *   $scope.column = {
     *       caption: 'My Caption',
     *       editor: 'text',
     *       updatable: true,
@@ -13573,66 +13617,32 @@ angular.module('ep.menu.builder').
     * @ngdoc directive
     * @name ep.record.editor.directive:epRecordEditor
     * @restrict E
+    * @scope
     *
     * @description
-    * Represents the ep.record.editor directive
-
-    RecordEditor Directive - used to display/edit record controls of a provided record
-    The usage in html is:
-        <recordeditor id="recordViewEditors" options="options" record="activeRecord" is-read-only="expression" />
-
-        options - are used to setup the directive;
-        activeRecord - is binding to a record
-        isReadOnly - set true if editing will not be allowed
-        sizeClass - default size class for all editors (bootstrap column size col-md-6, etc)
-
-    The controller or other hosting code must provide the options in active scope as follows:
-
-        scope.recordEditorOptions = {
-            columns: columns,       //metadata for columns - array of columns
-            columnTemplate: {}      //properties to be applied on all columns
-            factory: null,          //after directive initialization will expose factory to this control
-            flagInvalid: false      //flag controls when invalid (changes border color)
-        };
-
-
-    The following are attributes (parameters) for the a editor control defined in metadata columns:
-        # editor {string} - 'number' | 'text' | 'multiline' | 'date' | 'checkbox' | 'select' | 'image' | 'custom'
-            if 'auto' or blank then editor will be detected from value
-        # editorDirective {string} - directive name as in html for custom editor
-        # bizType {string} - 'phone' | 'address' | 'email' | 'url' | 'password'
-        # columnIndex - data ordinal index (data array index) or property name
-        # seq {int} - (optional) sequence index for ordering
-        # required {bool} - is entry required
-        # requiredFlag {bool} - should we display required flag
-        # name {string} - column name (optional)
-        # caption {string} - caption
-        # placeholder {string} - applicable to text input
-        # justification {string} - 'right' | 'left' | 'center'
-        # visible {bool}  - visible
-        # updatable {bool}  - updatable
-        # nullable {bool}  - nullable
-        # list {array}  - array of items for drop down (editor = 'select' ) [{ label, value }]
-        # sizeClass {string} - editor size class (bootstrap column sizes like col-md-6, col-lg-8, etc)
-        # checkBoxSize {string}  - applicable to checkbox only (for now). Can be '1x', '2x', '3x'
-        # oFormat {object}
-        #   - MaxLength {int}
-        #   -
-        # buttons {array} - array of button objects that conatin properties:
-            text {string} - button text
-            style {string} - button class
-            position {string} - 'pre' or 'post'
-            seq {int} - button sequence
-            action {function} - function action that is invoked on click
-            type {string} - 'btn' - if button, otherwise a link
-        # imageHeight {int} - image height for image editor
-        # imageWidth {int} - image width for image editor
-        # fnOnFldValidate(ctx, event, inputValue, originalValue) - callback function on validation
-        # fnOnChange(ctx, event) - callback function on change
-        # fnOnBlur(ctx, event) - callback function on change
-
+    * Used to display/edit record controls of a provided record
+    *
+    * @param {object} record - binding to a record
+    * @param {bool} isReadOnly - set true if editing will not be allowed
+    * @param {string} sizeClass - default size class for all editors (bootstrap column size col-md-6, etc)
+    * @param {function} onInit - callback when control has initialized. Provides factory
+    * @param {object} options - are used to setup the directive. Options are shown in example below. Refer
+    *                           to ep-editor-control directive for definition of column metadata. Factory is
+    *                           also set on the options object
     *
     * @example
+    *   HTML:
+    *
+    *   <recordeditor id="recordViewEditors" options="options" record="activeRecord" is-read-only="expression" />
+    *
+    *   Script:
+    *
+    *    scope.recordEditorOptions = {
+    *        columns: columns,       //metadata for columns - array of columns
+    *        columnTemplate: {}      //properties to be applied on all columns
+    *        factory: null,          //after directive initialization will expose factory to this control
+    *        flagInvalid: false      //flag controls when invalid (changes border color)
+    *    };
     */
     epRecordEditorDirective.$inject = ['$timeout', '$q', 'epRecordEditorFactory', 'epUtilsService'];
     angular.module('ep.record.editor').
@@ -20958,7 +20968,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.icon.selector/icon_selector.html',
-    "<div class=ep-icon-selector-container style=\"width: {{width}}\"><div class=input-group><input class=form-control ng-model=ngModel><div class=input-group-btn><button type=button class=\"btn btn-default dropdown-toggle\" data-toggle=dropdown aria-expanded=false><span class=\"fa {{selectedIcon}}\"></span></button><div class=\"dropdown-menu dropdown-menu-right\" role=menu style=\"width: {{iconListWidth}}\"><div class=\"icon-filter-field vertical-align text-center\"><input class=form-control placeholder=\"Type to filter\" ng-model=filteredIcon></div><ul class=icon-list style=\"max-height: {{iconListHeight}}\"><li ng-repeat=\"icon in icons | orderBy | filter: filteredIcon\" ng-click=\"getIconClass('{{icon}}')\"><span class=\"fa fa-{{icon}}\"></span>{{icon}}</li></ul></div></div></div></div>"
+    "<div class=ep-icon-selector-container ng-style=\"{ 'width': width }\"><div class=input-group><input class=form-control ng-model=ngModel><div class=input-group-btn><button type=button class=\"btn btn-default dropdown-toggle\" data-toggle=dropdown aria-expanded=false><span class=\"fa {{ngModel}}\"></span></button><div class=\"dropdown-menu dropdown-menu-right\" role=menu ng-style=\"{ 'width': iconListWidth }\"><div class=\"icon-filter-field vertical-align text-center\"><input class=form-control placeholder=\"Type to filter\" ng-model=filteredIcon></div><ul class=icon-list ng-style=\"{ 'max-height': iconListHeight }\"><li ng-repeat=\"icon in icons | orderBy | filter: filteredIcon\" ng-click=selectIcon(icon)><span class=\"fa fa-{{icon}}\"></span>fa-{{icon}}</li></ul></div></div></div></div>"
   );
 
 
@@ -21003,7 +21013,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-date-editor.html',
-    "<section><input id=dd_{{ctx.name}} ng-model=value ep-date-convert=toDate ng-hide=\"true\"><div class=\"input-group date datepicker\" id=dp_{{ctx.name}} ng-if=!ctx.useDateInput><input size=16 ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor\" ng-hide=ctx.fnDoValidations() ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) pattern={{ctx.pattern}} ng-keydown=ctx.fnDateKeyDown($event) uib-datepicker-popup={{ctx.format}} data-container=body datepicker-options111={{ctx.dateOptions}} placeholder={{ctx.format}} ng-pattern={{ctx.pattern}} is-open=\"ctx.dateOpened\"> <span class=input-group-addon ng-click=ctx.fnDateOpen($event) ng-style=\"{ 'cursor': ctx.disabled ? 'not-allowed' : 'pointer' }\"><a ng-if=!ctx.disabled><i class=\"fa fa-calendar\"></i></a> <i ng-if=ctx.disabled class=\"fa fa-calendar\"></i></span></div><div class=\"input-group date\" id=dp_{{ctx.name}} ng-if=\"ctx.useDateInput === true\"><input size=16 type=date ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor\" ng-hide=ctx.fnDoValidations(this) ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=\"ctx.fnBlur($event)\"></div></section>"
+    "<section><input id=dd_{{ctx.name}} ng-model=value ep-date-convert=toDate ng-hide=\"true\"><div class=\"input-group date datepicker\" id=dp_{{ctx.name}} ng-if=!ctx.useDateInput><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input size=16 ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor\" ng-hide=ctx.fnDoValidations() ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) pattern={{ctx.pattern}} ng-keydown=ctx.fnDateKeyDown($event) uib-datepicker-popup={{ctx.format}} data-container=body datepicker-options111={{ctx.dateOptions}} placeholder={{ctx.format}} ng-pattern={{ctx.pattern}} is-open=\"ctx.dateOpened\"> <span class=input-group-addon ng-click=ctx.fnDateOpen($event) ng-style=\"{ 'cursor': ctx.disabled ? 'not-allowed' : 'pointer' }\"><a ng-if=!ctx.disabled><i class=\"fa fa-calendar\"></i></a> <i ng-if=ctx.disabled class=\"fa fa-calendar\"></i></span> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div><div class=\"input-group date\" id=dp_{{ctx.name}} ng-if=\"ctx.useDateInput === true\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input size=16 type=date ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor\" ng-hide=ctx.fnDoValidations(this) ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=\"ctx.fnBlur($event)\"> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
   );
 
 
@@ -21018,21 +21028,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-multiline-editor.html',
-    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span><textarea id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=value ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-hide=ctx.fnDoValidations() maxlength={{ctx.maxlength}} ng-style=\"{'text-align': ctx.justification }\">\r" +
-    "\n" +
-    "\r" +
-    "\n" +
-    "        <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\">\r" +
-    "\n" +
-    "            <i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i>\r" +
-    "\n" +
-    "            <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a>\r" +
-    "\n" +
-    "        </span>\r" +
-    "\n" +
-    "    </div>\r" +
-    "\n" +
-    "</section>"
+    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span><textarea id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=value ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-hide=ctx.fnDoValidations() maxlength={{ctx.maxlength}} ng-style=\"{'text-align': ctx.justification }\"></textarea><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
   );
 
 
@@ -21042,7 +21038,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-select-editor.html',
-    "<section><select class=\"form-control editor\" id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) ng-hide=ctx.fnDoValidations() ng-model=value><option ng-repeat=\"opt in ctx.options\" label={{opt.label}} value={{opt.value}} ng-selected=opt.getIsSelected()>{{opt.label}}</option></select></section>"
+    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span><select class=\"form-control editor\" id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) ng-hide=ctx.fnDoValidations() ng-model=value><option ng-repeat=\"opt in ctx.options\" label={{opt.label}} value={{opt.value}} ng-selected=opt.getIsSelected()>{{opt.label}}</option></select><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
   );
 
 
