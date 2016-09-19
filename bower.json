@@ -2,7 +2,7 @@
   "name": "emf",
   "description": "Epicor Mobile Framework",
   "comment": "The Epicor Mobile Framework (EMF) provides components and tools for developing responsive web applications which can scale and adapt to devices from phones to desktops.",
-  "version": "1.0.8-dev.145",
+  "version": "1.0.8-dev.146",
   "main": [
     "emf.js",
     "emf.min.js"
@@ -36,10 +36,10 @@
     "metrojs": "~0.9.77",
     "moment": "~2.13.0",
     "numeral": "numeraljs#~1.5.3",
-    "underscore": "~1.8.3"
+    "underscore": "~1.8.3",
+    "angular-bootstrap-colorpicker": "^3.0.25"
   },
   "devDependencies": {
     "lesshat": "~3.0.2"
   }
 }
-	

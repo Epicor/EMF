@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.145 built: 16-09-2016
+ * version:1.0.8-dev.146 built: 19-09-2016
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -330,6 +330,13 @@
 .card-responsive {
   max-width: 100%;
   max-height: 100%;
+}
+
+.ep-color-selector-container .btn {
+  background-color: #F5F5F5;
+}
+.ep-color-selector-container .btn span {
+  display: inline-block;
 }
 
 .ep-color-tile {

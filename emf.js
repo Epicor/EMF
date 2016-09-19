@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.145 built: 16-09-2016
+ * version:1.0.8-dev.146 built: 19-09-2016
 */
 (function() {
     'use strict';
@@ -82,6 +82,21 @@ angular.module('ep.card', [
     'ep.templates',
     'ep.sysconfig'
 ]);
+
+/**
+ * @ngdoc overview
+ * @name ep.color.selector
+ * @description
+ * Provides the color selector
+ *
+ * Note: Include css/colorpicker.css and js/bootstrap-colorpicker-module.js in html file from lib/bower/angular-bootstrap-colorpicker.
+ * The JS file should be included before including emf.js
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.color.selector', ['colorpicker.module']);
+})();
 
 /**
  * @ngdoc overview
@@ -674,12 +689,20 @@ angular.module('ep.signature', [
                                     item.isExpanded = true;
                                     break;
                                 case 38: // arrow up
-                                    var target = $(e.target);
-                                    target.parents('div').prevAll('div').filter(':visible').first().find('div').first().focus();
+                                    if (target.parents().prevAll().first().parent().hasClass('ep-accordion-expanded')) {
+                                        console.log('true');
+                                        target.parents().prevAll().first().focus();
+                                    } else {
+                                        console.log('false');
+                                        target.parents().prevAll().first().find('.container-fluid').focus();
+                                    }
                                     break;
                                 case 40: // arrow down
-                                    var target = $(e.target);
-                                    target.parents('div').nextAll('div').filter(':visible').first().find('div').first().focus();
+                                    if (target.parent().hasClass('ep-accordion-expanded')) {
+                                        target.next().find('.container-fluid').first().focus();
+                                    } else {
+                                        target.parents().next().find('.container-fluid').first().focus();
+                                    }
                                     break;
                             }
                         };
@@ -1649,6 +1672,56 @@ app.directive('epCardTitle',
             templateUrl: 'src/components/ep.card/ep-card-title-template.html'
         };
 	});
+
+/**
+ * @ngdoc directive
+ * @name ep.color.selector:epColorSelector
+ * @restrict EA
+ *
+ * @description
+ * Represents color selector
+ *
+ * Note: Include css/colorpicker.css and js/bootstrap-colorpicker-module.js in index file from lib/bower/angular-bootstrap-colorpicker.
+ * The JS file should be included before including emf.js
+ *
+ * @property {object} ngModel:object
+ * This is the model object to store the selected color.
+ *
+ * @property {string} position:string
+ * This is the position of the color selector dropdown. Allowed values are top, right, bottom, left. Default is bottom.
+ *
+ * @property {string} size:string
+ * This is the size of color selector dropdown in pixels. Example values 200, 300 etc...Default is 100.
+ *
+ * @example
+ *  <pre>
+ *      <ep-color-selector ng-model="obj.color"></ep-color-selector>
+ *  </pre>
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.color.selector').directive('epColorSelector', epColorSelectorDirective);
+
+    function epColorSelectorDirective() {
+        return {
+            restrict: 'EA',
+            replace: true,
+            scope: {
+                ngModel: '=',
+                position: '@',
+                size: '@'
+            },
+            templateUrl: 'src/components/ep.color.selector/color_selector.html',
+            link: function(scope) {
+                scope.$on('colorpicker-selected', function (event, colorObject) {
+                    scope.selectedColor = colorObject.value;
+                });
+
+            }
+        };
+    }
+})();
 
 /**
 * @ngdoc directive
@@ -18089,7 +18162,6 @@ angular.module('ep.signature').directive('epSignature',
     function($scope) {
 
         $scope.isLoading = true;
-        $scope.isStriped = $scope.striped ? JSON.parse($scope.striped.toLowerCase()) : '';
         $scope.headers = $scope.columnHeaders ? $scope.columnHeaders.split(',')
             .map(function(c) { return c.trim(); }) : [];
         $scope.colCount = $scope.headers.length;
@@ -18103,7 +18175,7 @@ angular.module('ep.signature').directive('epSignature',
                 $scope.data.forEach(function(dr) { dr.$isSelected = false; });
                 row.$isSelected = true;
                 if ($scope.onSelectRow) {
-                    $scope.onSelectRow({ '$selectedRow': row, '$event': $event });
+                    $scope.onSelectRow({ 'row': row, '$event': $event });
                 }
             }
         };
@@ -18115,6 +18187,11 @@ angular.module('ep.signature').directive('epSignature',
                 $scope.selectRow($scope.data[0]);
             }
         });
+        $scope.onDblClick = function(row, $event) {
+            if ($scope.data && $scope.data.length && $scope.onDoubleClickRow) {
+                $scope.onDoubleClickRow({ 'row': row, '$event': $event });
+            }
+        }
     }
     ]);
 })();
@@ -18138,12 +18215,13 @@ angular.module('ep.signature').directive('epSignature',
             restrict: 'E',
             replace: true,
             scope: {
-                trackSelectedRow: '@',
                 data: '=',
                 columnHeaders: '@',
                 columnProperties: '@',
-                striped: '@',
-                onSelectRow: '&'
+                trackSelectedRow: '=',
+                striped: '=',
+                onSelectRow: '&',
+                onDoubleClickRow: '&',
             },
             controller: 'epTableCtrl',
             templateUrl: 'src/components/ep.table/table.html'
@@ -20883,7 +20961,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   'use strict';
 
   $templateCache.put('src/components/ep.accordion.menu/ep-accordion-menu-item_template.html',
-    "<div class=\"clearfix list-group-item\" ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\"><div class=\"clearfix container-fluid ep-accordion-menu-animate\" id=mnu_{{item.id}} ng-keydown=\"onKeydown(item, $event)\" role=group tabindex=0 ng-click=\"item.isExpanded = !item.isExpanded\"><div id=menuItem class=\"list-group-item row\" tabindex=1 ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\" ng-if=\"!(item.menuitems && item.menuitems.length)\" ng-click=\"navigate(item, false, $event)\"><!-- Menu item caption/text --><span class=\"clearfix ep-vertical-align-center\"><span class=\"pull-left col-xs-10 {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></span><!-- Favorite icon --> <i ng-if=\"(item.hideFavorite !== true)\" class=\"fa fa-lg col-xs-2 pull-left\" ng-click=\"toggleFavorite(item, $event)\" ng-class=\"{ 'fa-star-o': !item.favorite, 'fa-star text-warning': item.favorite }\"></i></span></div><div class=\"ep-submenu-header list-group-item row\" tabindex=1 ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\" ng-if=item.menuitems.length><!-- Menu item caption/text --><span class=\"clearfix ep-vertical-align-center\"><span class=\"pull-left col-xs-10 {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></span><!-- Expand icon --> <i class=\"fa fa-lg col-xs-2\" ng-class=\"{ 'fa-caret-right': !item.isExpanded, 'fa-caret-down': item.isExpanded }\"></i></span></div></div><div class=col-xs-12 ng-click=\"navigate(item, false, $event)\" ng-if=\"item.description && (!item.menuitems.length || !item.isExpanded) && !hideDescription\"><div class=ep-accordion-menu-desc><sup class=text-info ng-bind=item.description></sup></div></div><!-- Sub-menu --><div class=list-group-submenu ng-class=\"{'collapsed': !item.isExpanded }\" id=mnu_children ng-if=\"item.isExpanded && item.menuitems.length\"><ep-accordion-menu-item ng-repeat=\"child in item.menuitems | orderBy:orderByMenu\" item=child hide-description=hideDescription commit-menu-state=commitMenuState navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div>"
+    "<div class=\"clearfix list-group-item\" ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\"><div class=\"clearfix container-fluid ep-accordion-menu-animate\" id=mnu_{{item.id}} ng-keydown=\"onKeydown(item, $event)\" role=group tabindex=0 ng-click=\"item.isExpanded = !item.isExpanded\"><div id=menuItem class=\"list-group-item row\" ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\" ng-if=\"!(item.menuitems && item.menuitems.length)\" ng-click=\"navigate(item, false, $event)\"><!-- Menu item caption/text --><span class=\"clearfix ep-vertical-align-center\"><span class=\"pull-left col-xs-10 {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></span><!-- Favorite icon --> <i ng-if=\"(item.hideFavorite !== true)\" class=\"fa fa-lg col-xs-2 pull-left\" ng-click=\"toggleFavorite(item, $event)\" ng-class=\"{ 'fa-star-o': !item.favorite, 'fa-star text-warning': item.favorite }\"></i></span></div><div class=\"ep-submenu-header list-group-item row\" ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\" ng-if=item.menuitems.length><!-- Menu item caption/text --><span class=\"clearfix ep-vertical-align-center\"><span class=\"pull-left col-xs-10 {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></span><!-- Expand icon --> <i class=\"fa fa-lg col-xs-2\" ng-class=\"{ 'fa-caret-right': !item.isExpanded, 'fa-caret-down': item.isExpanded }\"></i></span></div></div><div class=col-xs-12 ng-click=\"navigate(item, false, $event)\" ng-if=\"item.description && (!item.menuitems.length || !item.isExpanded) && !hideDescription\"><div class=ep-accordion-menu-desc><sup class=text-info ng-bind=item.description></sup></div></div><!-- Sub-menu --><div class=list-group-submenu ng-class=\"{'collapsed': !item.isExpanded }\" id=mnu_children ng-if=\"item.isExpanded && item.menuitems.length\"><ep-accordion-menu-item ng-repeat=\"child in item.menuitems | orderBy:orderByMenu\" item=child hide-description=hideDescription commit-menu-state=commitMenuState navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div>"
   );
 
 
@@ -20914,6 +20992,11 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
   $templateCache.put('src/components/ep.card/ep-card.html',
     "<!--This is a partial for the ep-card directive --><div class=ep-card></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.color.selector/color_selector.html',
+    "<div class=\"ep-color-selector-container vertical-align\"><div class=input-group><input class=form-control value=\"{{selectedColor}}\"><div class=input-group-btn><button type=button class=\"btn btn-default dropdown-toggle\" colorpicker colorpicker-position=\"{{position ? position : 'bottom'}}\" colorpicker-size=\"{{size ? size : '100'}}\" ng-model=ngModel ng-style=\"{'background-color': selectedColor}\"><span></span></button></div></div></div>"
   );
 
 
@@ -21048,7 +21131,15 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/ep-record-editor.html',
-    "<div class=ep-record-editor><div ng-repeat=\"(key, ctrl) in state.controls | epOrderObjectBy:'seq'\" class=ep-record-editor-column><ep-editor-control column=ctrl.col value=state.activeRecord[ctrl.columnIndex] options=ctrl.options drag-enabled=state.dragEnabled></ep-editor-control></div></div>"
+    "<div class=\"row ep-record-editor ep-alex\"><ep-editor-control ng-repeat=\"(key, ctrl) in state.controls | epOrderObjectBy:'seq'\" class=ep-record-editor-column column=ctrl.col value=state.activeRecord[ctrl.columnIndex] options=ctrl.options drag-enabled=state.dragEnabled></ep-editor-control><!--<div ng-repeat=\"(key, ctrl) in state.controls | epOrderObjectBy:'seq'\" class=\"ep-record-editor-column\"  >\r" +
+    "\n" +
+    "\r" +
+    "\n" +
+    "        <ep-editor-control column=\"ctrl.col\" value=\"state.activeRecord[ctrl.columnIndex]\" options=\"ctrl.options\" drag-enabled=\"state.dragEnabled\"></ep-editor-control>\r" +
+    "\n" +
+    "\r" +
+    "\n" +
+    "    </div>--></div>"
   );
 
 
@@ -21106,7 +21197,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.table/table.html',
-    "<table class=table ng-class=\"{'table-striped' : isStriped}\"><tr><th ng-repeat=\"oneTh in headers track by $index\">{{oneTh}}</th></tr><tr ng-show=isLoading><td colspan={{colCount}}><div class=\"progress progress-striped active\"><div class=progress-bar role=progressbar aria-valuenow=1 aria-valuemin=0 aria-valuemax=1 style=\"width: 100%\"></div></div></td></tr><tr ng-show=loadError><td colspan={{colCount}}><p class=\"text-danger text-center\"><i class=\"fa fa-exclamation-triangle\"></i> {{loadError}}</p></td></tr><tr ng-repeat=\"row in data\" class=ep-table-row ng-class=\"{ 'info': row.$isSelected }\" ng-click=selectRow(row)><td ng-repeat=\"cell in props track by $index\" class=ep-table-cell>{{row[cell]}}</td></tr></table>"
+    "<table class=table ng-class=\"{'table-striped' : striped}\"><tr><th ng-repeat=\"oneTh in headers track by $index\">{{oneTh}}</th></tr><tr ng-show=isLoading><td colspan={{colCount}}><div class=\"progress progress-striped active\"><div class=progress-bar role=progressbar aria-valuenow=1 aria-valuemin=0 aria-valuemax=1 style=\"width: 100%\"></div></div></td></tr><tr ng-show=loadError><td colspan={{colCount}}><p class=\"text-danger text-center\"><i class=\"fa fa-exclamation-triangle\"></i> {{loadError}}</p></td></tr><tr ng-repeat=\"row in data\" class=ep-table-row ng-class=\"{ 'info': row.$isSelected }\" ng-click=selectRow(row,$event) ng-dblclick=onDblClick(row,$event)><td ng-repeat=\"cell in props track by $index\" class=ep-table-cell>{{row[cell]}}</td></tr></table>"
   );
 
 
