@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.149 built: 20-09-2016
+ * version:1.0.8-dev.150 built: 20-09-2016
 */
 (function() {
     'use strict';
@@ -15021,154 +15021,140 @@ angular.module('ep.record.editor').
 })();
 
 /**
- * @ngdoc controller
- * @name ep.shell.controller:epShellCtrl
- * @description
- * Represents the main shell controller.
- */
+* @ngdoc controller
+* @name ep.shell.controller:epShellCtrl
+* @description
+* Represents the main shell controller.
+*/
 (function() {
     'use strict';
-    angular.module('ep.shell').directive('touchHandler',
-        /* @ngInject */
-        function() {
-            return {
-                restrict: 'A',
-                link: function(scope, element, attrs) {
-                    scope.$watch('touchHandler', function(val){
-                        element.bind('touchstart', function(event) {
-                            scope[attrs.touchHandler] && scope[attrs.touchHandler](event);
-                        });
-                    })
+    angular.module('ep.shell').directive('myTouchstart', [function() {
+        return function(scope, element, attr) {
+            element.bind('touchstart', function(event) {
+                scope.$apply(attr['myTouchstart']);
+            });
+        };
+    }])
+    angular.module('ep.shell').controller('epShellCtrl', [
+        '$location',
+        '$rootScope',
+        '$route',
+        '$scope',
+        'epShellConfig',
+        'epShellService',
+        'epLocalStorageService',
+        'epShellFeedbackService',
+        'epShellConstants',
+        'epThemeConstants',
+        function($location, $rootScope, $route, $scope, epShellConfig, epShellService, epLocalStorageService,
+                  epShellFeedbackService, epShellConstants, epThemeConstants) {
 
-                }
-            }
-        })
-        .controller('epShellCtrl', [
-            '$location',
-            '$rootScope',
-            '$route',
-            '$scope',
-            'epShellConfig',
-            'epShellService',
-            'epLocalStorageService',
-            'epShellFeedbackService',
-            'epShellConstants',
-            'epThemeConstants',
-            function($location, $rootScope, $route, $scope, epShellConfig, epShellService, epLocalStorageService,
-                     epShellFeedbackService, epShellConstants, epThemeConstants) {
-
-                // Any logic that requires the immediate use of the emaService or the EmaRestService needs to be executed inside the "init" call in the controller.
-                // If the logic is already inside an event handler
-                function init() {
-                    // get the epShellService state so it can be used in the views
-                    $scope.state = epShellService.__state;
-                    $scope.options = epShellConfig.options;
-                    $scope.findXTouch = function(event) {
-                        epShellService.executeLeftSidebar(event)
-                    };
-                    //toggle sidebar event function
-                    $scope.toggleLeftSidebar = function() {
+            // Any logic that requires the immediate use of the emaService or the EmaRestService needs to be executed inside the "init" call in the controller.
+            // If the logic is already inside an event handler
+            function init() {
+                // get the epShellService state so it can be used in the views
+                $scope.state = epShellService.__state;
+                $scope.options = epShellConfig.options;
+                $scope.findXTouch;
+                //toggle sidebar event function
+                $scope.toggleLeftSidebar = function() {
+                    epShellService.toggleLeftSidebar();
+                };
+                //toggle sidebar event function
+                $scope.toggleRightSidebar = function() {
+                    epShellService.toggleRightSidebar();
+                };
+                //Swipe right 0-20% of the width of screen to pull left sidebar
+                $scope.showSwipeLeftSidebar = function() {
+                    var touchStart = $scope.findXTouch;
+                    var screenWidth = screen.width;
+                    var touchStartPercent = (touchStart / screenWidth) * 100;
+                    if (touchStartPercent <= 10 && $scope.state.enableLeftSidebar) {
                         epShellService.toggleLeftSidebar();
-                    };
-                    //toggle sidebar event function
-                    $scope.toggleRightSidebar = function() {
-                        epShellService.toggleRightSidebar();
-                    };
-                    //Swipe right 0-20% of the width of screen to pull left sidebar
-                    $scope.showSwipeLeftSidebar = function() {
-                        var touchStart = $scope.findXTouch;
-                        var screenWidth = screen.width;
-                        var touchStartPercent = (touchStart / screenWidth) * 100;
-                        if (touchStartPercent <= 10 && $scope.state.enableLeftSidebar) {
-                            epShellService.toggleLeftSidebar();
-                        }
-                    };
-                    //Swipe left 80-100% of the width of screen to pull right sidebar
-                    $scope.showSwipeRightSidebar = function() {
-                        var touchStart = $scope.findXTouch;
-                        var screenWidth = screen.width;
-                        var touchStartPercent = (touchStart / screenWidth) * 100;
-                        if (touchStartPercent >= 90 && $scope.state.enableRightSidebar) {
-                            epShellService.toggleRightSidebar();
-                        }
-                    };
-                    $scope.getTouchXPoint = function() {
-                        $scope.findXTouch = function(event) {
-                            epShellService.executeLeftSidebar(event)
-                        };
-                        return $scope.findXTouch;
-                    };
-
-                    //Close left sidebar on swipping right on left sidebar
-                    $scope.closeLeftSidebar = function() {
-                        epShellService.hideLeftSidebar();
-                    };
-                    //Close right sidebar on swipping left on right sidebar
-                    $scope.closeRightSidebar = function() {
-                        epShellService.hideRightSidebar();
-                    };
-
-                    if (epShellConfig.options.enableViewAnimations) {
-                        epShellService.initViewBackground();
                     }
+                };
+                //Swipe left 80-100% of the width of screen to pull right sidebar
+                $scope.showSwipeRightSidebar = function() {
+                    var touchStart = $scope.findXTouch;
+                    var screenWidth = screen.width;
+                    var touchStartPercent = (touchStart / screenWidth) * 100;
+                    if (touchStartPercent >= 90 && $scope.state.enableRightSidebar) {
+                        epShellService.toggleRightSidebar();
+                    }
+                };
+                $scope.getTouchXPoint = function() {
+                    $scope.findXTouch = epShellService.executeLeftSidebar(event);
+                    return $scope.findXTouch;
+                }
+                //Close left sidebar on swipping right on left sidebar
+                $scope.closeLeftSidebar = function() {
+                    epShellService.hideLeftSidebar();
+                };
+                //Close right sidebar on swipping left on right sidebar
+                $scope.closeRightSidebar = function() {
+                    epShellService.hideRightSidebar();
+                };
+
+                if (epShellConfig.options.enableViewAnimations) {
+                    epShellService.initViewBackground();
+                }
+                $scope.rightNavButtons = epShellService.getNavbarButtons().filter(function(b) {
+                    return !b.left;
+                });
+                $scope.leftNavButtons = epShellService.getNavbarButtons().filter(function(b) {
+                    return b.left;
+                });
+
+                $rootScope.$on(epShellConstants.SHELL_NAV_BUTTONS_CHANGED_EVENT, function() {
                     $scope.rightNavButtons = epShellService.getNavbarButtons().filter(function(b) {
                         return !b.left;
                     });
                     $scope.leftNavButtons = epShellService.getNavbarButtons().filter(function(b) {
                         return b.left;
                     });
-
-                    $rootScope.$on(epShellConstants.SHELL_NAV_BUTTONS_CHANGED_EVENT, function() {
-                        $scope.rightNavButtons = epShellService.getNavbarButtons().filter(function(b) {
-                            return !b.left;
-                        });
-                        $scope.leftNavButtons = epShellService.getNavbarButtons().filter(function(b) {
-                            return b.left;
-                        });
+                });
+                if (epShellConfig.options.enableViewAnimations) {
+                    $rootScope.$on(epThemeConstants.THEME_CHANGE_EVENT, function() {
+                        epShellService.initViewBackground();
                     });
-                    if (epShellConfig.options.enableViewAnimations) {
-                        $rootScope.$on(epThemeConstants.THEME_CHANGE_EVENT, function() {
-                            epShellService.initViewBackground();
-                        });
+                }
+                $rootScope.$on('$routeChangeStart', function(event, currRoute, prevRoute) {
+                    epShellService.clearInfo();
+                    epShellService.cleanupViewEvents();
+
+                    if (epShellConfig.options.enableViewAnimations && currRoute &&
+                        currRoute.$$route && prevRoute && prevRoute.$$route) {
+                        if (currRoute.$$route.index > prevRoute.$$route.index) {
+                            epShellService.viewAnimation('ep-slide-left');
+                        } else if (prevRoute.$$route.index > currRoute.$$route.index) {
+                            epShellService.viewAnimation('ep-slide-right');
+                        }
+
                     }
-                    $rootScope.$on('$routeChangeStart', function(event, currRoute, prevRoute) {
-                        epShellService.clearInfo();
-                        epShellService.cleanupViewEvents();
+                });
 
-                        if (epShellConfig.options.enableViewAnimations && currRoute &&
-                            currRoute.$$route && prevRoute && prevRoute.$$route) {
-                            if (currRoute.$$route.index > prevRoute.$$route.index) {
-                                epShellService.viewAnimation('ep-slide-left');
-                            } else if (prevRoute.$$route.index > currRoute.$$route.index) {
-                                epShellService.viewAnimation('ep-slide-right');
-                            }
+                //launch help event function
+                $scope.launchHelp = function() {
+                    $location.url('/help');
+                };
 
-                        }
-                    });
-
-                    //launch help event function
-                    $scope.launchHelp = function() {
-                        $location.url('/help');
-                    };
-
-                    $scope.sendFeedback = function() {
-                        epShellFeedbackService.showForm($scope.state.fnOnFeedback);
-                    };
-                }
-
-                try {
-                    $rootScope.$watch('initComplete', function(complete) {
-                        if (complete) {
-                            init();
-                        }
-                    });
-                } catch (ex) {
-                    console.log(ex);
-                }
+                $scope.sendFeedback = function() {
+                    epShellFeedbackService.showForm($scope.state.fnOnFeedback);
+                };
             }
-        ]);
-})();
 
+            try {
+                $rootScope.$watch('initComplete', function(complete) {
+                    if (complete) {
+                        init();
+                    }
+                });
+            } catch (ex) {
+                console.log(ex);
+            }
+        }
+    ]);
+})();
 /**
      * @ngdoc directive
      * @name ep.shell.directive:epshell
@@ -21167,7 +21153,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/view-container/view-container.html',
-    "<div id=viewContainer ng-controller=epShellCtrl touch-handler=getTouchXPoint ng-swipe-right=showSwipeLeftSidebar() ng-swipe-left=showSwipeRightSidebar() class=ep-view-container ng-class=\"{ 'ep-with-navbar': !!state.showNavbar,\r" +
+    "<div id=viewContainer ng-controller=epShellCtrl my-touchstart=getTouchXPoint() ng-swipe-right=showSwipeLeftSidebar() ng-swipe-left=showSwipeRightSidebar() class=ep-view-container ng-class=\"{ 'ep-with-navbar': !!state.showNavbar,\r" +
     "\n" +
     "                                    'ep-with-footer': !!state.showFooter,\r" +
     "\n" +
