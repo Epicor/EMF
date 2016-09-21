@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.152 built: 20-09-2016
+ * version:1.0.8-dev.153 built: 21-09-2016
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -9,7 +9,7 @@
 }
 .ep-accordion-menu .ep-menu-header {
   border-radius: 0 !important;
-  cursor: hand;
+  cursor: pointer;
   padding: 10px;
 }
 .ep-accordion-menu .list-group-item {
@@ -25,6 +25,32 @@
 .ep-accordion-menu .container-fluid {
   padding-left: 0;
 }
+.ep-accordion-menu .container-fluid:focus {
+  outline: none;
+  background-color: #0071b3;
+}
+.ep-accordion-menu .container-fluid:hover {
+  outline: none;
+  background-color: #0091e6;
+}
+.ep-accordion-menu .container-fluid:focus .ep-submenu-header {
+  outline: none;
+  background-color: transparent;
+  color: white;
+}
+.ep-accordion-menu .container-fluid:focus #menuItem {
+  outline: none;
+  background-color: transparent;
+  color: white;
+}
+.ep-accordion-menu .container-fluid:hover .ep-submenu-header {
+  background-color: transparent;
+  color: white;
+}
+.ep-accordion-menu .container-fluid:hover #menuItem {
+  background-color: transparent;
+  color: white;
+}
 .ep-accordion-menu .list-group-item:first-child {
   border-top: none;
 }
@@ -33,6 +59,9 @@
 }
 .ep-accordion-menu .list-group > .list-group-item {
   margin-left: 0px;
+}
+.ep-accordion-menu .list-group > .list-group-item:focus {
+  outline: none;
 }
 .ep-accordion-menu .panel {
   margin-bottom: 0;
@@ -57,21 +86,6 @@
 }
 .ep-accordion-menu .ep-accordion-expanded.ep-accordion-expanded-even {
   background-color: aliceblue;
-}
-.ep-accordion-menu .list-group-item #menuItem:hover {
-  background-color: #0083D0;
-  color: white;
-}
-.ep-accordion-menu .list-group-item div:focus {
-  outline: none;
-  border-left: #00B7B7 solid 10px;
-  border-right: none;
-  border-top: none;
-  border-bottom: none;
-}
-.ep-accordion-menu .list-group-item .ep-submenu-header:hover {
-  background-color: #0083D0;
-  color: white;
 }
 .ep-accordion-menu-animate {
   -webkit-transition: .5s linear all;
