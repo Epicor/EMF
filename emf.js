@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.150 built: 20-09-2016
+ * version:1.0.8-dev.151 built: 20-09-2016
 */
 (function() {
     'use strict';
@@ -5115,14 +5115,14 @@ angular.module('ep.datagrid').
 angular.module('ep.drag.drop').controller('epDropAreaCtrl', [
 '$scope',
 function($scope) {
-	var vm = this;
-	vm.onDragStart = onDragStart;
-	vm.onDrop = onDrop;
-	vm.onDragOver = onDragOver;
-	var getDragOperationFnc;
-	vm.onDragLeave = onDragLeave;
+    var vm = this;
+    vm.onDragStart = onDragStart;
+    vm.onDrop = onDrop;
+    vm.onDragOver = onDragOver;
+    var getDragOperationFnc;
+    vm.onDragLeave = onDragLeave;
 
-	/**
+    /**
 	 * @ngdoc method
 	 * @name onDragStart
 	 * @methodOf ep.drag.drop.controller:epDropAreaCtrl
@@ -5130,11 +5130,11 @@ function($scope) {
 	 * @description
 	 * handles the onDragStart event
 	 */
-	function onDragStart(scope, dragOperationGetter) {
-		getDragOperationFnc = dragOperationGetter;
-	}
+    function onDragStart(scope, dragOperationGetter) {
+        getDragOperationFnc = dragOperationGetter;
+    }
 
-	/**
+    /**
 	 * @ngdoc method
 	 * @name onDrop
 	 * @methodOf ep.drag.drop.controller:epDropAreaCtrl
@@ -5142,27 +5142,59 @@ function($scope) {
 	 * @description
 	 * handles the onDrop event
 	 */
-	function onDrop(evt) {
-		evt.stopPropagation();
-		evt.preventDefault();
-		var dragOperation = getDragOperationFnc();
-		var droppables = vm.dropItemTypes.split(',');
-		if (Array.isArray(droppables) && droppables.length > 1) {
-			if (droppables.indexOf(dragOperation.dragItemType) === -1) {
-				return;
-			}
-		} else {
-			if (vm.dropItemTypes !== dragOperation.dragItemType) {
-				return;
-			}
-		}
-		if ($scope[vm.dropHandler]) {
-			/*jshint validthis:true */
-			$scope[vm.dropHandler].call(dragOperation.dragItem || this, dragOperation);
-		}
-	}
+    function onDrop(evt) {
+        evt.stopPropagation();
+        evt.preventDefault();
+        var dragOperation = getDragOperationFnc();
+        var droppables = vm.dropItemTypes.split(',');
+        if (Array.isArray(droppables) && droppables.length > 1) {
+            if (droppables.indexOf(dragOperation.dragItemType) === -1) {
+                return;
+            }
+        } else {
+            if (vm.dropItemTypes !== dragOperation.dragItemType) {
+                return;
+            }
+        }
 
-	/**
+        callDropHandler(dragOperation.dragItem || this, dragOperation);
+    }
+
+    function callDropHandler(item, operation) {
+        if ($scope.onDrop) {
+            return $scope.onDrop({ item: item, operation: operation });
+        }
+        if ($scope.$parent && $scope.$parent[vm.dropHandler]) {
+            /*jshint validthis:true */
+            $scope.$parent[vm.dropHandler].call(item, operation);
+        }
+    }
+
+    function hasHandler(fnName, handlerName) {
+        if ($scope[fnName]) {
+            return true;
+        }
+        if ($scope.$parent && $scope.$parent[handlerName]) {
+            return true;
+        }
+        return false;
+    }
+
+    function getLeaveHandler() {
+        if ($scope.onLeave) {
+            return $scope.onLeave;
+        }
+        return $scope.$parent[vm.leaveHandler];
+    }
+
+    function getOverHandler() {
+        if ($scope.onOver) {
+            return $scope.onOver;
+        }
+        return $scope.$parent[vm.overHandler];
+    }
+
+    /**
 	 * @ngdoc method
 	 * @name onDragOver
 	 * @methodOf ep.drag.drop.controller:epDropAreaCtrl
@@ -5170,26 +5202,37 @@ function($scope) {
 	 * @description
 	 * handles the onDragOver event
 	 */
-	function onDragOver(evt) {
-		// TODO Add visual feedback on drag to show whether this area support this kind of drop
-		evt.stopPropagation();
-		evt.preventDefault();
-		if ($scope[vm.overHandler]) {
-			var dragOperation = getDragOperationFnc();
-			/*jshint validthis:true */
-			$scope[vm.overHandler].call(dragOperation.dragItem || this, dragOperation, evt);
-		}
-	}
+    function onDragOver(evt) {
+        // TODO Add visual feedback on drag to show whether this area support this kind of drop
+        evt.stopPropagation();
+        evt.preventDefault();
 
-	function onDragLeave(evt) {
-		evt.stopPropagation();
-		evt.preventDefault();
-		if ($scope[vm.leaveHandler]) {
-			var dragOperation = getDragOperationFnc();
-			/*jshint validthis:true */
-			$scope[vm.leaveHandler].call(dragOperation.dragItem || this, dragOperation, evt);
-		}
-	}
+        if (hasHandler('onOver', vm.overHandler)) {
+            var dragOperation = getDragOperationFnc();
+            var item = dragOperation.dragItem || this;
+            if ($scope.onOver) {
+                return $scope.onOver({ item: item, operation: dragOperation, evt: evt });
+            } else {
+                /*jshint validthis:true */
+                $scope[vm.overHandler].call(item, dragOperation, evt);
+            }
+        }
+    }
+
+    function onDragLeave(evt) {
+        evt.stopPropagation();
+        evt.preventDefault();
+        if (hasHandler('onLeave', vm.overHandler)) {
+            var dragOperation = getDragOperationFnc();
+            var item = dragOperation.dragItem || this;
+            if ($scope.onLeave) {
+                return $scope.onLeave({ item: item, operation: dragOperation, evt: evt });
+            } else {
+                /*jshint validthis:true */
+                $scope[vm.overHandler].call(item, dragOperation, evt);
+            }
+        }
+    }
 }]);
 
 'use strict';
@@ -5198,40 +5241,72 @@ function($scope) {
      * @name ep.drag.drop.directive:epDropArea
      * @restrict A
      *
+     * @param {bool} dropEnabled - is drop area enabled (by default enabled)
+     * @param {function} onDrop - handler to be called upon drop
+     * @param {function} onOver - handler to be called upon over
+     * @param {function} onLeave - handler to be called upon leave
+     *
      * @description
      * Represents the drop area directive
      *
      * >    dropItemTypes is a string attribute that can contain comma separated list of item types that can be
      * dropped to this area. This value will be used by ep-drop-area directive to check whether this drop is
      * supported by this area.
-     * >    dropCallback and dropCallbackParams attributes.  In some cases we already have some block of code
-     * that we can run when some event occurs. We can reuse existing code in drop handler by passing a callback
-     * function and parameters array in dropCallback and dropCallbackParams attributes.
+     * >     dropHandler,leaveHandler,overHandler attributes are supported for compatibilty with older code but
+     * scope function parameters onDrop, onOver and onLeave should now be used. For example, if onDrop is provided
+     * then dropHandler will be ignored.
      *
      * @example
      */
 
 angular.module('ep.drag.drop').directive('epDropArea', [
 function() {
-	return {
-		restrict: 'A',
-		controller: 'epDropAreaCtrl',
-		controllerAs: 'dropCtrl',
-		compile: function() {
-			return function(scope, ele, attrs) {
-				// set controller vm props
-				scope.dropCtrl.dropItemTypes = attrs.dropItemTypes;
-				scope.dropCtrl.dropHandler = attrs.dropHandler;
-				scope.dropCtrl.overHandler = attrs.overHandler;
-				scope.dropCtrl.leaveHandler = attrs.leaveHandler;
-				// register the event handlers
-				scope.$on('startDraging', scope.dropCtrl.onDragStart);
-				ele.on('drop', scope.dropCtrl.onDrop);
-				ele.on('dragover', scope.dropCtrl.onDragOver);
-				ele.on('dragleave', scope.dropCtrl.onDragLeave);
-			};
-		}
-	};
+    return {
+        restrict: 'A',
+        controller: 'epDropAreaCtrl',
+        controllerAs: 'dropCtrl',
+        //scope must be isolated in order to support multiple drop areas in one scope
+        scope: {
+            dropEnabled: '=',
+            onDrop: '&?',
+            onOver: '&?',
+            onLeave: '&?'
+        },
+        compile: function() {
+
+            function registerEvents(onOff, scope, ele) {
+                // register the event handlers
+                if (onOff) {
+                    scope.dropCtrl.evStartDragging = scope.$on('startDraging', scope.dropCtrl.onDragStart);
+                    ele.on('drop', scope.dropCtrl.onDrop);
+                    ele.on('dragover', scope.dropCtrl.onDragOver);
+                    ele.on('dragleave', scope.dropCtrl.onDragLeave);
+                } else {
+                    if (scope.dropCtrl.evStartDragging) {
+                        scope.dropCtrl.evStartDragging();
+                    }
+                    ele.off('drop', scope.dropCtrl.onDrop);
+                    ele.off('dragover', scope.dropCtrl.onDragOver);
+                    ele.off('dragleave', scope.dropCtrl.onDragLeave);
+                }
+            }
+
+            return function(scope, ele, attrs) {
+                // set controller vm props
+                scope.dropCtrl.dropItemTypes = attrs.dropItemTypes;
+                scope.dropCtrl.dropHandler = attrs.dropHandler;
+                scope.dropCtrl.overHandler = attrs.overHandler;
+                scope.dropCtrl.leaveHandler = attrs.leaveHandler;
+                registerEvents(true, scope, ele);
+
+                scope.$watch('dropEnabled', function(newValue, oldValue) {
+                    if (newValue !== oldValue) {
+                        registerEvents(newValue !== false, scope, ele);
+                    }
+                });
+            };
+        }
+    };
 }]);
 
 /**
@@ -9654,12 +9729,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
     *   <ep-include template="template" template-ctrl="templateCtrl" template-scope="templateScope"></ep-include>
     *
     */
-    epIncludeDirective.$inject = ['$compile'];
+    epIncludeDirective.$inject = ['$compile', '$log'];
     angular.module('ep.include').
         directive('epInclude', epIncludeDirective);
 
     /*@ngInject*/
-    function epIncludeDirective($compile) {
+    function epIncludeDirective($compile, $log) {
         return {
             restrict: 'E',
             replace: true,
@@ -9690,7 +9765,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     }
                     var html = sDiv;
                     if (options.templateStyle) {
-                        html += ' ng-style="' + options.templateStyle + '" ';
+                        try {
+                            eval('$scope.state.templateScope._templateStyle_ = ' + options.templateStyle);
+                        } catch (err) {
+                            $log.error('error evaluating style:' + err.message);
+                        }
+                        html += ' ng-style="_templateStyle_" ';
                     }
                     if (options.template) {
                         html += '>' + options.template + '</div>';
@@ -12982,6 +13062,9 @@ angular.module('ep.menu.builder').
         # nullable {bool}  - nullable
         # list {array}  - array of items for drop down (editor = 'select' ) [{ label, value }]
         # sizeClass {string} - editor size class (bootstrap column sizes like col-md-6, col-lg-8, etc)
+        # sizeClassTarget {object} - if string then acts like selector of closest ancestor and sets size 
+        #                   class to this element. if node is passed then sets size class on it.
+        #                   
         # checkBoxSize {string}  - applicable to checkbox only (for now). Can be '1x', '2x', '3x'
         # style {string} - sets inline styling. eg. '{ "color" : "red", "margin" : "0px" }
         # oFormat {object}
@@ -13073,6 +13156,15 @@ angular.module('ep.menu.builder').
             return 'text';
         }
 
+        function addSizeClass(el) {
+            if (el) {
+                $(el).removeClass(function(index, css) {
+                    return (css.match(/(^|\s)col-((lg)|(xs)|(sm)|(md))\S+/g) || []).join(' ');
+                });
+                el.addClass(sClass)
+            }
+        }
+
         function createContext(scope) {
             //creates editor context based on metadata
             var col = scope.column || {};
@@ -13137,7 +13229,22 @@ angular.module('ep.menu.builder').
             scope.editorDirective = '<' + directive + ' ctx=ctx value=value />';
 
             ctx.fnSetSizeClass = function(sizeClass) {
-                ctx.sizeClass = col.sizeClass || sizeClass || defaultSizeClass;
+                var isSet = true;
+                if (col.sizeClassTarget) {
+                    if (angular.isString(col.sizeClassTarget)) {
+                        $timeout(function() {
+                            var el = $(scope.state.iElement).closest(col.sizeClassTarget);
+                            addSizeClass(el);
+                        });
+                    } else if (col.sizeClassTarget instanceof HTMLElement) {
+                        addSizeClass($(col.sizeClassTarget));
+                    } else {
+                        isSet = false;
+                    }
+                } 
+                if (!col.sizeClassTarget || !isSet) {
+                    ctx.sizeClass = col.sizeClass || sizeClass || defaultSizeClass;
+                }
             };
             ctx.fnSetSizeClass();
 
