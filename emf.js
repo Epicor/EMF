@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.155 built: 21-09-2016
+ * version:1.0.8-dev.156 built: 22-09-2016
 */
 (function() {
     'use strict';
