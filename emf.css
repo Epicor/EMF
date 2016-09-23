@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.160 built: 23-09-2016
+ * version:1.0.8-dev.161 built: 23-09-2016
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -2498,4 +2498,42 @@ VIEW CONTAINER [ep-view-container]
   margin-right: 10px;
   margin-left: 10px;
   display: inline-block;
+}
+
+div.ep-viewmodal-show {
+  transform: translateY(0%);
+}
+div.ep-viewmodal-peek.ep-viewmodal {
+  background-color: rgba(64, 64, 64, 0.3);
+}
+.ep-viewmodal-header {
+  height: 40px;
+}
+.ep-viewmodal-header a:hover,
+a:focus {
+  text-decoration: none;
+}
+.modal-header.ep-viewmodal-header {
+  padding-left: 5px;
+  padding-right: 5px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.ep-viewmodal-icon {
+  color: white;
+  padding-right: 10px;
+  font-size: 24px;
+  margin-top: -3px;
+  cursor: pointer;
+}
+.ep-viewmodal {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: white;
+  z-index: 10000;
+  transition: all 250ms ease-in;
+  transform: translateY(-100%);
 }

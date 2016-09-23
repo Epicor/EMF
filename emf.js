@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.160 built: 23-09-2016
+ * version:1.0.8-dev.161 built: 23-09-2016
 */
 (function() {
     'use strict';
@@ -594,6 +594,18 @@ angular.module('ep.signature', [
     'ep.sysconfig'
     ]);
 })();
+
+'use strict';
+/**
+ * @ngdoc overview
+ * @name ep.viewmodal
+ * @description
+ * Provides a view modal dialog inside of a view that will not change the route.
+ */
+angular.module('ep.viewmodal', [
+    'ep.templates',
+    'ep.sysconfig'
+]);
 
 /**
  * @ngdoc directive
@@ -21272,6 +21284,78 @@ function epTilesMenuFavoritesDirective() {
         }]);
 })();
 
+(function() {
+'use strict';
+
+/**
+ * @ngdoc controller
+ * @name ep.viewmodal.controller:epViewmodalCtrl
+ * @description
+ * This this similar to the ep.modaldialog however it allows you to define a modal wrapper inside of your view that is
+ * overlays the view instead of popping up on top of it.  This gives you more flexibility for the content that is displayed
+ * and also has a nice animation effect from the top to the bottom.
+ *
+ * @example
+ *
+ */
+    epViewmodalCtrl.$inject = ['$scope'];
+    angular.module('ep.viewmodal')
+        .controller('epViewmodalCtrl', epViewmodalCtrl);
+
+    /*@ngInject*/
+    function epViewmodalCtrl($scope) {
+        $scope.peek = false;
+
+        //click event to close the viewmodal
+        $scope.closeClick = function(){
+            //reset peek mode
+            $scope.peek = false;
+
+            //close
+            $scope.options.showViewModal = false;
+        }
+
+        $scope.peekClick = function(){
+            $scope.peek = !$scope.peek;
+        }
+    }
+
+
+}());
+
+(function() {
+'use strict';
+/**
+* @ngdoc directive
+* @name ep.viewmodal.directive:epViewmodal
+* @restrict E
+*
+* @description
+* Represents the ep.viewmodal directive
+*
+* @example
+*/
+angular.module('ep.viewmodal').
+    directive('epViewmodal', epViewmodalDirective);
+
+    /*@ngInject*/
+    function epViewmodalDirective() {
+        return {
+            restrict: 'E',
+            replace: true,
+            transclude: true,
+            controller: 'epViewmodalCtrl',
+            templateUrl: 'src/components/ep.viewmodal/ep-viewmodal.html',
+            scope: {
+                'options': '=',
+                'title': '@',
+                'targetViewId': '@',
+                'lefticon': '@'
+            },
+        };
+    }
+}());
+
 //# sourceMappingURL=app.min.js.map
 angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   'use strict';
@@ -21541,6 +21625,11 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
   $templateCache.put('src/components/ep.ui.range.slider/ep-range-slider.html',
     "<div class=ep-range-slider-ctr><div ng-show=touch><div class=ep-range-slider-value-ctr ng-click=toggleRangeInputMode()>{{rangeMin}} - {{rangeMax}}</div><div class=ep-range-slider-value-axis><div class=ep-range-ctr><div class=ep-range></div></div><div class=\"ep-range-slide-handle ep-range-slide-handle-min js-handle-min\"></div><div class=\"ep-range-slide-handle ep-range-slide-handle-max js-handle-max\"></div></div><div class=ep-range-steps-ctr><span class=\"ep-range-step ep-range-step-{{::step}}\" ng-repeat=\"step in steps\"></span></div></div><div ng-show=!touch><input class=\"form-control ep-range-input-min\" name=tbMin ng-model=rangeMin ng-model-options=\"{ debounce: 500 }\"><label for=tbMax>and</label><input class=\"form-control ep-range-input-max\" name=tbMax ng-model=rangeMax ng-model-options=\"{ debounce: 500 }\"><div class=range-slider-mode-toggle-ctr><small class=ep-range-slider-toggle-mode ng-click=toggleRangeInputMode()>Switch to slider</small></div></div></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.viewmodal/ep-viewmodal.html',
+    "<!--This is a partial for the ep-viewmodal directive --><div class=ep-viewmodal ng-class=\"{'ep-viewmodal-show': options.showViewModal, 'ep-viewmodal-peek': peek}\"><div class=\"ep-viewmodal-header modal-header bg-primary modal-title\"><i class=\"pull-left ep-padding-top\" ng-class=\"'fa fa-lg ' + lefticon\" ng-if=lefticon></i><h5>{{title}} <span ng-if=peek class=text-warning><strong>(Peek Mode)</strong></span> <i class=pull-right><a class=\"fa fa-times fa-2x ep-viewmodal-icon\" ng-click=closeClick()></a></i> <i class=pull-right><a class=\"fa fa-eye fa-2x ep-viewmodal-icon\" ng-click=peekClick()></a></i></h5></div><div class=ep-viewmodal-body ng-hide=peek ng-transclude></div></div>"
   );
 
 }]);
