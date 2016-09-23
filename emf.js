@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.159 built: 22-09-2016
+ * version:1.0.8-dev.160 built: 23-09-2016
 */
 (function() {
     'use strict';
@@ -620,12 +620,12 @@ angular.module('ep.signature', [
  *
  * @example
  */
-(function () {
+(function() {
     'use strict';
 
     angular.module('ep.accordion.menu').directive('epAccordionMenu',
         /*@ngInclude*/
-        ['$timeout', function ($timeout) {
+        ['$timeout', function($timeout) {
             return {
                 restrict: 'E',
                 replace: true,
@@ -649,13 +649,13 @@ angular.module('ep.signature', [
                     commitMenuState: '='
                 },
                 link: {
-                    pre: function () {
+                    pre: function() {
                     },
-                    post: function ($scope) {
+                    post: function($scope) {
                         $scope.searchResultsHeader = $scope.searchResultsHeader || 'Search Results';
                         $scope.favoritesHeader = $scope.favoritesHeader || 'Favorites';
                         $scope.mainHeader = $scope.mainHeader || '';
-                        $timeout(function () {
+                        $timeout(function() {
                             $scope.initializeMenus('epAccordionMenu');
                         });
                     }
@@ -664,7 +664,7 @@ angular.module('ep.signature', [
         }])
         .directive('epAccordionMenuItem',
             /*@ngInclude*/
-            function () {
+            function() {
                 return {
                     restrict: 'E',
                     replace: true,
@@ -678,15 +678,15 @@ angular.module('ep.signature', [
                         commitMenuState: '='
                     },
                     /*ngInject*/
-                    controller: ['$rootScope', '$scope', function ($rootScope, $scope) {
-                        $scope.$watch('item.isExpanded', function (val) {
+                    controller: ['$rootScope', '$scope', function($rootScope, $scope) {
+                        $scope.$watch('item.isExpanded', function(val) {
                             if (val !== undefined) {
                                 $scope.onExpand && $scope.onExpand($scope.item);
                                 $scope.commitMenuState && $scope.commitMenuState();
                             }
                         });
 
-                        $scope.onKeydown = function (item, e) {
+                        $scope.onKeydown = function(item, e) {
                             var key = e.keyCode;
                             var target = $(e.target);
 
@@ -9697,6 +9697,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         /**
          * @ngdoc method
          * @name getIconList
+         * @methodOf ep.icon.selector:epIconSelectorService
+         * @public
          * @description
          * To read the icon classes from icon css file.
          */
