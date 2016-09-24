@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.161 built: 23-09-2016
+ * version:1.0.8-dev.162 built: 23-09-2016
 */
 (function() {
     'use strict';
@@ -5286,26 +5286,28 @@ angular.module('ep.datagrid').
                 }
             }
 
-            //watch the dropEnabled attribute to turn off/on events
-            $scope.$watch(attrs.dropEnabled, function(value) {
-                if ((value === true || value === false) && (value !== dropEnabled)) {
-                    setupEvents(value);
-                }
-            });
-
             $scope.$watch(attrs.dropHighlight, function(value) {
                 if (value === true || value === false) {
                     dropHighlight = value;
                 }
             });
 
-            var isEnabled = true;
-            if (attrs.dropEnabled) {
-                isEnabled = !attrs.dropEnabled || $parse(attrs.dropEnabled)($scope);
+            if (attrs.dropEnabled === undefined) {
+                //if we dont have an attribute (compatibility)
+                setupEvents(true);
+            } else {
+                //watch the dropEnabled attribute to turn off/on events
+                $scope.$watch(attrs.dropEnabled, function(value) {
+                    if (value === undefined && dropEnabled === undefined) {
+                        //Very first time if attribute value is undefined default to true
+                        setupEvents(true);
+                    }
+                    if ((value === true || value === false) && (value !== dropEnabled)) {
+                        setupEvents(value);
+                    }
+                });
             }
-            setupEvents(isEnabled);
         }
-
     }
 })();
 
@@ -13317,6 +13319,10 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', [
         # fnOnChange(ctx, event) - callback function on change
         # fnOnBlur(ctx, event) - callback function on change    
     *
+    * @param {object} value - the value binding for the editor
+    * @param {bool} isDropEnabled - is drop enabled for the editor
+    * @param {bool} isDragEnabled - is drag enabled for the editor
+    *
     * @example
     *   HTML:
     *   <div class="row">
@@ -13743,8 +13749,8 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', [
                 column: '=',
                 value: '=',
                 options: '=',
-                dragEnabled: '=',
-                dropEnabled: '='
+                isDragEnabled: '=',
+                isDropEnabled: '='
             }
         };
     }
@@ -14055,7 +14061,10 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', [
     *        columns: columns,       //metadata for columns - array of columns
     *        columnTemplate: {}      //properties to be applied on all columns
     *        factory: null,          //after directive initialization will expose factory to this control
-    *        flagInvalid: false      //flag controls when invalid (changes border color)
+    *        flagInvalid: false,     //flag controls when invalid (changes border color)
+    *        dragAndDrop: false,     //drag and drop allowed
+    *        dragEnabled: false,     //drag allowed
+    *        dropEnabled: false,     //drop allowed
     *    };
     */
     epRecordEditorDirective.$inject = ['$timeout', '$q', 'epRecordEditorFactory', 'epUtilsService'];
@@ -14076,7 +14085,9 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', [
                 rowData: {},
                 isReadOnly: false,
                 lastInputs: {},
-                isDataArray: false
+                isDataArray: false,
+                dragEnabled: false,
+                dropEnabled: false
             };
             return state;
         }
@@ -14341,6 +14352,16 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', [
                         //Expose this directive's scope to outside caller
                         newValue.factory = scope.state.factory;
                         if (angular.equals(newValue, oldValue)) {
+                            if (scope.options) {
+                                if (scope.options.dragAndDrop !== undefined) {
+                                    scope.state.dragEnabled = scope.options.dragAndDrop === true;
+                                    scope.state.dropEnabled = scope.state.dragEnabled;
+                                } else if (scope.options.dragEnabled !== undefined) {
+                                    scope.state.dragEnabled = scope.options.dragEnabled === true;
+                                } else if (scope.options.dropEnabled !== undefined) {
+                                    scope.state.dropEnabled = scope.options.dropEnabled === true;
+                                }
+                            }
                             if (!scope.state.columns || !scope.state.columns.length) {
                                 checkRecordType(scope);
                                 doDraw(scope, false);
@@ -21506,7 +21527,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-editor-control.html',
-    "<div class=\"ep-editor-control {{ctx.sizeClass}}\" ng-hide=ctx.hidden ep-drop-area drop-enabled=\"dropEnabled === true\" drop-handler=handleDrop drop-item-types=typeEditorCtrl ng-style=ctx.style><fieldset class=\"form-group ep-record-editor-container\" ng-class=\"{'has-error': ctx.invalidFlag}\" ep-draggable drag-enabled=\"dragEnabled === true\" drag-item=ctx drag-item-type=\"'typeEditorCtrl'\"><label class=ep-editor-label for={{ctx.name}}>{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label><section id=xtemplate></section></fieldset></div>"
+    "<div class=\"ep-editor-control {{ctx.sizeClass}}\" ng-hide=ctx.hidden ep-drop-area drop-enabled=\"isDropEnabled === true\" drop-handler=handleDrop drop-item-types=typeEditorCtrl ng-style=ctx.style><fieldset class=\"form-group ep-record-editor-container\" ng-class=\"{'has-error': ctx.invalidFlag}\" ep-draggable drag-enabled=\"isDragEnabled === true\" drag-item=ctx drag-item-type=\"'typeEditorCtrl'\"><label class=ep-editor-label for={{ctx.name}}>{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label><section id=xtemplate></section></fieldset></div>"
   );
 
 
@@ -21536,7 +21557,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/ep-record-editor.html',
-    "<div class=\"row ep-record-editor\"><ep-editor-control ng-repeat=\"(key, ctrl) in state.controls | epOrderObjectBy:'seq'\" class=ep-record-editor-column column=ctrl.col value=state.activeRecord[ctrl.columnIndex] options=ctrl.options drag-enabled=state.dragEnabled drop-enabled=state.dropEnabled></ep-editor-control></div>"
+    "<div class=\"row ep-record-editor\"><ep-editor-control ng-repeat=\"(key, ctrl) in state.controls | epOrderObjectBy:'seq'\" class=ep-record-editor-column column=ctrl.col value=state.activeRecord[ctrl.columnIndex] options=ctrl.options is-drag-enabled=state.dragEnabled is-drop-enabled=state.dropEnabled></ep-editor-control></div>"
   );
 
 
