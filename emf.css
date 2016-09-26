@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.171 built: 25-09-2016
+ * version:1.0.8-dev.172 built: 26-09-2016
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -31,7 +31,7 @@
 }
 .ep-accordion-menu .container-fluid:hover {
   outline: none;
-  background-color: #0091e6;
+  background-color: #0083D0;
 }
 .ep-accordion-menu .container-fluid:focus .ep-submenu-header {
   outline: none;
