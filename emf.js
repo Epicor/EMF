@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.172 built: 26-09-2016
+ * version:1.0.8-dev.173 built: 26-09-2016
 */
 (function() {
     'use strict';
@@ -684,6 +684,7 @@ angular.module('ep.viewmodal', [
                     scope: {
                         item: '=',
                         navigate: '=',
+                        navigateExternal: '=',
                         toggleFavorite: '=',
                         hideDescription: '=',
                         onExpand: '=',
@@ -11617,7 +11618,28 @@ angular.module('ep.menu.builder').
                     }
                 });
             }
-
+            /**
+             * @ngdoc method
+             * @name navigate
+             * @methodOf ep.multilevel.menu.controller:epMultiLevelMenuCtrl
+             * @public
+             * @description
+             * Handles the navigate request.
+             *
+             * @param {object} mi the menu item
+             * @param {bool} isHeader - is header clicked (backwards or top menu, otherwise triggered from item)
+             * @param {object} ev - event object from UI
+             */
+            function navigateExternal(mi) {
+                if (!mi) {
+                    return;
+                }
+                if (mi._type === 'item' && mi.action && typeof mi.action === 'function') {
+                    $scope.multiLevelMenuHelper.stampLastAccess(mi);
+                    emitMenuEvent(epMultiLevelMenuConstants.MLM_ITEM_CLICKED, mi);
+                    mi.actionExternal(mi);
+                }
+            }
             /**
              * @ngdoc method
              * @name navigate
@@ -11737,6 +11759,7 @@ angular.module('ep.menu.builder').
             $scope.clear = clear;
             $scope.setCurrentItems = setCurrentItems;
             $scope.navigate = navigate;
+            $scope.navigateExternal = navigateExternal;
             $scope.toggleFavorite = toggleFavorite;
             $scope.search = search;
             $scope.initializeMenus = initializeMenus;
@@ -17722,8 +17745,8 @@ angular.module('ep.shell').service('epSidebarService', [
 
     angular.module('ep.shell').directive('epShellViewContainer',
         /*ngInject*/
-        ['$log', '$parse', '$rootScope', '$timeout', 'epShellService', 'epSidebarService', 'epViewContainerService', 'epShellConstants', function($log, $parse, $rootScope, $timeout, epShellService, epSidebarService,
-            epViewContainerService, epShellConstants) {
+        ['$location', '$log', '$parse', '$rootScope', '$timeout', 'epShellService', 'epSidebarService', 'epViewContainerService', 'epShellConstants', 'epViewCacheService', function($location, $log, $parse, $rootScope, $timeout, epShellService, epSidebarService,
+            epViewContainerService, epShellConstants, epViewCacheService) {
 
             function setSidebarSettings(sidebar, updateIfChanged) {
                 if (sidebar.left) {
@@ -17785,8 +17808,14 @@ angular.module('ep.shell').service('epSidebarService', [
                         pre: function($scope, $elem, $attrs) {
                             $scope.state = epShellService.__state;
                             epShellService.clearInfo();
+                            // media mode is either "large" or "small" depending on the horizontal resolution
+                            // by default the breakpoint is @ 800px
                             currentMode = epShellService.getMediaMode();
+
+                            // Share scope with the current sidebar
                             epSidebarService.setScope($scope);
+
+                            // parse the setting that control the view and sidebar
                             var viewSettings = {
                                 sidebar: $scope.sidebarsettings ? JSON.parse($scope.sidebarsettings) : {},
                                 small: $scope.smallmodesettings ? JSON.parse($scope.smallmodesettings) : {},
@@ -17802,16 +17831,15 @@ angular.module('ep.shell').service('epSidebarService', [
                                 setSidebarSettings(viewSettings.sidebar, false);
                             }
 
-                            if (epViewContainerService.state.cleanup) {
-                                epViewContainerService.state.cleanup();
-                            }
-
                             //setting classes for animation in and out
                             $scope.state.animationIn = 'ep-' + $scope.state.animationIn + '-in';
                             $scope.state.animationOut = 'ep-' + $scope.state.animationOut + '-out';
-                            //setting animation speed to ng-view dynamically 
+                            //setting animation speed to ng-view dynamically
                             $scope.state.animationSpeed = $scope.state.animationSpeed || '500';
 
+                            if (epViewContainerService.state.cleanup) {
+                                epViewContainerService.state.cleanup();
+                            }
 
                             epViewContainerService.state.cleanup =
                                 $rootScope.$on(epShellConstants.SHELL_STATE_CHANGE_EVENT, function() {
@@ -17863,11 +17891,10 @@ angular.module('ep.shell').service('epSidebarService', [
                                 if (!def.id) {
                                     def.id = key;
                                 }
-
                                 configureButton($scope.$parent, def);
-
                                 return def;
                             });
+
                             if (buttonDefs.length) {
                                 epShellService.updateNavbarButtons(buttonDefs);
                             }
@@ -17876,12 +17903,78 @@ angular.module('ep.shell').service('epSidebarService', [
                                 $rootScope.$emit(epShellConstants.SHELL_VIEW_CHANGE_EVENT, viewSettings);
                             });
                         },
-                        post: function() {
+                        post: function($scope) {
+                            $scope.showFromCache = true;
+                            $scope.cacheKey = $location.url().replace('/', '-');
+                            $scope.hasCacheKey = epViewCacheService.hasCachedView($scope.cacheKey);
+                            if($scope.showFromCache) {
+                                var unBind = $rootScope.$on('$routeChangeStart', function(event, newRoute, oldRoute){
+                                    if($scope.showFromCache && oldRoute){
+                                        $scope.cacheKey = oldRoute.$$route.originalPath.replace('/', '-');
+                                        epViewCacheService.addViewToCache($scope.cacheKey, "#viewTemplate", oldRoute.scope);
+                                    }
+                                    unBind();
+                                });
+                            }
                         }
                     };
                 }
             };
-        }]);
+        }]).factory('epViewCacheService',
+        /*ngInject*/
+        function epViewCacheService() {
+            var viewCache = {};
+
+            function addViewToCache(key, selector, scope) {
+                var nodeSource = $(selector);
+                if(nodeSource.length) {
+                    viewCache[key] = {node: nodeSource, scope: scope};
+                }
+            }
+
+            function removeViewFromCache(key) {
+                delete viewCache[key];
+            }
+
+            function getViewFromCache(key) {
+                return viewCache[key];
+            }
+
+            function hasCachedView(key) {
+                return !!viewCache[key];
+            }
+
+            return {
+                addViewToCache: addViewToCache,
+                removeViewFromCache: removeViewFromCache,
+                getViewFromCache: getViewFromCache,
+                hasCachedView: hasCachedView
+            }
+        })
+        .directive('epCachedView',
+            /*ngInject*/
+            ['$rootScope', '$timeout', '$compile', 'epViewCacheService', function epCachedView($rootScope, $timeout, $compile, epViewCacheService) {
+                /*@ngInject*/
+                epCachedViewController.$inject = ['$scope'];
+                function epCachedViewController($scope) {
+                    var cache = epViewCacheService.getViewFromCache($scope.key);
+                    $timeout(function() {
+                        var targetNode = $("#epCacheTarget-" + $scope.key);
+                        cache.scope.hasCacheKey = false;
+                        var content = $compile(cache.node)(cache.scope);
+                       targetNode.replaceWith(content);
+                    });
+                }
+                return {
+                    restrict: 'E',
+                    replace: true,
+                    controller: epCachedViewController,
+                    template: '<div class="ep-fullscreen" id="epCacheTarget-{{key}}"></div>',
+                    scope: {
+                        key: '='
+                    }
+                }
+            }]);
 })();
 
 /**
@@ -21382,7 +21475,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   'use strict';
 
   $templateCache.put('src/components/ep.accordion.menu/ep-accordion-menu-item_template.html',
-    "<div class=\"clearfix list-group-item\" ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\"><div class=\"clearfix container-fluid\" id=mnu_{{item.id}} ng-keydown=\"($event.which === 13 && item.menuitems.length === 0)? navigate(item, false, $event) : onKeydown(item, $event)\" role=group tabindex=0 ng-click=\"item.isExpanded = !item.isExpanded\"><div id=menuItem class=\"list-group-item row\" ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\" ng-if=\"!(item.menuitems && item.menuitems.length)\" ng-click=\"navigate(item, false, $event)\"><!-- Menu item caption/text --><span class=\"clearfix ep-vertical-align-center\"><span class=\"pull-left col-xs-10 {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></span><!-- Favorite icon --> <i ng-if=\"(item.hideFavorite !== true)\" class=\"fa fa-lg col-xs-2 pull-left\" ng-click=\"toggleFavorite(item, $event)\" ng-class=\"{ 'fa-star-o': !item.favorite, 'fa-star text-warning': item.favorite }\"></i></span></div><div class=\"ep-submenu-header list-group-item row\" ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\" ng-if=item.menuitems.length><!-- Menu item caption/text --><span class=\"clearfix ep-vertical-align-center\"><span class=\"pull-left col-xs-10 {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></span><!-- Expand icon --> <i class=\"fa fa-lg col-xs-2\" ng-class=\"{ 'fa-caret-right': !item.isExpanded, 'fa-caret-down': item.isExpanded }\"></i></span></div></div><div class=col-xs-12 ng-click=\"navigate(item, false, $event)\" ng-if=\"item.description && (!item.menuitems.length || !item.isExpanded) && !hideDescription\"><div class=ep-accordion-menu-desc><sup class=text-info ng-bind=item.description></sup></div></div><!-- Sub-menu --><div class=list-group-submenu ng-class=\"{'collapsed': !item.isExpanded }\" id=mnu_children ng-if=\"item.isExpanded && item.menuitems.length\"><ep-accordion-menu-item ng-repeat=\"child in item.menuitems | orderBy:orderByMenu\" item=child hide-description=hideDescription commit-menu-state=commitMenuState navigate=navigate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div>"
+    "<div class=\"clearfix list-group-item\" ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\"><div class=\"clearfix container-fluid\" id=mnu_{{item.id}} ng-keydown=\"($event.which === 13 && item.menuitems.length === 0)? navigate(item, false, $event) : onKeydown(item, $event)\" role=group tabindex=0 ng-click=\"item.isExpanded = !item.isExpanded\"><div id=menuItem class=\"list-group-item row\" ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\" ng-if=\"!(item.menuitems && item.menuitems.length)\" ng-click=\"navigate(item, false, $event)\"><!-- Menu item caption/text --><span class=\"clearfix ep-vertical-align-center\"><span class=\"pull-left col-xs-10 {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></span><!-- Favorite icon --> <i ng-if=\"(item.hideFavorite !== true)\" class=\"fa fa-lg col-xs-2 pull-left\" ng-click=\"toggleFavorite(item, $event)\" ng-class=\"{ 'fa-star-o': !item.favorite, 'fa-star text-warning': item.favorite }\"></i></span></div><div class=\"ep-submenu-header list-group-item row\" ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\" ng-if=item.menuitems.length><!-- Menu item caption/text --><span class=\"clearfix ep-vertical-align-center\"><span class=\"pull-left col-xs-10 {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></span><!-- Expand icon --> <i class=\"fa fa-lg col-xs-2\" ng-class=\"{ 'fa-caret-right': !item.isExpanded, 'fa-caret-down': item.isExpanded }\"></i></span></div></div><div class=col-xs-12 ng-click=\"navigate(item, false, $event)\" ng-if=\"item.description && (!item.menuitems.length || !item.isExpanded) && !hideDescription\"><div class=ep-accordion-menu-desc><sup class=text-info ng-bind=item.description></sup></div></div><!-- Sub-menu --><div class=list-group-submenu ng-class=\"{'collapsed': !item.isExpanded }\" id=mnu_children ng-if=\"item.isExpanded && item.menuitems.length\"><ep-accordion-menu-item ng-repeat=\"child in item.menuitems | orderBy:orderByMenu\" item=child hide-description=hideDescription commit-menu-state=commitMenuState navigate=navigate navigate-external=navigateExternal toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div>"
   );
 
 
@@ -21595,7 +21688,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
     "\n" +
     "                                    'ep-scroll-y': !!state.allowVerticalScroll,\r" +
     "\n" +
-    "                                    'ep-momentum-scrolling-enabled': !!state.momentumScrollingEnabled }\"><div id=viewMessage class=ep-container-message ng-if=state.infoMessage ng-style=\"{'width': state.viewDimensions.size.width + 'px', 'height': state.viewDimensions.size.height + 'px'}\"><p class=\"ep-container-message-text ep-center-item\"><i class={{state.infoIcon}}></i><br>{{state.infoMessage}}</p></div><div class=ep-fullscreen ng-transclude></div></div>"
+    "                                    'ep-momentum-scrolling-enabled': !!state.momentumScrollingEnabled }\"><div id=viewMessage class=ep-container-message ng-if=state.infoMessage ng-style=\"{'width': state.viewDimensions.size.width + 'px', 'height': state.viewDimensions.size.height + 'px'}\"><p class=\"ep-container-message-text ep-center-item\"><i class={{state.infoIcon}}></i><br>{{state.infoMessage}}</p></div><!--<ep-cached-view ng-if=\"showFromCache && hasCacheKey\" key=\"cacheKey\"></ep-cached-view>--><div class=ep-fullscreen ng-if=\"!showFromCache || !hasCacheKey\" id=viewTemplate ng-transclude></div></div>"
   );
 
 
