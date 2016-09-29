@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.175 built: 27-09-2016
+ * version:1.0.8-dev.175 built: 29-09-2016
 */
 (function() {
     'use strict';
@@ -13717,29 +13717,42 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                 scope.handleDrop = function(drop) {
                     var state = scope.ctx.recordEditorState;
                     if (state) {
-                        var ctrlThis = state.controls[scope.ctx.columnIndex];
-                        var ctrlDropped = state.controls[drop.dragItem.columnIndex];
-                        if (ctrlThis !== ctrlDropped) {
+                        var ctrlDrop = state.controls[scope.ctx.columnIndex];
+                        var ctrlDragged = state.controls[drop.dragItem.columnIndex];
+                        if (ctrlDrop !== ctrlDragged) {
 
-                            var indexThis = ctrlThis.seq;
-                            var indexDropped = ctrlDropped.seq;
+                            var indexThis = ctrlDrop.seq;
+                            var indexDropped = ctrlDragged.seq;
                             //save
-                            if (ctrlThis.origSeq === undefined) {
-                                ctrlThis.origSeq = indexThis;
+                            if (ctrlDrop.origSeq === undefined) {
+                                ctrlDrop.origSeq = indexThis;
                             }
-                            if (ctrlDropped.origSeq === undefined) {
-                                ctrlDropped.origSeq = indexDropped;
+                            if (ctrlDragged.origSeq === undefined) {
+                                ctrlDragged.origSeq = indexDropped;
                             }
-                            if (ctrlThis.origSeq !== ctrlThis.seq) {
-                                delete ctrlThis.origSeq;
+                            if (ctrlDrop.origSeq !== ctrlDrop.seq) {
+                                delete ctrlDrop.origSeq;
                             }
-                            if (ctrlDropped.origSeq !== ctrlDropped.seq) {
-                                delete ctrlDropped.origSeq;
+                            if (ctrlDragged.origSeq !== ctrlDragged.seq) {
+                                delete ctrlDragged.origSeq;
                             }
 
-                            //swap
-                            ctrlThis.seq = indexDropped;
-                            ctrlDropped.seq = indexThis;
+                            if (ctrlDragged.seq >= ctrlDrop.seq) {
+                                ctrlDragged.seq = ctrlDrop.seq;
+                                angular.forEach(state.controls, function(c) {
+                                    if (c.seq > ctrlDrop.seq) {
+                                        c.seq++;
+                                    }
+                                });
+                                ctrlDrop.seq++;
+                            } else {
+                                angular.forEach(state.controls, function(c) {
+                                    if (c.seq < ctrlDrop.seq) {
+                                        c.seq--;
+                                    }
+                                });
+                                ctrlDragged.seq = ctrlDrop.seq - 1;
+                            }
 
                             if (state.fnOnDragDrop) {
                                 state.fnOnDragDrop(scope.ctx, drop.dragItem);
