@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.175 built: 29-09-2016
+ * version:1.0.8-dev.176 built: 29-09-2016
 */
 (function() {
     'use strict';
@@ -21687,7 +21687,11 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
     "\n" +
     "                                    'ep-scroll-y': !!state.allowVerticalScroll,\r" +
     "\n" +
-    "                                    'ep-momentum-scrolling-enabled': !!state.momentumScrollingEnabled }\"><div id=viewMessage class=ep-container-message ng-if=state.infoMessage ng-style=\"{'width': state.viewDimensions.size.width + 'px', 'height': state.viewDimensions.size.height + 'px'}\"><p class=\"ep-container-message-text ep-center-item\"><i class={{state.infoIcon}}></i><br>{{state.infoMessage}}</p></div><!--<ep-cached-view ng-if=\"showFromCache && hasCacheKey\" key=\"cacheKey\"></ep-cached-view>--><div class=ep-fullscreen ng-if=\"!showFromCache || !hasCacheKey\" id=viewTemplate ng-transclude></div></div>"
+    "                                    'ep-momentum-scrolling-enabled': !!state.momentumScrollingEnabled }\"><div id=viewMessage class=ep-container-message ng-if=state.infoMessage ng-style=\"{'width': state.viewDimensions.size.width + 'px', 'height': state.viewDimensions.size.height + 'px'}\"><p class=\"ep-container-message-text ep-center-item\"><i class={{state.infoIcon}}></i><br>{{state.infoMessage}}</p></div><!--<ep-cached-view ng-if=\"showFromCache && hasCacheKey\" key=\"cacheKey\"></ep-cached-view>--><!--\r" +
+    "\n" +
+    "    <div class=\"ep-fullscreen\" ng-if=\"!showFromCache || !hasCacheKey\" id=\"viewTemplate\" ng-transclude></div>\r" +
+    "\n" +
+    "--><div class=ep-fullscreen id=viewTemplate ng-transclude></div></div>"
   );
 
 
