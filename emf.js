@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.176 built: 29-09-2016
+ * version:1.0.8-dev.177 built: 29-09-2016
 */
 (function() {
     'use strict';
@@ -21424,8 +21424,14 @@ function epTilesMenuFavoritesDirective() {
             //reset peek mode
             $scope.peek = false;
 
+            var closeModal = true;
+
+            if ($scope.options.onClose) {
+                closeModal = $scope.options.onClose($scope.options);
+            }
+
             //close
-            $scope.options.showViewModal = false;
+            $scope.options.showViewModal = !closeModal;
         }
 
         $scope.peekClick = function(){
@@ -21461,9 +21467,7 @@ angular.module('ep.viewmodal').
             templateUrl: 'src/components/ep.viewmodal/ep-viewmodal.html',
             scope: {
                 'options': '=',
-                'title': '@',
-                'targetViewId': '@',
-                'lefticon': '@'
+                'targetViewId': '@'
             },
         };
     }
@@ -21746,7 +21750,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.viewmodal/ep-viewmodal.html',
-    "<!--This is a partial for the ep-viewmodal directive --><div class=ep-viewmodal ng-class=\"{'ep-viewmodal-show': options.showViewModal, 'ep-viewmodal-peek': peek}\"><div class=\"ep-viewmodal-header modal-header bg-primary modal-title\"><i class=\"pull-left ep-padding-top\" ng-class=\"'fa fa-lg ' + lefticon\" ng-if=lefticon></i><h5>{{title}} <span ng-if=peek class=text-warning><strong>(Peek Mode)</strong></span> <i class=pull-right><a class=\"fa fa-times fa-2x ep-viewmodal-icon\" ng-click=closeClick()></a></i> <i class=pull-right><a class=\"fa fa-eye fa-2x ep-viewmodal-icon\" ng-click=peekClick()></a></i></h5></div><div class=ep-viewmodal-body ng-hide=peek ng-transclude></div></div>"
+    "<!--This is a partial for the ep-viewmodal directive --><div class=ep-viewmodal ng-class=\"{'ep-viewmodal-show': options.showViewModal, 'ep-viewmodal-peek': peek}\"><div class=\"ep-viewmodal-header modal-header bg-primary modal-title\"><i class=\"pull-left ep-padding-top\" ng-class=\"'fa fa-lg ' + options.lefticon\" ng-if=options.lefticon></i><h5>{{options.title}} <span ng-if=peek class=text-warning><strong>(Peek Mode)</strong></span> <i class=pull-right><a class=\"fa fa-times fa-2x ep-viewmodal-icon\" ng-click=closeClick()></a></i> <i class=pull-right><a class=\"fa fa-eye fa-2x ep-viewmodal-icon\" ng-click=peekClick()></a></i></h5></div><div class=ep-viewmodal-body ng-hide=peek ng-transclude></div></div>"
   );
 
 }]);
