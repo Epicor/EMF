@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.181 built: 30-09-2016
+ * version:1.0.8-dev.182 built: 30-09-2016
 */
 (function() {
     'use strict';
@@ -369,7 +369,7 @@ angular.module('ep.menu.builder', [
  * @ngdoc overview
  * @name ep.photo.browser
  * @description
- * browsing the photos 
+ * browsing the photos
  */
 angular.module('ep.photo.browser', [
     'ep.templates',
@@ -12886,13 +12886,11 @@ angular.module('ep.menu.builder').
  *
  */
 angular.module('ep.photo.browser').controller('epPhotoBrowserCtrl', [
-    '$scope', 'epPhotoBrowserService',
+    '$scope','epPhotoBrowserService',
     function($scope, epPhotoBrowserService) {
-        
         epPhotoBrowserService.getImages().then(function(images) {
             $scope.images = images;
         });
-    
     }
 ]);
 
@@ -12902,11 +12900,21 @@ angular.module('ep.photo.browser').controller('epPhotoBrowserCtrl', [
 * @ngdoc directive
 * @name ep.photo.browser.directive:epPhotoBrowser
 * @restrict E
-*
 * @description
-* Represents the ep.photo.browser directive
-*
+* This component displays thumbnail image gallery.
+* Images can be imported from external url or passing base 64 format or fetching from device gallery
+* On click of the image, it will enlarge in the preview mode
+* Navigating to images can be done by using next or Previous button
+* Swiping left or right on the image will navigate to next or previous image
+* Rotation of images can be done by clicking play button in the preview mode
+* By setting the attribute show-preview as true, it will skip image gallery view and directly navigate to preview mode with rotating the images by default
 * @example
+<doc:example module="ep.photo.browser">
+    <doc:source>
+      <ep-photo-browser show-preview="true">
+      </ep-photo-browser>
+  </doc:source>
+</doc:example>
 */
 angular.module('ep.photo.browser').directive('epPhotoBrowser',
     ['epPhotoBrowserService', function(epPhotoBrowserService) {
@@ -12914,9 +12922,9 @@ angular.module('ep.photo.browser').directive('epPhotoBrowser',
             $scope.active = epPhotoBrowserService.active;
             $scope.slides = epPhotoBrowserService.slides;
             $scope.imageFiles = epPhotoBrowserService.imageFiles;
-
         }
         return {
+            link: link,
             restrict: 'E',
             controller: 'epPhotoBrowserCtrl',
             templateUrl: 'src/components/ep.photo.browser/ep-photo-browser.html',
@@ -12930,10 +12938,8 @@ angular.module('ep.photo.browser').directive('epPhotoBrowser',
  * @name ep.photo.browser.factory:epPhotoBrowserFactory
  * @description
  * Factory service for the ep.photo.browser module
- * browsing the photos 
- *
+ * browsing the photos
  * @example
- *
  */
 angular.module('ep.photo.browser').factory('epPhotoBrowserFactory', [
     function() {
@@ -12949,28 +12955,61 @@ angular.module('ep.photo.browser').factory('epPhotoBrowserFactory', [
             // do something
             return true;
         }
-
         return {
             publicMethod: publicMethod
         };
     }]);
 
+/**
+ * @ngdoc service
+ * @name ep.photo.browser.service:epPhotoBrowserService
+ * @description
+ * Service for accessing photo browser
+ *
+ * @example
+ *
+ */
+(function() {
+    'use strict';
 angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
     function($q) {
 
         var images = [];
         var imageFiles = [];
-
+        /**
+        * @ngdoc method
+        * @name getImages
+        * @methodOf ep.photo.browser.service:epPhotoBrowserService
+        * @public
+        * @description
+        * This asynchronous method enables image url passed as input
+        */
         function getImages() {
             var deferred = $q.defer();
             deferred.resolve(images);
             return deferred.promise;
         }
+        /**
+        * @ngdoc method
+        * @name showDeviceImage
+        * @methodOf ep.photo.browser.service:epPhotoBrowserService
+        * @public
+        * @description
+        * This enables when user wants to access device sd card and import images from device gallery
+        */
         function showDeviceImage() {
             document.addEventListener('deviceready', onDeviceReady, false);
         }
+        /**
+        * @ngdoc method
+        * @name onDeviceReady
+        * @methodOf ep.photo.browser.service:epPhotoBrowserService
+        * @public
+        * @description
+        * This enables when user wants to access device sd card and import images from device gallery
+        */
         function onDeviceReady() {
-            window.resolveLocalFileSystemURL(cordova.file.externalRootDirectory, function onFileSystemSuccess(fileSystem) {
+        window.resolveLocalFileSystemURL(cordova.file.externalRootDirectory, function onFileSystemSuccess(fileSystem) {
                 window.console.log(cordova.file.externalRootDirectory);
                 var directoryReader = fileSystem.createReader();
                 directoryReader.readEntries(function(entries) {
@@ -12987,16 +13026,24 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                 });
             });
         }
+        /**
+        * @ngdoc method
+        * @name getFileContentAsBase64
+        * @methodOf ep.photo.browser.service:epPhotoBrowserService
+        * @public
+        * @description
+        * This enables to read the file as base64 format
+        */
         function getFileContentAsBase64(path, callback) {
-            window.resolveLocalFileSystemURL(path, gotFile, fail);
-            function fail() {
-                window.Console.log('file not found')
+            window.resolveLocalFileSystemURL(path, gotFile, failMsg);
+            function failMsg() {
+                window.Console.log('file not found');
             }
             function gotFile(fileEntry) {
 
                 fileEntry.file(function(file) {
                     var reader = new FileReader();
-                    reader.onloadend = function(e) {
+                    reader.onloadend = function() {
                         var content = this.result;
                         callback(content);
                     };
@@ -13005,6 +13052,14 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                 });
             }
         }
+        /**
+        * @ngdoc method
+        * @name onGetDCIM
+        * @methodOf ep.photo.browser.service:epPhotoBrowserService
+        * @public
+        * @description
+        * This enables to read the entries inside the DCIM folder and find the Camera folder in device
+        */
         function onGetDCIM(entries) {
             var i;
             for (i = 0; i < entries.length; i++) {
@@ -13013,9 +13068,17 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                     mediaReader.readEntries(onGetFileNames, false);
                     break;
                 }
-                window.console.log(' the entries name ' + entries[i].name);
+                window.console.log('the entries name' + entries[i].name);
             }
         }
+        /**
+        * @ngdoc method
+        * @name onGetFileNames
+        * @methodOf ep.photo.browser.service:epPhotoBrowserService
+        * @public
+        * @description
+        * This enables to read the entries inside the Camera folder and filter the image files
+        */
         function onGetFileNames(entries) {
             var i;
             for (i = 0; i < entries.length; i++) {
@@ -13037,6 +13100,8 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
             showDeviceImage: showDeviceImage
         };
     }]);
+})();
+
 /**
 * @ngdoc directive
 * @name ep.record.editor.directive:epCheckboxEditor
@@ -21475,8 +21540,7 @@ angular.module('ep.viewmodal').
             controller: 'epViewmodalCtrl',
             templateUrl: 'src/components/ep.viewmodal/ep-viewmodal.html',
             scope: {
-                'options': '=',
-                'targetViewId': '@'
+                'options': '='
             },
         };
     }

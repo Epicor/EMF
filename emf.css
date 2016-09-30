@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.181 built: 30-09-2016
+ * version:1.0.8-dev.182 built: 30-09-2016
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -1713,7 +1713,6 @@
   transform: translateY(-50%);
   -webkit-transform: translateY(-50%);
   cursor: pointer;
-  -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
