@@ -1,7 +1,40 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.38 built: 30-06-2016
+ * version:1.0.8 built: 30-09-2016
 */
+(function() {
+    'use strict';
+
+    angular.module('ep.accordion.menu', [
+        'ngAnimate',
+        'ep.templates',
+        'ep.local.storage'
+    ]);
+})();
+
+/**
+ * @ngdoc overview
+ * @name ep.action.set
+ * @description
+ * #ep.action.set
+ * This is a complex component that provides action-menu/context-menu behavior.
+ *
+ * In order to make use of the action menu fuctionality, there needs to be one
+ * instance of the `<ep-action-menu></ep-action-menu>` directive on the page.
+ * This directive will render the menu; for desktop, it will provide regular popup,
+ * on mobile device, it will consume full width on the bottom of the device.
+ *
+ * Each action menu will be described for an action owner using the the nesting
+ * <pre>
+ *      <ep-action-set>
+ *          <ep-action-item title="myTitle" handler="myHandler"></ep-action-item>
+ *          <ep-action-separator"></ep-action-separator>
+ *          <ep-action-item title="myTitle2" handler="myHandler"></ep-action-item>
+ *          <ep-action-item title="myTitle3" handler="myHandler"></ep-action-item>
+ *      </ep-action-set>
+ * </pre>
+ *
+ */
 (function() {
     'use strict';
 
@@ -29,6 +62,18 @@
 'use strict';
 /**
  * @ngdoc overview
+ * @name ep.application
+ * @description
+ * Contains some basic information about the application
+ */
+angular.module('ep.application', [
+    'ep.templates',
+    'ep.sysconfig'
+]);
+
+'use strict';
+/**
+ * @ngdoc overview
  * @name ep.card
  * @description
  * card component
@@ -37,6 +82,21 @@ angular.module('ep.card', [
     'ep.templates',
     'ep.sysconfig'
 ]);
+
+/**
+ * @ngdoc overview
+ * @name ep.color.selector
+ * @description
+ * Provides the color selector
+ *
+ * Note: Include css/colorpicker.css and js/bootstrap-colorpicker-module.js in html file from lib/bower/angular-bootstrap-colorpicker.
+ * The JS file should be included before including emf.js
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.color.selector', ['colorpicker.module']);
+})();
 
 /**
  * @ngdoc overview
@@ -65,6 +125,18 @@ angular.module('ep.card', [
         'ep.datagrid',
         'ep.modaldialog'
     ]);
+})();
+
+/**
+ * @ngdoc overview
+ * @name ep.contacts.list
+ * @description
+ * Provides the contact list directive
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.contacts.list', []);
 })();
 
 /**
@@ -169,6 +241,30 @@ angular.module('ep.embedded.apps', ['ep.templates', 'ep.sysconfig', 'ep.utils'])
     angular.module('ep.file', []);
 })();
 
+/**
+ * @ngdoc overview
+ * @name ep.filter.list
+ * @description
+ * Provides a filter input to a list
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.filter.list', []);
+})();
+
+/**
+ * @ngdoc overview
+ * @name ep.icon.selector
+ * @description
+ * Provides the font awsome icon selector
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.icon.selector', []);
+})();
+
 'use strict';
 /**
  * @ngdoc overview
@@ -208,6 +304,24 @@ angular.module('ep.include', [
         'ep.sysconfig'
     ]);
 })();
+
+'use strict';
+/**
+ * @ngdoc overview
+ * @name ep.menu.builder
+ * @description
+ * This is the dynamic popup/context menu builder
+ * This will replace the ep-action-set; The SPA needs one instance of the <ep-dynamic-menu>
+ * directive on the main index.html, this directive will respond to the $broadcast
+ * of 'dynamicMenuCall' event.
+ *
+ * The <ep-context-menu> directive will use an instance of the menuBuilder (served up
+ * from the epMenuBuilderFactory) to add/remove menu item actions and/or separators
+ *
+ */
+angular.module('ep.menu.builder', [
+    'ep.templates'
+]);
 
 /**
  * @ngdoc overview
@@ -253,6 +367,18 @@ angular.module('ep.include', [
 'use strict';
 /**
  * @ngdoc overview
+ * @name ep.photo.browser
+ * @description
+ * browsing the photos
+ */
+angular.module('ep.photo.browser', [
+    'ep.templates',
+    'ep.sysconfig'
+]);
+
+'use strict';
+/**
+ * @ngdoc overview
  * @name ep.record.editor
  * @description
  * record editor creates controls by metadata
@@ -290,19 +416,21 @@ angular.module('ep.record.editor', [
     'use strict';
 
     angular.module('ep.shell', [
-    'ngRoute',
-    'ngAnimate',
-    'ui.bootstrap',
-    'ep.templates',
-    'ep.feature.detection',
-    'ep.local.storage',
-    'ep.theme',
-    'ep.utils',
-    'ep.sysconfig',
-    'ep.console',
-    'ep.multi.level.menu',
-    'ep.embedded.apps',
-    'ep.tiles.panel'
+        'ngRoute',
+        'ngAnimate',
+        'ui.bootstrap',
+        'ep.templates',
+        'ep.feature.detection',
+        'ep.local.storage',
+        'ep.theme',
+        'ep.utils',
+        'ep.sysconfig',
+        'ep.application',
+        'ep.console',
+        'ep.multi.level.menu',
+        'ep.accordion.menu',
+        'ep.embedded.apps',
+        'ep.tiles.panel'
     ]);
 })();
 
@@ -354,7 +482,9 @@ angular.module('ep.signature', [
 (function() {
     'use strict';
 
-    angular.module('ep.table', []);
+    angular.module('ep.table', [
+        'ep.templates'
+    ]);
 })();
 
 /**
@@ -379,9 +509,10 @@ angular.module('ep.signature', [
     'use strict';
 
     angular.module('ep.theme', [
-    'ep.templates',
-    'ep.local.storage',
-    'ep.sysconfig'
+        'ep.templates',
+        'ep.local.storage',
+        'ep.sysconfig',
+        'ep.application'
     ]);
 })();
 
@@ -395,10 +526,11 @@ angular.module('ep.signature', [
     'use strict';
 
     angular.module('ep.tile', [
-    'ep.templates',
-    'ep.sysconfig',
-    'ep.utils',
-    'ep.include'
+        'ep.templates',
+        'ep.sysconfig',
+        'ep.application',
+        'ep.utils',
+        'ep.include'
     ]);
 })();
 
@@ -428,6 +560,7 @@ angular.module('ep.signature', [
     'use strict';
 
     angular.module('ep.token', [
+        'ep.sysconfig',
         'ep.utils'
     ]);
 })();
@@ -460,6 +593,164 @@ angular.module('ep.signature', [
     angular.module('ep.utils', [
     'ep.sysconfig'
     ]);
+})();
+
+'use strict';
+/**
+ * @ngdoc overview
+ * @name ep.viewmodal
+ * @description
+ * Provides a view modal dialog inside of a view that will not change the route.
+ */
+angular.module('ep.viewmodal', [
+    'ep.templates',
+    'ep.sysconfig'
+]);
+
+/**
+ * @ngdoc directive
+ * @name ep.multi.level.menu.directive:epMultiLevelMenu
+ * @restrict E
+ *
+ * @description
+ * Represents the ep.multi.level.menu directive
+ *
+ * Multi-level menu directive.
+ *
+ *   # menu {object} (required) - the object containing menu item properties.
+ *       menuitems {array} - array of menu items (nested sub menu items
+ *       caption {string} - menu caption (for menu tile)
+ *       hideFavorite {bool} - hide the favorite turning on/off (favorite star)
+ *       icon {string} - the icon next to menu (favorite must be off)
+ *       action {function} - function called when menu is pressed
+ *       captionClass {string} - additional user class for caption
+ *       tile {object} - settings for ep.tile when working with <ep-tiles-menu-favorites>
+ *       separator {object} - add separator on top of th menu item
+ *           # text {string} - (optional) separator text
+ *           # icon {string} - (optional) the icon next separator text
+ *           # isBottom {bool} - (optional) separator to be displayed below the menu item
+ *
+ * @example
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.accordion.menu').directive('epAccordionMenu',
+        /*@ngInclude*/
+        ['$timeout', function($timeout) {
+            return {
+                restrict: 'E',
+                replace: true,
+                controller: 'epMultiLevelMenuCtrl',
+                templateUrl: 'src/components/ep.accordion.menu/ep-accordion-menu_template.html',
+                scope: {
+                    menuId: '=',           // menuId used to save favorites to local storage
+                    searchType: '=',
+                    searchDisabled: '=',   // disable search input
+                    sortDisabled: '=',     // disable sorting
+                    iconDisabled: '=',     // disable icons on menu items
+                    initFavorites: '=',    // initialize all favorites on very first time only
+                    menu: '=',             // we take the menu as input parameter on the directive
+                    onMenuInit: '&',       // this get fired upon menu initialization to provide factory
+                    onFavoriteChange: '&', // fired upon favorite menu change
+                    onExpand: '=',         // fired when the menu item is expanded/collapsed
+                    onTopMenuClick: '=',    // event for topmost menu item click
+                    searchResultsHeader: '=',
+                    favoritesHeader: '=',
+                    mainHeader: '=',
+                    commitMenuState: '='
+                },
+                link: {
+                    pre: function() {
+                    },
+                    post: function($scope) {
+                        $scope.searchResultsHeader = $scope.searchResultsHeader || 'Search Results';
+                        $scope.favoritesHeader = $scope.favoritesHeader || 'Favorites';
+                        $scope.mainHeader = $scope.mainHeader || '';
+                        $timeout(function() {
+                            $scope.initializeMenus('epAccordionMenu');
+                        });
+
+                        //on arrow down then select the first node of the search results
+                        $scope.onKeydown = function(e) {
+                            var key = e.keyCode;
+                            var target = $(e.target);
+
+                            if (key === 40) {
+                                target.parents().nextAll().filter(':visible')
+                                    .not('.ep-menu-header').find('.container-fluid')
+                                    .first().focus();
+                            }
+                        };
+                    }
+                }
+            };
+        }])
+        .directive('epAccordionMenuItem',
+            /*@ngInclude*/
+            function() {
+                return {
+                    restrict: 'E',
+                    replace: true,
+                    templateUrl: 'src/components/ep.accordion.menu/ep-accordion-menu-item_template.html',
+                    scope: {
+                        item: '=',
+                        navigate: '=',
+                        navigateExternal: '=',
+                        toggleFavorite: '=',
+                        hideDescription: '=',
+                        onExpand: '=',
+                        commitMenuState: '='
+                    },
+                    /*ngInject*/
+                    controller: ['$rootScope', '$scope', function($rootScope, $scope) {
+                        $scope.$watch('item.isExpanded', function(val) {
+                            if (val !== undefined) {
+                                if ($scope.onExpand) { $scope.onExpand($scope.item); }
+                                if ($scope.commitMenuState) { $scope.commitMenuState(); }
+                            }
+                        });
+
+                        $scope.onKeydown = function(item, e) {
+                            var key = e.keyCode;
+                            var target = $(e.target);
+
+                            switch (key) {
+                                case 13: // Enter key
+                                    item.isExpanded = !item.isExpanded;
+                                    break;
+                                case 37: // Left key
+                                    item.isExpanded = false;
+                                    break;
+                                case 39: // Right key
+                                    item.isExpanded = true;
+                                    break;
+                                case 38: // arrow up
+                                    if (target.parents().prevAll().filter(':visible').first().parent()
+                                        .hasClass('ep-accordion-expanded')) {
+                                        target.parents().prevAll().filter(':visible').first().focus();
+                                    } else {
+                                        target.parents().prevAll().filter(':visible')
+                                            .not('.ep-menu-header').first()
+                                            .find('.container-fluid, .form-control')
+                                            .focus();
+                                    }
+                                    break;
+                                case 40: // arrow down
+                                    if (target.parent().hasClass('ep-accordion-expanded')) {
+                                        target.next().find('.container-fluid')
+                                            .first().focus();
+                                    } else {
+                                        target.parents().nextAll().filter(':visible')
+                                            .find('.container-fluid')
+                                            .first().focus();
+                                    }
+                                    break;
+                            }
+                        };
+                    }]
+                };
+            });
 })();
 
 /**
@@ -1186,38 +1477,174 @@ angular.module('ep.signature', [
     });
 })();
 
-'use strict';
+/**
+ * @ngdoc object
+ * @name ep.application.object:epApplicationConfig
+ * @description
+ * Provider for epApplicationConfig.
+ * Gets configuration options from sysconfig.json or default
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.application').provider('epApplicationConfig',
+        function() {
+            var config = {
+                /**
+                * @ngdoc property
+                * @name id
+                * @propertyOf ep.application.object:epApplicationConfig
+                * @public
+                * @description
+                * Application identifier, corresponds to folder name
+                */
+                id: '',
+                /**
+                * @ngdoc property
+                * @name type
+                * @propertyOf ep.application.object:epApplicationConfig
+                * @public
+                * @description
+                * Application type - 'webapp' or 'hybridmobileapp'
+                */
+                type: 'webapp',
+                /**
+                * @ngdoc property
+                * @name generatorEMF
+                * @propertyOf ep.application.object:epApplicationConfig
+                * @public
+                * @description
+                * what version of emf generator was used
+                */
+                generatorEMF: '',
+                /**
+                * @ngdoc property
+                * @name libPath
+                * @propertyOf ep.application.object:epApplicationConfig
+                * @public
+                * @description
+                * path to libs
+                */
+                libPath: './lib',
+            };
+
+            //we use the epSysConfig provider to perform the $http read against sysconfig.json
+            //epSysConfig.mergeSection() function merges the defaults with sysconfig.json settings
+            this.$get = ['epSysConfig', function(epSysConfig) {
+                epSysConfig.mergeSection('ep.application', config);
+                return config;
+            }];
+        });
+})();
 
 /**
- * @ngdoc controller
- * @name ep.card.controller:epCardCtrl
+ * @ngdoc overview
+ * @name epApplicationLoader
  * @description
- * Represents the epCard controller for the
- * ep.card module, or for specific ep-card directive
- *
- * @example
- *
+ * Provides script that loads angular application on devices. This replaces the ng-app='someModuleId'
+ * This script makes sure that angular bootstraping is done after the device is ready and document is loaded
+ * The html root element on index page must have the module id declared as
+ * <html ep-module-id='someModuleId'>
+ * The following has to be included in the head section
+ * <script type='text/javascript'>epApplicationLoader.initialize();</script>
  */
-angular.module('ep.card').controller('epCardCtrl', [
-    '$scope',
-    function($scope) {
-        // do something with $scope property
-        $scope.myProperty = 'emf';
+(function() {
+    'use strict';
 
-        /**
-         * @ngdoc method
-         * @name myFunction
-         * @methodOf ep.card.controller:epCardCtrl
-         * @public
-         * @description
-         * Handles the myFunction request
+    var epApplicationLoader = {
+        state: {
+            moduleId: '',
+            contentLoaded: false,
+            deviceDetected: false,
+            messages: ['Initializing application.'],
+            debugMode: false
+        },
+        // Application Constructor
+        initialize: function() {
+            this.state.moduleId = document.getElementsByTagName('html')[0].getAttribute('ep-ng-app');
+            if (this.state.moduleId) {
+                var dbg = document.getElementsByTagName('html')[0].getAttribute('ep-debug');
+                this.state.debugMode = (dbg === '1' || dbg === 'true');
+                document.addEventListener('deviceready', this.onDeviceReady, false);
+                window.addEventListener('load', this.onLoad, false);
+            }
+        },
+        // deviceready Event Handler
+        onDeviceReady: function() {
+            epApplicationLoader.state.deviceDetected = true;
+            epApplicationLoader.state.messages.push('The device is ready.');
+            epApplicationLoader.bootstrapApp();
+        },
+        // load Event Handler
+        onLoad: function() {
+            epApplicationLoader.state.contentLoaded = true;
+            epApplicationLoader.state.messages.push('onLoad event is triggered.');
+
+            //sometimes this onLoad fires faster than the onDeviceReady so in that case we need to bootstrap angular
+            if (epApplicationLoader.state.deviceDetected) {
+                epApplicationLoader.doTheBootstrap();
+            }
+
+            //if we are running as a web page the onDeviceReady will never fire so we bootstrap
+            if (!window.cordova) {
+                epApplicationLoader.state.messages.push('No device detected, executing a manual bootstrap.');
+                epApplicationLoader.bootstrapApp();
+            }
+        },
+
+        /*
+         =====================================================================================================
+         MAIN bootstrapping function.
+         =====================================================================================================
          */
-        $scope.myFunction = function() {
-            // do something else with $scope property
-            // $scope.myProperty = 'new property value';
-        };
-    }
-]);
+        bootstrapApp: function() {
+            epApplicationLoader.debugOutput(function() {
+                if (!epApplicationLoader.state.contentLoaded) {
+                    epApplicationLoader.state.messages.push('Waiting for DOM to load.');
+                    document.addEventListener('DOMContentLoaded', function() {
+                        epApplicationLoader.doTheBootstrap();
+                    });
+                } else {
+                    epApplicationLoader.doTheBootstrap();
+                }
+            });
+        },
+
+        doTheBootstrap: function() {
+            var state = epApplicationLoader.state;
+            state.contentLoaded = true;
+            if (state.moduleId) {
+                epApplicationLoader.attachFastClick();
+                state.messages.push('Bootstrapping epApplicationLoader...');
+                angular.bootstrap(document, [state.moduleId]);
+                state.messages.push('Application successfully bootstrapped.');
+            }
+        },
+
+        attachFastClick: function() {
+            FastClick.attach(document.body);
+            this.state.messages.push('FastClick attached.');
+        },
+
+        debugOutput: function(continuation) {
+            if (this.state.debugMode) {
+                angular.element('body').append('<div id="messages"></div>');
+                var messageBlock = angular.element('#messages');
+                messageBlock.append('<button id="continueButton" class="btn btn-default">Continue</button>');
+                this.state.messages.forEach(function(msg) {
+                    messageBlock.append(angular.element('<p>' + msg + '</p>'));
+                });
+                angular.element('#continueButton').on('click', function() {
+                    continuation();
+                });
+            } else {
+                continuation();
+            }
+        }
+    };
+
+    epApplicationLoader.initialize();
+})();
 
 'use strict';
 /**
@@ -1288,63 +1715,55 @@ app.directive('epCardTitle',
         };
 	});
 
-'use strict';
 /**
- * @ngdoc service
- * @name ep.card.factory:epCardFactory
+ * @ngdoc directive
+ * @name ep.color.selector:epColorSelector
+ * @restrict EA
+ *
  * @description
- * Factory service for the ep.card module
- * card component
+ * Represents color selector
+ *
+ * Note: Include css/colorpicker.css and js/bootstrap-colorpicker-module.js in index file from lib/bower/angular-bootstrap-colorpicker.
+ * The JS file should be included before including emf.js
+ *
+ * @property {object} ngModel:object
+ * This is the model object to store the selected color.
+ *
+ * @property {string} position:string
+ * This is the position of the color selector dropdown. Allowed values are top, right, bottom, left. Default is bottom.
+ *
+ * @property {string} size:string
+ * This is the size of color selector dropdown in pixels. Example values 200, 300 etc...Default is 100.
  *
  * @example
- *
+ *  <pre>
+ *      <ep-color-selector ng-model="obj.color"></ep-color-selector>
+ *  </pre>
  */
-angular.module('ep.card').factory('epCardFactory', [
-    function() {
-        /**
-         * @ngdoc method
-         * @name publicMethod
-         * @methodOf ep.card.factory:epCardFactory
-         * @public
-         * @description
-         * sample public method stub
-         */
-        function publicMethod() {
-            // do something
-            return true;
-        }
+(function() {
+    'use strict';
 
+    angular.module('ep.color.selector').directive('epColorSelector', epColorSelectorDirective);
+
+    function epColorSelectorDirective() {
         return {
-            publicMethod: publicMethod
-        };
-    }]);
+            restrict: 'EA',
+            replace: true,
+            scope: {
+                ngModel: '=',
+                position: '@',
+                size: '@'
+            },
+            templateUrl: 'src/components/ep.color.selector/color_selector.html',
+            link: function(scope) {
+                scope.$on('colorpicker-selected', function(event, colorObject) {
+                    scope.selectedColor = colorObject.value;
+                });
 
-'use strict';
-/**
- * @ngdoc service
- * @name ep.card.service:epCardService
- * @description
- * Service for the ep.card module
- * card component
- *
- * @example
- *
- */
-angular.module('ep.card').service('epCardService', [
-    function() {
-        /**
-         * @ngdoc method
-         * @name publicFunction
-         * @methodOf ep.card.service:epCardService
-         * @public
-         * @description
-         * sample public service function stub
-         */
-        this.publicFunction = function() {
-            // do something
-            return true;
+            }
         };
-    }]);
+    }
+})();
 
 /**
 * @ngdoc directive
@@ -1353,8 +1772,33 @@ angular.module('ep.card').service('epCardService', [
 *
 * @description
 * This component displays a square tile with a title, description and an icon and allows you to set the color of the tile using either a CSS class or an HTML color keyword/hex value.
-*
-* @example
+ *
+ * @property {string} title:string
+ *  This property sets the title of the tile.
+ *  <br/><br/>
+ *  title="My Tile Title"
+ *
+ * @property {string} description:string
+ *  This property sets the description of the tile.
+ *  <br/><br/>
+ *  description="My Tile Description"
+ *
+ * @property {string} fineprint:string
+ *  This property sets the fine print of the tile.
+ *  <br/><br/>
+ *  fineprint="My Tile Fine Print"
+ *
+ * @property {string} icon:string
+ *  This property sets the icon of the tile.  This needs to be set to a font-awesome icon string.
+ *  <br/><br/>
+ *  icon="fa-cogs"
+ *
+ * @property {string} color:string
+ *  This property set the color of the tile.
+ *  <br/><br/>
+ *  color="red"
+ *
+ * @example
 <doc:example module="ep.color.tile">
     <doc:source>
       <ep-color-tile title="My Tile Title" description="This is the description for the tile." fineprint="This is the fine print for the tile." icon="fa-arrows" color="deepskyblue">
@@ -1623,6 +2067,183 @@ angular.module('ep.card').service('epCardService', [
             hasLog: hasLog,
             clearLog: clearLog,
             showLog: showLog
+        };
+    }
+})();
+
+/**
+ * @ngdoc object
+ * @name ep.contacts.list:epContactsListConstants
+ * @description
+ * Constants for epContactsListConstants.
+ * ep.constacts.list constants
+ * Events:
+    * <pre>
+    *   CONTACTS_LIST_INDEXES - indexes displayed default.
+    *   CONTACTS_LIST_INDEXES_SMALL - indexes displayed if contacts list container height is < 430px
+    * </pre>
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.contacts.list').constant('epContactsListConstants', {
+        CONTACTS_LIST_INDEXES: '#ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+        CONTACTS_LIST_INDEXES_SMALL: '#A.E.H.L.O.S.V.Z',
+        CONTACTS_LIST_INDEXES_BREAKPOINT: 430,
+        CONTACTS_LIST_INDEXES_HIDDEN_BREAKPOINT: 180
+    });
+})();
+
+/**
+ * @ngdoc directive
+ * @name ep.contacts.list:epContactsList
+ * @restrict EA
+ *
+ * @description
+ * Represents contacts list with alphabet indexes on right side
+ * - data: contacts list array
+ * - handler: handler function when clicks on a contact.
+ *
+ * @example
+ *  <pre>
+ *      <ep-contacts-list data="['Bname', 'Cname', 'Aname'"></ep-contacts-list>
+ *  </pre>
+ */
+(function() {
+    'use strict';
+
+    epContactsListDirective.$inject = ['$filter', '$timeout', 'epContactsListService', 'epContactsListConstants'];
+    angular.module('ep.contacts.list').directive('epContactsList', epContactsListDirective);
+
+    function epContactsListDirective($filter, $timeout, epContactsListService, epContactsListConstants) {
+        return {
+            restrict: 'EA',
+            replace: true,
+            scope: {
+                data: '=',
+                handler: '='
+            },
+            templateUrl: 'src/components/ep.contacts.list/contacts_list.html',
+            link: function(scope) {
+                scope.nameList = epContactsListService.getGroupedList(scope.data);
+
+                scope.indexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES;
+                scope.smallIndexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES_SMALL;
+
+                $(window).resize(function() {
+                    epContactsListService.toggleIndexes();
+                });
+                epContactsListService.toggleIndexes();
+
+                scope.goToLink = function(id) {
+                    if (id === '.') {
+                        return;
+                    }
+                    var container = $('.ep-contacts-list');
+
+                    //hash index will scroll to numbers list
+                    id = (id === '#') ? '1' : id;
+                    var scrollToElem = $('#list-group-' + id);
+                    if (scrollToElem.length) {
+                        container.animate({
+                            scrollTop: scrollToElem.offset().top - container.offset().top + container.scrollTop() - 50
+                        });
+                    }
+                };
+
+            }
+        };
+    }
+})();
+
+/**
+ * @ngdoc service
+ * @name ep.contacts.list:epContactsListService
+ * @description
+ * Provides methods for dislaying contacts list with indexes.
+ *
+ * @example
+ *
+ */
+(function() {
+    'use strict';
+
+    epContactsListService.$inject = ['$filter', '$timeout', 'epContactsListConstants'];
+    angular.module('ep.contacts.list').factory('epContactsListService', epContactsListService);
+
+    function epContactsListService($filter, $timeout, epContactsListConstants) {
+
+        /**
+         * @ngdoc method
+         * @name getGroupedList
+         * @methodOf ep.contacts.list:epContactsListService
+         * @public
+         * @param {Array} listData - list of contacts to display
+         * @description
+         * To group the contacts list based on alphabets
+         */
+        function getGroupedList(listData) {
+            var sortedlist = $filter('orderBy')(listData);
+            var groupedObj = {};
+            var itemGroup = [];
+            var currAlphabet = '';
+            var prevAlphabet = '';
+            for (var i = 0; i < sortedlist.length; i++) {
+                currAlphabet = sortedlist[i].substring(0, 1).toUpperCase();
+
+                //if a number, make group name as #
+                if (!isNaN(currAlphabet)) {
+                    currAlphabet = '#';
+                }
+                if (currAlphabet !== prevAlphabet && prevAlphabet !== '') {
+                    groupedObj[prevAlphabet] = itemGroup;
+                    itemGroup = [];
+                }
+                itemGroup.push(sortedlist[i]);
+                if (i === (sortedlist.length - 1)) {
+                    groupedObj[currAlphabet] = itemGroup;
+                    itemGroup = [];
+                }
+                prevAlphabet = currAlphabet;
+
+            }
+            return groupedObj;
+
+        }
+
+        /**
+         * @ngdoc method
+         * @name toggleIndexes
+         * @methodOf ep.contacts.list:epContactsListService
+         * @public
+         * @description
+         * To toggle index list based on the contacts container height
+         */
+        function toggleIndexes() {
+            $timeout(function() {
+                var mainContainerHeight = $('.ep-contacts-list').height();
+                var indexesLength = 0;
+                var indexItemHeight = 0;
+                if (mainContainerHeight < epContactsListConstants.CONTACTS_LIST_INDEXES_HIDDEN_BREAKPOINT) {
+                    $('.ep-index-list').hide();
+                } else if (mainContainerHeight < epContactsListConstants.CONTACTS_LIST_INDEXES_BREAKPOINT) {
+                    $('.ep-index-list.large-index-list').hide();
+                    $('.ep-index-list.small-index-list').show();
+                    indexesLength = $('.ep-index-list.small-index-list li').length;
+                } else {
+                    $('.ep-index-list.small-index-list').hide();
+                    $('.ep-index-list.large-index-list').show();
+                    indexesLength = $('.ep-index-list.large-index-list li').length;
+                }
+                //adjust index list height based on the list container height
+                indexItemHeight = parseInt(mainContainerHeight / indexesLength);
+                $('.ep-index-list li').css('line-height', indexItemHeight + 'px');
+            });
+        }
+
+        return {
+            getGroupedList: getGroupedList,
+            toggleIndexes: toggleIndexes
         };
     }
 })();
@@ -3358,7 +3979,12 @@ angular.module('ep.datagrid').directive('epDataGrid', [
             scope.state.linkElement = element;
 
             scope.state.tableElement = element.find('.ep-dg-grid-table:first-child');
+
             scope.state.$table = angular.element(scope.state.tableElement);
+            // We need to set the table id property explicitly instead of waiting for it to get
+            // set as part of the compilation process because the datatables library gets confused
+            // by identical ids otherwise.
+            scope.state.$table.attr('id', 'tbl_' + scope.state.dataGridId);
             scope.viewState = scope.state;
 
             scope.$on('$destroy', scope.onScopeDestroy);
@@ -3945,21 +4571,23 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                 /// <summary>
                 ///   Resizes the table and invokes the DataTables api to retrieve more records, if necessary.
                 /// </summary>
+                if (scope.state.$table && scope.state.$table.is(':visible')) {
+                    $timeout.cancel(scope.resizeTimeout);
+                    scope.resizeTimeout = $timeout(function() {
+                        if (scope.state.dataTable) {
+                            var tableHeight = scope.calcTableHeight();
 
-                $timeout(function() {
-                    if (scope.state.dataTable) {
-                        var tableHeight = scope.calcTableHeight();
+                            var settings = scope.state.dataTable.fnSettings();
+                            var tableHeightPx = tableHeight + 'px';
 
-                        var settings = scope.state.dataTable.fnSettings();
-                        var tableHeightPx = tableHeight + 'px';
-
-                        //only trigger this if the vertical height has changed to load rows.
-                        if (settings && settings.oScroll && (force || settings.oScroll.sY !== tableHeightPx)) {
-                            settings.oScroll.sY = tableHeightPx;
-                            scope.findElement('.dataTables_scrollBody').height(tableHeight);
+                            //only trigger this if the vertical height has changed to load rows.
+                            if (settings && settings.oScroll && (force || settings.oScroll.sY !== tableHeightPx)) {
+                                settings.oScroll.sY = tableHeightPx;
+                                scope.findElement('.dataTables_scrollBody').height(tableHeight);
+                            }
                         }
-                    }
-                }, 300);
+                    }, 300);
+                }
             };
 
             scope.refreshData = function() {
@@ -4449,6 +5077,7 @@ angular.module('ep.datagrid').
      * when we need some object to use in drop operation. This object will be used for as this context in dropHandler
      * of drop-area directive.
      * >    dropCallback and dropCallbackParams attributes are just helper attributes. see drop-area directive.
+     * >    'ep-drag-active' class is set on the element when drag starts and is removed when drag ends
      */
 (function() {
     'use strict';
@@ -4469,7 +5098,9 @@ angular.module('ep.datagrid').
                     //dragged item's base object. For example OLAPEntity
                     dragItem: '=dragItem',
                     //used for deciding whether the dropArea should handle drop with this kind of dragged item
-                    dragItemType: '=dragItemType'
+                    dragItemType: '=dragItemType',
+                    //by default enabled. You can disable by setting false
+                    dragEnabled: '='
                 },
                 compile: function(elem, attrs) {
                     if (!attrs.draggable) {
@@ -4479,6 +5110,13 @@ angular.module('ep.datagrid').
                         if (!scope.dragItemType) {
                             throw new Error('Dragged item type is not specified!');
                         }
+
+                        scope.$watch('dragEnabled', function(newValue) {
+                            if (newValue !== undefined) {
+                                ele.attr('draggable', newValue === false ? 'false' : 'true');
+                            }
+                        });
+
                         ele.on('dragstart', function(evt) {
                             evt.stopPropagation();
                             evt.originalEvent.dataTransfer.setData('Text', evt.target.textContent);
@@ -4490,12 +5128,14 @@ angular.module('ep.datagrid').
                             if (angular.isFunction(dragOperation.dragStart)) {
                                 dragOperation.dragStart(evt, dragOperation.dragItem);
                             }
+                            $(evt.target).addClass('ep-drag-active');
                             scope.$root.$broadcast('startDraging', getDragOperation);
                         });
 
                         ele.on('dragend', function(evt) {
                             evt.stopPropagation();
                             evt.preventDefault();
+                            $(evt.target).removeClass('ep-drag-active');
                             var dragOperation = dragOperationFactory.getDragOperation(scope);
                             if (angular.isFunction(dragOperation.dropCallback)) {
                                 dragOperation.dropCallback();
@@ -4507,7 +5147,6 @@ angular.module('ep.datagrid').
         }]);
 })();
 
-'use strict';
 /**
  * @ngdoc controller
  * @name ep.drag.drop.controller:epDropAreaCtrl
@@ -4517,85 +5156,181 @@ angular.module('ep.datagrid').
  * @example
  *
  */
-angular.module('ep.drag.drop').controller('epDropAreaCtrl', [
-'$scope',
-function($scope) {
-	var vm = this;
-	vm.onDragStart = onDragStart;
-	vm.onDrop = onDrop;
-	vm.onDragOver = onDragOver;
-	var getDragOperationFnc;
-	vm.onDragLeave = onDragLeave;
+(function() {
+    'use strict';
 
-	/**
-	 * @ngdoc method
-	 * @name onDragStart
-	 * @methodOf ep.drag.drop.controller:epDropAreaCtrl
-	 * @public
-	 * @description
-	 * handles the onDragStart event
-	 */
-	function onDragStart(scope, dragOperationGetter) {
-		getDragOperationFnc = dragOperationGetter;
-	}
+    epDropAreaCtrl.$inject = ['$scope'];
+    angular.module('ep.drag.drop')
+        .controller('epDropAreaCtrl', epDropAreaCtrl);
 
-	/**
-	 * @ngdoc method
-	 * @name onDrop
-	 * @methodOf ep.drag.drop.controller:epDropAreaCtrl
-	 * @public
-	 * @description
-	 * handles the onDrop event
-	 */
-	function onDrop(evt) {
-		evt.stopPropagation();
-		evt.preventDefault();
-		var dragOperation = getDragOperationFnc();
-		var droppables = vm.dropItemTypes.split(',');
-		if (Array.isArray(droppables) && droppables.length > 1) {
-			if (droppables.indexOf(dragOperation.dragItemType) === -1) {
-				return;
-			}
-		} else {
-			if (vm.dropItemTypes !== dragOperation.dragItemType) {
-				return;
-			}
-		}
-		if ($scope[vm.dropHandler]) {
-			/*jshint validthis:true */
-			$scope[vm.dropHandler].call(dragOperation.dragItem || this, dragOperation);
-		}
-	}
+    /*@ngInject*/
+    function epDropAreaCtrl($scope) {
+        //Place the main closure function on the scope for access from directive
+        $scope.register = register;
 
-	/**
-	 * @ngdoc method
-	 * @name onDragOver
-	 * @methodOf ep.drag.drop.controller:epDropAreaCtrl
-	 * @public
-	 * @description
-	 * handles the onDragOver event
-	 */
-	function onDragOver(evt) {
-		// TODO Add visual feedback on drag to show whether this area support this kind of drop
-		evt.stopPropagation();
-		evt.preventDefault();
-		if ($scope[vm.overHandler]) {
-			var dragOperation = getDragOperationFnc();
-			/*jshint validthis:true */
-			$scope[vm.overHandler].call(dragOperation.dragItem || this, dragOperation, evt);
-		}
-	}
+        /**
+         * @ngdoc method
+         * @name register
+         * @methodOf ep.drag.drop.controller:epDropAreaCtrl
+         * @public
+         * @description
+         * Registers a dom element to act as drop down area and sets all further
+         * events. It acts as a closure for the element and its attributes, since they may be
+         * more than one drop-area element within single scope
+         */
+        function register(ele, attrs) {
+            var getDragOperationFnc;
+            var evStartDragging;
+            var dropEnabled;
+            var dropHighlight = true;
 
-	function onDragLeave(evt) {
-		evt.stopPropagation();
-		evt.preventDefault();
-		if ($scope[vm.leaveHandler]) {
-			var dragOperation = getDragOperationFnc();
-			/*jshint validthis:true */
-			$scope[vm.leaveHandler].call(dragOperation.dragItem || this, dragOperation, evt);
-		}
-	}
-}]);
+            function onDragStart(scope, dragOperationGetter) {
+                getDragOperationFnc = dragOperationGetter;
+            }
+
+            /**
+             * @ngdoc method
+             * @name onDrop
+             * @methodOf ep.drag.drop.controller:epDropAreaCtrl
+             * @private
+             * @description
+             * checks if dragItem type is allowed to be dropped
+             */
+            function isValidDragType(dragItemType) {
+                var droppables = attrs.dropItemTypes.split(',');
+                if (Array.isArray(droppables) && droppables.length > 1) {
+                    if (droppables.indexOf(dragItemType) === -1) {
+                        return false;
+                    }
+                } else {
+                    if (attrs.dropItemTypes !== dragItemType) {
+                        return false;
+                    }
+                }
+                return true;
+            }
+
+            /**
+             * @ngdoc method
+             * @name onDrop
+             * @methodOf ep.drag.drop.controller:epDropAreaCtrl
+             * @public
+             * @description
+             * handles the onDrop event. If dropHandler is supplied it is called as dropHandler(item,dropElement)
+             */
+            function onDrop(evt) {
+                evt.stopPropagation();
+                evt.preventDefault();
+                $(ele).removeClass('ep-drop-active ep-drop-highlight');
+                var dragOperation = getDragOperationFnc();
+                if (!isValidDragType(dragOperation.dragItemType)) {
+                    return;
+                }
+                if ($scope[attrs.dropHandler]) {
+                    /*jshint validthis:true */
+                    $scope[attrs.dropHandler].call(dragOperation.dragItem || this, dragOperation, ele);
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name onDragOver
+             * @methodOf ep.drag.drop.controller:epDropAreaCtrl
+             * @public
+             * @description
+             * handles the onDragOver event
+             */
+            function onDragOver(evt) {
+                // TODO Add visual feedback on drag to show whether this area support this kind of drop
+                evt.stopPropagation();
+                evt.preventDefault();
+
+                var dragOperation = getDragOperationFnc();
+                if (isValidDragType(dragOperation.dragItemType)) {
+                    $(ele).addClass('ep-drop-active');
+                    if (dropHighlight) {
+                        $(ele).addClass('ep-drop-highlight');
+                    }
+                }
+
+                if ($scope[attrs.overHandler]) {
+                    /*jshint validthis:true */
+                    var item = dragOperation.dragItem || this;
+                    /*jshint validthis:true */
+                    $scope[attrs.overHandler].call(item, dragOperation, evt);
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name onDragLeave
+             * @methodOf ep.drag.drop.controller:epDropAreaCtrl
+             * @public
+             * @description
+             * handles the onDragLeave event
+             */
+            function onDragLeave(evt) {
+                evt.stopPropagation();
+                evt.preventDefault();
+                $(ele).removeClass('ep-drop-active ep-drop-highlight');
+                if ($scope[attrs.overHandler]) {
+                    var dragOperation = getDragOperationFnc();
+                    /*jshint validthis:true */
+                    var item = dragOperation.dragItem || this;
+                    /*jshint validthis:true */
+                    $scope[attrs.overHandler].call(item, dragOperation, evt);
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name setupEvents
+             * @methodOf ep.drag.drop.controller:epDropAreaCtrl
+             * @public
+             * @description
+             * Configures drag drop HTML5 events
+             */
+            function setupEvents(onOff) {
+                dropEnabled = onOff;
+                if (onOff) {
+                    evStartDragging = $scope.$on('startDraging', onDragStart);
+                    ele.on('drop', onDrop);
+                    ele.on('dragover', onDragOver);
+                    ele.on('dragleave', onDragLeave);
+                } else {
+                    if (evStartDragging) {
+                        evStartDragging();
+                    }
+                    ele.off('drop');
+                    ele.off('dragover');
+                    ele.off('dragleave');
+                }
+            }
+
+            $scope.$watch(attrs.dropHighlight, function(value) {
+                if (value === true || value === false) {
+                    dropHighlight = value;
+                }
+            });
+
+            if (attrs.dropEnabled === undefined) {
+                //if we dont have an attribute (compatibility)
+                setupEvents(true);
+            } else {
+                //watch the dropEnabled attribute to turn off/on events
+                $scope.$watch(attrs.dropEnabled, function(value) {
+                    if (value === undefined && dropEnabled === undefined) {
+                        //Very first time if attribute value is undefined default to true
+                        setupEvents(true);
+                    }
+                    if ((value === true || value === false) && (value !== dropEnabled)) {
+                        setupEvents(value);
+                    }
+                });
+            }
+        }
+    }
+})();
 
 'use strict';
 /**
@@ -4603,40 +5338,40 @@ function($scope) {
      * @name ep.drag.drop.directive:epDropArea
      * @restrict A
      *
+     * @param {bool} dropEnabled - is drop area enabled (by default enabled)
+     * @param {string} dropHandler - name of handler to be called upon drop
+     * @param {string} overHandler - name of handler to be called upon over
+     * @param {string} leaveHandler - name of handler to be called upon leave
+     * @param {bool} dropHighlight - should we highlight drop area (by default enabled)
+     *
      * @description
      * Represents the drop area directive
      *
      * >    dropItemTypes is a string attribute that can contain comma separated list of item types that can be
      * dropped to this area. This value will be used by ep-drop-area directive to check whether this drop is
      * supported by this area.
-     * >    dropCallback and dropCallbackParams attributes.  In some cases we already have some block of code
-     * that we can run when some event occurs. We can reuse existing code in drop handler by passing a callback
-     * function and parameters array in dropCallback and dropCallbackParams attributes.
+     * >     dropHandler,leaveHandler,overHandler attributes are attributes that pass names of the functions acting
+     * as callbacks on the active scope
+     * >    'ep-drop-active' class is set on the element when drop area is active
      *
      * @example
      */
 
 angular.module('ep.drag.drop').directive('epDropArea', [
 function() {
-	return {
-		restrict: 'A',
-		controller: 'epDropAreaCtrl',
-		controllerAs: 'dropCtrl',
-		compile: function() {
-			return function(scope, ele, attrs) {
-				// set controller vm props
-				scope.dropCtrl.dropItemTypes = attrs.dropItemTypes;
-				scope.dropCtrl.dropHandler = attrs.dropHandler;
-				scope.dropCtrl.overHandler = attrs.overHandler;
-				scope.dropCtrl.leaveHandler = attrs.leaveHandler;
-				// register the event handlers
-				scope.$on('startDraging', scope.dropCtrl.onDragStart);
-				ele.on('drop', scope.dropCtrl.onDrop);
-				ele.on('dragover', scope.dropCtrl.onDragOver);
-				ele.on('dragleave', scope.dropCtrl.onDragLeave);
-			};
-		}
-	};
+    return {
+        restrict: 'A',
+        controller: 'epDropAreaCtrl',
+        controllerAs: 'dropCtrl',
+        //scope cannot be isolated to be able to place directly on another directive
+        scope: false,
+        compile: function() {
+            return function(scope, ele, attrs) {
+                //register element and set it up for drop area
+                scope.register(ele, attrs);
+            };
+        }
+    };
 }]);
 
 /**
@@ -5397,434 +6132,440 @@ angular.module('ep.embedded.apps')
         }])
 
     .provider('epEmbeddedAppsProvider', [
-    '$controllerProvider',
-    '$provide',
-    '$compileProvider',
-    '$filterProvider',
-    function($controllerProvider, $provide, $compileProvider, $filterProvider) {
-        var regModules = ['ng'];
+        '$controllerProvider',
+        '$provide',
+        '$compileProvider',
+        '$filterProvider',
+        function($controllerProvider, $provide, $compileProvider, $filterProvider) {
+            var regModules = ['ng'];
 
-        var sysconfig = {
-            rootRoute: 'app',
-            path: 'apps',
-            provider: 'sysconfig',
-            applications: [],
-            hostAppModule: ''
-        };
+            var sysconfig = {
+                rootRoute: 'app',
+                path: 'apps',
+                provider: 'sysconfig',
+                applications: [],
+                hostAppModule: ''
+            };
 
-        var modules = {};
-        var providers = {
-            $controllerProvider: $controllerProvider,
-            $compileProvider: $compileProvider,
-            $filterProvider: $filterProvider,
-            $provide: $provide
-        };
-        var moduleCache = [];
+            var modules = {};
+            var providers = {
+                $controllerProvider: $controllerProvider,
+                $compileProvider: $compileProvider,
+                $filterProvider: $filterProvider,
+                $provide: $provide
+            };
+            var moduleCache = [];
 
-        moduleCache.push = function(value) {
-            if (this.indexOf(value) === -1) {
-                Array.prototype.push.apply(this, arguments);
+            moduleCache.push = function(value) {
+                if (this.indexOf(value) === -1) {
+                    Array.prototype.push.apply(this, arguments);
+                }
+            };
+
+            function moduleExists(moduleName) {
+                try {
+                    angular.module(moduleName);
+                } catch (e) {
+                    if (/No module/.test(e)) {
+                        return false;
+                    }
+                }
+                return true;
             }
-        };
 
-        function moduleExists(moduleName) {
-            try {
-                angular.module(moduleName);
-            } catch (e) {
-                if (/No module/.test(e)) {
-                    return false;
+            function getRequires(module) {
+                var requires = [];
+                angular.forEach(module.requires, function(requireModule) {
+                    if (regModules.indexOf(requireModule) === -1) {
+                        requires.push(requireModule);
+                    }
+                });
+                return requires;
+            }
+
+            function invoke($log, queue, providers) {
+                var i;
+                var ii;
+                var invokeQueue;
+                for (invokeQueue = queue, i = 0, ii = queue.length; i < ii; i++) {
+                    var invokeArgs = queue[i];
+                    var provider;
+
+                    if (providers.hasOwnProperty(invokeArgs[0])) {
+                        provider = providers[invokeArgs[0]];
+                    } else {
+                        return $log.error('unsupported provider ' + invokeArgs[0]);
+                    }
+                    var entityRegistrar = provider[invokeArgs[1]];
+                    var entityArgs = invokeArgs[2];
+
+                    entityRegistrar.apply(provider, entityArgs);
                 }
             }
-            return true;
-        }
 
-        function getRequires(module) {
-            var requires = [];
-            angular.forEach(module.requires, function(requireModule) {
-                if (regModules.indexOf(requireModule) === -1) {
-                    requires.push(requireModule);
-                }
-            });
-            return requires;
-        }
+            function register($log, $injector, providers, registerModules) {
+                var k;
+                var moduleName;
+                var moduleFn;
+                if (registerModules) {
+                    var runBlocks = [];
 
-        function register($log, $injector, providers, registerModules) {
-            var i;
-            var ii;
-            var k;
-            var invokeQueue;
-            var moduleName;
-            var moduleFn;
-            var invokeArgs;
-            var provider;
-            if (registerModules) {
-                var runBlocks = [];
-                var configBlocks = [];
-
-                var hostAppDependencies = [];
-                if (sysconfig.hostAppModule) {
-                    hostAppDependencies = getRequires(angular.module(sysconfig.hostAppModule));
-                }
-                for (k = registerModules.length - 1; k >= 0; k--) {
-                    moduleName = registerModules[k];
-                    if (angular.moduleRequiresLoading[moduleName] ||
-                        (hostAppDependencies.length && hostAppDependencies.indexOf(moduleName) === -1)) {
-                        regModules.push(moduleName);
-                        moduleFn = angular.module(moduleName);
-                        configBlocks = configBlocks.concat(moduleFn._configBlocks);
-                        runBlocks = runBlocks.concat(moduleFn._runBlocks);
-                        try {
-                            for (invokeQueue = moduleFn._invokeQueue, i = 0, ii = invokeQueue.length; i < ii; i++) {
-                                invokeArgs = invokeQueue[i];
-
-                                if (providers.hasOwnProperty(invokeArgs[0])) {
-                                    provider = providers[invokeArgs[0]];
-                                } else {
-                                    return $log.error('unsupported provider ' + invokeArgs[0]);
+                    var hostAppDependencies = [];
+                    if (sysconfig.hostAppModule) {
+                        hostAppDependencies = getRequires(angular.module(sysconfig.hostAppModule));
+                    }
+                    providers.$injector = $injector;
+                    for (k = registerModules.length - 1; k >= 0; k--) {
+                        moduleName = registerModules[k];
+                        if (angular.moduleRequiresLoading[moduleName] ||
+                            (hostAppDependencies.length && hostAppDependencies.indexOf(moduleName) === -1)) {
+                            regModules.push(moduleName);
+                            moduleFn = angular.module(moduleName);
+                            runBlocks = runBlocks.concat(moduleFn._runBlocks);
+                            try {
+                                invoke($log, moduleFn._invokeQueue, providers);
+                                invoke($log, moduleFn._configBlocks, providers);
+                            } catch (e) {
+                                if (e.message) {
+                                    e.message += ' from ' + moduleName;
                                 }
-                                var entityRegistrar = provider[invokeArgs[1]];
-                                var entityArgs = invokeArgs[2];
+                                $log.error(e.message);
+                                throw e;
+                            }
 
-                                entityRegistrar.apply(provider, entityArgs);
-                            }
-                        } catch (e) {
-                            if (e.message) {
-                                e.message += ' from ' + moduleName;
-                            }
-                            $log.error(e.message);
-                            throw e;
+                            angular.moduleRequiresLoading[moduleName] = false;
                         }
-                        angular.moduleRequiresLoading[moduleName] = false;
+                        registerModules.pop();
                     }
-                    registerModules.pop();
+
+                    angular.forEach(runBlocks, function(fn) {
+                        try {
+                            $injector.invoke(fn);
+                        } catch (e) {
+                            $log.error(e);
+                        }
+                    });
                 }
-                angular.forEach(configBlocks, function(fn) {
-                    try {
-                        $injector.invoke(fn);
-                    } catch (e) {
-                        $log.error(e);
-                    }
-                });
-                angular.forEach(runBlocks, function(fn) {
-                    try {
-                        $injector.invoke(fn);
-                    } catch (e) {
-                        $log.error(e);
-                    }
-                });
+                return null;
             }
-            return null;
-        }
 
-        function getAppPath() {
-            var _args = _.flatten(arguments, true);
-            var path = sysconfig.path;
-            angular.forEach(_args, function(arg) {
-                path += '/' + arg;
-            });
-            return path;
-        }
+            function getAppPath() {
+                var _args = _.flatten(arguments, true);
+                var path = sysconfig.path;
+                angular.forEach(_args, function(arg) {
+                    path += '/' + arg;
+                });
+                return path;
+            }
 
-        function getAppRoute() {
-            var _args = _.flatten(arguments, true);
-            var route = '/' + sysconfig.rootRoute;
-            angular.forEach(_args, function(arg) {
-                route += '/' + arg;
-            });
-            return route;
-        }
+            function getAppRoute() {
+                var _args = _.flatten(arguments, true);
+                var route = '/' + sysconfig.rootRoute;
+                angular.forEach(_args, function(arg) {
+                    route += '/' + arg;
+                });
+                return route;
+            }
 
-        var activeConfig;
-        function getAppPackageService(config, $timeout) {
-            // this active config switching needs work-- it's causing a problem where the wrong application is routed to. see EMA-855
-            activeConfig = config;
-            return ['$location', function appPackageService($location) {
-                var data = {};
+            var activeConfig;
 
-                function getLocalAppPath() {
-                    return getAppPath(activeConfig.id, arguments);
-                }
+            function getAppPackageService(config, $timeout) {
+                // this active config switching needs work-- it's causing a problem where the wrong application is routed to. see EMA-855
+                activeConfig = config;
+                return ['$location', function appPackageService($location) {
+                    var data = {};
 
-                function getLocalAppRoute() {
-                    return getAppRoute(activeConfig.id, arguments);
-                }
-
-                function goToView(viewId) {
-                    $location.url(getLocalAppRoute(viewId));
-                }
-
-                function executeResource(method, name, value, cacheKey, reload) {
-                    if (cacheKey !== undefined && cacheKey !== null && !reload && data[cacheKey]) {
-                        return $timeout(function() {
-                            return data[cacheKey];
-                        });
-                    }
-                    //var url = settings.appServerUrl + 'api/' + name;
-                    //return $http[method](url, value).then(function(result) {
-                    //    if (cacheKey !== undefined && cacheKey !== null) {
-                    //        data[cacheKey] = result.data;
-                    //    }
-                    //    return result.data;
-                    //});
-                }
-
-                var resource = {
-                    get: function(name, cacheKey, reload) {
-                        return executeResource('get', name, '', cacheKey, reload);
-                    },
-
-                    post: function(name, value, cacheKey, reload) {
-                        return executeResource('post', name, value, cacheKey, reload);
-                    },
-
-                    put: function(name, value, cacheKey, reload) {
-                        return executeResource('put', name, value, cacheKey, reload);
-                    },
-
-                    'delete': function(name, value, cacheKey, reload) {
-                        return executeResource('delete', name, '', cacheKey, reload);
-                    }
-                };
-
-                function getConfig() {
-                    return activeConfig;
-                }
-
-                return {
-                    getConfig: getConfig,
-                    resource: resource,
-                    data: data,
-                    goToView: goToView,
-                    getAppPath: getLocalAppPath,
-                    getAppRoute: getLocalAppRoute
-                };
-
-            }];
-        }
-
-        var state = {
-            loadComplete: false
-        };
-
-        this.$get = [
-            '$timeout', '$document', '$http', '$injector', '$log', '$q',
-            'epEmbeddedAppsCacheService', 'epSysConfig', 'epUtilsService',
-            function($timeout, $document, $http, $injector, $log, $q,
-                epEmbeddedAppsCacheService, epSysConfig, epUtilsService) {
-
-                function load(config) {
-                    var deferredLoad = $q.defer();
-                    var resourceId = 'module: ' + config.id;
-                    modules[config.id] = config;
-
-                    if (!config) {
-                        var errorText = 'Module not configured';
-                        $log.error(errorText);
-                        throw errorText;
+                    function getLocalAppPath() {
+                        return getAppPath(activeConfig.id, arguments);
                     }
 
-                    function loadLinks(urls, onLoadLink) {
-                        urls.forEach(function(url, idx) {
-                            var linkId = 'link_' + idx;
-                            if (url && !epEmbeddedAppsCacheService.linkCache.get(linkId)) {
-                                var linkElement = $document[0].createElement('link');
-                                linkElement.setAttribute('id', linkId);
-                                linkElement.rel = 'stylesheet';
-                                linkElement.href = url;
-                                linkElement.type = 'text/css';
-                                $document[0].head.appendChild(linkElement);
-                                epEmbeddedAppsCacheService.linkCache.put(linkId, 1);
-
-                                $timeout(function() {
-                                    onLoadLink('Link: ' + url);
-                                });
-                            }
-                        });
+                    function getLocalAppRoute() {
+                        return getAppRoute(activeConfig.id, arguments);
                     }
 
-                    // Load all of the resources required by the app package
-                    function loadResources(onLoadScript, onLoadLink, onLoadComplete) {
-                        state.loadComplete = false;
+                    function goToView(viewId) {
+                        $location.url(getLocalAppRoute(viewId));
+                    }
 
-                        // loads a list of scripts and resolves once they have all completed loading
-                        function loadScriptList(list) {
-                            var deferred = $q.defer();
-                            var remaining = list.length;
-                            if (remaining === 0) {
-                                deferred.resolve();
-                            }
-                            // decrement the remaining # of scripts and resolves once it reaches 0;
-                            function dec() {
-                                remaining--;
-                                if (remaining < 1) {
+                    function executeResource(method, name, value, cacheKey, reload) {
+                        if (cacheKey !== undefined && cacheKey !== null && !reload && data[cacheKey]) {
+                            return $timeout(function() {
+                                return data[cacheKey];
+                            });
+                        }
+                        //var url = settings.appServerUrl + 'api/' + name;
+                        //return $http[method](url, value).then(function(result) {
+                        //    if (cacheKey !== undefined && cacheKey !== null) {
+                        //        data[cacheKey] = result.data;
+                        //    }
+                        //    return result.data;
+                        //});
+                    }
+
+                    var resource = {
+                        get: function(name, cacheKey, reload) {
+                            return executeResource('get', name, '', cacheKey, reload);
+                        },
+
+                        post: function(name, value, cacheKey, reload) {
+                            return executeResource('post', name, value, cacheKey, reload);
+                        },
+
+                        put: function(name, value, cacheKey, reload) {
+                            return executeResource('put', name, value, cacheKey, reload);
+                        },
+
+                        'delete': function(name, value, cacheKey, reload) {
+                            return executeResource('delete', name, '', cacheKey, reload);
+                        }
+                    };
+
+                    function getConfig() {
+                        return activeConfig;
+                    }
+
+                    return {
+                        getConfig: getConfig,
+                        resource: resource,
+                        data: data,
+                        goToView: goToView,
+                        getAppPath: getLocalAppPath,
+                        getAppRoute: getLocalAppRoute
+                    };
+
+                }];
+            }
+
+            var state = {
+                loadComplete: false
+            };
+
+            this.$get = [
+                '$timeout', '$document', '$http', '$injector', '$log', '$q',
+                'epEmbeddedAppsCacheService', 'epSysConfig', 'epUtilsService',
+                function($timeout, $document, $http, $injector, $log, $q,
+                         epEmbeddedAppsCacheService, epSysConfig, epUtilsService) {
+
+                    function load(config) {
+                        var deferredLoad = $q.defer();
+                        var resourceId = 'module: ' + config.id;
+                        modules[config.id] = config;
+
+                        if (!config) {
+                            var errorText = 'Module not configured';
+                            $log.error(errorText);
+                            throw errorText;
+                        }
+
+                        function loadLinks(urls, onLoadLink) {
+                            urls.forEach(function(url, idx) {
+                                var linkId = 'link_' + idx;
+                                if (url && !epEmbeddedAppsCacheService.linkCache.get(linkId)) {
+                                    var linkElement = $document[0].createElement('link');
+                                    linkElement.setAttribute('id', linkId);
+                                    linkElement.rel = 'stylesheet';
+                                    linkElement.href = url;
+                                    linkElement.type = 'text/css';
+                                    $document[0].head.appendChild(linkElement);
+                                    epEmbeddedAppsCacheService.linkCache.put(linkId, 1);
+
+                                    $timeout(function() {
+                                        onLoadLink('Link: ' + url);
+                                    });
+                                }
+                            });
+                        }
+
+                        // Load all of the resources required by the app package
+                        function loadResources(onLoadScript, onLoadLink, onLoadComplete) {
+                            state.loadComplete = false;
+
+                            // loads a list of scripts and resolves once they have all completed loading
+                            function loadScriptList(list) {
+                                var deferred = $q.defer();
+                                var remaining = list.length;
+                                if (remaining === 0) {
                                     deferred.resolve();
                                 }
-                            }
-                            // queue up each script in the list
-                            list.forEach(function(url) {
-                                epUtilsService.loadScript(url, epEmbeddedAppsCacheService.scriptCache).
-                                    then(function(id) {
-                                        onLoadScript(id);
-                                    }).then(dec, dec);
-                            });
-                            return deferred.promise;
-                        }
-                        (function(orig) {
-                            angular.moduleRequiresLoading = {};
-                            angular.module = function() {
-                                if (arguments.length > 1) {
-                                    angular.moduleRequiresLoading[arguments[0]] = true;
+                                // decrement the remaining # of scripts and resolves once it reaches 0;
+                                function dec() {
+                                    remaining--;
+                                    if (remaining < 1) {
+                                        deferred.resolve();
+                                    }
                                 }
-                                return orig.apply(null, arguments);
-                            };
-                        })(angular.module);
-                        // Load all of the third party scripts first
-                        var thirdPartyScripts = (config.resources.scripts.thirdParty || []).map(function(url) {
-                            return getAppPath(config.id, url);
-                        });
-                        loadScriptList(thirdPartyScripts).then(function() {
-                            // next get the module script syncronously
-                            var url = config.resources.scripts.module;
-                            return epUtilsService.loadScript(
-                                getAppPath(config.id, url), epEmbeddedAppsCacheService.scriptCache).
-                                then(function(id) { onLoadScript(id);
-                        });
-                        }).then(function() {
-                            // finally load the rest of the app's scripts
-                            var appScripts = config.resources.scripts.app.map(function(url) {
+
+                                // queue up each script in the list
+                                list.forEach(function(url) {
+                                    epUtilsService.loadScript(url, epEmbeddedAppsCacheService.scriptCache).then(
+                                        function(id) {
+                                            onLoadScript(id);
+                                        }).then(dec, dec);
+                                });
+                                return deferred.promise;
+                            }
+
+                            (function(orig) {
+                                angular.moduleRequiresLoading = {};
+                                angular.module = function() {
+                                    if (arguments.length > 1) {
+                                        angular.moduleRequiresLoading[arguments[0]] = true;
+                                    }
+                                    return orig.apply(null, arguments);
+                                };
+                            })(angular.module);
+                            // Load all of the third party scripts first
+                            var thirdPartyScripts = (config.resources.scripts.thirdParty || []).map(function(url) {
                                 return getAppPath(config.id, url);
                             });
-                            return loadScriptList(appScripts);
-                        }).then(onLoadComplete);
+                            loadScriptList(thirdPartyScripts).then(function() {
+                                // next get the module script syncronously
+                                var url = config.resources.scripts.module;
+                                return epUtilsService.loadScript(
+                                    getAppPath(config.id, url), epEmbeddedAppsCacheService.scriptCache).then(
+                                    function(id) {
+                                        onLoadScript(id);
+                                    });
+                            }).then(function() {
+                                // finally load the rest of the app's scripts
+                                var appScripts = config.resources.scripts.app.map(function(url) {
+                                    return getAppPath(config.id, url);
+                                });
+                                return loadScriptList(appScripts);
+                            }).then(onLoadComplete);
 
-                        // load all of the css
-                        var urls = config.resources.links.map(function(url) {
-                            return getAppPath(config.id, url);
-                        });
-                        loadLinks(urls, onLoadLink);
-                    }
-
-                    function loadDependencies(moduleId, allDependencyLoad) {
-
-                        if (regModules.indexOf(moduleId) > -1) {
-                            return allDependencyLoad();
+                            // load all of the css
+                            var urls = config.resources.links.map(function(url) {
+                                return getAppPath(config.id, url);
+                            });
+                            loadLinks(urls, onLoadLink);
                         }
 
-                        var loadedModule = angular.module(moduleId);
-                        var requires = getRequires(loadedModule);
+                        function loadDependencies(moduleId, allDependencyLoad) {
 
-                        function onModuleLoad(moduleLoaded) {
-                            if (moduleLoaded) {
+                            if (regModules.indexOf(moduleId) > -1) {
+                                return allDependencyLoad();
+                            }
 
-                                var index = requires.indexOf(moduleLoaded);
-                                if (index > -1) {
-                                    requires.splice(index, 1);
+                            var loadedModule = angular.module(moduleId);
+                            var requires = getRequires(loadedModule);
+
+                            function onModuleLoad(moduleLoaded) {
+                                if (moduleLoaded) {
+
+                                    var index = requires.indexOf(moduleLoaded);
+                                    if (index > -1) {
+                                        requires.splice(index, 1);
+                                    }
+                                }
+                                if (requires.length === 0) {
+                                    $timeout(function() {
+                                        allDependencyLoad(moduleId);
+                                    });
                                 }
                             }
-                            if (requires.length === 0) {
-                                $timeout(function() {
-                                    allDependencyLoad(moduleId);
-                                });
-                            }
-                        }
 
-                        var requireNeeded = getRequires(loadedModule);
-                        angular.forEach(requireNeeded, function(requireModule) {
+                            var requireNeeded = getRequires(loadedModule);
+                            angular.forEach(requireNeeded, function(requireModule) {
 
-                            moduleCache.push(requireModule);
+                                moduleCache.push(requireModule);
 
-                            if (moduleExists(requireModule)) {
-                                return onModuleLoad(requireModule);
-                            }
+                                if (moduleExists(requireModule)) {
+                                    return onModuleLoad(requireModule);
+                                }
 
-                            var requireModuleConfig = modules[requireModule];
-                            if (requireModuleConfig) {
-                                loadResources(function() {
+                                var requireModuleConfig = modules[requireModule];
+                                if (requireModuleConfig) {
+                                    loadResources(function() {
 
-                                }, function() {
+                                    }, function() {
 
-                                }, function() {
-                                    loadDependencies(requireModule, function requireModuleLoaded(name) {
-                                        onModuleLoad(name);
+                                    }, function() {
+                                        loadDependencies(requireModule, function requireModuleLoaded(name) {
+                                            onModuleLoad(name);
+                                        });
                                     });
-                                });
-                            } else {
-                                $log.warn('module [' + requireModule + '] not loaded and not configured');
-                                onModuleLoad(requireModule);
+                                } else {
+                                    $log.warn('module [' + requireModule + '] not loaded and not configured');
+                                    onModuleLoad(requireModule);
+                                }
+                                return null;
+                            });
+
+                            if (requireNeeded.length === 0) {
+                                onModuleLoad();
                             }
                             return null;
-                        });
-
-                        if (requireNeeded.length === 0) {
-                            onModuleLoad();
                         }
-                        return null;
-                    }
 
-                    if (epEmbeddedAppsCacheService.scriptCache.get(resourceId)) {
-                        $log.debug('AppPackage ' + config.id + ' already loaded.');
-                        activeConfig = config;
-                        deferredLoad.resolve(config.id);
-                        // load all of the css links
-                        // even though the module has already been loaded, we still need to reload the css
-                        // since it gets removed from the page when the package is unloaded.
-                        var urls = config.resources.links.map(function(url) {
-                            return getAppPath(config.id, url);
-                        });
-                        loadLinks(urls, function(id) {
-                            $log.debug('Loaded ' + id);
-                        });
-                    } else {
+                        if (epEmbeddedAppsCacheService.scriptCache.get(resourceId)) {
+                            $log.debug('AppPackage ' + config.id + ' already loaded.');
+                            activeConfig = config;
+                            deferredLoad.resolve(config.id);
+                            // load all of the css links
+                            // even though the module has already been loaded, we still need to reload the css
+                            // since it gets removed from the page when the package is unloaded.
+                            var urls = config.resources.links.map(function(url) {
+                                return getAppPath(config.id, url);
+                            });
+                            loadLinks(urls, function(id) {
+                                $log.debug('Loaded ' + id);
+                            });
+                        } else {
 
-                        loadResources(
-                            // onLoadScript
-                            function(id) { $log.debug('Loaded ' + id); },
+                            loadResources(
+                                // onLoadScript
+                                function(id) {
+                                    $log.debug('Loaded ' + id);
+                                },
 
-                            //onLoadLink
-                            function(id) { $log.debug('Loaded ' + id); },
+                                //onLoadLink
+                                function(id) {
+                                    $log.debug('Loaded ' + id);
+                                },
 
-                            //onLoadComplete
-                            function() {
-                                moduleCache.push(config.id);
-                                loadDependencies(config.id, function() {
-                                    angular.module(config.id).factory('appPackageService',
-                                        getAppPackageService(config, $timeout, $http));
-                                    register($log, $injector, providers, angular.copy(moduleCache));
-                                    epEmbeddedAppsCacheService.scriptCache.put(resourceId, config);
-                                    $timeout(function() {
-                                        deferredLoad.resolve(config.id);
-                                        state.loadComplete = true;
+                                //onLoadComplete
+                                function() {
+                                    moduleCache.push(config.id);
+                                    loadDependencies(config.id, function() {
+                                        angular.module(config.id).factory('appPackageService',
+                                            getAppPackageService(config, $timeout, $http));
+                                        register($log, $injector, providers, angular.copy(moduleCache));
+                                        epEmbeddedAppsCacheService.scriptCache.put(resourceId, config);
+                                        $timeout(function() {
+                                            deferredLoad.resolve(config.id);
+                                            state.loadComplete = true;
+                                        });
                                     });
                                 });
-                            });
+                        }
+                        return deferredLoad.promise;
                     }
-                    return deferredLoad.promise;
-                }
 
-                function getConfig() {
-                    epSysConfig.mergeSection('ep.embedded.apps', sysconfig);
+                    function getConfig() {
+                        epSysConfig.mergeSection('ep.embedded.apps', sysconfig);
 
-                    if (!sysconfig.path) {
-                        sysconfig.path = 'apps';
+                        if (!sysconfig.path) {
+                            sysconfig.path = 'apps';
+                        }
+                        if (!sysconfig.rootRoute) {
+                            sysconfig.rootRoute = 'app';
+                        }
+                        return sysconfig;
                     }
-                    if (!sysconfig.rootRoute) {
-                        sysconfig.rootRoute = 'app';
-                    }
-                    return sysconfig;
-                }
 
-                sysconfig = getConfig();
+                    sysconfig = getConfig();
 
-                return {
-                    settings: sysconfig,
-                    load: load,
-                    modules: modules,
-                    getAppPath: getAppPath,
-                    getAppRoute: getAppRoute,
-                    state: state
-                };
-            }];
-    }
+                    return {
+                        settings: sysconfig,
+                        load: load,
+                        modules: modules,
+                        getAppPath: getAppPath,
+                        getAppRoute: getAppRoute,
+                        state: state
+                    };
+                }];
+        }
     ]);
 
 'use strict';
@@ -6753,19 +7494,24 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
         var fileSystem = storageSystems.localStorage;
 
-        // private method
-        function fail(deferred, error) {
-            var errDesc;
-            if (error.name) {
-                errDesc = domErrors[error.name];
-            } else if (error.code) {
-                errDesc = fileErrors[error.code];
-            } else {
-                errDesc = error;
-            }
-            var msg = 'LocalFileSystem failure: ' + errDesc + ' [' + error.name + ']';
-            $log.error(msg);
-            deferred.reject(msg);
+        function failWith(deferred, url) {
+            return function(error) {
+                var errDesc;
+                if (error.name) {
+                    errDesc = domErrors[error.name];
+                } else if (error.code) {
+                    errDesc = fileErrors[error.code];
+                } else {
+                    errDesc = error;
+                }
+                var msg = 'LocalFileSystem failure: ' + errDesc + ' [ ' + url;
+                if (error.name) {
+                    msg += ': ' + error.name;
+                }
+                msg += ' ]';
+                $log.error(msg);
+                deferred.reject(msg);
+            };
         }
 
         /**
@@ -6773,30 +7519,55 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @name load
          * @methodOf ep.file:epFileService
          * @public
+         * @param {string} path (optional) the device file system directory to use when loading the file (defaults to the application's data directory)
+         * @param {string} filename the name of the file to load
          * @description
          * Loads an object from persistent storage. On cordova apps the file
-         * is loaded from the application's data directory. On browser based apps,
-         * the data is stored in localStorage
+         * is loaded from the application's data directory by default. On browser based apps,
+         * the data is stored in localStorage. The path parameter is optional, defaulting to the
          */
-        function load(filename) {
+        function load(path, filename) {
+            return loadText(path, filename).then(function(text) {
+                return angular.fromJson(text);
+            });
+        }
+
+        /**
+         * @ngdoc method
+         * @name load
+         * @methodOf ep.file:epFileService
+         * @public
+         * @param {string} path (optional) the device file system directory to use when loading the file (defaults to the application's data directory)
+         * @param {string} filename the name of the file to load
+         * @description
+         * Loads text from persistent storage. On cordova apps the file
+         * is loaded from the application's data directory by default. On browser based apps,
+         * the data is stored in localStorage. The path parameter is optional, defaulting to the
+         */
+        function loadText(path, filename) {
             var graph;
             var deferred = $q.defer();
             var filePath;
 
             if (fileSystem === storageSystems.localStorage) {
-                filePath = epFileConstants.namespace + '.' + filename;
+                if (!filename) {
+                    filename = path;
+                    path = epFileConstants.namespace;
+                }
+                filePath = path + '.' + filename;
                 graph = epLocalStorageService.get(filePath);
                 if (!graph) {
-                    deferred.reject({
-                        code: 1,
-                        message: 'File not found'
-                    });
+                    failWith(deferred, filename)({code: 1});
                 } else {
                     $log.debug('Successfully loaded ' + filePath + ' from LocalStorage.');
                     deferred.resolve(graph);
                 }
             } else {
-                $window.resolveLocalFileSystemURL($window.cordova.file.dataDirectory + filename,
+                if (!filename) {
+                    filename = path;
+                    path = $window.cordova.file.dataDirectory;
+                }
+                $window.resolveLocalFileSystemURL(path + filename,
                     function(fileEntry) {
                         fileEntry.file(function(file) {
                             var reader = new FileReader();
@@ -6804,12 +7575,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             // to satisfy the Blob interface. When it is read, the function
                             // returns it as an array with one member.
                             reader.onloadend = function() {
-                                graph = this.result;
-                                deferred.resolve(JSON.parse(graph));
+                                deferred.resolve(this.result);
                             };
                             reader.readAsText(file);
-                        }, fail.bind(null, deferred));
-                    }, fail.bind(null, deferred));
+                        }, failWith(deferred, filename));
+                    }, failWith(deferred, filename));
             }
 
             return deferred.promise;
@@ -6820,23 +7590,54 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @name save
          * @methodOf ep.file:epFileService
          * @public
+         * @param {object} graph to save to the file system.
+         * @param {string} path (optional) the device file system directory to use when saving the file (defaults to the application's data directory)
+         * @param {string} filename the name of the file to load
          * @description
          * Saves an object to persistent storage. On cordova apps the file
-         * is saved in the application's data directory. On browser based apps,
+         * is saved in the application's data directory by default. On browser based apps,
          * the data is stored in localStorage.
          */
-        function save(graph, filename) {
+        function save(graph, path, filename) {
+            return saveText(angular.toJson(graph), path, filename);
+        }
+
+        /**
+         * @ngdoc method
+         * @name save
+         * @methodOf ep.file:epFileService
+         * @public
+         * @param {string} text to save to the file system.
+         * @param {string} path (optional) the device file system directory to use when saving the file (defaults to the application's data directory)
+         * @param {string} filename the name of the file to load
+         * @param {string} type {optional} the mime type with which to save the file
+         * @description
+         * Saves text to persistent storage. On cordova apps the file
+         * is saved in the application's data directory by default. On browser based apps,
+         * the data is stored in localStorage.
+         */
+        function saveText(text, path, filename, type) {
             var deferred = $q.defer();
             try {
                 var filePath = '';
-
+                if (!type) {
+                    type = 'text/plain';
+                }
                 if (fileSystem === storageSystems.localStorage) {
-                    filePath = epFileConstants.namespace + '.' + filename;
-                    epLocalStorageService.update(filePath, graph);
+                    if (!filename) {
+                        filename = path;
+                        path = epFileConstants.namespace;
+                    }
+                    filePath = path + '.' + filename;
+                    epLocalStorageService.update(filePath, text);
                     $log.debug('Successfully saved ' + filePath + ' to LocalStorage.');
                     deferred.resolve();
                 } else {
-                    $window.resolveLocalFileSystemURL($window.cordova.file.dataDirectory, function(directoryEntry) {
+                    if (!filename) {
+                        filename = path;
+                        path = $window.cordova.file.dataDirectory;
+                    }
+                    $window.resolveLocalFileSystemURL(path, function(directoryEntry) {
                         directoryEntry.getFile(filename, {create: true}, function(fileEntry) {
                             fileEntry.createWriter(function(writer) {
 
@@ -6851,15 +7652,15 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                                 };
                                 // the blob interface expects the object graph to be inside an array
                                 // so the graph gets stringified, then set as the only element in the array
-                                var blob = new Blob([JSON.stringify(graph)], {type: 'text/plain'});
+                                var blob = new Blob([text], {type: type});
                                 writer.write(blob);
 
-                            }, fail.bind(null, deferred));
-                        }, fail.bind(null, deferred));
-                    }, fail.bind(null, deferred));
+                            }, failWith(deferred, filename));
+                        }, failWith(deferred, filename));
+                    }, failWith(deferred, filename));
                 }
             } catch (e) {
-                deferred.reject(e);
+                failWith(deferred, filename)(e);
             }
             return deferred.promise;
         }
@@ -6875,25 +7676,34 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * On cordova based apps, the dataDirectory is searched for the given file,
          * and on browser apps, the localStorage is queried.
          */
-        function fileExists(filename) {
+        function fileExists(path, filename) {
             var deferred = $q.defer();
             try {
                 if (fileSystem === storageSystems.fileStorage) {
-                    $window.resolveLocalFileSystemURL($window.cordova.file.dataDirectory + filename,
+                    if (!filename) {
+                        filename = path;
+                        path = $window.cordova.file.dataDirectory;
+                    }
+                    $window.resolveLocalFileSystemURL(path + filename,
                         function() {
                             deferred.resolve(true);
                         }, function(err) {
                             if (err.code === 1) {
                                 deferred.resolve(false);
                             } else {
-                                fail(deferred, err);
+                                failWith(deferred, filename)(err);
                             }
                         });
                 } else {
-                    deferred.resolve(!!epLocalStorageService.get(epFileConstants.namespace + '.' + filename));
+                    if (!filename) {
+                        filename = path;
+                        path = epFileConstants.namespace;
+                    }
+                    var filePath = path + '.' + filename;
+                    deferred.resolve(!!epLocalStorageService.get(filePath));
                 }
             } catch (e) {
-                deferred.reject(e);
+                failWith(deferred, filename)(e);
             }
             return deferred.promise;
         }
@@ -6933,11 +7743,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             fileEntry.remove();
                             deferred.resolve();
                         }, function(err) {
-                            fail(deferred, err);
+                            failWith(deferred, filename)(err);
                         });
                 }
             } catch (e) {
-                deferred.reject(e);
+                failWith(deferred, filename)(e);
             }
             return deferred.promise;
         }
@@ -6952,12 +7762,46 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
         return {
             load: load,
+            loadText: loadText,
             save: save,
+            saveText: saveText,
             getFilePath: getFilePath,
             fileExists: fileExists,
             remove: remove
         };
     }
+})();
+
+/**
+ * @ngdoc directive
+ * @name ep.filter.list.directive:epFilterList
+ * @restrict E
+ *
+ * @description
+ * Represents the filter list input directive
+ *
+ * @example
+ * <pre>
+        <ep-filter-list search-by=filter1.firstname></ep-filter-list>
+        <ul>
+            <li ng-repeat="name in nameList | filter: filter1">{{name.firstname}} {{name.lastname}}</li>
+        </ul>
+ * </pre>
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.filter.list').directive('epFilterList',
+    function() {
+        return {
+            restrict: 'E',
+            replace: true,
+            scope: {
+                searchBy: '='
+            },
+            templateUrl: 'src/components/ep.filter.list/filter_list.html'
+        };
+    });
 })();
 
 /**
@@ -6972,7 +7816,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @ngdoc service
  * @name ep.hybrid.barcode:epHybridBarcodeService
  * @description
- * Service for accessing Cordova Barcode plugin
+ * Service for accessing Cordova Barcode plugin. This will scan a barcode and recognize the UPC code and format.
+ *
+ * Note: Include cordova.js script file in html file and add
+ * {@link https://www.npmjs.com/package/cordova-plugin-barcodescanner cordova barcodescanner plugin} into app.
  *
  * @example
     <example module="TestApp">
@@ -6981,15 +7828,15 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             <div class="panel-body">
                 <p>{{barCodeNumber}}</p>
                 <p>{{barCodeFormat}}</p>
-                <button class="btn btn-primary" style="width:100%" ng-click="scanBarcode()">Scan</button>
+                <button class="btn btn-primary btn-block" ng-click="scanBarcode()">Scan</button>
             </div>
 	      </div>
      </file>
      <file name="script.js">
      	angular.module('TestApp', ['ep.hybrid.barcode'])
      		.controller('SampleCtrl',['$scope', '$log', 'epHybridBarcodeService',
-	     		function($scope, epHybridBarcodeService){
-                    $scope.scanBarcode = function () {
+	     		function($scope, epHybridBarcodeService) {
+                    $scope.scanBarcode = function() {
                         epHybridBarcodeService.scan(
 				            onSuccess,
                             onFail
@@ -7060,7 +7907,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @ngdoc service
  * @name ep.hybrid.calendar:epHybridCalendarService
  * @description
- * Service for accessing Cordova Calendar plugin
+ * Service for accessing Cordova Calendar plugin. This allows you to manipulate the native calendar.
+ *
+ * Note: Include cordova.js script file in html file and add
+ * {@link https://www.npmjs.com/package/cordova-plugin-calendar cordova calendar plugin} into app.
  *
  * @example
    <example module="TestApp">
@@ -7073,7 +7923,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      <file name="script.js">
      	angular.module("TestApp", ["ep.hybrid.calendar"])
      		.controller("SampleCtrl",["$scope", "$log", "epHybridCalendarService",
-	     		function($scope, epHybridCalendarService){
+	     		function($scope, epHybridCalendarService) {
                     // create a calendar (iOS only for now)
                     epHybridCalendarService.createCalendar('calendar name',onSuccess,onFail);
 
@@ -7430,20 +8280,27 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @ngdoc service
  * @name ep.hybrid.contacts:epHybridContactsService
  * @description
- * Service for accessing Cordova contacts plugin
+ * Service for accessing Cordova contacts plugin. This will select a contact from device and display the information.
+ *
+ * Note: Include cordova.js script file in html file and add
+ * {@link https://www.npmjs.com/package/cordova-plugin-contacts cordova contacts plugin} into app
  *
  * @example
     <example module="TestApp">
      <file name="index.html">
 	     <div ng-controller="SampleCtrl">
             <div class="panel-body">
-                <button class="button button-block button-balanced" ng-click="pickContact()">
+                <button class="btn btn-block btn-primary" ng-click="pickContact()">
                 Pick a Contact from Phone
                 </button>
                 <div class="card" ng-if="selectedContact != undefined">
                     <div>Name: {{selectedContact.name.formatted}}</div>
-                    <div>Phone: {{selectedContact.phoneNumbers[0].value}}</div>
-                    <div>Email: {{selectedContact.emails[0].value}}</div>
+                    <div ng-repeat="phone in selectedContact.phoneNumbers">
+                        Phone {{ $index + 1 }}: {{phone.value}}
+                    </div>
+                    <div ng-repeat="email in selectedContact.emails">
+                        Email {{ $index + 1 }}: {{email.value}}
+                    </div>
                 </div>
             </div>
 	      </div>
@@ -7451,8 +8308,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      <file name="script.js">
      	angular.module("TestApp", ["ep.hybrid.contacts"])
      		.controller("SampleCtrl",["$scope", "$log", "epHybridContactsService",
-                function($scope, epHybridContactsService){
-                    $scope.pickContact = function () {
+                function($scope, epHybridContactsService) {
+                    $scope.pickContact = function() {
                         epHybridContactsService.pickContact(
                             onSuccess,
                             onFail
@@ -7526,7 +8383,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @ngdoc service
  * @name ep.hybrid.device:epHybridDeviceService
  * @description
- * Service for accessing Cordova device plugin
+ * Service for accessing Cordova device plugin. This will fetch the details about the device.
+ *
+ * Note: Include cordova.js script file in html file and add
+ * {@link https://www.npmjs.com/package/cordova-plugin-device cordova device plugin} into app
  *
  * @example
     <example module="TestApp">
@@ -7543,7 +8403,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      <file name="script.js">
      	angular.module("TestApp", ["ep.hybrid.device"])
      		.controller("SampleCtrl",["$scope", "epHybridDeviceService",
-	     		function($scope, epHybridDeviceService){
+	     		function($scope, epHybridDeviceService) {
                     $scope.deviceModel = epHybridDeviceService.getModel();
                     $scope.devicePlatform = epHybridDeviceService.getPlatform();
                     $scope.deviceId = epHybridDeviceService.getUUID();
@@ -7568,6 +8428,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @public
          * @description
          * To get the OS of the device
+         * @returns {string} Operating System name.
          */
         function getPlatform() {
             if (!isDevicePluginAvailable()) {
@@ -7583,6 +8444,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @public
          * @description
          * To get the model of the device
+         * @returns {string} model name.
          */
         function getModel() {
             if (!isDevicePluginAvailable()) { return; }
@@ -7596,6 +8458,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @public
          * @description
          * To get the UUID of the device
+         * @returns {string} Device's UUID.
          */
         function getUUID() {
             if (!isDevicePluginAvailable()) { return; }
@@ -7609,6 +8472,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @public
          * @description
          * To get OS version of the device
+         * @returns {string} Operating System version.
          */
         function getVersion() {
             if (!isDevicePluginAvailable()) { return; }
@@ -7622,6 +8486,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @private
          * @description
          * To check the cordova device plugin availability
+         * @returns {Boolean} true or false based on the device plugin availablity.
          */
         function isDevicePluginAvailable() {
             if (!$window.device) {
@@ -7646,6 +8511,165 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  *
  */
 (function() {
+    'use strict';
+    angular.module('ep.hybrid.emailcomposer', []);
+})();
+
+/**
+ * @ngdoc service
+ * @name ep.hybrid.emailcomposer:epHybridEmailComposerService
+ * @description
+ * Service for accessing Cordova Email Composer plugin. This provides access to the standard interface that manages the editing and sending an email.
+  *
+ * Note: Include cordova.js script file in html file and add
+ * {@link https://www.npmjs.com/package/cordova-plugin-email cordova email plugin} into app
+ *
+ * @example
+    <example module="TestApp">
+     <file name="index.html">
+	     <div ng-controller="SampleCtrl">
+            <div class="panel-body">
+                <div><button class="btn btn-primary btn-block" ng-click="sendEmail()">Send An Email</button></div>
+            </div>
+	      </div>
+     </file>
+     <file name="script.js">
+     	angular.module('TestApp', ['ep.hybrid.emailcomposer'])
+     		.controller('SampleCtrl',['$scope', '$log', 'epHybridEmailComposerService',
+	     		function($scope, epHybridEmailComposerService) {
+
+                    $scope.sendEmail = function() {
+                        try {
+                            epHybridPhotoService.getPicture(
+                                onSuccess,
+                                onFail,
+                                {
+                                    quality: 50,
+                                    destinationType: Camera.DestinationType.DATA_URL, sourceType: Camera.PictureSourceType.PHOTOLIBRARY,
+                                    correctOrientation: true
+                                }
+                            );
+                        }
+                        catch (err) {
+                            console.log(err.message);
+                        }
+                    }
+
+                    function onSuccess(imageData) {
+                        try {
+                            epHybridEmailComposerService.draftAnEmail({
+                                subject: 'EpicApp',
+                                body: '<h3>EpicApp Test File Attached</h3>' +
+                                '<p>EpicApp Test: ' + '</p>',
+                                isHtml: true,
+                                attachments: ['base64:image.png//' + imageData]
+                            });
+                        }
+                        catch (ex) {
+                            console.log(ex);
+                        }
+                    }
+
+                    function onFail(message) {
+                        console.log("Failed because: " + message);
+                    }
+     </file>
+   </example>
+ */
+(function() {
+    'use strict';
+
+    epHybridEmailComposerService.$inject = ['$log'];
+    angular.module('ep.hybrid.emailcomposer')
+        .service('epHybridEmailComposerService', /*@ngInject*/ epHybridEmailComposerService);
+
+    function epHybridEmailComposerService($log) {
+
+        /**
+         * @ngdoc method
+         * @name isEmailAvailable
+         * @methodOf ep.hybrid.emailcomposer:epHybridEmailComposerService
+         * @private
+         * @description
+         * To check the availability of cordova email composer plugin.
+         * @returns {Boolean} true or false based on the availablity of email composer plugin .
+         */
+        function isEmailAvailable() {
+            var emailAvailable;
+            try {
+                cordova.plugins.email.isAvailable(
+                   function(isAvailable) {
+                       emailAvailable = isAvailable;
+                   }
+            );
+            } catch (ex) {
+                emailAvailable = false;
+                $log.debug('Email service not available' + ex);
+            }
+            return emailAvailable;
+        }
+
+        /**
+         * @ngdoc method
+         * @name draftAnEmail
+         * @methodOf ep.hybrid.emailcomposer:epHybridEmailComposerService
+         * @public
+         * @param {object} settings - Options to configure the Action Sheet
+         * @param {object} settings.to - Array of strings i.e. Email addresses for TO field
+         * @param {object} settings.cc - Array of strings i.e. Email addresses for CC field
+         * @param {object} settings.bcc - Array of strings i.e. Email addresses for BCC field
+         * @param {string} settings.subject - Subject of the email
+         * @param {string} settings.body - Email body (for HTML, set isHtml to true)
+         * @param {boolean} settings.isHtml - Indicats if the body is HTML or plain text
+         * @param {object} settings.attachments - Array of strings i.e. File paths that needs to be attached
+         * @description
+         * Opens an Email draft with the provided inputs. After opening the draft the user can edit, delete or send an email.
+         */
+
+        function draftAnEmail(settings) {
+            try {
+                cordova.plugins.email.isAvailable(
+                    /*jshint validthis:true */
+                    function(isAvailable) {
+                        var defaults = {
+                            to: [],
+                            cc: [],
+                            bcc: [],
+                            subject: '[No Subject]',
+                            body: '',
+                            isHtml: false,
+                            attachments: [],
+                            app: 'gmail'
+                        };
+                        var emailSettings = angular.extend(defaults, settings);
+                        if (!angular.isArray(emailSettings.attachments)) {
+                            emailSettings.attachments = [emailSettings.attachments];
+                        }
+                        cordova.plugins.email.open(emailSettings, function(e) {
+                            $log.error('An error occurred while attempting to launch the email application.' + e);
+                        });
+                    }, function() {
+                        $log.debug('Email service not available');
+                    });
+            }
+            catch (ex) {
+                $log.error('An error occurred while attempting to launch the email application. ' + ex);
+            }
+        }
+
+        return {
+            isEmailAvailable: isEmailAvailable,
+            draftAnEmail: draftAnEmail
+        };
+    }
+
+})();
+
+
+/**
+ *
+ */
+(function() {
   'use strict';
     angular.module('ep.hybrid.flashlight', []);
 })();
@@ -7654,23 +8678,29 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @ngdoc service
  * @name ep.hybrid.flashlight:epHybridFlashlightService
  * @description
- * Service for accessing Cordova flashlight plugin
- *
+ * Service for accessing Cordova flashlight plugin ({@link https://www.npmjs.com/package/cordova-plugin-flashlight cordova-plugin-flashlight})
  * @example
      <example module="TestApp">
      <file name="index.html">
 	     <div ng-controller="SampleCtrl">
             <div class="panel-body">
-                <button class="btn btn-primary btn-block" ng-click="on()">On</button>
+                <div><button class="btn btn-success btn-block" ng-click="on()">On</button></div> &nbsp
+                <div><button class="btn btn-danger btn-block" ng-click="off()">Off</button></div>
             </div>
 	      </div>
      </file>
      <file name="script.js">
      	angular.module("TestApp", ["ep.hybrid.flashlight"])
      		.controller("SampleCtrl",["$scope", "epHybridFlashlightService",
-                function($scope, epHybridFlashlightService){
-                        $scope.on = function() {
+                function($scope, epHybridFlashlightService) {
+                    // Allows to switch on the flashlight
+                    $scope.on = function() {
                         epHybridFlashlightService.flashOn();
+                    }
+
+                    // Allows to switch off the flashlight
+                    $scope.off = function() {
+                        epHybridFlashlightService.flashOff();
                     }
             }]);
      </file>
@@ -7691,19 +8721,13 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @methodOf ep.hybrid.flashlight:epHybridFlashlightService
          * @public
          * @description
-         * Allows you to switch the flashlight / torch of the device on and off.
+         * Allows you to switch the flashlight / torch of the device on.
          */
         function flashOn() {
             window.plugins.flashlight.available(function(isAvailable) {
                 if (isAvailable) {
                     // switch on
                     window.plugins.flashlight.switchOn();
-
-                    //// switch off after 3 seconds
-                    //setTimeout(function() {
-                    //    window.plugins.flashlight.switchOff();
-                    //}, 3000);
-
                 } else {
                     $log.debug('Flashlight not available on this device');
                 }
@@ -7715,11 +8739,17 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             }, false);
         }
 
+        /**
+         * @ngdoc method
+         * @name flashOff
+         * @methodOf ep.hybrid.flashlight:epHybridFlashlightService
+         * @public
+         * @description
+         * Allows you to switch the flashlight / torch of the device off.
+         */
         function flashOff() {
-            //if (window.plugins.flashlight.isSwitchedOn == true)
-            //{
-                window.plugins.flashlight.switchOff();
-            //}
+            // switch off
+            window.plugins.flashlight.switchOff();
         }
 
         function exitApp() {
@@ -7746,22 +8776,36 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @ngdoc service
  * @name ep.hybrid.geolocation:epHybridGeolocationService
  * @description
- * Service for accessing Cordova Geolocation plugin
- *
+ * Service for accessing Cordova Geolocation plugin ({@link https://www.npmjs.com/package/cordova-plugin-geolocation cordova-plugin-geolocation})
+ * @requires {@link https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places}
  * @example
    <example module="TestApp">
      <file name="index.html">
 	     <div ng-controller="SampleCtrl">
             <div class="panel-body">
+                <div>
+                    <button type="button" class="btn btn-primary btn-block" ng-click="showMap()">Show Multiple Locations</button>
+                </div> &nbsp
+                <div>
+                    <input type="text" id="start" class="form-control" ng-keypress="addNeedClickClass()" value="" placeholder="Choose starting point" />
+                    <input type="text" id="end" class="form-control" ng-keypress="addNeedClickClass()" value="" placeholder="Choose destination" />
+                </div>
                 <div id="map"></div>
-                <div id="panel"></div>
             </div>
 	      </div>
      </file>
      <file name="script.js">
      	angular.module("TestApp", ["ep.hybrid.geolocation"])
      		.controller("SampleCtrl",["$scope", "epHybridGeolocationService",
-                function($scope, epHybridGeolocationService){
+                function($scope, epHybridGeolocationService) {
+
+                    //Specially this method need to be included while using autocomplete textboxes in ios devices
+                    $scope.addNeedClickClass = function() {
+                        $('.pac-container').bind('touchstart', function(event) {
+                        event.target.classList.add('needsclick');
+                        });
+                    };
+
                     epHybridGeolocationService.getGeolocation(
                         onSucess,
                         onError,
@@ -7782,8 +8826,25 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         //Adds marker on map
                         epHybridGeolocationService.addMarker(latLng, map);
 
-                        //Get the from and to autocomplete inputs and show directions
+                        //Get the from and to autocomplete inputs and show direction
                         epHybridGeolocationService.autocompleteAndAssociatedActions(map, start, end);
+
+                        //Adds multiple markers on map, based on the given locations
+                        $scope.showMultipleLocations = function()
+                        {
+
+                            //locations as list of Objects with name, latitude and longitude of the locations
+                            var locations = [
+                                ['Bondi Beach', -33.890542, 151.274856],
+                                ['Coogee Beach', -33.923036, 151.259052],
+                                ['Cronulla Beach', -34.028249, 151.157507]
+                            ];
+
+                            //Or locations as a list of strings with names of locations
+                            //var locations = ['Bondi Beach', 'Coogee Beach',...];
+
+                            epHybridGeolocationService.addMultipleMarkers(locations, map);
+                        }
                 }
 
                 function onError(error) {
@@ -7813,6 +8874,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @param {function} successCallback - function called on success of API call
          * @param {function} errorCallback - function called on error of API call
          * @param {object} options - Cordova Geolocation Plugin options
+         * @param {boolean} options.enableHighAccuracy - Indicates the application would like to receive the best possible results
+         * @param {number} options.timeout - Represents the maximum length of time (in milliseconds) the device is allowed to take in order to return a position
+         * @param {number} options.maximumAge - Indicates the maximum age in milliseconds of a possible cached position that is acceptable to return
          * @description
          * To get geolocation
          */
@@ -7885,6 +8949,95 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
         /**
          * @ngdoc method
+         * @name addMultipleMarkers
+         * @methodOf ep.hybrid.geolocation:epHybridGeolocationService
+         * @public
+         * @param {object} locations - Includes list of locations (Example: locations = ['Bondi Beach', ...] or locations = ['Bondi Beach', -33.890542, 151.274856], ...) where the pins need to be placed
+         * @param {object} map - Map on which the markers need to be placed
+         * @description
+         * To show multiple markers/pins on map
+         */
+        function addMultipleMarkers(locations, map) {
+
+            if (!locations || locations.length === 0) {
+                return;
+            }
+
+            var infowindow = new google.maps.InfoWindow({
+                maxWidth: 160
+            });
+
+            var bounds = new google.maps.LatLngBounds();
+            var geocoder = new google.maps.Geocoder();
+
+            if (angular.isString(locations[0])) {
+                // Add the markers on map for the list of locations containing names
+                locations.forEach(function(location) {
+                    geocoder.geocode({
+                        'address': location
+                    }, function(results, status) {
+                        if (status === google.maps.GeocoderStatus.OK) {
+                            var marker = new google.maps.Marker({
+                                position: results[0].geometry.location,
+                                map: map
+                            });
+
+                            google.maps.event.addListener(marker, 'click', (function(marker) {
+                                return function() {
+                                    // because formatted_address does not conform with jscs rules - turn them off here
+                                    // jscs:disable
+                                    infowindow.setContent(results[0].formatted_address);
+                                    // jscs:enable
+                                    infowindow.open(map, marker);
+                                };
+                            })(marker));
+
+                            bounds.extend(results[0].geometry.location);
+                            //  Fit the bounds to map
+                            map.fitBounds(bounds);
+                        } else {
+                            $log.debug('Geocode of ' + location + ' return ' + status);
+                        }
+                    });
+                });
+            }
+
+            function mapClick(marker, index, locations, map) {
+                infowindow.setContent(locations[index][0]);
+                infowindow.open(map, marker);
+            }
+            if (angular.isObject(locations[0])) {
+                // Add the markers on map, for the list of locations containing names and respective latitude and longitude
+                for (var i = 0; i < locations.length; i++) {
+
+                    if (angular.isArray(locations[i])) {
+                        try {
+                            var latLng = new google.maps.LatLng(locations[i][1], locations[i][2]);
+
+                            var marker = new google.maps.Marker({
+                                position: latLng,
+                                map: map
+                            });
+
+                            google.maps.event.addListener(marker, 'click', mapClick
+                                .bind(this, marker, i, locations, map));
+
+                            bounds.extend(latLng);
+                            //  Fit the bounds to map
+                            map.fitBounds(bounds);
+                        }
+                        catch (e) {
+                            $log.error('Something went wrong. Please provide valid location addresses. Error: ' + e);
+                        }
+                    } else {
+                        $log.debug('Location address is not valid');
+                    }
+                }
+            }
+        }
+
+        /**
+         * @ngdoc method
          * @name calculateAndDisplayRoute
          * @methodOf ep.hybrid.geolocation:epHybridGeolocationService
          * @public
@@ -7939,51 +9092,185 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
             directionsDisplay.setMap(map);//Set Map
 
-            //Autocomplete and actions on Origin textbox
-            var origin = new google.maps.places.Autocomplete(originInput);
-            google.maps.event.addListener(origin, 'place_changed', function() {
-                var from = origin.getPlace();
-                // because palce_id does not conform with jscs rules - turn them off here
-                // jscs:disable
-                start = from.place_id;
-                // jscs:enable
+            if (originInput) {
+                //Autocomplete and actions on Origin textbox
+                var origin = new google.maps.places.Autocomplete(originInput);
+                google.maps.event.addListener(origin, 'place_changed', function() {
+                    var from = origin.getPlace();
+                    // because palce_id does not conform with jscs rules - turn them off here
+                    // jscs:disable
+                    start = from.place_id;
+                    // jscs:enable
 
-                $rootScope.$watch('start', function() {
-                    console.log('origin:' + start);
+                    $rootScope.$watch('start', function() {
+                        console.log('origin:' + start);
+                    });
+
+                    addMarker(from.geometry.location, map);
+                    calculateAndDisplayRoute(start, end);
                 });
+            }
 
-                addMarker(from.geometry.location, map);
-                calculateAndDisplayRoute(start, end);
-            });
+            if (destinationInput) {
+                //Autocomplete and actions on destination textbox
+                var destination = new google.maps.places.Autocomplete(destinationInput);
+                google.maps.event.addListener(destination, 'place_changed', function() {
+                    var to = destination.getPlace();
+                    // because palce_id does not conform with jscs rules - turn them off here
+                    // jscs:disable
+                    end = to.place_id;
+                    // jscs:enable
 
-            //Autocomplete and actions on destination textbox
-            var destination = new google.maps.places.Autocomplete(destinationInput);
-            google.maps.event.addListener(destination, 'place_changed', function() {
-                var to = destination.getPlace();
-                // because palce_id does not conform with jscs rules - turn them off here
-                // jscs:disable
-                end = to.place_id;
-                // jscs:enable
+                    $rootScope.$watch('end', function() {
+                        console.log('destination:' + end);
+                    });
 
-                $rootScope.$watch('end', function() {
-                    console.log('destination:' + end);
+                    addMarker(to.geometry.location, map);
+                    calculateAndDisplayRoute(start, end);
                 });
-
-                addMarker(to.geometry.location, map);
-                calculateAndDisplayRoute(start, end);
-            });
+            }
         }
 
         return {
             getGeolocation: getGeolocation,
             showMap: showMap,
             addMarker: addMarker,
+            addMultipleMarkers: addMultipleMarkers,
             calculateAndDisplayRoute: calculateAndDisplayRoute,
             autocompleteAndAssociatedActions: autocompleteAndAssociatedActions
         };
     }
 
 })();
+
+/**
+ *
+ */
+(function() {
+    'use strict';
+    angular.module('ep.hybrid.gpstracker', []);
+})();
+
+/**
+ * @ngdoc service
+ * @name ep.hybrid.gpstracker:epHybridGPSTrackerService
+ * @description
+ * Service for accessing Cordova foreground and background geolocation service
+ *
+ *
+ * @example
+    <example module="TestApp">
+     <file name="index.html">
+	     <div ng-controller="SampleCtrl">
+            <div class="panel-body">
+            </div>
+	      </div>
+     </file>
+     <file name="script.js">
+     	angular.module('TestApp', ['ep.hybrid.gpstracker'])
+     		.controller('SampleCtrl',['$scope', '$log', 'epHybridGPSTrackerService',
+	     		function($scope, epHybridGPSTrackerService) {  }]);
+     </file>
+   </example>
+ */
+(function(backgroundGeolocation) {
+    'use strict';
+
+    epHybridGPSTrackerService.$inject = ['$rootScope', '$log'];
+    angular.module('ep.hybrid.gpstracker')
+        .service('epHybridGPSTrackerService', /*@ngInject*/ epHybridGPSTrackerService);
+
+    function epHybridGPSTrackerService($rootScope, $log) {
+
+        var gpsConfigured = false;
+
+        /**
+         * @ngdoc method
+         * @name background
+         * @methodOf ep.hybrid.gpstracker:epHybridGPSTrackerService
+         * @public
+         * @param {function} successCallback - function called on success of API call
+         * @param {function} errorCallback - function called on error of API call
+         * @description
+         * To get geolocation
+         */
+        function background(successCallback, errorCallback, options) {
+            navigator.geolocation.getCurrentPosition(
+                function(position) {
+                    $rootScope.$apply(successCallback(position));
+                },
+                function(error) {
+                    $rootScope.$apply(errorCallback(error));
+                },
+                options
+			);
+        }
+
+        function configureGPSTracking() {
+            /*
+             * This callback will be executed every time a geolocation is recorded in the background.
+             */
+            var callbackFn = function(position) {
+                //write the lat / long
+                console.log('[js] BackgroundGeolocation callback:  ' + position.latitude + ',' + position.longitude);
+
+                /*
+                 IMPORTANT:  We must execute the finish method here to inform the native plugin that we are finished,
+                 and the background-task may be completed. IF YOU DON'T, ios will CRASH YOUR APP for spending
+                 too much time in the background.
+                 */
+                backgroundGeolocation.finish();
+            };
+
+            var failureFn = function(error) {
+                $log.error('Error capturing geolocation - ' + error.message);
+            };
+
+            // If we're not running in the browser, then turn on the geolocation service
+            //if (window.backgroundGeolocation) {
+                //setup geolocation tracking settings
+                backgroundGeolocation.configure(callbackFn, failureFn, {
+                    desiredAccuracy: 0, //set to 10 for best performance / battery power consumption
+                    stationaryRadius: 0, //if inside of 10 meters it will not track
+                    distanceFilter: 0, //only send every 3 meters
+                    debug: true, // <-- enable this hear sounds for background-geolocation life-cycle.
+                    stopOnTerminate: false, // <-- enable this to clear background location settings when the app terminates
+
+                });
+
+                //turn ON the background-geolocation system if the track GPS setting is turned on.
+                backgroundGeolocation.start();
+            //} else {
+            //    $log.debug('No background geolocation service is available.');
+            //}
+        }
+
+        function startGPSTracking() {
+            var bg = backgroundGeolocation;
+            console.log(bg);
+            //if (!gpsConfigured && window.backgroundGeoLocation) {
+                $log.info('GPS background tracking started.');
+                gpsConfigured = true;
+                configureGPSTracking();
+            //}
+        }
+
+        function stopGPSTracking() {
+            //if (gpsConfigured && window.backgroundGeoLocation) {
+                $log.info('GPS background tracking stopped.');
+                gpsConfigured = false;
+                backgroundGeolocation.stop();
+            //}
+        }
+
+        return {
+            background: background,
+            startGPSTracking: startGPSTracking,
+            stopGPSTracking: stopGPSTracking
+        };
+    }
+
+})(window.backgroundGeolocation);
 
 /**
  *
@@ -8004,15 +9291,15 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      <file name="index.html">
 	     <div ng-controller="SampleCtrl">
             <div class="panel-body">
-                <div><button class="btn btn-primary" style="width:100%" ng-click="playMusic()">Let's Jam!</button></div> &nbsp
-                <div><button class="btn btn-primary" style="width:100%" ng-click="stopMusic()">Stop</button></div>
+                <div><button class="btn btn-primary btn-block" ng-click="playMusic()">Let's Jam!</button></div> &nbsp
+                <div><button class="btn btn-primary btn-block" ng-click="stopMusic()">Stop</button></div>
             </div>
 	      </div>
      </file>
      <file name="script.js">
      	angular.module("TestApp", ["ep.hybrid.media"])
      		.controller("SampleCtrl",["$scope", "$log", "epHybridMediaService",
-                function($scope, epHybridMediaService){
+                function($scope, epHybridMediaService) {
                     var audioUrl = "http://www.sounddogs.com/sound-effects/2217/mp3/410647_SOUNDDOGS__wo.mp3";
 
                     $scope.playMusic = function() {
@@ -8094,29 +9381,46 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @description
  * Service for accessing Cordova Network-Information plugin
  *
+ * Note: Include cordova.js script file in html file and add
+ * {@link https://www.npmjs.com/package/cordova-plugin-network-information cordova network information plugin} into app.
+ *
  * @example
    <example module="TestApp">
      <file name="index.html">
-	     <div ng-controller="SampleCtrl">
-            <div class="panel-body">
-                <div><button class="btn btn-primary" style="width:100%" ng-click="playMusic()">Let's Jam!</button></div> &nbsp
-                <div><button class="btn btn-primary" style="width:100%" ng-click="stopMusic()">Stop</button></div>
+	    <div class="ep-fullscreen" id="network">
+            <div class="panel panel-default">
+                <div class="panel-heading ep-align-center">
+                    <span class="ep-ci-network-status fa-2x text-warning"></span> Internet Status
+                </div>
+                <div class="panel-body ep-align-center" style="margin-left:5px">
+                    {{status}}
+                </div>
             </div>
-	      </div>
+            <div class="panel panel-default">
+                <div class="panel-heading ep-align-center">
+                    <span class="ep-ci-network-status fa-2x text-warning"></span> Internet Type
+                </div>
+                <div class="panel-body ep-align-center" style="margin-left:5px">
+                    {{type}}
+                </div>
+            </div>
+        </div>
      </file>
      <file name="script.js">
-     	angular.module('TestApp', ['ep.hybrid.media'])
-     		.controller('SampleCtrl',['$scope', '$log', 'epHybridMediaService',
-                function($scope, epHybridMediaService){
-                    var audioUrl = 'http://www.sounddogs.com/sound-effects/2217/mp3/410647_SOUNDDOGS__wo.mp3';
-
-                    $scope.playMusic = function() {
-                        epHybridMediaService.playAudio(audioUrl);
-                    }
-
-                    $scope.stopMusic = function() {
-                        epHybridMediaService.stopAudio(audioUrl);
-                    }
+     	angular.module('TestApp', ['ep.hybrid.network'])
+     		.controller('networkCtrl',['$scope', '$log', 'epHybridMediaService',
+                function($scope, epHybridNetworkService){
+                    function checkStatus() {
+                     var type = epHybridNetworkService.checkConnection();
+                     if (type == epNetworkStatus.Unknown || type == epNetworkStatus.None) {
+                        $scope.status = "OFF";
+                        $scope.type = type;
+                      }
+                      else {
+                        $scope.status = "ON";
+                        $scope.type = type;
+                     }
+                }
             }]);
      </file>
    </example>
@@ -8125,32 +9429,30 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
     'use strict';
 
     angular.module('ep.hybrid.network')
+        .constant('epNetworkStatus', {
+            Unknown: 'unknown',
+            Ethernet: 'ethernet',
+            Wifi: 'wifi',
+            Cell2g: '2g',
+            Cell3g: '3g',
+            Cell4g: '4g',
+            Cell: 'cellular',
+            None: 'none'
+        })
+
         .service('epHybridNetworkService', /*@ngInject*/ epHybridNetworkService);
 
     function epHybridNetworkService() {
         /**
          * @ngdoc method
          * @name checkConnection
-         * @methodOf ep.hybrid.media:epHybridNetworkService
+         * @methodOf ep.hybrid.network:epHybridNetworkService
          * @public
          * @description
          * To check the internet connection and status
          */
         function checkConnection() {
-            var networkState = navigator.connection.type;
-            var states = {};
-
-            states[Connection.UNKNOWN] = 'Unknown connection';
-            states[Connection.ETHERNET] = 'Ethernet connection';
-            states[Connection.WIFI] = 'WiFi connection';
-            states[Connection.CELL_2G] = 'Cell 2G connection';
-            states[Connection.CELL_3G] = 'Cell 3G connection';
-            states[Connection.CELL_4G] = 'Cell 4G connection';
-            states[Connection.CELL] = 'Cell generic connection';
-            states[Connection.NONE] = 'No network connection';
-
-            return states[networkState];
-
+            return navigator.connection.type;
         }
         return {
             checkConnection: checkConnection
@@ -8170,24 +9472,28 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @ngdoc service
  * @name ep.hybrid.photo:epHybridPhotoService
  * @description
- * Service for accessing Cordova camera plugin
+ * Service for accessing Cordova camera plugin. This will allow to take picture from camera
+ * or to select a picture from photo library.
+ *
+ * Note: Include cordova.js script file in html file and add
+ * {@link https://www.npmjs.com/package/cordova-plugin-camera cordova camera plugin} into app.
  *
  * @example
    <example module="TestApp">
      <file name="index.html">
 	     <div ng-controller="SampleCtrl">
             <div class="panel-body">
-                <img id="pictureImage" class="full-image" src="">
-                <div><button class="btn btn-primary" style="width:100%" ng-click="takePicture()">Take Picture</button></div> &nbsp
-                <div><button class="btn btn-primary" style="width:100%" ng-click="loadPicture()">Load from Photo Library</button></div>
+                <img id="pictureImage" class="full-image img-thumbnail" src="">
+                <div><button class="btn btn-primary btn-block" ng-click="takePicture()">Take Picture</button></div> &nbsp
+                <div><button class="btn btn-primary btn-block" ng-click="loadPicture()">Load from Photo Library</button></div>
             </div>
 	      </div>
      </file>
      <file name="script.js">
      	angular.module("TestApp", ["ep.hybrid.photo"])
      		.controller("SampleCtrl",["$scope", "$log", "epHybridPhotoService",
-	     		function($scope, epHybridPhotoService){
-                    $scope.takePicture = function () {
+	     		function($scope, epHybridPhotoService) {
+                    $scope.takePicture = function() {
                         epHybridPhotoService.getPicture(
                             onSuccess,
                             onFail,
@@ -8195,7 +9501,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         );
                     };
 
-                    $scope.loadPicture = function () {
+                    $scope.loadPicture = function() {
                         epHybridPhotoService.getPicture(
                             onSuccess,
                             onFail,
@@ -8208,12 +9514,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     };
 
                     function onSuccess(imageData) {
-                        var image = document.getElementById("pictureImage");
+                        var image = document.getElementById('pictureImage');
                         image.src = "data:image/jpeg;base64," + imageData;
                     }
 
                     function onFail(message) {
-                        $log.debug("Failed because: " + message);
+                        $log.debug('Failed because: ' + message);
                     }
             }]);
      </file>
@@ -8236,7 +9542,41 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @public
          * @param {function} successCallback - function called on success of API call
          * @param {function} errorCallback - function called on error of API call
-         * @param {object} options - Cordova Camera Plugin options
+         * @param {object} options - Cordova Camera Plugin options. This will override camera.CameraOptions object of cordova
+         * @param {number} options.quality - Quality of the saved image, expressed as a range of 0-100
+         * @param {DestinationType} options.destinationType - The format of the return value. This is a static enum property of Camera
+         * <pre>
+         *      Camera.DestinationType.DATA_URL - Return base64 encoded string
+         *      Camera.DestinationType.FILE_URI - Default. Return file uri (content://media/external/images/media/2 for Android)
+         *      Camera.DestinationType.NATIVE_URI - Return native uri (eg. asset-library://... for iOS)
+         * </pre>
+         * @param {PictureSourceType} options.sourceType - Set the source of the picture. This is a static enum property of Camera.
+         * <pre>
+         *      Camera.PictureSourceType.PHOTOLIBRARY - Choose image from picture library
+         *      Camera.PictureSourceType.CAMERA - Take picture from camera
+         * </pre>
+         * @param {Boolean} options.allowEdit - Allow simple editing of image before selection.
+         * @param {EncodingType} options.encodingType - Choose the returned image file's encoding.
+         * <pre>
+         *      Camera.EncodingType.JPEG - Return JPEG encoded image
+         *      Camera.EncodingType.PNG - Return PNG encoded image
+         * </pre>
+         * @param {number} options.targetWidth - Width in pixels to scale image. Must be used with targetHeight. Aspect ratio remains constant.
+         * @param {number} options.targetHeight - Height in pixels to scale image. Must be used with targetWidth. Aspect ratio remains constant.
+         * @param {MediaType} options.mediaType - Set this option when PictureSourceType is PHOTOLIBRARY.
+         * <pre>
+         *      Camera.MediaType.PICTURE - Allow selection of still pictures only. DEFAULT. Will return format specified via DestinationType
+         *      Camera.MediaType.VIDEO - Allow selection of video only, ONLY RETURNS URL
+         *      Camera.MediaType.ALLMEDIA - Allow selection from all media types
+         * </pre>
+         * @param {Boolean} options.correctOrientation - Rotate the image to correct for the orientation of the device during capture.
+         * @param {Boolean} options.saveToPhotoAlbum - Save the image to the photo album on the device after capture.
+         * @param {CameraPopoverOptions} options.popoverOptions - iOS-only options that specify popover location in iPad.
+         * @param {Direction} options.cameraDirection - Choose the camera to use (front- or back-facing).
+         * <pre>
+         *      Camera.Direction.BACK - Use the back-facing camera
+         *      Camera.Direction.FRONT - Use the front-facing camera
+         * </pre>
          * @description
          * To take picture using camera or load photos from gallery
          */
@@ -8269,10 +9609,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
 /**
  * @ngdoc service
- * @name ep.hybrid.barcode:epHybridVibrationService
+ * @name ep.hybrid.vibration:epHybridVibrationService
  * @description
- * Service for accessing Cordova vibration plugin <br />
- * <b>Note</b>:vibrate length only works on Android and Windows
+ * Service for accessing Cordova vibration plugin. This will make the device vibrate for 3 seconds.
+ *
+ * Note: Include cordova.js script file in html file and add
+ * {@link https://www.npmjs.com/package/cordova-plugin-vibration cordova vibration plugin} into app.
  *
  * @example
    <example module="TestApp">
@@ -8286,7 +9628,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      <file name="script.js">
      	angular.module("TestApp", ["ep.hybrid.vibration"])
      		.controller("SampleCtrl",["$scope", "$log", "epHybridVibrationService",
-                function($scope, epHybridVibrationService){
+                function($scope, epHybridVibrationService) {
                     var sec = 3000;
                     $scope.vibration = function() {
                         epHybridVibrationService.vibrateDevice(sec);
@@ -8302,6 +9644,15 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         .service('epHybridVibrationService', /*@ngInject*/ epHybridVibrationService);
     function epHybridVibrationService() {
 
+        /**
+        * @ngdoc method
+        * @name vibrateDevice
+        * @methodOf ep.hybrid.vibration:epHybridVibrationService
+        * @public
+        * @param {sec} sec - number of seconds device to vibrate
+        * @description
+        * Make the device to vibrate
+        */
         function vibrateDevice(sec) {
             navigator.vibrate([sec]);
         }
@@ -8311,6 +9662,114 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         };
     }
 
+})();
+
+/**
+ * @ngdoc directive
+ * @name ep.icon.selector:epIconSelector
+ * @restrict EA
+ *
+ * @description
+ * Represents fontawesome icon selector
+ *
+ * @property {string} width:string
+ * This is the width of entire icon selector component. Example values 500px, 80% etc...Default is 100%.
+ *
+ * @property {string} iconListWidth:string
+ * This is the width of icon selector drop down menu. Example values 200px, 300px etc...Default is 295px.
+ *
+ * @property {string} iconListHeight:string
+ * This is the maximum height of icon selector list in the drop down menu. Example values 200px, 300px etc...Default is 400px.
+ *
+ * @example
+ *  <pre>
+ *      <ep-icon-selector></ep-icon-selector>
+ *  </pre>
+ */
+(function() {
+    'use strict';
+
+    epIconSelectorDirective.$inject = ['epIconSelectorService'];
+    angular.module('ep.icon.selector').directive('epIconSelector', epIconSelectorDirective);
+
+    function epIconSelectorDirective(epIconSelectorService) {
+        return {
+            restrict: 'EA',
+            replace: true,
+            scope: {
+                ngModel: '=',
+                width: '@',
+                iconListWidth: '@',
+                iconListHeight: '@'
+            },
+            templateUrl: 'src/components/ep.icon.selector/icon_selector.html',
+            link: function(scope) {
+
+                //read icons from fontawesome css file
+                scope.icons = epIconSelectorService.getIconList();
+
+                scope.selectIcon = function(icon) {
+                    scope.ngModel = 'fa-' + icon;
+                };
+
+            }
+        };
+    }
+})();
+
+/**
+ * @ngdoc service
+ * @name ep.icon.selector:epIconSelectorService
+ * @description
+ * Provides methods for getting the icon classes from icon css file.
+ *
+ * @example
+ *
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.icon.selector').factory('epIconSelectorService', epIconSelectorService);
+
+    function epIconSelectorService() {
+
+        /**
+         * @ngdoc method
+         * @name getIconList
+         * @methodOf ep.icon.selector:epIconSelectorService
+         * @public
+         * @description
+         * To read the icon classes from icon css file.
+         */
+        function getIconList() {
+            var icons = $.map($.map(document.styleSheets, function(s) {
+                if (s.href && s.href.endsWith('font-awesome.min.css')) {
+                    return s;
+                }
+                return null;
+            })[0].rules, function(r) {
+                if (r.cssText.indexOf('::before { content: ') > 0) {
+                    var multipleCSS = [];
+                    var count = (r.cssText.match(/::before/g) || []).length;
+                    if (count > 1) {
+                        multipleCSS = r.cssText.split(',');
+                        for (var i = 0; i < multipleCSS.length; i++) {
+                            var css = multipleCSS[i].trim();
+                            multipleCSS[i] = css.substring(4, css.indexOf('::'));
+                        }
+                        return multipleCSS;
+                    }
+                    return r.cssText.substring(4, r.cssText.indexOf('::'));
+                }
+                return null;
+            });
+
+            return icons;
+        }
+        return {
+            getIconList: getIconList
+        };
+    }
 })();
 
 (function() {
@@ -8328,6 +9787,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
     *   # templateUrl {string} - file link to HTML that is to be included
     *   # templateCtrl {function} - controller function
     *   # templateScope {object} - scope to be applied for the template
+    *   # templateStyle {string} - sets inline styling. eg. '{ "color" : "red", "margin" : "0px" }
     *   # userData {object} - pass anything you want here to consume by the template. Will be set as userData on the template scope
     *   # options {object} - an object containing all of the above properties. Note: if options are used then
     *       the other attributes are not applied.
@@ -8340,12 +9800,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
     *   <ep-include template="template" template-ctrl="templateCtrl" template-scope="templateScope"></ep-include>
     *
     */
-    epIncludeDirective.$inject = ['$compile'];
+    epIncludeDirective.$inject = ['$compile', '$log'];
     angular.module('ep.include').
         directive('epInclude', epIncludeDirective);
 
     /*@ngInject*/
-    function epIncludeDirective($compile) {
+    function epIncludeDirective($compile, $log) {
         return {
             restrict: 'E',
             replace: true,
@@ -8356,6 +9816,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 templateUrl: '=',
                 templateCtrl: '=',
                 templateScope: '=',
+                templateStyle: '=',
                 userData: '='
             },
             compile: function() {
@@ -8374,6 +9835,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         sDiv = '<div ng-controller="' + ctrlName + '"';
                     }
                     var html = sDiv;
+                    if (options.templateStyle) {
+                        try {
+                            $scope.state.templateScope._templateStyle_ = $scope.$eval(options.templateStyle);
+                        } catch (err) {
+                            $log.error('error evaluating style:' + err.message);
+                        }
+                        html += ' ng-style="_templateStyle_" ';
+                    }
                     if (options.template) {
                         html += '>' + options.template + '</div>';
                     } else if (options.templateUrl) {
@@ -8738,6 +10207,340 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         };
     }]);
 })();
+
+(function() {
+'use strict';
+
+/**
+ * @ngdoc controller
+ * @name ep.menu.builder.controller:epContextMenuCtrl
+ * @description
+ * Represents the epContextMenu controller for the
+ * ep.menu.builder module, or for specific ep-context-menu directive
+ *
+ *
+ */
+    epContextMenuCtrl.$inject = ['$scope'];
+    angular.module('ep.menu.builder')
+        .controller('epContextMenuCtrl', epContextMenuCtrl);
+
+    /*@ngInject*/
+    function epContextMenuCtrl($scope) {
+        /*jshint validthis:true */
+        var vm = this;
+        vm.onDynamicMenuCall = onDynamicMenuCall;
+
+        /**
+         * @ngdoc method
+         * @name myFunction
+         * @methodOf ep.menu.builder.controller:epContextMenuCtrl
+         * @private
+         * @description
+         * Handles the broadcast of DynamicMenuCall event
+         */
+        function onDynamicMenuCall(event) {
+            if (angular.isUndefined(vm.epContextMenuBuilder)) {
+                return;
+            }
+            $scope.$root.$broadcast('dynamicMenuCall', {
+                event: event,
+                builder: vm.epContextMenuBuilder,
+                context: vm.epMenuOptionContext,
+            });
+            event.preventDefault();
+            event.stopPropagation();
+        }
+    }
+}());
+
+(function() {
+'use strict';
+/**
+* @ngdoc directive
+* @name ep.menu.builder.directive:epContextMenu
+* @restrict E
+*
+* @description
+* Represents the ep.menu.builder directive
+*
+* @example <ep-context-menu
+            ep-context-menu-builder="myBuilder"
+            ep-menu-option-context="myCurrentNode"
+            ep-context-menu-icon="fa fa-meh-o"
+            ep-context-menu-position="right-center">
+            </ep-context-menu>
+*/
+angular.module('ep.menu.builder').
+    directive('epContextMenu', epContextMenuDirective);
+
+    /*@ngInject*/
+    function epContextMenuDirective() {
+        return {
+            restrict: 'EA',
+            controller: 'epContextMenuCtrl',
+            controllerAs:'contextMenuCtrl',
+            templateUrl: 'src/components/ep.menu.builder/context.menu/ep-context-menu.html',
+            scope: {
+            },
+            bindToController: {
+                epContextMenuBuilder: '=',
+                epMenuOptionContext: '=',
+                epContextMenuIcon: '@',
+                epContextMenuPosition: '@'
+            },
+            link: function(scope, el, attr) {
+                //Context menu icon decided here
+                var iconClass = angular.isUndefined(attr.epContextMenuIcon) ?
+                                    'fa fa-ellipsis-v' : attr.epContextMenuIcon;
+                angular.element(el[0].querySelector('.ep-context-menu')).addClass(iconClass);
+
+                //Context menu position decided here
+                var positionClass = 'ep-actionset-right-down';
+                if (attr.epContextMenuPosition) {
+                    switch (attr.epContextMenuPosition) {
+                        case 'absolute-right-bottom':
+                            positionClass = 'ep-actionset-right-bottom';
+                            break;
+                        case 'right-bottom':
+                            positionClass = 'ep-actionset-right-down';
+                            break;
+                        case 'right-center':
+                            positionClass = 'ep-actionset-right-center';
+                            break;
+                    }
+                }
+                angular.element(el[0].querySelector('.ep-actionset')).addClass(positionClass);
+
+                //Available position attribute values :
+                // 1. ep-actionset-right-bottom
+                // 2. ep-actionset-right-down
+                // 3. ep-actionset-right-center
+            }
+        };
+    }
+}());
+
+(function() {
+'use strict';
+
+/**
+ * @ngdoc controller
+ * @name ep.menu.builder.controller:epDynamicMenuCtrl
+ * @description
+ * Represents the epDynamicMenu controller for the
+ * ep.menu.builder module, or for specific ep-dynamic-menu directive
+ *
+ * @example
+ *
+ */
+    epDynamicMenuCtrl.$inject = ['$scope', '$document'];
+    angular.module('ep.menu.builder')
+        .controller('epDynamicMenuCtrl', epDynamicMenuCtrl);
+
+    /*@ngInject*/
+    function epDynamicMenuCtrl($scope, $document) {
+        /*jshint validthis:true */
+        var vm = this;
+        vm.closeMenu = closeMenu;
+        vm.invokeAction = invokeAction;
+
+        // closes the Action menu popup
+        function closeMenu() {
+            vm.menuItems = null;
+            if (!$scope.$root.$$phase) {
+                $scope.$apply();
+            }
+            $document.off('click.actionMenu');
+        }
+
+        // invoke the menuItem's action handler function
+        function invokeAction(event, menuItem, context) {
+            if (angular.isFunction(menuItem.action)) {
+                menuItem.action(context);
+            }
+            closeMenu();
+            event.stopPropagation();
+            event.preventDefault();
+        }
+
+        $scope.$on('dynamicMenuCall', function(event, args) {
+            if (angular.isUndefined(args.builder)) { return; }
+            if (angular.isFunction(args.builder.beforeShowMenu)) {
+                args.builder.beforeShowMenu(args.context);
+            }
+            // use the menuBuilder to serve up the collection of menu items
+            vm.menuItems = angular.isFunction(args.builder.menuItems) ? args.builder.menuItems() : null;
+            vm.context = args.context || null;
+
+            // if position is fixed we are running on small width devices. Just skip this statement
+            // if not, set css position of actionMenu
+            if (vm.element.css('position') !== 'fixed') {
+                vm.element.css({ left: args.event.clientX + 'px', top: args.event.clientY + 'px' });
+            }
+            $document.on('click.actionMenu', function() {
+                closeMenu();
+            });
+            //added for passing unit tests
+            if (!$scope.$root.$$phase) {
+                $scope.$apply();
+            }
+        });
+    }
+}());
+
+(function() {
+'use strict';
+/**
+* @ngdoc directive
+* @name ep.menu.builder.directive:epDynamicMenu
+* @restrict E
+*
+* @description
+* Represents the ep.menu.builder directive
+*
+* @example <ep-dynamic-menu></ep-dynamic-menu>
+*/
+angular.module('ep.menu.builder').
+    directive('epDynamicMenu', epDynamicMenuDirective);
+
+    /*@ngInject*/
+    function epDynamicMenuDirective() {
+        return {
+            restrict: 'E',
+            replace: true,
+            controller: 'epDynamicMenuCtrl',
+            controllerAs: 'dynamicMenuCtrl',
+            templateUrl: 'src/components/ep.menu.builder/dynamic.menu/ep-dynamic-menu.html',
+            link: function(scope, el) {
+                // at link, we set the current element onto the controller vm
+                // we use this on full screen mode to set the position of dynamic menu based on the position of parent
+                scope.dynamicMenuCtrl.element = el;
+            }
+        };
+    }
+}());
+
+(function() {
+    'use strict';
+
+    /**
+     * @ngdoc service
+     * @name ep.menu.builder.factory:epMenuBuilderFactory
+     * @description
+     * Factory service for the ep.menu.builder module
+     * This factory will serve up an instance of the menuBuilder
+     *
+     * @example
+     *
+     */
+    epMenuBuilderFactory.$inject = ['$filter'];
+    angular.module('ep.menu.builder').
+        factory('epMenuBuilderFactory', epMenuBuilderFactory);
+
+    /*@ngInject*/
+    function epMenuBuilderFactory($filter) {
+        /**
+         * @ngdoc method
+         * @name getMenuBuilder
+         * @methodOf ep.menu.builder.factory:epMenuBuilderFactory
+         * @public
+         * @description
+         * serves up a new instance of the menuBuilder
+         */
+        function getMenuBuilder() {
+            var items = [];
+
+            /**
+             * @ngdoc method
+             * @name setItem
+             * @methodOf ep.menu.builder.object:menuBuilder
+             * @public
+             * @description
+             * sets menu item onto instance of the menuBuilder
+             */
+            function setItem(menuItem) {
+                var foundItem = $filter('filter')(items, { caption: menuItem.caption }, true)[0];
+                var idx = items.indexOf(foundItem);
+                // if we add an untyped item assume it's an action
+                if (angular.isUndefined(menuItem.type) && angular.isFunction(menuItem.action)) {
+                    menuItem.type = 'action';
+                }
+                if (idx === -1) {
+                    items.push(menuItem);
+                } else {
+                    items[idx] = angular.extend(items[idx], menuItem);
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name removeItem
+             * @methodOf ep.menu.builder.object:menuBuilder
+             * @public
+             * @description
+             * removes menu item from instance of the menuBuilder
+             */
+            function removeItem(menuItem) {
+                var foundItem = $filter('filter')(items, { caption: menuItem.caption }, true)[0];
+                var idx = items.indexOf(foundItem);
+                if (idx !== -1) {
+                    var spliceAtIndex = idx;
+                    var itemsToRemove = 1;
+
+                    if (items[idx - 1] && items[idx - 1].type === 'separator') {
+                        spliceAtIndex = idx - 1;
+                        itemsToRemove = 2;
+                    } else if (items[idx + 1] && items[idx + 1].type === 'separator') {
+                        spliceAtIndex = idx;
+                        itemsToRemove = 2;
+                    }
+                    items.splice(spliceAtIndex, itemsToRemove);
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name getItems
+             * @methodOf ep.menu.builder.object:menuBuilder
+             * @public
+             * @description
+             * returns collection of menu item from instance of the menuBuilder
+             */
+            function getItems() {
+                return angular.copy(items);
+            }
+
+            /**
+             * @ngdoc method
+             * @name addSeparator
+             * @methodOf ep.menu.builder.object:menuBuilder
+             * @public
+             * @description
+             * adds the separator between menu items where needed
+             */
+            function addSeparator() {
+                items.push({ type: 'separator' });
+            }
+
+            /**
+             * @ngdoc service
+             * @name ep.menu.builder.object:menuBuilder
+             * @description
+             * menuBuilder instance for the ep.menu.builder module
+             */
+            return {
+                setMenuItem: setItem,
+                removeMenuItem: removeItem,
+                menuItems: getItems,
+                addSeparator: addSeparator
+            };
+        }
+
+        return {
+            getMenuBuilder: getMenuBuilder
+        };
+    }
+}());
 
 /**
      * @ngdoc directive
@@ -9197,13 +11000,13 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         if (cfg.helpTemplateOptions) {
                             if (!cfg.helpTemplateOptions.templateScope) {
                                 cfg.helpTemplateOptions.templateScope = $scope;
-                            }
+                            };
                             $scope.helpButtonClick = function() {
                                 $scope.showHelp = !$scope.showHelp;
                             };
                             $scope.closeHelp = function() {
                                 $scope.showHelp = false;
-                            }
+                            };
                         }
 
                         if (cfg.templateOptions && !cfg.templateOptions.templateScope) {
@@ -9731,7 +11534,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         MLM_INITIALIZED_EVENT: 'MLM_INITIALIZED_EVENT',
         MLM_MENU_DATA_CHANGED: 'MLM_MENU_DATA_CHANGED',
         MLM_FAVORITES_CHANGED: 'MLM_FAVORITES_CHANGED',
-        MLM_ITEM_CLICKED: 'MLM_ITEM_CLICKED'
+        MLM_ITEM_CLICKED: 'MLM_ITEM_CLICKED',
+        MLM_ITEM_EXPANDED: 'MLM_ITEM_EXPANDED'
     });
 })();
 
@@ -9748,225 +11552,245 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 (function() {
     'use strict';
 
-    angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl', [
-    '$rootScope',
-    '$scope',
-    '$timeout',
-    'epMultiLevelMenuFactory',
-    'epMultiLevelMenuConstants',
-    'epMultiLevelMenuService',
-    function($rootScope, $scope, $timeout, epMultiLevelMenuFactory,
-        epMultiLevelMenuConstants, epMultiLevelMenuService) {
-        // init the scope properties
-        $scope.state = {
-            searchTerm: '',
-            searchType: 'item',
-            lastSearchTerm: ''
-        };
-        $scope.searchResults = [];  //Current search results
-        $scope.currentItems = [];   //Current items to display (can be menu or search results)
-        $scope.multiLevelMenuHelper = null;
+    angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl',
+        /*@ngInject*/
+        ['$rootScope', '$scope', '$timeout', 'epMultiLevelMenuFactory', 'epMultiLevelMenuConstants', 'epMultiLevelMenuService', function($rootScope, $scope, $timeout, epMultiLevelMenuFactory,
+                 epMultiLevelMenuConstants, epMultiLevelMenuService) {
+            // init the scope properties
+            $scope.state = {
+                searchTerm: '',
+                searchType: 'item',
+                lastSearchTerm: ''
+            };
+            $scope.searchResults = [];  //Current search results
+            $scope.currentItems = [];   //Current items to display (can be menu or search results)
+            $scope.multiLevelMenuHelper = null;
 
-        var searchTimeout;
+            var searchTimeout;
 
-        // private clear controller results
-        function clear() {
-            $scope.searchResults = [];
-            $scope.currentItems = [];
-            $scope.state.lastSearchTerm = '';
-        }
-
-        // private set current items (search or menu)
-        function setCurrentItems() {
-            if ($scope.state.searchTerm) {
-                $scope.currentItems = $scope.searchResults;
-            } else if ($scope.data && $scope.data.next) {
-                $scope.currentItems = $scope.data.next.menuitems;
-            } else {
-                $scope.currentItems = [];
-            }
-        }
-
-        /**
-         * @ngdoc method
-         * @name search
-         * @methodOf ep.multilevel.menu.controller:epMultiLevelMenuCtrl
-         * @public
-         * @description
-         * Handles the search request.   this will take the $scope.state.searchTerm from the
-         * input box on the form populates local $scope.searchResults [] collection.
-         * if $scope.state.searchType is provided, the menu.type can be used to refine the search
-         * results by type, here 'menu' or 'item' can be used.
-         */
-        function search() {
-            $scope.isRightToLeft = false;
-            if (searchTimeout) {
-                $timeout.cancel(searchTimeout);
-            }
-
-            if (!$scope.menu || !$scope.menu.menuitems || !$scope.state.searchTerm) {
+            // private clear controller results
+            function clear() {
                 $scope.searchResults = [];
+                $scope.currentItems = [];
                 $scope.state.lastSearchTerm = '';
-                setCurrentItems();
-                return;
             }
 
-            searchTimeout = $timeout(function() {
-                var results = [];
-
-                var term = $scope.state.searchTerm.toLowerCase();
-                var type = $scope.state.searchType ? $scope.state.searchType.toLowerCase() : '';
-
-                if ($scope.state.lastSearchTerm && term.indexOf($scope.state.lastSearchTerm) === 0) {
-                    //search in our prior result set
-                    searchKids($scope.searchResults, term, type, false, results);
+            // private set current items (search or menu)
+            function setCurrentItems() {
+                if ($scope.state.searchTerm) {
+                    $scope.currentItems = $scope.searchResults;
+                } else if ($scope.data && $scope.data.next) {
+                    $scope.currentItems = $scope.data.next.menuitems;
                 } else {
-                    searchKids($scope.menu.menuitems, term, type, true, results);
+                    $scope.currentItems = [];
                 }
-                $scope.searchResults = results;
-                setCurrentItems();
-                $scope.state.lastSearchTerm = term;
-            }, 250); // delay 250 ms in case user types too fast...
-        }
-
-        // private enum to search kids for local searchTerm
-        function searchKids(menuitems, term, type, recursive, results) {
-            angular.forEach(menuitems, function(kid) {
-                if (kid && kid.caption.toLowerCase().indexOf(term) !== -1) {
-                    // if we are type checking, also check the system-set _type
-                    if (type === '' || kid.type === type || kid._type === type) {
-                        results.push(kid);
-                    }
-                }
-                if (recursive && kid.menuitems) {
-                    searchKids(kid.menuitems, term, type, recursive, results);
-                }
-            });
-        }
-
-        /**
-        * @ngdoc method
-        * @name navigate
-        * @methodOf ep.multilevel.menu.controller:epMultiLevelMenuCtrl
-        * @public
-        * @description
-        * Handles the navigate request.
-        *
-        * @param {object} mi the menu item
-        * @param {bool} isHeader - is header clicked (backwards or top menu, otherwise triggered from item)
-        * @param {object} ev - event object from UI
-        */
-        function navigate(mi, isHeader, ev) {
-            if (!mi) {
-                return;
             }
-            if (mi._type === 'menu') {
-                if (mi._id === 'topmenu') {
+
+            /**
+             * @ngdoc method
+             * @name search
+             * @methodOf ep.multilevel.menu.controller:epMultiLevelMenuCtrl
+             * @public
+             * @description
+             * Handles the search request.   this will take the $scope.state.searchTerm from the
+             * input box on the form populates local $scope.searchResults [] collection.
+             * if $scope.state.searchType is provided, the menu.type can be used to refine the search
+             * results by type, here 'menu' or 'item' can be used.
+             */
+            function search() {
+                $scope.isRightToLeft = false;
+                if (searchTimeout) {
+                    $timeout.cancel(searchTimeout);
+                }
+
+                if (!$scope.menu || !$scope.menu.menuitems || !$scope.state.searchTerm) {
+                    $scope.searchResults = [];
+                    $scope.state.lastSearchTerm = '';
+                    setCurrentItems();
                     return;
                 }
-                //going to back to parent set 'left-to-right' animation,
-                //otherwise 'right-to-left'
-                $scope.isRightToLeft = (isHeader !== true);
-                $scope.data.next = mi;
-                $timeout(function() {
+
+                searchTimeout = $timeout(function() {
+                    var results = [];
+
+                    var term = $scope.state.searchTerm.toLowerCase();
+                    var type = $scope.state.searchType ? $scope.state.searchType.toLowerCase() : '';
+
+                    if ($scope.state.lastSearchTerm && term.indexOf($scope.state.lastSearchTerm) === 0) {
+                        //search in our prior result set
+                        searchKids($scope.searchResults, term, type, false, results);
+                    } else {
+                        searchKids($scope.menu.menuitems, term, type, true, results);
+                    }
+                    $scope.searchResults = results;
                     setCurrentItems();
-                    $scope.$apply();
+                    $scope.state.lastSearchTerm = term;
+                }, 250); // delay 250 ms in case user types too fast...
+            }
+
+            // private enum to search kids for local searchTerm
+            function searchKids(menuitems, term, type, recursive, results) {
+                angular.forEach(menuitems, function(kid) {
+                    if (kid && kid.caption.toLowerCase().indexOf(term) !== -1) {
+                        // if we are type checking, also check the system-set _type
+                        if (type === '' || kid.type === type || kid._type === type) {
+                            results.push(kid);
+                        }
+                    }
+                    if (recursive && kid.menuitems) {
+                        searchKids(kid.menuitems, term, type, recursive, results);
+                    }
                 });
             }
-            if (mi._type === 'item' && mi.action && typeof mi.action === 'function') {
-                $scope.multiLevelMenuHelper.stampLastAccess(mi);
-                emitMenuEvent(epMultiLevelMenuConstants.MLM_ITEM_CLICKED, mi);
-                mi.action(mi);
+            /**
+             * @ngdoc method
+             * @name navigateExternal
+             * @methodOf ep.multilevel.menu.controller:epMultiLevelMenuCtrl
+             * @public
+             * @description
+             * Handles the navigate request.
+             *
+             * @param {object} mi - the menu item
+             * @param {object} event - event object from UI
+             */
+            function navigateExternal(mi, event) {
+                if (!mi) {
+                    return;
+                }
+                if (mi._type === 'item' && mi.action && typeof mi.action === 'function') {
+                    $scope.multiLevelMenuHelper.stampLastAccess(mi);
+                    emitMenuEvent(epMultiLevelMenuConstants.MLM_ITEM_CLICKED, mi);
+                    mi.actionExternal(mi);
+                }
+
+                if (event) { event.stopPropagation(); }
             }
-            if (mi.isTop && isHeader && ev && $scope.onTopMenuClick) {
-                $scope.onTopMenuClick();
-            }
-        }
-
-        /**
-         * @ngdoc method
-         * @name toggleFavorite
-         * @methodOf ep.multilevel.menu.controller:epMultiLevelMenuCtrl
-         * @public
-         * @description
-         * Handles the toggleFavorite request
-         *
-         * @param {object} mi the menu item
-         */
-        function toggleFavorite(mi) {
-            $scope.multiLevelMenuHelper.toggleFavorite(mi);
-        }
-
-        function emitMenuEvent(eventId, menuItem) {
-            $rootScope.$emit(eventId, {
-                eventId: eventId,
-                menuId: $scope.menuId,
-                factory: $scope.multiLevelMenuHelper,
-                scope: $scope,
-                menuItem: menuItem
-            });
-        }
-
-        // initialize the menus using the directive properties
-        function initializeMenus() {
-            // if they pass in the search-type directive property, set it on $scope.state
-            // override the default searchType = 'item'
-            if ($scope.searchType) {
-                $scope.state.searchType = $scope.searchType;
-            }
-            // now the transitionEnd event is wired up, we use the local mlmService to populate()
-            // AKA, walk up and down the menu setting the _parent and _depth properties
-            $scope.multiLevelMenuHelper = epMultiLevelMenuFactory.getMultiLevelMenuHelper($scope);
-            $scope.multiLevelMenuHelper.populate($scope.menu);
-            // now we set the data (with _parent and _depth properties) on scope and set the 'next' panel
-            $scope.data = $scope.multiLevelMenuHelper.data;
-            $scope.data.next = $scope.multiLevelMenuHelper.data.menu;
-            // when we invoke navigate, this will add the animation class setting the initial
-            // animation into effect
-            $scope.navigate($scope.data.next);
-
-            if ($scope.onMenuInit) {
-                //a callback to the outside to provide factory if needed...
-                $scope.onMenuInit({ factory: $scope.multiLevelMenuHelper });
+            /**
+             * @ngdoc method
+             * @name navigate
+             * @methodOf ep.multilevel.menu.controller:epMultiLevelMenuCtrl
+             * @public
+             * @description
+             * Handles the navigate request.
+             *
+             * @param {object} mi the menu item
+             * @param {bool} isHeader - is header clicked (backwards or top menu, otherwise triggered from item)
+             * @param {object} ev - event object from UI
+             */
+            function navigate(mi, isHeader, ev) {
+                if (!mi) {
+                    return;
+                }
+                if (mi._type === 'menu') {
+                    if (mi._id === 'topmenu') {
+                        return;
+                    }
+                    //going to back to parent set 'left-to-right' animation,
+                    //otherwise 'right-to-left'
+                    $scope.isRightToLeft = (isHeader !== true);
+                    $scope.data.next = mi;
+                    $timeout(function() {
+                        setCurrentItems();
+                        $scope.$apply();
+                    });
+                }
+                if (mi._type === 'item' && mi.action && typeof mi.action === 'function') {
+                    $scope.multiLevelMenuHelper.stampLastAccess(mi);
+                    emitMenuEvent(epMultiLevelMenuConstants.MLM_ITEM_CLICKED, mi);
+                    mi.action(mi);
+                }
+                if (mi.isTop && isHeader && ev && $scope.onTopMenuClick) {
+                    $scope.onTopMenuClick();
+                }
             }
 
-            emitMenuEvent(epMultiLevelMenuConstants.MLM_INITIALIZED_EVENT);
+            /**
+             * @ngdoc method
+             * @name toggleFavorite
+             * @methodOf ep.multilevel.menu.controller:epMultiLevelMenuCtrl
+             * @public
+             * @description
+             * Handles the toggleFavorite request
+             *
+             * @param {object} mi the menu item
+             * @param {object} event the click event that invoked toggleFavorite
+             */
+            function toggleFavorite(mi, event) {
+                $scope.multiLevelMenuHelper.toggleFavorite(mi, event);
+            }
 
-            $scope.$watch('menu', function(newValue, oldValue) {
-                if (newValue && (!angular.equals(newValue, oldValue) || !$scope.data || !$scope.data.menu)) {
-                    $scope.multiLevelMenuHelper.populate($scope.menu, true);
-                    $scope.data = $scope.multiLevelMenuHelper.data;
-                    $scope.data.next = $scope.multiLevelMenuHelper.data.menu;
-                    setCurrentItems();
-                    emitMenuEvent(epMultiLevelMenuConstants.MLM_MENU_DATA_CHANGED);
+            function emitMenuEvent(eventId, menuItem) {
+                $rootScope.$emit(eventId, {
+                    eventId: eventId,
+                    menuId: $scope.menuId,
+                    factory: $scope.multiLevelMenuHelper,
+                    scope: $scope,
+                    menuItem: menuItem
+                });
+            }
+
+            // initialize the menus using the directive properties
+            function initializeMenus(componentType) {
+                // if they pass in the search-type directive property, set it on $scope.state
+                // override the default searchType = 'item'
+                if ($scope.searchType) {
+                    $scope.state.searchType = $scope.searchType;
+                }
+                // now the transitionEnd event is wired up, we use the local mlmService to populate()
+                // AKA, walk up and down the menu setting the _parent and _depth properties
+                $scope.multiLevelMenuHelper = epMultiLevelMenuFactory.getMultiLevelMenuHelper($scope, componentType);
+                $scope.multiLevelMenuHelper.populate($scope.menu);
+
+                // now we set the data (with _parent and _depth properties) on scope and set the 'next' panel
+                $scope.data = $scope.multiLevelMenuHelper.data;
+                $scope.data.next = $scope.multiLevelMenuHelper.data.menu;
+                // when we invoke navigate, this will add the animation class setting the initial
+                // animation into effect
+                $scope.navigate($scope.data.next);
+
+                if ($scope.onMenuInit) {
+                    //a callback to the outside to provide factory if needed...
+                    $scope.onMenuInit({factory: $scope.multiLevelMenuHelper});
+                }
+
+                emitMenuEvent(epMultiLevelMenuConstants.MLM_INITIALIZED_EVENT);
+
+                $scope.$watch('menu', function(newValue, oldValue) {
+                    if (newValue && (!angular.equals(newValue, oldValue) || !$scope.data || !$scope.data.menu)) {
+                        $scope.multiLevelMenuHelper.populate($scope.menu, true);
+                        $scope.data = $scope.multiLevelMenuHelper.data;
+                        $scope.data.next = $scope.multiLevelMenuHelper.data.menu;
+                        setCurrentItems();
+                        emitMenuEvent(epMultiLevelMenuConstants.MLM_MENU_DATA_CHANGED);
+                    }
+                });
+
+                epMultiLevelMenuService.registerMenuFactory($scope.multiLevelMenuHelper);
+                //TO DO: on scope destroy unregister
+            }
+
+            function doOrderByMenu(menu) {
+                var sortFnValue = $scope.fnSort ? $scope.fnSort(menu) : undefined;
+                return sortFnValue || menu.sort || menu.caption;
+            }
+
+            $scope.$watch('sortDisabled', function(newValue, oldValue) {
+                if ((newValue === true || newValue === false) && !angular.equals(newValue, oldValue)) {
+                    $scope.orderByMenu = (newValue === true) ? undefined : doOrderByMenu;
                 }
             });
 
-            epMultiLevelMenuService.registerMenuFactory($scope.multiLevelMenuHelper);
-            //TO DO: on scope destroy unregister
-        }
-
-        function doOrderByMenu(menu) {
-            var sortFnValue = $scope.fnSort ? $scope.fnSort(menu) : undefined;
-            return sortFnValue || menu.sort || menu.caption;
-        }
-
-        $scope.$watch('sortDisabled', function(newValue, oldValue) {
-            if ((newValue === true || newValue === false) && !angular.equals(newValue, oldValue)) {
-                $scope.orderByMenu = (newValue === true) ? undefined : doOrderByMenu;
-            }
-        });
-
-        $scope.orderByMenu = ($scope.sortDisabled === true) ? undefined : doOrderByMenu;
-        $scope.clear = clear;
-        $scope.setCurrentItems = setCurrentItems;
-        $scope.navigate = navigate;
-        $scope.toggleFavorite = toggleFavorite;
-        $scope.search = search;
-        $scope.initializeMenus = initializeMenus;
-        $scope.emitMenuEvent = emitMenuEvent;
-    }
-    ]);
+            $scope.orderByMenu = ($scope.sortDisabled === true) ? undefined : doOrderByMenu;
+            $scope.clear = clear;
+            $scope.setCurrentItems = setCurrentItems;
+            $scope.navigate = navigate;
+            $scope.navigateExternal = navigateExternal;
+            $scope.toggleFavorite = toggleFavorite;
+            $scope.search = search;
+            $scope.initializeMenus = initializeMenus;
+            $scope.emitMenuEvent = emitMenuEvent;
+        }]
+    );
 })();
 
 /**
@@ -10022,7 +11846,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                      pre: function() { },
                      post: function($scope) {
                          $timeout(function() {
-                             $scope.initializeMenus();
+                             $scope.initializeMenus('epMultiLevelMenu');
                          });
                      }
                  };
@@ -10049,14 +11873,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
     'epMultiLevelMenuService',
     'epMultiLevelMenuConstants',
     function(epLocalStorageService, epMultiLevelMenuService, epMultiLevelMenuConstants) {
-        function getMultiLevelMenuHelper(scope) {
-            return new multiLevelMenuHelper(scope);
+        function getMultiLevelMenuHelper(scope, type) {
+            return new multiLevelMenuHelper(scope, type);
         }
         return {
             getMultiLevelMenuHelper: getMultiLevelMenuHelper
         };
 
-        function multiLevelMenuHelper(ctrlScope) {
+        function multiLevelMenuHelper(ctrlScope, componentType) {
             var depth = 0;
             var scope = ctrlScope; // scope from the controller
             var data = {
@@ -10087,7 +11911,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
                 menu._depth = depth;
                 angular.forEach(menu.menuitems, function(kid) {
-                    kid._parent = menu;
+                    if (componentType !== 'epAccordionMenu') {
+                        // we cannot set the parent with the accordion menu because the menu data is serialized
+                        // as JSON, and setting the parent causes a circular structure
+                        kid._parent = menu;
+                    }
                     depth++;
                     buildTree(kid);
                     depth--;
@@ -10271,8 +12099,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
              * Handles the toggleFavorite request
              *
              * @param {object} mi the menu item or menu id
+             * @param {object} event the click event that invoked the toggleFavorite method
             */
-            function toggleFavorite(mi) {
+            function toggleFavorite(mi, event) {
                 var item = getMenuItemFromObj(mi);
                 if (!item) {
                     return;
@@ -10292,6 +12121,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 if (scope.onFavoriteChange) {
                     scope.onFavoriteChange({ menuItem: mi, favorites: data.favorites });
                 }
+                if (event) { event.stopPropagation(); }
                 scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_FAVORITES_CHANGED);
             }
             /**
@@ -11012,6 +12842,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             var logicalOp = (isOr) ? ' or ' : ' and ';
             odataObject.$filter = ((odataObject && odataObject.$filter) ? (odataObject.$filter + logicalOp) : '') +
                 expression;
+            /*jshint validthis: true */
             return this;
         }
 
@@ -11048,364 +12879,1223 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 })();
 
 'use strict';
+
+/**
+ * @ngdoc controller
+ * @name ep.photo.browser.controller:epPhotoBrowserCtrl
+ * @description
+ * Represents the epPhotoBrowser controller for the
+ * ep.photo.browser module, or for specific ep-photo-browser directive
+ *
+ * @example
+ *
+ */
+angular.module('ep.photo.browser').controller('epPhotoBrowserCtrl', [
+    '$scope','epPhotoBrowserService',
+    function($scope, epPhotoBrowserService) {
+        epPhotoBrowserService.getImages().then(function(images) {
+            $scope.images = images;
+        });
+    }
+]);
+
+
+'use strict';
+/**
+* @ngdoc directive
+* @name ep.photo.browser.directive:epPhotoBrowser
+* @restrict E
+* @description
+* This component displays thumbnail image gallery.
+* Images can be imported from external url or passing base 64 format or fetching from device gallery
+* On click of the image, it will enlarge in the preview mode
+* Navigating to images can be done by using next or Previous button
+* Swiping left or right on the image will navigate to next or previous image
+* Rotation of images can be done by clicking play button in the preview mode
+* By setting the attribute show-preview as true, it will skip image gallery view and directly navigate to preview mode with rotating the images by default
+* @example
+<doc:example module="ep.photo.browser">
+    <doc:source>
+      <ep-photo-browser show-preview="true">
+      </ep-photo-browser>
+  </doc:source>
+</doc:example>
+*/
+angular.module('ep.photo.browser').directive('epPhotoBrowser',
+    ['epPhotoBrowserService', function(epPhotoBrowserService) {
+        function link($scope) {
+            $scope.active = epPhotoBrowserService.active;
+            $scope.slides = epPhotoBrowserService.slides;
+            $scope.imageFiles = epPhotoBrowserService.imageFiles;
+        }
+        return {
+            link: link,
+            restrict: 'E',
+            controller: 'epPhotoBrowserCtrl',
+            templateUrl: 'src/components/ep.photo.browser/ep-photo-browser.html',
+            scope: { showPreview: '@' }
+        };
+    }]);
+
+'use strict';
+/**
+ * @ngdoc service
+ * @name ep.photo.browser.factory:epPhotoBrowserFactory
+ * @description
+ * Factory service for the ep.photo.browser module
+ * browsing the photos
+ * @example
+ */
+angular.module('ep.photo.browser').factory('epPhotoBrowserFactory', [
+    function() {
+        /**
+         * @ngdoc method
+         * @name publicMethod
+         * @methodOf ep.photo.browser.factory:epPhotoBrowserFactory
+         * @public
+         * @description
+         * sample public method stub
+         */
+        function publicMethod() {
+            // do something
+            return true;
+        }
+        return {
+            publicMethod: publicMethod
+        };
+    }]);
+
+/**
+ * @ngdoc service
+ * @name ep.photo.browser.service:epPhotoBrowserService
+ * @description
+ * Service for accessing photo browser
+ *
+ * @example
+ *
+ */
 (function() {
-    angular.module('ep.record.editor')
-        .directive('epCheckboxEditor', function() {
-            return {
-                restrict: 'E',
-                replace: true,
-                templateUrl: 'src/components/ep.record.editor/editors/ep-checkbox-editor.html',
-                scope: {
-                    'ctx': '=',
-                    'options': '='
-                },
-                compile: function() {
-                    return {
-                        pre: function($scope) {
-                            var ctx = $scope.ctx;
+    'use strict';
+angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
+    function($q) {
 
-                            if (ctx.updatable) {
-                                ctx.toggleValue = function(c, ev) {
-                                    if (c.state.activeRecord && !ctx.disabled) {
-                                        var newVal = !c.state.activeRecord[c.columnIndex];
-                                        ctx.fnSetCurrentValue(newVal, false);
+        var images = [];
+        var imageFiles = [];
+        /**
+        * @ngdoc method
+        * @name getImages
+        * @methodOf ep.photo.browser.service:epPhotoBrowserService
+        * @public
+        * @description
+        * This asynchronous method enables image url passed as input
+        */
+        function getImages() {
+            var deferred = $q.defer();
+            deferred.resolve(images);
+            return deferred.promise;
+        }
+        /**
+        * @ngdoc method
+        * @name showDeviceImage
+        * @methodOf ep.photo.browser.service:epPhotoBrowserService
+        * @public
+        * @description
+        * This enables when user wants to access device sd card and import images from device gallery
+        */
+        function showDeviceImage() {
+            document.addEventListener('deviceready', onDeviceReady, false);
+        }
+        /**
+        * @ngdoc method
+        * @name onDeviceReady
+        * @methodOf ep.photo.browser.service:epPhotoBrowserService
+        * @public
+        * @description
+        * This enables when user wants to access device sd card and import images from device gallery
+        */
+        function onDeviceReady() {
+        window.resolveLocalFileSystemURL(cordova.file.externalRootDirectory, function onFileSystemSuccess(fileSystem) {
+                window.console.log(cordova.file.externalRootDirectory);
+                var directoryReader = fileSystem.createReader();
+                directoryReader.readEntries(function(entries) {
+                    var i;
+                    for (i = 0; i < entries.length; i++) {
+                        if (entries[i].name === 'DCIM') {
+                            var dcimReader = entries[i].createReader();
+                            dcimReader.readEntries(onGetDCIM, false);
+                            break;
+                        }
+                    }
+                }, function() {
+                    window.console.log('fail');
+                });
+            });
+        }
+        /**
+        * @ngdoc method
+        * @name getFileContentAsBase64
+        * @methodOf ep.photo.browser.service:epPhotoBrowserService
+        * @public
+        * @description
+        * This enables to read the file as base64 format
+        */
+        function getFileContentAsBase64(path, callback) {
+            window.resolveLocalFileSystemURL(path, gotFile, failMsg);
+            function failMsg() {
+                window.Console.log('file not found');
+            }
+            function gotFile(fileEntry) {
 
-                                        if (ctx.fnValidate && ctx.col.bRaiseEvent && ctx.updatable) {
-                                            ctx.fnValidate(ctx.col, this, ev);
-                                        }
+                fileEntry.file(function(file) {
+                    var reader = new FileReader();
+                    reader.onloadend = function() {
+                        var content = this.result;
+                        callback(content);
+                    };
+
+                    reader.readAsDataURL(file);
+                });
+            }
+        }
+        /**
+        * @ngdoc method
+        * @name onGetDCIM
+        * @methodOf ep.photo.browser.service:epPhotoBrowserService
+        * @public
+        * @description
+        * This enables to read the entries inside the DCIM folder and find the Camera folder in device
+        */
+        function onGetDCIM(entries) {
+            var i;
+            for (i = 0; i < entries.length; i++) {
+                if (entries[i].name === 'Camera') {
+                    var mediaReader = entries[i].createReader();
+                    mediaReader.readEntries(onGetFileNames, false);
+                    break;
+                }
+                window.console.log('the entries name' + entries[i].name);
+            }
+        }
+        /**
+        * @ngdoc method
+        * @name onGetFileNames
+        * @methodOf ep.photo.browser.service:epPhotoBrowserService
+        * @public
+        * @description
+        * This enables to read the entries inside the Camera folder and filter the image files
+        */
+        function onGetFileNames(entries) {
+            var i;
+            for (i = 0; i < entries.length; i++) {
+                if (/\.(jpe?g|png|gif|bmp)$/i.test(entries[i].name)) {
+
+                    var imagePath = entries[i].fullPath.substr(1);
+                    var path = cordova.file.externalRootDirectory + imagePath;
+                    images.push({ thumb: path, img: path });
+                }
+            }
+        }
+        return {
+            imageFiles: imageFiles,
+            getFileContentAsBase64: getFileContentAsBase64,
+            onGetDCIM: onGetDCIM,
+            onGetFileNames: onGetFileNames,
+            images: images,
+            getImages: getImages,
+            showDeviceImage: showDeviceImage
+        };
+    }]);
+})();
+
+/**
+* @ngdoc directive
+* @name ep.record.editor.directive:epCheckboxEditor
+* @restrict E
+*
+* @description
+* Checkbox editor used by ep-record-editor or ep-editor-control
+*/
+(function() {
+    'use strict';
+
+    angular.module('ep.record.editor').
+    directive('epCheckboxEditor', epCheckboxEditorDirective);
+
+    /*@ngInject*/
+    function epCheckboxEditorDirective() {
+        return {
+            restrict: 'E',
+            replace: true,
+            templateUrl: 'src/components/ep.record.editor/editors/ep-checkbox-editor.html',
+            scope: {
+                'ctx': '=',
+                'value': '=',
+                'options': '='
+            },
+            compile: function() {
+                return {
+                    pre: function($scope) {
+                        var ctx = $scope.ctx;
+
+                        //set size class smaller for check box
+                        ctx.fnSetSizeClass('col-xs-12 col-sm-4 col-md-3 col-lg-2');
+                        ctx.checkBoxSize = ctx.checkBoxSize || '2x';
+
+                        if (ctx.updatable) {
+                            ctx.toggleValue = function(c, ev) {
+                                if ($scope.value !== undefined && !ctx.disabled) {
+                                    var newVal = !$scope.value;
+                                    ctx.fnSetCurrentValue(newVal, false);
+
+                                    if (ctx.fnValidate && ctx.updatable) {
+                                        ctx.fnValidate(ctx.col, this, ev);
                                     }
-                                };
-                            }
-                            ctx.checked = ctx.value ? 'checked' : '';
-                            $scope.handleKey = function($event) {
-                                if ($event.which === 32) {
-                                    $scope.ctx.toggleValue($scope.ctx);
                                 }
                             };
                         }
-                    };
-                }
-            };
-        });
+                        ctx.checked = ctx.value ? 'checked' : '';
+                        $scope.handleKey = function($event) {
+                            if ($event.which === 32) {
+                                $scope.ctx.toggleValue($scope.ctx);
+                            }
+                        };
+                    }
+                };
+            }
+        };
+    }
 })();
 
-'use strict';
+/**
+* @ngdoc directive
+* @name ep.record.editor.directive:epDateConvert
+* @restrict E
+*
+* @description
+*/
 (function() {
-    angular.module('ep.record.editor')
-        .directive('epDateEditor', ['epFeatureDetectionService', function(epFeatureDetectionService) {
+    'use strict';
 
-            var isDateInputSupported = epFeatureDetectionService.inputSupportsType('date');
+    angular.module('ep.record.editor').
+    directive('epDateConvert', epDateConvertDirective);
 
-            return {
-                restrict: 'E',
-                replace: true,
-                templateUrl: 'src/components/ep.record.editor/editors/ep-date-editor.html',
-                scope: {
-                    'ctx': '=',
-                    'options': '='
-                },
-                compile: function() {
-                    return {
-                        pre: function($scope) {
-                            var ctx = $scope.ctx;
-                            var col = ctx.col;
+    /*@ngInject*/
+    function epDateConvertDirective() {
+        //This directive is used to convert string to date between temp input and record
+        //we need this because date angular bootstrap and input 'date' for native dates work
+        //only if date object is bound to control. But our record stores ISO string date
+        //so we have temp control with date object which we edit and pass result to hidden
+        //control bound to actual record.
+        return {
+            restrict: 'A',
+            require: 'ngModel',
+            link: function(scope, element, attrs, ngModel) {
+                if (!ngModel) { return; }
 
-                            ctx.useDateInput = isDateInputSupported; //activate browser native date entry
+                var mode = attrs.epDateConvert;
 
-                            var format = col.oFormat.FormatString;
-                            ctx.format = format;
-                            ctx.dateOptions = {};
+                if (mode === 'toString') {
+                    //transform date to string
+                    ngModel.$parsers.unshift(function(value) {
+                        var dd = null;
+                        if (value !== undefined) {
+                            var m = moment(value);
+                            var fmt = scope.ctx.isDateTime ? 'YYYY-MM-DDT00:00:00' : 'YYYY-MM-DD';
+                            dd = m.isValid() ? m.format(fmt) : null;
+                        }
+                        var vCur = scope.ctx.fnGetCurrentValue();
+                        if (vCur !== dd) {
+                            scope.value = dd;
+                        }
+                        return value;
+                    });
 
-                            if (!ctx.useDateInput) {
-                                var reg;
-                                if (format) {
-                                    reg = /[A-Z]|[a-z]/;
-                                    ctx.dateSeparator = _.find(ctx.format, function(c) {
-                                        return c && !reg.test(c);
-                                    });
+                    ngModel.$viewChangeListeners.push(function() {
+                        if (ngModel.$modelValue === undefined) {
+                            //this happens during edit when date becomes invalid (modelValue undefined)
+                            scope.ctx.isInvalidDateSet = true;
+                            scope.value = undefined;
+                        }
+                    });
+                }
+                if (mode === 'toDate') {
+                    //transform ISO string date to date object
+                    ngModel.$formatters.push(function(value) {
+                        if (angular.isString(value)) {
+                            var md = moment(value);
+                            scope.ctx.dateValue = md.isValid() ? md.toDate() : null;
+                        } else {
+                            if (scope.ctx.isInvalidDateSet === true) {
+                                scope.ctx.isInvalidDateSet = false;
+                            } else {
+                                scope.ctx.dateValue = angular.isDate(value) ? value : null;
+                            }
+                        }
+                        return value;
+                    });
+                }
+            }
+        };
+    }
+})();
+
+
+/**
+* @ngdoc directive
+* @name ep.record.editor.directive:epDateEditor
+* @restrict E
+*
+* @description
+* @description
+* Date editor used by ep-record-editor or ep-editor-control
+*/
+(function() {
+    'use strict';
+
+    epDateEditorDirective.$inject = ['epFeatureDetectionService'];
+    angular.module('ep.record.editor').
+    directive('epDateEditor', epDateEditorDirective);
+
+    /*@ngInject*/
+    function epDateEditorDirective(epFeatureDetectionService) {
+        var isDateInputSupported = epFeatureDetectionService.inputSupportsType('date');
+
+        return {
+            restrict: 'E',
+            replace: true,
+            templateUrl: 'src/components/ep.record.editor/editors/ep-date-editor.html',
+            scope: {
+                'ctx': '=',
+                'value': '=',
+                'options': '='
+            },
+            compile: function() {
+                return {
+                    pre: function($scope) {
+                        var ctx = $scope.ctx;
+                        var col = ctx.col;
+
+                        ctx.useDateInput = isDateInputSupported; //activate browser native date entry
+
+                        var format = col.oFormat.FormatString;
+                        ctx.format = format;
+                        ctx.dateOptions = {};
+
+                        if (!ctx.useDateInput) {
+                            var reg;
+                            if (format) {
+                                reg = /[A-Z]|[a-z]/;
+                                ctx.dateSeparator = _.find(ctx.format, function(c) {
+                                    return c && !reg.test(c);
+                                });
+                            }
+                            if (!ctx.dateSeparator) {
+                                var dd = new Date().toLocaleDateString();
+                                reg = /[0-9]|[' ']/;
+                                ctx.dateSeparator = _.find(dd, function(c) {
+                                    return c && c.charCodeAt(0) !== 8206 && !reg.test(c);
+                                });
+                            }
+
+                            ctx.fnDateOpen = function($event) {
+                                if (!ctx.disabled) {
+                                    $event.preventDefault();
+                                    $event.stopPropagation();
+                                    ctx.dateOpened = true;
                                 }
-                                if (!ctx.dateSeparator) {
-                                    var dd = new Date().toLocaleDateString();
-                                    reg = /[0-9]|[' ']/;
-                                    ctx.dateSeparator = _.find(dd, function(c) {
-                                        return c && c.charCodeAt(0) !== 8206 && !reg.test(c);
-                                    });
+                            };
+                            ctx.fnDateKeyDown = function($event) {
+                                var k = $event.keyCode;
+                                if (k === 8 || k === 9 || k === 16 || k === 33 || k === 34 ||
+                                    k === 35 || k === 36 || k === 37 || k === 38 || k === 39 || k === 40) {
+                                    return true;
                                 }
-
-                                ctx.fnDateOpen = function($event) {
-                                    if (!ctx.disabled) {
-                                        $event.preventDefault();
-                                        $event.stopPropagation();
-                                        ctx.dateOpened = true;
-                                    }
-                                };
-                                ctx.fnDateKeyDown = function($event) {
-                                    var k = $event.keyCode;
-                                    if (k === 8 || k === 9 || k === 16 || k === 33 || k === 34 ||
-                                        k === 35 || k === 36 || k === 37 || k === 38 || k === 39 || k === 40) {
-                                        return true;
-                                    }
-                                    if ($event.ctrlKey) {
-                                        return true; //for Copy/Paste etc.
-                                    }
-                                    if (ctx.disabled) {
-                                        $event.preventDefault();
-                                        return false;
-                                    }
-                                    if (ctx.dateSeparator && $event.char) {
-                                        //with date separator check for it or [0-9]
-                                        var sepCode = ctx.dateSeparator;
-                                        if ($event.char === sepCode) {
-                                            //prevent more than 2 date separators
-                                            if (angular.isString($event.target.value) &&
-                                                $event.target.value.split(sepCode).length > 2) {
-                                                $event.preventDefault();
-                                                return false;
-                                            }
-                                            return true;
-                                        }
-                                        if (/[0-9]/.test($event.char)) {
-                                            return true;
-                                        }
-                                    } else if ($event.char) {
-                                        //without date separator we will allow all non-alphanumerics
-                                        if (!(/[A-Z]|[a-z]/.test($event.char))) {
-                                            return true;
-                                        }
-                                    } else {
-                                        //uncontrolled because we cannot trust key code
-                                        if (k < 65 || k > 90) {
-                                            return true;
-                                        }
-                                    }
+                                if ($event.ctrlKey) {
+                                    return true; //for Copy/Paste etc.
+                                }
+                                if (ctx.disabled) {
                                     $event.preventDefault();
                                     return false;
+                                }
+                                if (ctx.dateSeparator && $event.char) {
+                                    //with date separator check for it or [0-9]
+                                    var sepCode = ctx.dateSeparator;
+                                    if ($event.char === sepCode) {
+                                        //prevent more than 2 date separators
+                                        if (angular.isString($event.target.value) &&
+                                            $event.target.value.split(sepCode).length > 2) {
+                                            $event.preventDefault();
+                                            return false;
+                                        }
+                                        return true;
+                                    }
+                                    if (/[0-9]/.test($event.char)) {
+                                        return true;
+                                    }
+                                } else if ($event.char) {
+                                    //without date separator we will allow all non-alphanumerics
+                                    if (!(/[A-Z]|[a-z]/.test($event.char))) {
+                                        return true;
+                                    }
+                                } else {
+                                    //uncontrolled because we cannot trust key code
+                                    if (k < 65 || k > 90) {
+                                        return true;
+                                    }
+                                }
+                                $event.preventDefault();
+                                return false;
+                            };
+                        }
+                    }
+                };
+            }
+        };
+    }
+})();
+
+
+(function() {
+    'use strict';
+    /**
+    * @ngdoc directive
+    * @name ep.editor.directive:epEditorControl
+    * @restrict E
+    * @scope
+    *
+    * @description
+    * Represents the ep.editor.control directive
+    * This directive allows using editors standalone without ep-record-editor
+    * Please note that the controls must be under class="row" for proper sizing
+    *
+    * @param {object} column - the following are properties of the column:
+        # editor {string} - 'number' | 'text' | 'multiline' | 'date' | 'checkbox' | 'select' | 'image' | 'custom'
+            if 'auto' or blank then editor will be detected from value
+        # editorDirective {string} - directive name as in html for custom editor
+        # bizType {string} - 'phone' | 'address' | 'email' | 'url' | 'password'
+        # columnIndex - data ordinal index (data array index) or property name
+        # seq {int} - (optional) sequence index for ordering
+        # required {bool} - is entry required
+        # requiredFlag {bool} - should we display required flag
+        # name {string} - column name (optional)
+        # caption {string} - caption
+        # placeholder {string} - applicable to text input
+        # justification {string} - 'right' | 'left' | 'center'
+        # visible {bool}  - visible
+        # updatable {bool}  - updatable
+        # nullable {bool}  - nullable
+        # list {array}  - array of items for drop down (editor = 'select' ) [{ label, value }]
+        # sizeClass {string} - editor size class (bootstrap column sizes like col-md-6, col-lg-8, etc)
+        # sizeClassTarget {object} - if string then acts like selector of closest ancestor and sets size
+        #                   class to this element. if node is passed then sets size class on it.
+        #
+        # checkBoxSize {string}  - applicable to checkbox only (for now). Can be '1x', '2x', '3x'
+        # style {string} - sets inline styling. eg. '{ "color" : "red", "margin" : "0px" }
+        # oFormat {object}
+        #   - MaxLength {int}
+        #   -
+        # buttons {array} - array of button objects that conatin properties:
+            text {string} - button text
+            style {string} - button class
+            position {string} - 'pre' or 'post'
+            seq {int} - button sequence
+            action {function} - function action that is invoked on click
+            type {string} - 'btn' - if button, otherwise a link
+        # imageHeight {int} - image height for image editor
+        # imageWidth {int} - image width for image editor
+        # fnOnFldValidate(ctx, event, inputValue, originalValue) - callback function on validation
+        # fnOnChange(ctx, event) - callback function on change
+        # fnOnBlur(ctx, event) - callback function on change
+    *
+    * @param {object} value - the value binding for the editor
+    * @param {bool} isDropEnabled - is drop enabled for the editor
+    * @param {bool} isDragEnabled - is drag enabled for the editor
+    *
+    * @example
+    *   HTML:
+    *   <div class="row">
+    *       <ep-editor-control column="column" value="valueText"></ep-editor-control>
+    *   </div>
+    *
+    *   Script:
+    *   $scope.column = {
+    *       caption: 'My Caption',
+    *       editor: 'text',
+    *       updatable: true,
+    *       placeholder: 'Enter text here...'
+    *   };
+    *   $scope.valueText = 'My Text';
+    */
+    epEditorControlDirective.$inject = ['$log', '$timeout', '$window', '$compile', '$q', 'epUtilsService'];
+    angular.module('ep.record.editor').
+        directive('epEditorControl', epEditorControlDirective);
+
+    /*@ngInject*/
+    function epEditorControlDirective($log, $timeout, $window, $compile, $q, epUtilsService) {
+
+        var defaultSizeClass = 'col-xs-12 col-sm-8 col-md-6 col-lg-3';
+
+        var defaultFormat = {
+            FieldType: 0,
+            MaxLength: 30
+        };
+
+        function doValidation(ctx, ev, focus) {
+            if (!ctx.col.fnOnFldValidate) {
+                return;
+            }
+            if (getRecordEditor(ctx.control.scope)) {
+                var re = getRecordEditor(ctx.control.scope);
+                re.doValidation(ctx.control.scope.options.recordEditor.state, ctx, ev, focus);
+            } else {
+                ctx.isInvalid = false;
+                var newValue = ctx.control.scope.value;
+                $q.when(ctx.col.fnOnFldValidate(ctx, ev, newValue)).then(function(result) {
+                    if (result === false) {
+                        ctx.isInvalid = true;
+                    }
+                    if (focus) {
+                        ctx.fnSetFocus();
+                    }
+                    $timeout(function() {
+                        ctx.fnDoValidations();
+                    });
+                });
+            }
+            $timeout(function() {
+                ctx.fnDoValidations();
+            });
+        }
+
+        function getEditorByValue(v) {
+            var tp = typeof v;
+            if (tp === 'number') {
+                return 'number';
+            } else if (tp === 'boolean') {
+                return 'checkbox';
+            } else if (tp === 'date') {
+                return 'date';
+            } else if (tp === 'string') {
+                var reg = /\d{4}-\d{2}-\d{2}['T']/;
+                if (v && v.match(reg)) {
+                    return 'date';
+                }
+            }
+            return 'text';
+        }
+
+        function addSizeClass(el, sClass) {
+            if (el) {
+                $(el).removeClass(function(index, css) {
+                    return (css.match(/(^|\s)col-((lg)|(xs)|(sm)|(md))\S+/g) || []).join(' ');
+                });
+                el.addClass(sClass);
+            }
+        }
+
+        function createContext(scope) {
+            //creates editor context based on metadata
+            var col = scope.column || {};
+            col.oFormat = col.oFormat || defaultFormat;
+
+            //determine editor
+            var edt = 'text';
+            if (!col.editor || col.editor === 'auto') {
+                if (scope.value !== undefined && scope.value !== null) {
+                    edt = getEditorByValue(scope.value);
+                    scope.editorValueType = typeof scope.value;
+                }
+            } else {
+                edt = col.editor;
+            }
+            var editor = (edt || 'text').trim().toLowerCase();
+
+            var name = col.name || col.caption || col.columnIndex;
+            var ctx = {
+                recordEditorState: undefined,
+                editorContainer: scope.state.iElement,
+                control: {
+                    scope: scope
+                },
+                col: col,
+                editor: editor,
+                name: editor + '_' + name + scope.$id,
+                columnIndex: col.columnIndex,
+                required: col.required || (editor === 'number' && !col.nullable), //all number's except Nullable are required
+                requiredFlag: col.requiredFlag,  //to display the required flag
+                bizType: col.bizType,
+                label: col.caption || name || '',
+                maxlength: col.oFormat.MaxLength,
+                justification: col.justification,
+                hidden: col.hidden,
+                updatable: col.updatable,
+                disabled: !col.updatable,
+                nullable: col.nullable,
+                displayInvalid: col.flagInvalid || true,
+                buttons: col.buttons || [],
+                imageWidth: (col.imageWidth ? col.imageWidth : 0),
+                imageHeight: (col.imageHeight ? col.imageHeight : 0),
+                isInvalid: false,
+                placeholder: col.placeholder,
+                size: col.size,
+                style: col.style,
+                checkBoxSize: col.checkBoxSize
+            };
+
+            if (col.style && angular.isString(col.style)) {
+                try {
+                    var xStyle =  scope.$eval(col.style);
+                    ctx.style = xStyle;
+                } catch (err) {
+                    $log.error('Error in ep-editor-control styling. Error: ' + err.message + '\nStyle: ' + col.style);
+                }
+            }
+
+            //TO DO - validate buttons pre/post seq etc
+            var directive = ctx.editor === 'custom' ? col.editorDirective : ('ep-' + ctx.editor + '-editor');
+            scope.editorDirective = '<' + directive + ' ctx=ctx value=value />';
+
+            ctx.fnSetSizeClass = function(sizeClass) {
+                var sClass = col.sizeClass || sizeClass || defaultSizeClass;
+                var isSet = true;
+                if (col.sizeClassTarget) {
+                    if (angular.isString(col.sizeClassTarget)) {
+                        $timeout(function() {
+                            var el = $(scope.state.iElement).closest(col.sizeClassTarget);
+                            addSizeClass(el, sClass);
+                        });
+                    } else if (col.sizeClassTarget instanceof HTMLElement) {
+                        addSizeClass($(col.sizeClassTarget), sClass);
+                    } else {
+                        isSet = false;
+                    }
+                }
+                if (!col.sizeClassTarget || !isSet) {
+                    ctx.sizeClass = sClass;
+                }
+            };
+            ctx.fnSetSizeClass();
+
+            ctx.fnSetFocus = function() {
+                var edt = ctx.fnGetEditorElement();
+                if (edt) {
+                    angular.element(edt).focus();
+                }
+            };
+
+            ctx.fnGetCurrentValue = function() {
+                return ctx.control.scope.value;
+            };
+
+            ctx.fnSetCurrentValue = function(val, focus) {
+                var edt = ctx.fnGetEditorElement();
+                if (val !== undefined) {
+                    if (ctx.fnGetCurrentValue() !== val) {
+                        ctx.control.scope.value = val;
+                        //because we set value programatically, set dirty
+                        if (edt) {
+                            angular.element(edt).addClass('ng-dirty');
+                        }
+                        if (ctx.updatable) {
+                            doValidation(ctx, {}, true);
+                        }
+                        ctx.fnOnChange({}, ctx);
+                    }
+                }
+                if (focus) {
+                    ctx.fnSetFocus();
+                }
+            };
+
+            ctx.fnGetEditorElement = function() {
+                var editor = null;
+                if (ctx.editorContainer) {
+                    editor = angular.element(ctx.editorContainer).find('.form-control.editor');
+                }
+                return editor;
+            };
+
+            ctx.fnOnChange = function($event) {
+                if (ctx.col.fnOnChange) {
+                    $timeout(function() {
+                        ctx.col.fnOnChange($event, ctx);
+                    });
+                }
+            };
+
+            ctx.fnBlur = function onBlur(ev) {
+                var state = scope.ctx.recordEditorState;
+                if (state) {
+                    state.lastFocused = { Col: ctx.col, Ctx: ctx, Event: ev };
+                }
+                if (ctx.updatable) {
+                    if (angular.element(ev.currentTarget).hasClass('ng-dirty')) {
+                        doValidation(ctx, ev, false);
+                    }
+                }
+                if (ctx.col.fnOnBlur) {
+                    ctx.col.fnOnBlur(ev, ctx);
+                }
+                return true;
+            };
+
+            //This function checks invalid status from angular and field validation to highlight invalid
+            ctx.fnDoValidations = function() {
+                ctx.invalidFlag = false;
+                if (ctx.displayInvalid && ctx.editorContainer) {
+                    var state = scope.ctx.recordEditorState;
+                    var showAllInvalidFields = (state && state.showAllInvalidFields);
+                    var editor = angular.element(ctx.editorContainer).find('.form-control.editor');
+                    if (editor.length) {
+                        //TO DO: check in angular if we can remove the 'ng-invalid-remove'/'ng-dirty-add' check
+                        var isInvalid = ctx.isInvalid || ((editor.hasClass('ng-invalid') &&
+                            !editor.hasClass('ng-invalid-remove')) || editor.hasClass('ng-valid-remove'));
+                        var isDirty = (editor.hasClass('ng-dirty') || editor.hasClass('ng-dirty-add') ||
+                            showAllInvalidFields);
+                        ctx.invalidFlag = (isInvalid && isDirty);
+                    } else if (ctx.toggleValue) {
+                        //special checkbox case:
+                        ctx.invalidFlag = ctx.isInvalid;
+                    }
+                }
+                return false;
+            };
+
+            //Configure BizType buttons
+            if (ctx.bizType && (ctx.bizType === 'phone' || ctx.bizType === 'address' ||
+                ctx.bizType === 'email' || ctx.bizType === 'url')) {
+                var btnHref = '';
+                var btnStyle = '';
+                var btnType = 'href-input';
+
+                switch (ctx.bizType) {
+                    case 'address':
+                        btnHref = 'http://maps.google.com/maps?q={0}';
+                        btnStyle = 'fa fa-map-marker';
+                        break;
+
+                    case 'phone':
+                        btnHref = 'tel:{0}';
+                        btnStyle = 'fa fa-phone';
+                        break;
+
+                    case 'email':
+                        btnHref = 'mailto:{0}';
+                        btnStyle = 'fa fa-envelope';
+                        break;
+
+                    case 'url':
+                        btnHref = '';
+                        btnStyle = 'fa fa-globe';
+                        btnType = 'href-func';
+                        ctx.fnGetHref = function() {
+                            var v = ctx.fnGetCurrentValue();
+                            if (col.stringFormat) {
+                                // example stringFormat = 'http://somewhere.com/{0}';
+                                v = epUtilsService.strFormat(col.stringFormat, v);
+                            }
+                            if (v) {
+                                //if string does not start with 'http' or 'https' then append
+                                var v1 = v.trim().toLowerCase();
+                                if (v1.substr(0, 4) !== 'http') {
+                                    v = 'http://' + v;
+                                }
+                            }
+                            return v;
+                        };
+                        break;
+                }
+                if (btnStyle) {
+                    ctx.buttons.push({
+                        type: btnType,
+                        text: '',
+                        href: btnHref,
+                        style: btnStyle,
+                        seq: 2,
+                        position: 'pre',
+                    });
+                }
+            }
+
+            if (ctx.buttons.length) {
+                ctx.fnBtnClick = function(btn) {
+                    if (btn.type === 'btn') {
+                        btn.action(ctx);
+                    } else {
+                        var v = ctx.fnGetCurrentValue();
+                        if (v) {
+                            var url = '';
+                            switch (btn.type) {
+                                case 'href':
+                                    url = btn.href;
+                                    break;
+                                case 'href-input':
+                                    url = epUtilsService.strFormat(btn.href, v);
+                                    break;
+                                case 'href-func':
+                                    url = ctx.fnGetHref();
+                                    break;
+                            }
+                            if (btn.type === 'href') {
+                                $window.open(url, '_blank');
+                            } else {
+                                $window.open(url);
+                            }
+                        }
+                    }
+                };
+            }
+            scope.ctx = ctx;
+            if (getRecordEditorState(scope)) {
+                var state = getRecordEditorState(scope);
+                var ctrl = state.controls[ctx.columnIndex];
+                ctrl.controlCtx = ctx;
+                ctx.recordEditorState = state;
+                ctx.seq = ctrl.seq;
+            }
+
+            var target = angular.element(scope.state.iElement).find('#xtemplate');
+            target.empty().append($compile(scope.editorDirective)(scope));
+        }
+
+        function getRecordEditorState(scope) {
+            return (scope.options && scope.options.recordEditor) ? scope.options.recordEditor.state : null;
+        }
+        function getRecordEditor(scope) {
+            return (scope.options && scope.options.recordEditor) ? scope.options.recordEditor : null;
+        }
+
+        // <-----------------Private methods
+
+        return {
+            restrict: 'E,A',
+            templateUrl: 'src/components/ep.record.editor/editors/ep-editor-control.html',
+            replace: true,
+            link: function(scope, element) {
+                scope.state = {
+                    iElement: element
+                };
+
+                scope.$watch('column', function(newValue) {
+                    if (newValue !== undefined) {
+                        createContext(scope);
+                    }
+                });
+
+                scope.$watch('value', function(newValue) {
+                    if (newValue !== undefined) {
+                        if (!scope.editorValueType &&
+                            (!scope.column || !scope.column.editor || scope.column.editor === 'auto'))
+                        {
+                            createContext(scope);
+                        }
+                    }
+                });
+
+                scope.handleDrop = function(drop) {
+                    var state = scope.ctx.recordEditorState;
+                    if (state) {
+                        var ctrlDrop = state.controls[scope.ctx.columnIndex];
+                        var ctrlDragged = state.controls[drop.dragItem.columnIndex];
+                        if (ctrlDrop !== ctrlDragged) {
+
+                            var indexThis = ctrlDrop.seq;
+                            var indexDropped = ctrlDragged.seq;
+                            //save
+                            if (ctrlDrop.origSeq === undefined) {
+                                ctrlDrop.origSeq = indexThis;
+                            }
+                            if (ctrlDragged.origSeq === undefined) {
+                                ctrlDragged.origSeq = indexDropped;
+                            }
+                            if (ctrlDrop.origSeq !== ctrlDrop.seq) {
+                                delete ctrlDrop.origSeq;
+                            }
+                            if (ctrlDragged.origSeq !== ctrlDragged.seq) {
+                                delete ctrlDragged.origSeq;
+                            }
+
+                            if (ctrlDragged.seq >= ctrlDrop.seq) {
+                                ctrlDragged.seq = ctrlDrop.seq;
+                                angular.forEach(state.controls, function(c) {
+                                    if (c.seq > ctrlDrop.seq) {
+                                        c.seq++;
+                                    }
+                                });
+                                ctrlDrop.seq++;
+                            } else {
+                                angular.forEach(state.controls, function(c) {
+                                    if (c.seq < ctrlDrop.seq) {
+                                        c.seq--;
+                                    }
+                                });
+                                ctrlDragged.seq = ctrlDrop.seq - 1;
+                            }
+
+                            if (state.fnOnDragDrop) {
+                                state.fnOnDragDrop(scope.ctx, drop.dragItem);
+                            }
+
+                            scope.$apply();
+                        }
+                    }
+                };
+                //scope.leaveHandler = function(drop) {
+                //};
+                //scope.overHandler = function(drop) {
+                //};
+            },
+            scope: {
+                column: '=',
+                value: '=',
+                options: '=',
+                isDragEnabled: '=',
+                isDropEnabled: '='
+            }
+        };
+    }
+}());
+
+
+/**
+* @ngdoc directive
+* @name ep.record.editor.directive:epImageEditor
+* @restrict E
+*
+* @description
+*/
+(function() {
+    'use strict';
+
+    angular.module('ep.record.editor').
+    directive('epImageEditor', epImageEditorDirective);
+
+    /*@ngInject*/
+    function epImageEditorDirective() {
+        return {
+            restrict: 'E',
+            replace: true,
+            templateUrl: 'src/components/ep.record.editor/editors/ep-image-editor.html',
+            scope: {
+                'ctx': '=',
+                'value': '=',
+                'options': '='
+            }
+        };
+    }
+})();
+
+/**
+* @ngdoc directive
+* @name ep.record.editor.directive:epMultilineEditor
+* @restrict E
+*
+* @description
+* @description
+* Multiline editor used by ep-record-editor or ep-editor-control
+*/
+(function() {
+    'use strict';
+
+    angular.module('ep.record.editor').
+    directive('epMultilineEditor', epMultilineEditorDirective);
+
+    /*@ngInject*/
+    function epMultilineEditorDirective() {
+        return {
+            restrict: 'E',
+            replace: true,
+            templateUrl: 'src/components/ep.record.editor/editors/ep-multiline-editor.html',
+            scope: {
+                'ctx': '=',
+                'value': '=',
+                'options': '='
+            },
+            compile: function() {
+                return {
+                    pre: function($scope) {
+                        var ctx = $scope.ctx;
+                        //set size class larger for multiline
+                        ctx.fnSetSizeClass('col-xs-12 col-sm-12 col-md-8 col-lg-8');
+                    }
+                };
+            }
+
+        };
+    }
+})();
+
+/**
+* @ngdoc directive
+* @name ep.record.editor.directive:epNumberEditor
+* @restrict E
+*
+* @description
+* @description
+* Number editor used by ep-record-editor or ep-editor-control
+*/
+(function() {
+    'use strict';
+
+    angular.module('ep.record.editor').
+    directive('epNumberEditor', epNumberEditorDirective);
+
+    /*@ngInject*/
+    function epNumberEditorDirective() {
+        return {
+            restrict: 'E',
+            replace: true,
+            templateUrl: 'src/components/ep.record.editor/editors/ep-number-editor.html',
+            scope: {
+                'ctx': '=',
+                'value': '=',
+                'options': '='
+            },
+            compile: function() {
+                return {
+                    pre: function($scope) {
+                        var ctx = $scope.ctx;
+                        var col = ctx.col;
+                        if (ctx.editor === 'number') {
+                            var fmt = col.oFormat;
+                            if (!fmt) {
+                                col.oFormat = fmt = {
+                                    Min: -99999999999,
+                                    Max: 99999999999
                                 };
                             }
-                        }
-                    };
-                }
-            };
-        }])
 
-        .directive('epDateConvert', function() {
-            //This directive is used to convert string to date between temp input and record
-            //we need this because date angular bootstrap and input 'date' for native dates work
-            //only if date object is bound to control. But our record stores ISO string date
-            //so we have temp control with date object which we edit and pass result to hidden
-            //control bound to actual record.
-            return {
-                restrict: 'A',
-                require: 'ngModel',
-                link: function(scope, element, attrs, ngModel) {
-                    if (!ngModel) { return; }
-
-                    var mode = attrs.epDateConvert;
-
-                    if (mode === 'toString') {
-                        //transform date to string
-                        ngModel.$parsers.unshift(function(value) {
-                            var dd = null;
-                            if (value !== undefined) {
-                                var m = moment(value);
-                                var fmt = scope.ctx.isDateTime ? 'YYYY-MM-DDT00:00:00' : 'YYYY-MM-DD';
-                                dd = m.isValid() ? m.format(fmt) : null;
-                            }
-                            var rec = scope.ctx.state.activeRecord;
-                            if (rec && rec[scope.ctx.columnIndex] !== dd) {
-                                rec[scope.ctx.columnIndex] = dd;
-                            }
-                            return value;
-                        });
-
-                        ngModel.$viewChangeListeners.push(function() {
-                            if (ngModel.$modelValue === undefined) {
-                                //this happens during edit when date becomes invalid (modelValue undefined)
-                                var rec = scope.ctx.state.activeRecord;
-                                if (rec) {
-                                    scope.ctx.isInvalidDateSet = true;
-                                    rec[scope.ctx.columnIndex] = undefined;
+                            if (fmt.Min || fmt.Min === 0) {
+                                ctx.min = fmt.Min;
+                                //TO DO: rework AllowNegative to be Min=0
+                                if (fmt.AllowNegative === false && fmt.Min < 0) {
+                                    ctx.min = 0;
                                 }
                             }
-                        });
-                    }
-                    if (mode === 'toDate') {
-                        //transform ISO string date to date object
-                        ngModel.$formatters.push(function(value) {
-                            if (angular.isString(value)) {
-                                var md = moment(value);
-                                scope.ctx.dateValue = md.isValid() ? md.toDate() : null;
-                            } else {
-                                if (scope.ctx.isInvalidDateSet === true) {
-                                    scope.ctx.isInvalidDateSet = false;
+                            if (fmt.Max || fmt.Max === 0) {
+                                ctx.max = fmt.Max;
+                            }
+                            if (fmt.NumberFormatInfo || (fmt.Decimals !== undefined)) {
+                                //to do : negatives mask!!!
+                                var dec = 0;
+                                if (fmt.Decimals !== undefined) {
+                                    dec = fmt.Decimals;
                                 } else {
-                                    scope.ctx.dateValue = angular.isDate(value) ? value : null;
+                                    dec = fmt.NumberFormatInfo.NumberDecimalDigits || 0;
                                 }
-                            }
-                            return value;
-                        });
-                    }
-                }
-            };
-        });
-
-})();
-
-'use strict';
-(function() {
-    angular.module('ep.record.editor')
-        .directive('epImageEditor', function() {
-            return {
-                restrict: 'E',
-                replace: true,
-                templateUrl: 'src/components/ep.record.editor/editors/ep-image-editor.html',
-                scope: {
-                    'ctx': '=',
-                    'options': '='
-                }
-            };
-        });
-})();
-
-'use strict';
-(function() {
-    angular.module('ep.record.editor')
-        .directive('epMultilineEditor', function() {
-            return {
-                restrict: 'E',
-                replace: true,
-                templateUrl: 'src/components/ep.record.editor/editors/ep-multiline-editor.html',
-                scope: {
-                    'ctx': '=',
-                    'options': '='
-                }
-            };
-        });
-})();
-
-'use strict';
-(function() {
-    angular.module('ep.record.editor')
-        .directive('epNumberEditor', function() {
-            return {
-                restrict: 'E',
-                replace: true,
-                templateUrl: 'src/components/ep.record.editor/editors/ep-number-editor.html',
-                scope: {
-                    'ctx': '=',
-                    'options': '='
-                },
-                compile: function() {
-                    return {
-                        pre: function($scope) {
-                            var ctx = $scope.ctx;
-                            var col = ctx.col;
-                            if (ctx.editor === 'number') {
-                                var fmt = col.oFormat;
-                                if (!fmt) {
-                                    col.oFormat = fmt = {
-                                        Min: -99999999999,
-                                        Max: 99999999999
-                                    };
+                                if (dec < 0) {
+                                    dec = 0;
                                 }
-
-                                if (fmt.Min || fmt.Min === 0) {
-                                    ctx.min = fmt.Min;
-                                    //TO DO: rework AllowNegative to be Min=0
-                                    if (fmt.AllowNegative === false && fmt.Min < 0) {
-                                        ctx.min = 0;
-                                    }
+                                if (dec === 0) {
+                                    ctx.pattern = '^NEG(\\d+)$';
+                                } else {
+                                    ctx.pattern =
+                                        '^NEG(\\d+)([\'.\'](\\d){0,DEC})?$'.replace('DEC', dec.toString());
                                 }
-                                if (fmt.Max || fmt.Max === 0) {
-                                    ctx.max = fmt.Max;
-                                }
-                                if (fmt.NumberFormatInfo || (fmt.Decimals !== undefined)) {
-                                    //to do : negatives mask!!!
-                                    var dec = 0;
-                                    if (fmt.Decimals !== undefined) {
-                                        dec = fmt.Decimals;
-                                    } else {
-                                        dec = fmt.NumberFormatInfo.NumberDecimalDigits || 0;
-                                    }
-                                    if (dec < 0) {
-                                        dec = 0;
-                                    }
-                                    if (dec === 0) {
-                                        ctx.pattern = '^NEG(\\d+)$';
-                                    } else {
-                                        ctx.pattern =
-                                            '^NEG(\\d+)([\'.\'](\\d){0,DEC})?$'.replace('DEC', dec.toString());
-                                    }
-                                    if (fmt.AllowNegative || false) {
-                                        ctx.pattern = ctx.pattern.replace('NEG', '([-]?)');
-                                    } else {
-                                        ctx.pattern = ctx.pattern.replace('NEG', '');
-                                    }
+                                if (fmt.AllowNegative || false) {
+                                    ctx.pattern = ctx.pattern.replace('NEG', '([-]?)');
+                                } else {
+                                    ctx.pattern = ctx.pattern.replace('NEG', '');
                                 }
                             }
                         }
-                    };
-                }
-            };
-        });
+                    }
+                };
+            }
+        };
+    }
 })();
 
-'use strict';
+/**
+* @ngdoc directive
+* @name ep.record.editor.directive:epSelectEditor
+* @restrict E
+*
+* @description
+* @description
+* Select editor used by ep-record-editor or ep-editor-control
+*/
 (function() {
-    angular.module('ep.record.editor')
-        .directive('epSelectEditor', function() {
-            return {
-                restrict: 'E',
-                replace: true,
-                templateUrl: 'src/components/ep.record.editor/editors/ep-select-editor.html',
-                scope: {
-                    'ctx': '=',
-                    'options': '='
-                },
-                compile: function() {
-                    return {
-                        pre: function($scope) {
-                            var ctx = $scope.ctx;
-                            var col = ctx.col;
+    'use strict';
 
+    angular.module('ep.record.editor').
+    directive('epSelectEditor', epSelectEditorDirective);
+
+    /*@ngInject*/
+    function epSelectEditorDirective() {
+        return {
+            restrict: 'E',
+            replace: true,
+            templateUrl: 'src/components/ep.record.editor/editors/ep-select-editor.html',
+            scope: {
+                'ctx': '=',
+                'value': '=',
+                'options': '='
+            },
+            compile: function() {
+                return {
+                    pre: function($scope) {
+                        $scope.$watch('ctx.col.list', function() {
+
+                            var ctx = $scope.ctx;
+                            ctx.options = [];
                             if (ctx.col.list) {
                                 ctx.options = angular.extend([], ctx.col.list);
                                 angular.forEach(ctx.options, function(item) {
                                     item.getIsSelected = function() {
-                                        return item.value === ctx.fnGetCurrentValue();
+                                        return item.value === $scope.value;
                                     };
                                 });
                             }
 
                             // add an 'empty' value for fields that are not required.
-                            if (!col.bRequired && !_.find(ctx.options, function(o) { return !o.value; })) {
+                            if (!ctx.required && !_.find(ctx.options, function(o) { return !o.value; })) {
+                                if (!ctx.options) {
+                                    ctx.options = [];
+                                }
                                 ctx.options.unshift({
                                     label: '', value: null, getIsSelected: function() {
-                                        return !ctx.fnGetCurrentValue();
+                                        return !$scope.value;
                                     }
                                 });
                             }
-                        }
-                    };
-                }
-            };
-        });
+
+                        });
+                    }
+                };
+            }
+        };
+    }
 })();
 
-'use strict';
+/**
+* @ngdoc directive
+* @name ep.record.editor.directive:epTextEditor
+* @restrict E
+*
+* @description
+* @description
+* Text editor used by ep-record-editor or ep-editor-control
+*/
 (function() {
-    angular.module('ep.record.editor')
-        .directive('epTextEditor', function() {
-            return {
-                restrict: 'E',
-                replace: true,
-                templateUrl: 'src/components/ep.record.editor/editors/ep-text-editor.html',
-                scope: {
-                    'ctx': '=',
-                    'options': '='
-                }
-            };
-        });
+    'use strict';
+
+    angular.module('ep.record.editor').
+    directive('epTextEditor', epTextEditorDirective);
+
+    /*@ngInject*/
+    function epTextEditorDirective() {
+        return {
+            restrict: 'E',
+            replace: true,
+            templateUrl: 'src/components/ep.record.editor/editors/ep-text-editor.html',
+            scope: {
+                'ctx': '=',
+                'value': '=',
+                'options': '='
+            }
+        };
+    }
 })();
 
 /**
@@ -11447,103 +14137,57 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
     * @ngdoc directive
     * @name ep.record.editor.directive:epRecordEditor
     * @restrict E
+    * @scope
     *
     * @description
-    * Represents the ep.record.editor directive
-
-    RecordEditor Directive - used to display/edit record controls of a provided record
-    The usage in html is:
-        <recordeditor id="recordViewEditors" options="options" record="activeRecord" is-read-only="expression" />
-
-        options - are used to setup the directive;
-        activeRecord - is binding to a record
-        isReadOnly - set true if editing will not be allowed
-        sizeClass - default size class for all editors (bootstrap column size col-md-6, etc)
-
-    The controller or other hosting code must provide the options in active scope as follows:
-
-        scope.recordEditorOptions = {
-            columns: columns,       //metadata for columns - array of columns
-            factory: null,          //after directive initialization will expose factory to this control
-            flagInvalid: false      //flag controls when invalid (changes border color)
-            isDataArray: true       //data in activeRecors is an array (default). Otherwise a collection
-            fnOnChange()            //called when edit is started
-        };
-
-
-    The following are attributes (parameters) for the a editor control defined in metadata columns:
-        # editor {string} - 'number'| 'text' | 'multiline' | 'date' | 'checkbox' | 'select' | 'image' | 'custom'
-        # editorDirective {string} - directive name as in html for custom editor
-        # bizType {string} - 'phone' | 'address' | 'email' | 'url' | 'password'
-        # mData {int|string} - data ordinal index (data array index) or property name
-        # seq {int} - (optional) sequence index for ordering
-        # required {bool} - is entry required
-        # requiredFlag {bool} - should we display required flag
-        # name {string} - column name (optional)
-        # caption {string} - caption
-        # justification {string} - 'right' | 'left' | 'center'
-        # visible {bool}  - visible
-        # updatable {bool}  - updatable
-        # nullable {bool}  - nullable
-        # sizeClass {string} - editor size class (bootstrap column sizes like col-md-6, col-lg-8, etc)
-        # oFormat {object}
-        #   - MaxLength {int}
-        #   -
-        # buttons {array} - array of button objects that conatin properties:
-            text {string} - button text
-            style {string} - button class
-            position {string} - 'pre' or 'post'
-            seq {int} - button sequence
-            action {function} - function action that is invoked on click
-            type {string} - 'btn' - if button, otherwise a link
-        # imageHeight {int} - image height for image editor
-        # imageWidth {int} - image width for image editor
-        # fnOnFldValidate(ctx, event, originalValue, inputValue) - callback function on validation
-
+    * Used to display/edit record controls of a provided record
+    *
+    * @param {object} record - binding to a record
+    * @param {bool} isReadOnly - set true if editing will not be allowed
+    * @param {string} sizeClass - default size class for all editors (bootstrap column size col-md-6, etc)
+    * @param {function} onInit - callback when control has initialized. Provides factory
+    * @param {object} options - are used to setup the directive. Options are shown in example below. Refer
+    *                           to ep-editor-control directive for definition of column metadata. Factory is
+    *                           also set on the options object
     *
     * @example
+    *   HTML:
+    *
+    *   <recordeditor id="recordViewEditors" options="options" record="activeRecord" is-read-only="expression" />
+    *
+    *   Script:
+    *
+    *    scope.recordEditorOptions = {
+    *        columns: columns,       //metadata for columns - array of columns
+    *        columnTemplate: {}      //properties to be applied on all columns
+    *        factory: null,          //after directive initialization will expose factory to this control
+    *        flagInvalid: false,     //flag controls when invalid (changes border color)
+    *        dragAndDrop: false,     //drag and drop allowed
+    *        dragEnabled: false,     //drag allowed
+    *        dropEnabled: false,     //drop allowed
+    *    };
     */
-    epRecordEditorDirective.$inject = ['$timeout', 'appPackageService', '$rootScope', '$compile', '$templateCache', '$window', 'epShellConstants', 'epUtilsService', 'epFeatureDetectionService', 'epRecordEditorFactory'];
+    epRecordEditorDirective.$inject = ['$timeout', '$q', 'epRecordEditorFactory', 'epUtilsService'];
     angular.module('ep.record.editor').
         directive('epRecordEditor', epRecordEditorDirective);
 
     /*@ngInject*/
-    function epRecordEditorDirective($timeout, appPackageService, $rootScope, $compile, $templateCache, $window,
-        epShellConstants, epUtilsService, epFeatureDetectionService, epRecordEditorFactory) {
+    function epRecordEditorDirective($timeout, $q, epRecordEditorFactory, epUtilsService) {
         // Private methods ------------------>
-
-        var uniqueID = {
-            counter: 0,
-            get: function(prefix) {
-                if (!prefix) {
-                    prefix = 'uniqueId';
-                }
-                return prefix + '_' + uniqueID.counter++;
-            }
-        };
-
-        var defaultSizeClass = 'col-xs-12 col-sm-8 col-md-6 col-lg-3';
-
-        var defaultFormat = {
-            FieldType: 0,
-            MaxLength: 30
-        };
 
         function getNewState() {
             var state = {
                 scope: null,
                 linkElement: null,
                 formElement: null,
-                editorContexts: null,
+                controls: null,
                 activeRecord: undefined,
                 rowData: {},
-                smartCtrlLayout: true,
                 isReadOnly: false,
-                initializeWithoutRecord: false,
-                boundEvents: {},
                 lastInputs: {},
-                showAllInvalidFields: false,
-                isDataArray: false
+                isDataArray: false,
+                dragEnabled: false,
+                dropEnabled: false
             };
             return state;
         }
@@ -11562,16 +14206,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
         function selectFirstInvalidControl(scope) {
             //TODO: This selects the first input element, even if there's a select element before it
-
-            if (scope.state.editorContexts) {
-                var ctxFirst = _.find(scope.state.editorContexts, function(ctx) {
+            if (scope.state.controls) {
+                var ctx;
+                var ctrlFirst = _.find(scope.state.controls, function(ctrl) {
+                    ctx = ctrl.getControlCtx();
                     return (ctx.isInvalid);
                 });
-                if (ctxFirst) {
-                    var edt = ctxFirst.fnGetEditorElement();
-                    if (edt) {
-                        edt.focus();
-                    }
+                if (ctrlFirst) {
+                    ctx.fnSetFocus();
                 }
             }
         }
@@ -11585,8 +14227,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             return false;
         }
 
-        function doValidation(ctx, ev, focus) {
-            var state = ctx.state;
+        function doValidation(state, ctx, ev, focus) {
             var dc = ctx.columnIndex;
             if (state.activeRecord[dc] !== undefined) {
                 var originalValue = state.rowData[dc];
@@ -11601,37 +14242,85 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 } //prevent calling if last input was same
                 state.lastInputs[dc] = inputValue;
                 if (compareValues(originalValue, inputValue)) {
-                    var targetEl = angular.element(ctx.fnGetEditorElement());
                     ctx.isInvalid = false;
-                    var validate = ctx.col.fnOnFldValidate(ctx, ev, originalValue, inputValue);
-                    if (validate && validate.then) {
-                        validate.then(function(result) {
-                            if (result === false) {
-                                ctx.isInvalid = true;
-                            }
-                            if (focus) {
-                                targetEl.focus();
-                            }
-                        });
-                    } else if (validate === false) {
-                        ctx.isInvalid = true;
-                    }
-                    if (focus) {
-                        targetEl.focus();
-                    }
+                    $q.when(ctx.col.fnOnFldValidate(ctx, ev, inputValue, originalValue)).then(function(result) {
+                        if (result === false) {
+                            ctx.isInvalid = true;
+                        }
+                        if (focus) {
+                            ctx.fnSetFocus();
+                        }
+                    });
                 }
             }
         }
 
-        function doDraw(scope, bForceRedraw) {
-            if (scope.options === undefined) {
-                return;
+        function getEditorByValue(v) {
+            var tp = typeof v;
+            if (tp === 'number') {
+                return 'number';
+            } else if (tp === 'boolean') {
+                return 'checkbox';
+            } else if (tp === 'date') {
+                return 'date';
+            } else if (tp === 'string') {
+                var reg = /\d{4}-\d{2}-\d{2}['T']/;
+                if (v && v.match(reg)) {
+                    return 'date';
+                }
             }
-            if (scope.state.editorContexts !== null && !bForceRedraw) {
+            return 'text';
+        }
+
+        function doDraw(scope, bForceRedraw) {
+            if (scope.state.controls !== null && !bForceRedraw) {
                 return; //unless force redraw, we should not recreate
             }
 
-            scope.state.columns = scope.options.columns; //needed for editor's scope
+            //Prepare columns
+            var hasCols = scope.options && angular.isArray(scope.options.columns);
+            if (!scope.state.isDataArray && !hasCols && scope.record) {
+                var columns = [];
+                if (scope.options && scope.options.columns && angular.isString(scope.options.columns)) {
+                    var colNames = scope.options.columns.split(',');
+                    angular.forEach(colNames, function(c) {
+                        columns.push({
+                            columnIndex: c,
+                            editor: 'auto', // getEditorByValue(scope.record[c]),
+                            updatable: true
+                        });
+                    });
+                } else {
+                    angular.forEach(scope.record, function(v, n) {
+                        columns.push({
+                            columnIndex: n,
+                            editor: 'auto', //getEditorByValue(v),
+                            updatable: true
+                        });
+                    });
+                }
+                scope.state.columns = columns;
+            } else {
+                scope.state.columns = hasCols ? scope.options.columns : [];
+            }
+            if (scope.options && scope.options.columnTemplate && scope.state.columns) {
+                angular.forEach(scope.state.columns, function(c) {
+                    epUtilsService.copyProperties(scope.options.columnTemplate, c, false);
+                });
+            }
+
+            if (scope.state.columns && scope.record) {
+                angular.forEach(scope.state.columns, function(c) {
+                    if (!c.editor && c.columnIndex) {
+                        c.editor = getEditorByValue(scope.record[c.columnIndex]);
+                    }
+                });
+            }
+
+            if (!scope.state.columns || !scope.state.columns.length) {
+                return;
+            }
+
             createContext(scope);
 
             // TODO: Fix this ugly hack
@@ -11645,236 +14334,43 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         }
 
         function createContext(scope) {
-            //creates editor context based on metadata
-            //state must contain following:
-            //  - scope
-            //  - activeRecord
-            var editorsContext = {};
+            //to pass as options to control editors
+            scope.state.options = {
+                recordEditor: {
+                    state: scope.state,
+                    doValidation: doValidation
+                }
+            };
+
+            var controls = {};
             var iIndex = -1;
-            _.each(_.filter(scope.state.columns, function(c) { return (c.mData >= 0 || c.mData); }), function(col) {
-                col.oFormat = col.oFormat || defaultFormat;
+            _.each(_.filter(scope.state.columns,
+                function(c) { return (c.columnIndex >= 0 || c.columnIndex); }),
+                function(col) {
 
                 iIndex++;
-                var iVisibleIndex;
-                if (!col.seq && col.seq !== 0) {
-                    if (col.mData && !angular.isString(col.mData)) {
-                        iVisibleIndex = col.mData;
-                    }
-                } else {
+                var iVisibleIndex = iIndex;
+                if (col.seq || col.seq === 0) {
                     iVisibleIndex = col.seq;
-                }
-                if (iVisibleIndex === undefined) {
-                    iVisibleIndex = iIndex;
+                } else if (col.columnIndex && !angular.isString(col.columnIndex)) {
+                    iVisibleIndex = col.columnIndex;
                 }
 
-                var name = col.name || col.mData.toString();
                 var editor = (col.editor || 'text').trim().toLowerCase();
-                var ctx = {
-                    state: scope.state,
+                var ctrl = {
                     col: col,
                     editor: editor,
+                    seq: iVisibleIndex,
                     visibleIndex: ('000' + iVisibleIndex).substr(-3, 3), // <- so that it's sortable as a string
-                    columnIndex: col.mData,
-                    name: uniqueID.get(editor + '_' + name),
-                    required: col.required || (editor === 'number' && !col.nullable), //all number's except Nullable are required
-                    requiredFlag: col.requiredFlag,  //to display the required flag
-                    bizType: col.bizType,
-                    label: col.caption || '',
-                    maxlength: col.oFormat.MaxLength,
-                    justification: col.justification,
-                    hidden: col.hidden,
-                    updatable: col.updatable,
-                    disabled: !col.updatable,
-                    nullable: col.nullable,
-                    displayInvalid: scope.options.flagInvalid || true,
-                    buttons: col.buttons || [],
-                    imageWidth: (col.imageWidth ? col.imageWidth : 0),
-                    imageHeight: (col.imageHeight ? col.imageHeight : 0),
-                    isInvalid: false,
-                    sizeClass: col.sizeClass || scope.sizeClass || defaultSizeClass
+                    columnIndex: col.columnIndex,
+                    options: scope.state.options
                 };
-
-                //TO DO - validate buttons pre/post seq etc
-
-                if (ctx.editor !== 'custom') {
-                    ctx.editorDirective = '<ep-' + ctx.editor + '-editor ctx=userData />';
-                } else {
-                    ctx.editorDirective = '<' + col.editorDirective + ' ctx=userData />';
-                }
-
-                ctx.fnGetCurrentValue = function() {
-                    return ctx.state.activeRecord ? ctx.state.activeRecord[ctx.columnIndex] : null;
+                ctrl.getControlCtx = function() {
+                    return ctrl.controlCtx;
                 };
-
-                ctx.fnSetCurrentValue = function(val, focus) {
-                    var edt = ctx.fnGetEditorElement();
-                    if (ctx.state.activeRecord) {
-                        if (val !== undefined) {
-                            var isChanged = (ctx.state.activeRecord[ctx.columnIndex] !== val);
-                            if (isChanged) {
-                                ctx.state.activeRecord[ctx.columnIndex] = val;
-                                //because we set value programatically, set dirty
-
-                                if (edt) {
-                                    angular.element(edt).addClass('ng-dirty');
-                                }
-                                if (scope.callBackValidate && col.bRaiseEvent && ctx.updatable) {
-                                    scope.callBackValidate(col, ctx, {}, edt, true);
-                                }
-                                ctx.fnOnChange({}, ctx);
-                            }
-                        }
-                    }
-                    if (focus) {
-                        if (edt) {
-                            edt.focus();
-                        }
-                    }
-                };
-
-                ctx.fnGetEditorElement = function() {
-                    var editor = null;
-                    if (ctx.editorContainer) {
-                        editor = angular.element(ctx.editorContainer).find('.form-control.editor');
-                    }
-                    return editor;
-                };
-
-                ctx.fnOnChange = function($event) {
-                    if (scope.options.fnOnChange) {
-                        scope.options.fnOnChange($event, ctx);
-                    }
-                };
-
-                ctx.fnBlur = function onBlur(ev) {
-                    ctx.state.lastFocused = { Col: ctx.col, Ctx: ctx, Event: ev };
-                    if (ctx.col.bRaiseEvent && ctx.updatable) {
-                        if (angular.element(ev.currentTarget).hasClass('ng-dirty')) {
-                            scope.callbacks.callBackValidate(col, this, ev);
-                        }
-                    }
-                    return true;
-                };
-
-                //This function checks invalid status from angular and fiel;d validation to highlight invalid
-                ctx.fnDoValidations = function() {
-                    ctx.invalidFlag = false;
-                    if (ctx.displayInvalid && ctx.editorContainer) {
-                        var editor = angular.element(ctx.editorContainer).find('.form-control.editor');
-                        if (editor.length) {
-                            //TO DO: check in angular if we can remove the 'ng-invalid-remove'/'ng-dirty-add' check
-                            var isInvalid = ctx.isInvalid || ((editor.hasClass('ng-invalid') &&
-                                !editor.hasClass('ng-invalid-remove')) || editor.hasClass('ng-valid-remove'));
-                            var isDirty = (editor.hasClass('ng-dirty') || editor.hasClass('ng-dirty-add') ||
-                                ctx.state.showAllInvalidFields);
-                            ctx.invalidFlag = (isInvalid && isDirty);
-                        } else if (ctx.toggleValue) {
-                            //special checkbox case:
-                            ctx.invalidFlag = ctx.isInvalid;
-                        }
-                    }
-                    return false;
-                };
-
-                if (ctx.col.fnOnFldValidate) {
-                    ctx.fnOnChange = function($event) {
-                        doValidation(ctx, $event);
-                    };
-                }
-
-                //Configure BizType buttons
-                if (ctx.bizType && (ctx.bizType === 'phone' || ctx.bizType === 'address' ||
-                    ctx.bizType === 'email' || ctx.bizType === 'url')) {
-                    var btnHref = '';
-                    var btnStyle = '';
-                    var btnType = 'href-input';
-
-                    switch (ctx.bizType) {
-                        case 'address':
-                            btnHref = 'http://maps.google.com/maps?q={0}';
-                            btnStyle = 'fa fa-map-marker';
-                            break;
-
-                        case 'phone':
-                            btnHref = 'tel:{0}';
-                            btnStyle = 'fa fa-phone';
-                            break;
-
-                        case 'email':
-                            btnHref = 'mailto:{0}';
-                            btnStyle = 'fa fa-envelope';
-                            break;
-
-                        case 'url':
-                            btnHref = '';
-                            btnStyle = 'fa fa-globe';
-                            btnType = 'href-func';
-                            ctx.fnGetHref = function() {
-                                var v = ctx.fnGetCurrentValue();
-                                if (col.stringFormat) {
-                                    // example stringFormat = 'http://somewhere.com/{0}';
-                                    v = epUtilsService.strFormat(col.stringFormat, v);
-                                }
-                                if (v) {
-                                    //if string does not start with 'http' or 'https' then append
-                                    var v1 = v.trim().toLowerCase();
-                                    if (v1.substr(0, 4) !== 'http') {
-                                        v = 'http://' + v;
-                                    }
-                                }
-                                return v;
-                            };
-                            break;
-                    }
-                    if (btnStyle) {
-                        ctx.buttons.push({
-                            type: btnType,
-                            text: '',
-                            href: btnHref,
-                            style: btnStyle,
-                            seq: 2,
-                            position: 'pre',
-                        });
-                    }
-                }
-
-                if (ctx.buttons.length) {
-                    ctx.fnBtnClick = function(btn) {
-                        if (btn.type === 'btn') {
-                            btn.action(ctx);
-                        } else {
-                            var v = ctx.fnGetCurrentValue();
-                            if (v) {
-                                var url = '';
-                                switch (btn.type) {
-                                    case 'href':
-                                        url = btn.href;
-                                        break;
-                                    case 'href-input':
-                                        url = epUtilsService.strFormat(btn.href,
-                                            ctx.state.activeRecord[ctx.columnIndex]);
-                                        break;
-                                    case 'href-func':
-                                        url = ctx.fnGetHref();
-                                        break;
-                                }
-                                if (btn.type === 'href') {
-                                    $window.open(url, '_blank');
-                                } else {
-                                    $window.open(url);
-                                }
-                            }
-                        }
-                    };
-                }
-                editorsContext[col.mData] = ctx;
+                controls[col.columnIndex] = ctrl;
             });
-            scope.state.editorController = function($scope) {
-                //For each editor set the container and find editor
-                var ctx = $scope.userData;
-                ctx.editorContainer = $scope.state.iElement;
-            };
-            scope.state.editorContexts = editorsContext;
+            scope.state.controls = controls;
         }
 
         function checkRecordType(scope) {
@@ -11933,7 +14429,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     }
                 });
 
-                scope.$watch('record', function(newValue, oldValue) {
+                scope.$watch('record', function(newValue) {
                     if (newValue && scope.state.activeRecord !== newValue) {
                         checkRecordType(scope);
                         scope.state.lastInputs = {};
@@ -11942,29 +14438,44 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         //store a copy for reset
                         scope.state.rowData = scope.extendRecord(scope.state.activeRecord);
 
-                        if (oldValue === undefined) {
+                        if (!scope.state.columns || !scope.state.columns.length) {
                             doDraw(scope, false);
                         }
-                        scope.state.factory.setPristine();
+                        if (scope.state.columns && scope.state.columns.length) {
+                            scope.state.factory.setPristine();
+                        }
                     }
                 });
 
-                scope.$watch('options', function(newValue) {
+                scope.$watch('options', function(newValue, oldValue) {
                     if (newValue) {
                         //Expose this directive's scope to outside caller
                         newValue.factory = scope.state.factory;
-                        checkRecordType(scope);
-                        doDraw(scope, false);
+                        if (angular.equals(newValue, oldValue)) {
+                            if (scope.options) {
+                                if (scope.options.dragAndDrop !== undefined) {
+                                    scope.state.dragEnabled = scope.options.dragAndDrop === true;
+                                    scope.state.dropEnabled = scope.state.dragEnabled;
+                                } else if (scope.options.dragEnabled !== undefined) {
+                                    scope.state.dragEnabled = scope.options.dragEnabled === true;
+                                } else if (scope.options.dropEnabled !== undefined) {
+                                    scope.state.dropEnabled = scope.options.dropEnabled === true;
+                                }
+                            }
+                            if (!scope.state.columns || !scope.state.columns.length) {
+                                checkRecordType(scope);
+                                doDraw(scope, false);
+                            }
+                        }
                     }
                 });
 
                 scope.$watch('sizeClass', function(newValue, oldValue) {
                     if (newValue !== oldValue) {
-                        if (scope.state.editorContexts) {
-                            angular.forEach(scope.state.editorContexts, function(ctx) {
-                                if (!ctx.col.sizeClass) {
-                                    ctx.sizeClass = ctx.col.sizeClass || scope.sizeClass || defaultSizeClass;
-                                }
+                        if (scope.state.controls) {
+                            angular.forEach(scope.state.controls, function(ctrl) {
+                                var ctx = ctrl.getControlCtx();
+                                ctx.fnSetSizeClass(newValue);
                             });
                         }
                     }
@@ -11983,11 +14494,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     '$destroy',
                     function() {
                         //clean up events and buffers
-                        scope.state.editorContexts = null;
-                        _.each(scope.state.boundEvents, function(unbind) {
-                            unbind();
-                        });
-                        scope.state.boundEvents = {};
+                        scope.state.controls = null;
                     }
                 );
 
@@ -11999,8 +14506,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
                 scope.setReadOnly = function() {
                     //set readonly attribute to all updatable controls
-                    if (scope.state.editorContexts) {
-                        _.each(scope.state.editorContexts, function(ctx) {
+                    if (scope.state.controls) {
+                        _.each(scope.state.controls, function(ctrl) {
+                            var ctx = ctrl.getControlCtx();
                             if (ctx.updatable) {
                                 ctx.readonly = scope.state.isReadOnly;
                             }
@@ -12023,13 +14531,20 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         selectFirstControl(scope);
                     }
                 };
+
+                if (scope.onInit) {
+                    scope.onInit({ factory: scope.state.factory });
+                }
+
                 scope.compareValues = compareValues;
+
             },
             scope: {
                 options: '=',
                 record: '=',
                 isReadOnly: '=',
-                sizeClass: '='
+                sizeClass: '=',
+                onInit: '&'
             }
         };
     }
@@ -12072,14 +14587,14 @@ angular.module('ep.record.editor').
                 var ret = {
                     editsDetected: false,
                     changedColumns: [],
-                    record: scope.extendRecord(scope.state.rowData)
+                    record: scope.state.activeRecord
                 };
 
-                if (scope.options.columns) {
-                    var columns = scope.options.columns;
+                if (scope.state.columns) {
+                    var columns = scope.state.columns;
                     for (var idx = 0; idx < columns.length; idx++) {
                         var col = columns[idx];
-                        var dataColumn = col.mData;
+                        var dataColumn = col.columnIndex;
                         var inputValue;
                         if (scope.state.activeRecord) {
                             inputValue = scope.state.activeRecord[dataColumn];
@@ -12100,7 +14615,6 @@ angular.module('ep.record.editor').
                                     originalValue: originalValue, newValue: inputValue
                                 });
                                 ret.editsDetected = true;
-                                ret.rowData[dataColumn] = inputValue;
                             }
                         } else if (col.editor === 'date') {
                             ret.editsDetected = true;
@@ -12120,10 +14634,10 @@ angular.module('ep.record.editor').
              * Reset the editors to original values
             */
             function resetEditors() {
-                var columns = scope.options.columns;
+                var columns = scope.state.columns;
                 for (var idx = 0; idx < columns.length; idx++) {
                     var col = columns[idx];
-                    scope.state.activeRecord[col.mData] = scope.state.rowData[col.mData];
+                    scope.state.activeRecord[col.columnIndex] = scope.state.rowData[col.columnIndex];
                 }
 
                 setPristine();
@@ -12139,15 +14653,16 @@ angular.module('ep.record.editor').
              * Clear all values
             */
             function clearEditors() {
-                if (scope.state.editorContexts) {
-                    _.each(scope.state.editorContexts, function(ctx) {
+                if (scope.state.controls) {
+                    _.each(scope.state.controls, function(ctrl) {
+                        var ctx = ctrl.getControlCtx();
                         var emptyVal = '';
                         if (ctx.editor === 'number') {
                             emptyVal = 0;
                         } else if (ctx.editor === 'checkbox') {
                             emptyVal = false;
                         }
-                        scope.state.activeRecord[ctx.col.mData] = emptyVal;
+                        scope.state.activeRecord[ctx.columnIndex] = emptyVal;
                     });
                 }
             }
@@ -12167,9 +14682,12 @@ angular.module('ep.record.editor').
                 scope.state.lastInputs = {};
                 scope.state.showAllInvalidFields = false;
 
-                if (scope.state.editorContexts) {
-                    angular.forEach(scope.state.editorContexts, function(ctx) {
-                        ctx.isInvalid = false;
+                if (scope.state.controls) {
+                    angular.forEach(scope.state.controls, function(ctrl) {
+                        var ctx = ctrl.getControlCtx();
+                        if (ctx) {
+                            ctx.isInvalid = false;
+                        }
                     });
                 }
             }
@@ -12267,7 +14785,7 @@ angular.module('ep.record.editor').
                     invalidFieldValidation: false
                 };
 
-                if (scope.state.editorContexts) {
+                if (scope.state.controls) {
                     scope.state.linkElement.find('.form-control.editor').each(function() {
                         var editor = $(this);
                         if (editor.length) {
@@ -12280,7 +14798,8 @@ angular.module('ep.record.editor').
                         }
                     });
 
-                    var epInvalid = _.find(scope.state.editorContexts, function(ctx) {
+                    var epInvalid = _.find(scope.state.controls, function(ctrl) {
+                        var ctx = ctrl.getControlCtx();
                         return ctx.isInvalid;
                     });
                     if (epInvalid) {
@@ -12313,7 +14832,7 @@ angular.module('ep.record.editor').
             */
             function resetCombo(column, list) {
                 if (!list) { return; }
-                //reset column combo. if column is string then by columnName otherwise by mData (index)
+                //reset column combo. if column is string then by columnName otherwise by columnIndex
                 var ctx = getColumnContext(scope, column);
                 if (ctx && ctx.col.list) {
                     ctx.options = angular.extend([], ctx.col.list);
@@ -12335,34 +14854,35 @@ angular.module('ep.record.editor').
              * @param {object} column - column name or column index
             */
             function getColumnContext(column) {
-                if (column === null || !scope.options.columns) { return null; }
-                if (!scope.state.editorContexts) {
-                    //in case if editors context has not been initialized, force initialization
-                    if (scope.options.record === undefined) {
-                        scope.state.activeRecord = null;
-                        scope.record = null;
-                    }
-                    scope.doDraw(scope, true);
-                }
-                if (!scope.state.editorContexts) {
+                if (column === null || !scope.state.columns)
+                {
                     return null;
                 }
+                var ctrl = _.find(scope.state.controls, function(ctrl) {
+                    var ctx = ctrl.getControlCtx();
+                    return (ctx.col && ctx.columnIndex === column);
+                });
+                if (ctrl) {
+                    return ctrl.getControlCtx();
+                }
+                return null;
+            }
 
-                var ret = null;
-                if (typeof column !== 'string') {
-                    //assume that this is mData
-                    ret = _.find(scope.state.editorContexts, function(ctx) {
-                        return (ctx.col && ctx.col.mData === column);
-                    });
-                } else {
-                    ret = _.find(scope.state.editorContexts, function(ctx) {
-                        return (ctx.col && ctx.name === column);
-                    });
-                }
-                if (ret) {
-                    return scope.state.editorContexts[ret.col.mData];
-                }
-                return ret;
+            function getColumns() {
+                return scope.state.columns;
+            }
+
+            function getOptions() {
+                return scope.options;
+            }
+
+            function getState() {
+                return scope.state;
+            }
+
+            function enableEditorsDrag(enableDrag, enableDrop) {
+                scope.state.dragEnabled = enableDrag;
+                scope.state.dropEnabled = enableDrop;
             }
 
             return {
@@ -12378,7 +14898,11 @@ angular.module('ep.record.editor').
                 selectControl: selectControl,
                 validate: validate,
                 resetCombo: resetCombo,
-                getColumnContext: getColumnContext
+                getColumnContext: getColumnContext,
+                getColumns: getColumns,
+                getOptions: getOptions,
+                getState: getState,
+                enableEditorsDrag: enableEditorsDrag
             };
         };
         return epRecordEditorFactoryInstance;
@@ -12771,27 +15295,28 @@ angular.module('ep.record.editor').
     }]);
 })();
 
-    /**
-     * @ngdoc controller
-     * @name ep.shell.controller:epShellMenuCtrl
-     * @description
-     * Represents shell's menu controller.
-     */
+/**
+ * @ngdoc controller
+ * @name ep.shell.controller:epShellMenuCtrl
+ * @description
+ * Represents shell's menu controller.
+ */
 (function() {
     'use strict';
 
-    epShellMenuCtrl.$inject = ['$q', '$scope', 'epEmbeddedAppsService', 'epMultiLevelMenuService'];
-    angular.module('ep.shell').
-        controller('epShellMenuCtrl', epShellMenuCtrl);
+    epShellMenuCtrl.$inject = ['$q', '$scope', 'epEmbeddedAppsService', 'epLocalStorageService', 'epMultiLevelMenuService'];
+    angular.module('ep.shell').controller('epShellMenuCtrl', epShellMenuCtrl);
 
+    var cache = {};
     /*@ngInject*/
-    function epShellMenuCtrl($q, $scope, epEmbeddedAppsService, epMultiLevelMenuService) {
+    function epShellMenuCtrl($q, $scope, epEmbeddedAppsService, epLocalStorageService, epMultiLevelMenuService) {
 
         $scope.onMenuOptions = function onMenuOptions() {
+
             $scope.menuOptions.onMenuInit = function(factory) {
                 $scope.menuOptions.factory = factory;
             };
-            $scope.onTopMenuClick = function() {
+            $scope.onTopMenuClick = function topMenuClicked() {
                 if ($scope.menuOptions.onTopMenuClick) {
                     $scope.menuOptions.onTopMenuClick();
                 }
@@ -12803,21 +15328,82 @@ angular.module('ep.record.editor').
                 menuitems: []
             };
 
-            $scope.menuGets = [$scope.menuOptions.fnGetMenu];
-            if ($scope.includeEmbeddedMenu) {
-                $scope.menuGets.push(epEmbeddedAppsService.retrieveAppsMenu);
-            }
-            $scope.count = $scope.menuGets.length;
+            if ($scope.menuOptions.menuType !== 'accordion') {
+                $scope.menuGets = $scope.menuOptions.fnGetMenu;
+                if (angular.isFunction($scope.menuOptions.fnGetMenu)) {
+                    $scope.menuGets = [$scope.menuOptions.fnGetMenu];
+                }
 
-            angular.forEach($scope.menuGets, function(fn) {
-                $q.when(fn()).then(function(m) {
-                    epMultiLevelMenuService.mergeMenus($scope.menu, m);
-                    if (--$scope.count === 0) {
-                        $scope.menuOptions.menu = $scope.menu;
+                if ($scope.includeEmbeddedMenu) {
+                    $scope.menuGets.push(epEmbeddedAppsService.retrieveAppsMenu);
+                }
+                $scope.count = $scope.menuGets.length;
+                angular.forEach($scope.menuGets, function(fn) {
+                    $q.when(fn()).then(function(m) {
+                        epMultiLevelMenuService.mergeMenus($scope.menu, m);
+                        if (--$scope.count === 0) {
+                            $scope.menuOptions.menu = $scope.menu;
+                        }
+                    });
+                });
+            } else {
+               // The accordion menu passes a list of menu providers instead of a list of functions
+                // Ensure that the providers object is an array
+                if (!angular.isArray($scope.menuOptions.providers)) {
+                    $scope.menuOptions.providers = [$scope.menuOptions.providers];
+                }
+
+                var providers = $scope.menuOptions.providers;
+                $scope.count = providers.length;
+                var keys = providers.map(function(p) { return p.getCacheKey(); });
+                $scope.commitMenuState = function commitMenuState() {
+                    keys
+                        .forEach(function(key) {
+                            var m = cache[key];
+                            epLocalStorageService.update('menu.' + key, m);
+                        });
+                };
+                var interval = ($scope.menuOptions.refreshInterval || 0) * 1000;
+                var now = new Date().valueOf();
+                providers.forEach(function(provider) {
+
+                    var key = provider.getCacheKey();
+                    provider.register(function() {
+                        cache[key] = null;
+                        epLocalStorageService.update('menu.' + key, null);
+                    });
+                    var cached = cache[key];
+                    if (cached) {
+                        // If we've read the menu out of memory, it doesn't need to be restored
+                        merge(cached);
+                    } else {
+                        cached = epLocalStorageService.get('menu.' + key);
+                        if (cached && cached._timestamp + interval > now) {
+                            provider.restore(cached);
+                            cache[key] = cached;
+                            merge(cached);
+                        } else {
+                            var fetch = provider.get;
+                            if (fetch) {
+                                fetch().then(function(m) {
+                                    m._timestamp = now;
+                                    cache[key] = m;
+                                    epLocalStorageService.update('menu.' + key, m);
+                                    provider.restore(m);
+                                    merge(m);
+                                });
+                            }
+                        }
                     }
                 });
-            });
+            }
         };
+        function merge(m) {
+            epMultiLevelMenuService.mergeMenus($scope.menu, m);
+            if (--$scope.count === 0) {
+                $scope.menuOptions.menu = $scope.menu;
+            }
+        }
     }
 })();
 
@@ -12894,19 +15480,25 @@ angular.module('ep.record.editor').
         FOOTERHEIGHT: 25,
         MEDIA_MODE_LARGE: 'large',
         MEDIA_MODE_SMALL: 'small',
-        MEDIA_SIZE_BREAKPOINT: 800
+        MEDIA_SIZE_BREAKPOINT: 801
     });
 })();
 
 /**
- * @ngdoc controller
- * @name ep.shell.controller:epShellCtrl
- * @description
- * Represents the main shell controller.
- */
+* @ngdoc controller
+* @name ep.shell.controller:epShellCtrl
+* @description
+* Represents the main shell controller.
+*/
 (function() {
     'use strict';
-
+    angular.module('ep.shell').directive('myTouchstart', [function() {
+        return function(scope, element, attr) {
+            element.bind('touchstart', function() {
+                scope.$apply(attr.myTouchstart);
+            });
+        };
+    }])
     angular.module('ep.shell').controller('epShellCtrl', [
         '$location',
         '$rootScope',
@@ -12927,7 +15519,7 @@ angular.module('ep.record.editor').
                 // get the epShellService state so it can be used in the views
                 $scope.state = epShellService.__state;
                 $scope.options = epShellConfig.options;
-
+                $scope.findXTouch;
                 //toggle sidebar event function
                 $scope.toggleLeftSidebar = function() {
                     epShellService.toggleLeftSidebar();
@@ -12936,6 +15528,37 @@ angular.module('ep.record.editor').
                 $scope.toggleRightSidebar = function() {
                     epShellService.toggleRightSidebar();
                 };
+                //Swipe right 0-20% of the width of screen to pull left sidebar
+                $scope.showSwipeLeftSidebar = function() {
+                    var touchStart = $scope.findXTouch;
+                    var screenWidth = screen.width;
+                    var touchStartPercent = (touchStart / screenWidth) * 100;
+                    if (touchStartPercent <= 10 && $scope.state.enableLeftSidebar) {
+                        epShellService.toggleLeftSidebar();
+                    }
+                };
+                //Swipe left 80-100% of the width of screen to pull right sidebar
+                $scope.showSwipeRightSidebar = function() {
+                    var touchStart = $scope.findXTouch;
+                    var screenWidth = screen.width;
+                    var touchStartPercent = (touchStart / screenWidth) * 100;
+                    if (touchStartPercent >= 90 && $scope.state.enableRightSidebar) {
+                        epShellService.toggleRightSidebar();
+                    }
+                };
+                $scope.getTouchXPoint = function() {
+                    $scope.findXTouch = epShellService.executeLeftSidebar(event);
+                    return $scope.findXTouch;
+                }
+                //Close left sidebar on swipping right on left sidebar
+                $scope.closeLeftSidebar = function() {
+                    epShellService.hideLeftSidebar();
+                };
+                //Close right sidebar on swipping left on right sidebar
+                $scope.closeRightSidebar = function() {
+                    epShellService.hideRightSidebar();
+                };
+
                 if (epShellConfig.options.enableViewAnimations) {
                     epShellService.initViewBackground();
                 }
@@ -13181,1650 +15804,1772 @@ angular.module('ep.record.editor').
  *
  */
 (function() {
-  'use strict';
-
-  angular.module('ep.shell').service('epShellService',
-   /*@ngInject*/
-   ['$q', '$rootScope', '$timeout', '$sce', '$document', '$location', 'epFeatureDetectionService', 'epSidebarService', 'epThemeService', 'epShellConfig', 'epShellConstants', 'epConsoleService', 'epUtilsService', 'epEmbeddedAppsService', function($q, $rootScope, $timeout, $sce, $document, $location,
-       epFeatureDetectionService, epSidebarService, epThemeService, epShellConfig,
-       epShellConstants, epConsoleService, epUtilsService, epEmbeddedAppsService) {
-
-     epConsoleService.initialize();
-
-     $rootScope.shellServiceInitComplete = false;
-
-     /**
-      * @private
-      * @description
-      * Holds the current shell state. Almost all settings are here
-      */
-     var shellState = {
-       showProgressIndicator: false,
-       progressIndicatorlevel: 0,
-       enableFeedback: false,
-       enableEmbeddedApps: true,
-       fnOnFeedback: undefined,
-       suspend: false,
-       showBrand: true,
-       brandHTML: 'Mobile Access <sup>2.0</sup>',
-       brandTarget: '',
-       footerHTML: '',
-       footerTarget: '',
-       freezeNavButtons: false,
-       viewSettings: {
-         sidebar: {},
-         small: {
-           animateViewContainer: true,
-           autoActivateSidebar: false,
-           showLeftSidebar: false,
-           enableLeftSidebar: true,
-           showLeftToggleButton: false,
-           showRightToggleButton: false,
-           showNavbar: false,
-           showFooter: false,
-           showHomeButton: false,
-           showBrand: false,
-           centerBrand: true
-         },
-         large: {
-           animateViewContainer: true,
-           autoActivateSidebar: true,
-           showLeftSidebar: false,
-           enableLeftSidebar: true,
-           showLeftToggleButton: false,
-           showRightToggleButton: false,
-           showNavbar: false,
-           showFooter: false,
-           showHomeButton: false,
-           showBrand: false,
-           centerBrand: false
-         }
-       },
-       pageTitle: '',
-       colorScheme: {},
-       mediaMode: epShellConstants.MEDIA_MODE_SMALL,
-       date: {
-         weekday: 'Tuesday',
-         month: 'October',
-         day: 21
-       },
-       viewDimensions: {
-         offset: { top: 0, left: 0 },
-         size: { width: 0, height: 0 }
-       },
-       infoMessage: '',
-       infoIcon: 'fa fa-3x fa-warning',
-       executeButton: function(btn) {
-         shellState.navButtonClicked = null;
-         if (btn.confirm) {
-           btn.confirm(btn.action);
-         } else if (shellState.freezeNavButtons !== true && btn.enabled !== false) {
-           btn.action();
-         }
-       },
-       buttonMouseDown: function(btn) {
-         //record buttonClicked (for ng-blur events). it will be dismissed after real click.
-         shellState.navButtonClicked = btn;
-       },
-       momentumScrollingEnabled: true,
-       allowVerticalScroll: true,
-       //Stores the nav button that is clicked on mouse down event. This state is cleared on actual click event.
-       //Useful for blur processing
-       navButtonClicked: null
-     };
-
-     /**
-      * @private
-      * @description
-      * After saveState() is called, savedState contains certain properties of current shell state
-      * that are needed to restore later.
-      */
-     var savedState = {};
-
-     /**
-      * @private
-      * @description
-      * Contains the navigation buttons array
-      */
-     var navbarButtons = [];
-
-     /**
-      * @private
-      * @description
-      * Contains the bound view events
-      */
-     var boundViewEvents = {};
-
-     /**
-      * @private
-      * @description
-      * Certain things we initialize at the first reference of the service
-      */
-     function initialize() {
-       //setup the epFeatureDetectionService enquireService registration at 800 px so that we can
-       //perform Javascript operations when the UI goes into large / small mode
-       epFeatureDetectionService.registerMediaQuery(epShellConstants.MEDIA_SIZE_BREAKPOINT, function() {
-         shellState.mediaMode = epShellConstants.MEDIA_MODE_LARGE;
-         notifyStateChanged('setMediaMode');
-       }, function() {
-         shellState.mediaMode = epShellConstants.MEDIA_MODE_SMALL;
-         notifyStateChanged('setMediaMode');
-       });
-
-       //Any time the size of the shell window changes fire an event to the views
-       function sendResizeEvent() {
-         notifySizeChanged('size');
-       }
-
-       //this is to ensure it only happens one time
-       var lazySendResize = _.debounce(sendResizeEvent, 100);
-       angular.element(window).on('resize', lazySendResize);
-       $timeout(sendResizeEvent, 100);
-       $rootScope.$on('$routeChangeSuccess', sendResizeEvent);
-
-       setPageTitle(epShellConfig.options.pageTitle);
-       setBrandHTML(epShellConfig.options.brandHTML);
-       setFooterHTML(epShellConfig.options.footerHTML);
-
-       if (epShellConfig.options.includeEmbeddedApps !== undefined) {
-         if (epShellConfig.options.includeEmbeddedApps) {
-           $rootScope.$watch('initComplete', function(complete) {
-             if (complete) {
-               //place here whatever needs to be initialized after initComplete
-               epEmbeddedAppsService.initialize();
-             }
-           });
-         }
-       }
-     }
-
-     /**
-      * @private
-      * @description
-      * Set flags depending on current mode (small or large)
-      */
-     function setCurrentModeFlags() {
-       var mode = shellState.viewSettings[shellState.mediaMode];
-        mode.autoActivateSidebar = mode.autoActivateSidebar !== false;
-
-       shellState.showLeftToggleButton = mode.enableLeftSidebar;
-       shellState.enableLeftSidebar = mode.enableLeftSidebar;
-       shellState.showRightToggleButton = mode.enableRightSidebar;
-       shellState.enableRightSidebar = mode.enableRightSidebar;
-       shellState.showNavbar = mode.showNavbar;
-       shellState.showFooter = mode.showFooter;
-       shellState.showHomeButton = mode.showHomeButton;
-       shellState.showBrand = mode.showBrand;
-       shellState.centerBrand = mode.centerBrand;
-       shellState.autoActivateSidebar = mode.autoActivateSidebar;
-
-       shellState.enableFeedback = (epShellConfig.options.enableFeedback && mode.enableFeedback === true);
-
-       if (shellState.showBrand && mode.brandHTML) {
-         if (mode.brandHTML) {
-           setBrandHTML(mode.brandHTML);
-         }
-         if (mode.brandTarget) {
-           setBrandTarget(mode.brandTarget);
-         }
-       }
-       if (shellState.showFooter) {
-         if (mode.footerHTML) {
-           setFooterHTML(mode.footerHTML);
-         }
-         if (mode.footerTarget) {
-           setFooterTarget(mode.footerTarget);
-         }
-       }
-       if (mode.autoActivateSidebar) {
-         if (mode.enableLeftSidebar && (isMediaModeLarge() || shellState.suspend)) {
-           showLeftSidebar();
-         } else {
-           hideLeftSidebar();
-         }
-       }
-       hideRightSidebar(false);
-       shellState.allowVerticalScroll = !!mode.allowVerticalScroll;
-       shellState.animateViewContainer = mode.animateViewContainer !== false;
-       shellState.momentumScrollingEnabled = mode.momentumScrollingEnabled !== false;
-       notifyStateChanged();
-     }
-
-     /**
-      * @private
-      * @description
-      * Set or Get the viewSettings
-      */
-     function viewSettings(settings) {
-       if (settings !== undefined) {
-         shellState.viewSettings = settings;
-       }
-       return shellState.viewSettings;
-     }
-
-     //--------  Public Functions ----------------------->>>>
-
-     /**
-      * @ngdoc method
-      * @name init
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Initialization of the shell. To be called by application upon start-up
-      */
-     function init() {
-       window.addEventListener('load', function() {
-         FastClick.attach(document.body);
-       }, false);
-
-       $timeout(epThemeService.initialize, 200);
-
-       var windowWidth = $(window).width();
-       shellState.mediaMode = windowWidth >= epShellConstants.MEDIA_SIZE_BREAKPOINT ?
-           epShellConstants.MEDIA_MODE_LARGE : epShellConstants.MEDIA_MODE_SMALL;
-       // initialize the sidebar as "shown" if we're in large mode, otherwise false.
-       shellState.showSidebar = isMediaModeLarge();
-       $rootScope.initComplete = true;
-     }
-
-     /**
-      * @ngdoc method
-      * @name saveState
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * save current shell state for later usage by restoreState(). Used by embedded applications to store
-      * shell state when embedded app is started and then to restore back when exiting embedded app
-      * @returns {object} saved state data
-      */
-     function saveState() {
-       savedState = {
-         pageTitle: getPageTitle(),
-         brandHTML: getBrandHTML(),
-         navbarButtons: angular.extend([], navbarButtons)
-       };
-       return savedState;
-     }
-
-     /**
-      * @ngdoc method
-      * @name restoreState
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Used in conjunction with saveState(). This method will restore some properties
-      * of shell state to what they were at the time of saveState() call.
-      * @param {object} state - optional parameter that contains saved state data. If not
-      * provided, internal saved state data will be used
-      */
-     function restoreState(state) {
-       var oldState = (state) ? state : savedState;
-       if (oldState && oldState !== {}) {
-         if (oldState.navbarButtons) {
-           updateNavbarButtons(oldState.navbarButtons);
-         }
-         if (oldState.pageTitle) {
-           setPageTitle(oldState.pageTitle);
-         }
-         if (oldState.brandHTML) {
-           setBrandHTML(oldState.brandHTML);
-         }
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name showProgressIndicator
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Show progress indicator in the middle of the current view of the shell
-      */
-     function showProgressIndicator() {
-       shellState.showProgressIndicator = true;
-       shellState.progressIndicatorlevel++;
-     }
-
-     /**
-      * @ngdoc method
-      * @name hideProgressIndicator
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Hides progress indicator. Since showProgressIndicator() are stackable (queue)
-      * the hideProgressIndicator() will decrement the show calls and will actually hide when bottom of
-      * queue is reached.
-      * @param {boolean} immediate - optional parameter - if true the progress indicator is stopped
-      * immediately, otherwise after a timeout
-      */
-     function hideProgressIndicator(immediate) {
-       shellState.progressIndicatorlevel--;
-       shellState.progressIndicatorlevel = Math.max(shellState.progressIndicatorlevel, 0);
-       if (shellState.progressIndicatorlevel === 0) {
-         if (immediate) {
-           shellState.showProgressIndicator = false;
-         } else {
-           $timeout(function() { shellState.showProgressIndicator = false; });
-         }
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name resetProgressIndicator
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Hides and resets progress indicator. Since showProgressIndicator() are stackable (queue)
-      * the hideProgressIndicator() will decrement the show calls and will actually hide when bottom of
-      * queue is reached. This method allows to hide immediately, reseeting the queue.
-      */
-     function resetProgressIndicator() {
-       shellState.progressIndicatorlevel = 0;
-       hideProgressIndicator(true);
-     }
-
-     /**
-      * @ngdoc method
-      * @name getMediaMode
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Returns the current media mode: MEDIA_MODE_LARGE or MEDIA_MODE_SMALL (epShellConstants)
-      * @returns {string} current media mode: MEDIA_MODE_LARGE or MEDIA_MODE_SMALL (epShellConstants)
-      */
-     function getMediaMode() {
-       return shellState.mediaMode;
-     }
-
-     /**
-      * @ngdoc method
-      * @name isMediaModeLarge
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Checks if the current media mode is MEDIA_MODE_LARGE (epShellConstants)
-      */
-     function isMediaModeLarge() {
-       return shellState.mediaMode === epShellConstants.MEDIA_MODE_LARGE;
-     }
-
-     /**
-      * @ngdoc method
-      * @name themingDisabled
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @param {boolean} onOff - if true theming is turned on, if false set as off
-      * @description
-      * Returns the state of theming flag as set by sysconfig.json. True - if theming is disabled.
-      * Can also be used to turn off and on theming in the shell by passing the disabled parameter
-      * @returns {boolean} current media mode: MEDIA_MODE_LARGE or MEDIA_MODE_SMALL (epShellConstants)
-      */
-     function themingDisabled(onOff) {
-       return epThemeService.disableTheming(onOff);
-     }
-
-     function registerViewEvent(id, eventName, callback) {
-       // clean up the old event if there is one
-       if (boundViewEvents[id]) {
-         boundViewEvents[id]();
-       }
-
-       // register the given event in the boundViewEvents collection.
-       boundViewEvents[id] = $rootScope.$on(eventName, callback);
-     }
-
-     function cleanupViewEvents() {
-       // clean up any events that have been registered.
-       _.each(boundViewEvents, function(unregister) { unregister(); });
-       boundViewEvents = {};
-     }
-
-     /**
-      * @ngdoc method
-      * @name setInfo
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Set the Info Message view overlay, that will cover the current view
-      * @param {string} icon - icon to be displayed
-      * @param {string} message - icon to be displayed
-      */
-     function setInfo(icon, message) {
-       shellState.infoIcon = icon;
-       shellState.infoMessage = message;
-     }
-
-     /**
-      * @ngdoc method
-      * @name clearInfo
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Clears the Info Message view overlay, that covers the current view.
-      */
-     function clearInfo() {
-       shellState.infoIcon = '';
-       shellState.infoMessage = '';
-     }
-
-     /**
-      * @ngdoc method
-      * @name setPageTitle
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Set the title of the page on the browser
-      */
-     function setPageTitle(val) {
-       shellState.pageTitle = val;
-       $document[0].title = shellState.pageTitle;
-     }
-     /**
-     * @ngdoc method
-     * @name initViewBackground
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Set the the background color of the view for an animation
-     */
-     function initViewBackground() {
-       if (epShellConfig.options.enableViewAnimations !== false) {
-         $('#viewStyle').remove();
-         var color = $('body').css('background-color');
-         var opaqueColor = getOpaqueColor(color);
-         var style = '.view { background-color: ' + opaqueColor + '; }';
-         $('head').append('<style id="viewStyle">' + style + '</style>');
-       }
-     }
-     /**
-    * @ngdoc method
-    * @name getOpaqueColor
-    * @methodOf ep.shell.service:epShellService
-    * @public
-    * @description
-    * Get the fully opaque color for the given color
-    */
-     function getOpaqueColor(color) {
-       var newVals;
-       if (color.indexOf('rgb') === 0) {
-         var numbers = color.replace('rgb', '').replace('a', '').replace('(', '').replace(')', '');
-         var vals = numbers.split(',').map(function(v) { return v.trim(); });
-
-         if (vals.length === 4) {
-           vals[3] = '1';
-         } else if (vals.length === 3) {
-           vals.push('1');
-         }
-
-         newVals = vals.join(', ');
-       }
-       //else {
-       //  TODO: support parsing hex code
-       //}
-       return 'rgba(' + newVals + ')';
-     }
-
-     /**
-      * @ngdoc method
-      * @name getPageTitle
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Get the title of the page (from shell state)
-      * @returns {string} page title
-      */
-     function getPageTitle() {
-       return shellState.pageTitle;
-     }
-
-     /**
-      * @ngdoc method
-      * @name toggleBrand
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Toggles the display of the brand in the shell
-      */
-     function toggleBrand() {
-       shellState.showBrand = !shellState.showBrand;
-       shellState.viewSettings[shellState.mediaMode].showBrand = shellState.showBrand;
-     }
-
-     /**
-      * @ngdoc method
-      * @name showBrand
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Turns on and off the display of the brand in the shell
-      * @param {boolean} onOff - if true brand is turned on, if false set as off
-      */
-     function showBrand(onOff) {
-       shellState.showBrand = (onOff === undefined) ? true : onOff;
-       shellState.viewSettings[shellState.mediaMode].showBrand = shellState.showBrand;
-     }
-
-     /**
-      * @ngdoc method
-      * @name setBrandHTML
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Sets the branding HTML.
-      * @param {string} html - branding html
-      */
-     function setBrandHTML(html) {
-       shellState.brandHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;
-       shellState.viewSettings[shellState.mediaMode].brandHTML = shellState.brandHTML;
-     }
-     /**
-      * @ngdoc method
-      * @name setBrandTarget
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Sets the branding target url.
-      * @param {string} target - url to follow when clicking on the brand
-      */
-     function setBrandTarget(target) {
-       shellState.brandTarget = target;
-       shellState.viewSettings[shellState.mediaMode].brandTarget = shellState.brandTarget;
-     }
-     /**
-      * @ngdoc method
-      * @name centerBrand
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Turns on and off the centering of the brand in the navbar
-      * @param {boolean} onOff - if true brand centering is turned on, if false set as off
-      */
-     function centerBrand(onOff) {
-       shellState.centerBrand = (onOff === undefined) ? true : onOff;
-       shellState.viewSettings[shellState.mediaMode].centerBrand = shellState.centerBrand;
-     }
-     /**
-      * @ngdoc method
-      * @name getBrandHTML
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Returns the branding html. (The html returned is compiled by $sce)
-      * @returns {string} brand html
-      */
-     function getBrandHTML() {
-       return shellState.brandHTML;
-     }
-     /**
-      * @ngdoc method
-      * @name getBrandTarget
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Returns the branding target. (The url followed when clicking on the brand link.)
-      * @returns {string} brand target
-      */
-     function getBrandTarget() {
-       return shellState.brandTarget;
-     }
-     /**
-      * @ngdoc method
-      * @name setFooterHTML
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Sets the footer HTML.
-      * @param {string} html - footer html
-      */
-     function setFooterHTML(html) {
-       shellState.footerHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;
-       shellState.viewSettings[shellState.mediaMode].footerHTML = shellState.footerHTML;
-     }
-
-     /**
-      * @ngdoc method
-      * @name getBrandHTML
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Returns the branding html. (The html returned is compiled by $sce)
-      * @returns {string} brand html
-      */
-     function getFooterHTML() {
-       return shellState.footerHTML;
-     }
-
-     /**
-      * @ngdoc method
-      * @name setFooterTarget
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Sets the footer target url.
-      * @param {string} target - url to follow when clicking on the footer
-      */
-     function setFooterTarget(target) {
-       shellState.footerTarget = target;
-       shellState.viewSettings[shellState.mediaMode].footerTarget = shellState.footerTarget;
-     }
-
-     /**
-      * @ngdoc method
-      * @name getFooterTarget
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Returns the footer target. (The url followed when clicking on the footer link.)
-      * @returns {string} footer target
-      */
-     function getFooterTarget() {
-       return shellState.footerTarget;
-     }
-
-     function notifyShellButtonsChanged(event) {
-       navbarButtons = _.sortBy(navbarButtons, function(btn) { return btn.index; });
-       $rootScope.$emit(epShellConstants.SHELL_NAV_BUTTONS_CHANGED_EVENT, event);
-
-       $timeout(function() { $rootScope.$apply(); });
-     }
-
-     function suspend() {
-       shellState.suspend = true;
-     }
-
-     function resume() {
-       shellState.suspend = false;
-     }
-
-     /**
-      * @ngdoc method
-      * @name feedbackCallback
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Set the callback function for Feedback which is called after the feedback form is displayed
-      * and user data is entered. The applicatio will then do whatever it nneds to do to forward the
-      * feedback appropriately.
-      */
-     function feedbackCallback(fnOnFeedback) {
-       //set or get feedback callback function which will do actual submission of user data.
-       //Function must return a promise.
-       if (fnOnFeedback !== undefined) {
-         shellState.fnOnFeedback = fnOnFeedback;
-       }
-       return shellState.fnOnFeedback;
-     }
-
-     /**
-      * @ngdoc method
-      * @name enableFeedback
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Enable the feedback button functionality (by default on, can be overriden by sysconfig)
-      * @param {bool} onOff - turn feature on / off
-      */
-     function enableFeedback(onOff) {
-       epShellConfig.options.enableFeedback = onOff;
-     }
-     /**
-      * @ngdoc method
-      * @name enableViewFeedback
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Enable the feedback button on current view
-      * @param {bool} onOff - turn feedback on / off on current view
-      */
-     function enableViewFeedback(onOff) {
-       if (epShellConfig.options.enableFeedback) {
-         shellState.enableFeedback = onOff;
-       }
-     }
-     /**
-      * @ngdoc method
-      * @name toggleViewFeedback
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Toggle the feedback button on current view
-      */
-     function toggleViewFeedback() {
-       if (epShellConfig.options.enableFeedback) {
-         shellState.enableFeedback = !shellState.enableFeedback;
-       }
-     }
-
-     function notifyStateChanged(event) {
-       $rootScope.$emit(epShellConstants.SHELL_STATE_CHANGE_EVENT, event);
-     }
-
-     function notifySizeChanged(event) {
-       // use timeout to wait until the animation is complete before publishing the resize event
-       $timeout(function() {
-         $rootScope.$emit(epShellConstants.SHELL_SIZE_CHANGE_EVENT, event);
-       }, 310);
-     }
-
-     /**
-      * @ngdoc method
-      * @name hideHomeButton
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Hide home button (can be overriden by viewcontainer options)
-      */
-     function hideHomeButton() {
-       if (shellState.showHomeButton) {
-         shellState.showHomeButton = false;
-         notifyShellButtonsChanged('hideHomeButton');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name showHomeButton
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Show home button (can be overriden by viewcontainer options)
-      */
-     function showHomeButton() {
-       if (!shellState.showHomeButton) {
-         shellState.showHomeButton = true;
-         notifyShellButtonsChanged('showHomeButton');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name hideLeftToggleButton
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Hide the left panel toggle button
-      */
-     function hideLeftToggleButton() {
-       if (shellState.showLeftToggleButton) {
-         shellState.showLeftToggleButton = false;
-         notifyShellButtonsChanged('hideLeftToggleButton');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name showLeftToggleButton
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Show the left panel toggle button
-      */
-     function showLeftToggleButton() {
-       if (!shellState.showLeftToggleButton) {
-         shellState.showLeftToggleButton = true;
-         notifyShellButtonsChanged('showLeftToggleButton');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name hideRightToggleButton
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Hide the right panel toggle button
-      */
-     function hideRightToggleButton() {
-       if (shellState.showRightToggleButton) {
-         shellState.showRightToggleButton = false;
-
-         notifyShellButtonsChanged('hideRightToggleButton');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name showLeftToggleButton
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Show the right panel toggle button
-      */
-     function showRightToggleButton() {
-       if (!shellState.showRightToggleButton) {
-         shellState.showRightToggleButton = true;
-
-         notifyShellButtonsChanged('showRightToggleButton');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name toggleLeftSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Toggle left side bar
-      */
-     function toggleLeftSidebar() {
-       shellState.showLeftSidebar = !shellState.showLeftSidebar;
-       shellState.viewSettings[shellState.mediaMode].showLeftSidebar = shellState.showLeftSidebar;
-
-       notifySizeChanged(shellState.showLeftSidebar ? 'showLeftSidebar' : 'hideLeftSidebar');
-     }
-
-     /**
-      * @ngdoc method
-      * @name showLeftSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Show left side bar
-      */
-     function showLeftSidebar() {
-       if (!shellState.showLeftSidebar) {
-         shellState.showLeftSidebar = true;
-         shellState.viewSettings[shellState.mediaMode].showLeftSidebar = true;
-
-         notifySizeChanged('showLeftSidebar');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name hideLeftSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Hide left side bar
-      */
-     function hideLeftSidebar() {
-       if (shellState.showLeftSidebar) {
-         shellState.showLeftSidebar = false;
-         shellState.viewSettings[shellState.mediaMode].showLeftSidebar = false;
-
-         notifySizeChanged('hideLeftSidebar');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name disableLeftSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Disable left side bar
-      */
-     function disableLeftSidebar() {
-       if (shellState.enableLeftSidebar) {
-         shellState.enableLeftSidebar = false;
-         shellState.viewSettings.large.enableLeftSidebar = false;
-         shellState.viewSettings.small.enableLeftSidebar = false;
-
-         hideLeftSidebar();
-         hideLeftToggleButton();
-         notifyStateChanged('disableLeftSidebar');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name enableLeftSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Enable left side bar
-      */
-     function enableLeftSidebar() {
-       if (!shellState.enableLeftSidebar) {
-         shellState.enableLeftSidebar = true;
-         shellState.viewSettings.large.enableLeftSidebar = true;
-         shellState.viewSettings.small.enableLeftSidebar = true;
-
-         if (isMediaModeLarge()) {
-           showLeftSidebar();
-         }
-         showLeftToggleButton();
-         notifyStateChanged('enableLeftSidebar');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name clearLeftSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Clear content of the left side bar
-      */
-     function clearLeftSidebar() {
-       epSidebarService.clearLeftSidebar();
-     }
-
-     /**
-      * @ngdoc method
-      * @name toggleRightSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Toggle the right side bar
-      */
-     function toggleRightSidebar() {
-       shellState.showRightSidebar = !shellState.showRightSidebar;
-       shellState.viewSettings[shellState.mediaMode].showRightSidebar = shellState.showRightSidebar;
-
-       notifySizeChanged(shellState.showRightSidebar ? 'showRightSidebar' : 'hideRightSidebar');
-
-     }
-
-     /**
-      * @ngdoc method
-      * @name showRightSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Show the right side bar
-      */
-     function showRightSidebar() {
-       if (!shellState.showRightSidebar) {
-         shellState.showRightSidebar = true;
-         shellState.viewSettings[shellState.mediaMode].showRightSidebar = true;
-
-         notifyStateChanged('showRightSidebar');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name hideRightSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Hide the right side bar
-      */
-     function hideRightSidebar() {
-       if (shellState.showRightSidebar) {
-         shellState.showRightSidebar = false;
-         shellState.viewSettings[shellState.mediaMode].showRightSidebar = false;
-
-         notifyStateChanged('hideRightSidebar');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name disableRightSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Disable the right side bar
-      */
-     function disableRightSidebar() {
-       if (shellState.enableRightSidebar) {
-         shellState.enableRightSidebar = false;
-         shellState.viewSettings.large.enableRightSidebar = false;
-         shellState.viewSettings.small.enableRightSidebar = false;
-
-         hideRightSidebar();
-         hideRightToggleButton();
-         notifyStateChanged('disableRightSidebar');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name enableRightSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Enable the right side bar
-      */
-     function enableRightSidebar() {
-       if (!shellState.enableRightSidebar) {
-         shellState.enableRightSidebar = true;
-         shellState.viewSettings.large.enableRightSidebar = true;
-         shellState.viewSettings.small.enableRightSidebar = true;
-
-         showRightToggleButton();
-         notifyStateChanged('enableRightSidebar');
-       }
-     }
-
-     /**
-      * @ngdoc method
-      * @name clearRightSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Clear the content of the right side bar
-      */
-     function clearRightSidebar() {
-       epSidebarService.clearRightSidebar();
-     }
-
-     /**
-      * @ngdoc method
-      * @name getShowLeftSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Returns visibility flag of left side bar
-      * @returns {boolean} true if left bar is visible
-      */
-     function getShowLeftSidebar() {
-       return shellState.showLeftSidebar;
-     }
-
-     /**
-      * @ngdoc method
-      * @name getShowRightSidebar
-      * @methodOf ep.shell.service:epShellService
-      * @public
-      * @description
-      * Returns visibility flag of right side bar
-      * @returns {boolean} true if right bar is visible
-      */
-     function getShowRightSidebar() {
-       return shellState.showRightSidebar;
-     }
-
-     /**
-     * @ngdoc method
-     * @name setLeftTemplate
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Set the left sidabar html
-     * @param {string} html - html of template to be loaded in left sidebar
-     */
-     function setLeftTemplate(html) {
-       epSidebarService.setLeftTemplate(html);
-     }
-
-     /**
-     * @ngdoc method
-     * @name setRightTemplate
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Set the right sidabar html
-     * @param {string} html - html of template to be loaded in right sidebar
-     */
-     function setRightTemplate(html) {
-       epSidebarService.setRightTemplate(html);
-     }
-
-     /**
-     * @ngdoc method
-     * @name setLeftTemplateUrl
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Set the left sidabar html
-     * @param {string} url - url of template to be loaded in left sidebar
-     */
-     function setLeftTemplateUrl(url) {
-       epSidebarService.setLeftTemplateUrl(url);
-     }
-
-     /**
-     * @ngdoc method
-     * @name setRightTemplateUrl
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Set the right sidabar html
-     * @param {string} url - url of template to be loaded in right sidebar
-     */
-     function setRightTemplateUrl(url) {
-       epSidebarService.setRightTemplateUrl(url);
-     }
-
-     /**
-     * @ngdoc method
-     * @name hideNavbar
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Hide navigation bar
-     */
-     function hideNavbar() {
-       if (shellState.showNavbar) {
-         shellState.showNavbar = false;
-         notifyStateChanged('hideNavbar');
-       }
-     }
-     /**
-     * @ngdoc method
-     * @name showNavbar
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Show navigation bar
-     */
-     function showNavbar() {
-       if (!shellState.showNavbar) {
-         shellState.showNavbar = true;
-         notifyStateChanged('showNavbar');
-       }
-     }
-     /**
-     * @ngdoc method
-     * @name toggleNavbar
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Toggle show/hide navigation bar
-     */
-     function toggleNavbar() {
-       if (!shellState.showNavbar) {
-         shellState.showNavbar = true;
-         notifyStateChanged('showNavbar');
-       } else {
-         shellState.showNavbar = false;
-         notifyStateChanged('hideNavbar');
-       }
-     }
-     /**
-     * @ngdoc method
-     * @name hideFooter
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Hide Footer
-     */
-     function hideFooter() {
-       if (shellState.showFooter) {
-         shellState.showFooter = false;
-         notifyStateChanged('hideFooter');
-       }
-     }
-     /**
-     * @ngdoc method
-     * @name showFooter
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Show Footer
-     */
-     function showFooter() {
-       if (!shellState.showFooter) {
-         shellState.showFooter = true;
-         notifyStateChanged('showFooter');
-       }
-     }
-     /**
-     * @ngdoc method
-     * @name toggleFooter
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Toggle show/hide Footer
-     */
-     function toggleFooter() {
-       if (!shellState.showFooter) {
-         shellState.showFooter = true;
-         notifyStateChanged('showFooter');
-       } else {
-         shellState.showFooter = false;
-         notifyStateChanged('hideFooter');
-       }
-     }
-
-     //---------> Navbar Buttons--------------->>>>>>
-
-     /**
-     * @ngdoc method
-     * @name iterateNavbarButton
-     * @methodOf ep.shell.service:epShellService
-     * @private
-     * @description
-     * Iterate through buttons and call func(button, index). If func returns
-     * true, then notifyShellButtonsChanged(eventName) is called
-     * @param {array} arrIds - an array of button id's
-     * @param {string} eventName - event name passed to notifyShellButtonsChanged
-     * @param {function} func - function called for each matched button id
-     */
-     function iterateNavbarButton(arrIds, eventName, func) {
-       //you can pass one or more id's seperated by comma
-       var hasFound = false;
-       if (arrIds !== undefined) {
-         _.each(arrIds, function(arg) {
-           var idx = _.findIndex(navbarButtons, function(value) {
-             return value.id === arg;
-           });
-           if (idx !== -1 && func(navbarButtons[idx], idx)) {
-             hasFound = true;
-           }
-         });
-       }
-       if (hasFound) {
-         notifyShellButtonsChanged(eventName);
-       }
-     }
-
-     /**
-     * @ngdoc method
-     * @name clearNavbarButtons
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Clear (delete) navigation buttons
-     */
-     function clearNavbarButtons() {
-       navbarButtons = [];
-       notifyShellButtonsChanged('clearNavbarButtons');
-     }
-     /**
-     * @ngdoc method
-     * @name updateNavbarButtons
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Update navigation buttons. Old buttons are cleared.
-     * @param {array} buttons - an array of button objects
-     */
-     function updateNavbarButtons(buttons) {
-       navbarButtons = [];
-       addNavbarButtons(buttons);
-       notifyShellButtonsChanged('updateNavbarButtons');
-     }
-     /**
-     * @ngdoc method
-     * @name addNavbarButtons
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Add navigation buttons. They will be merged with existing buttons, but without duplication
-     */
-     function addNavbarButtons(buttons) {
-       var btns = _.union(navbarButtons, buttons);
-       _.each(btns, function(btn) {
-         if (!btn.type) {
-           btn.type = 'button';
-         }
-       });
-       navbarButtons = _.uniq(btns, false, function(value) {
-         return value.id || value.title;
-       });
-       notifyShellButtonsChanged('addNavbarButtons');
-     }
-     /**
-     * @ngdoc method
-     * @name deleteNavbarButton
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Delete navigation button(s). Buttons are removed from the list for matched button id's
-     * @param {object} buttons - an array/arguments of button id's
-     * @example
-     * deleteNavbarButton('myButton1', 'myButton2');
-     * deleteNavbarButton(['myButton1', 'myButton2']);
-     */
-     function deleteNavbarButton() {
-       var args = _.flatten(arguments, true);
-       iterateNavbarButton(args, 'deleteNavbarButton', function(b, idx) {
-         navbarButtons.splice(idx, 1);
-         return true;
-       });
-     }
-
-     /**
-     * @ngdoc method
-     * @name getNavbarButtons
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Return all navigation buttons - the current array of buttons is returned
-     * @returns {array} array of button objects
-     */
-     function getNavbarButtons() {
-       return navbarButtons;
-     }
-
-     /**
-     * @ngdoc method
-     * @name getNavbarButton
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Return navigation button - for matched button id
-     * @returns {object} button object or null
-     */
-     function getNavbarButton(id) {
-       return _.find(navbarButtons, function(btn) { return btn.id === id; });
-     }
-     /**
-     * @ngdoc method
-     * @name hideNavbarButton
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Hide navigation button(s). Buttons are hidden for matched button id's
-     * @param {object} buttons - an array/arguments of button id's
-     * @example
-     * hideNavbarButton('myButton1', 'myButton2');
-     * hideNavbarButton(['myButton1', 'myButton2']);
-     */
-     function hideNavbarButton() {
-       //you can pass one or more id's seperated by comma
-       var args = _.flatten(arguments, true);
-       iterateNavbarButton(args, 'hideNavbarButton', function(b) {
-         b.hidden = true;
-         return true;
-       });
-     }
-
-     /**
-     * @ngdoc method
-     * @name showNavbarButton
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Show navigation button(s). Buttons are made visible for matched button id's
-     * @param {object} buttons - an array/arguments of button id's
-     * @example
-     * showNavbarButton('myButton1', 'myButton2');
-     * showNavbarButton(['myButton1', 'myButton2']);
-     */
-     function showNavbarButton() {
-       //you can pass one or more id's seperated by comma
-       var args = _.flatten(arguments, true);
-       iterateNavbarButton(args, 'showNavbarButton', function(b) {
-         if (b.fnVisible && angular.isFunction(b.fnVisible)) {
-           b.hidden = !b.fnVisible();
-         } else if (b.enabled && angular.isFunction(b.enabled)) {
-           //Obsolete - enabled should not be used for show/hide!!!
-           //Only temporary for EMA
-           b.hidden = !b.enabled();
-         } else {
-           b.hidden = false;
-         }
-         return true;
-       });
-     }
-     /**
-     * @ngdoc method
-     * @name enableNavbarButton
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Enable navigation button(s). Buttons are made visible for matched button id's
-     * @param {object} buttons - an array/arguments of button id's
-     * @example
-     * enableNavbarButton('myButton1', 'myButton2');
-     * enableNavbarButton(['myButton1', 'myButton2']);
-     */
-     function enableNavbarButton() {
-       //you can pass one or more id's seperated by comma
-       var args = _.flatten(arguments, true);
-       iterateNavbarButton(args, 'enableNavbarButton', function(b) {
-         b.enabled = true;
-         return true;
-       });
-     }
-     /**
-     * @ngdoc method
-     * @name disableNavbarButton
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Disable navigation button(s). Buttons are made visible for matched button id's
-     * @param {object} buttons - an array/arguments of button id's
-     * @example
-     * disableNavbarButton('myButton1', 'myButton2');
-     * disableNavbarButton(['myButton1', 'myButton2']);
-     */
-     function disableNavbarButton() {
-       //you can pass one or more id's seperated by comma
-       var args = _.flatten(arguments, true);
-       iterateNavbarButton(args, 'disableNavbarButton', function(b) {
-         b.enabled = false;
-         return true;
-       });
-     }
-     /**
-     * @ngdoc method
-     * @name hideAllNavbarButtons
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Hide all navigation buttons. All user buttons in are made hidden in Navbar
-     */
-     function hideAllNavbarButtons() {
-       _.each(navbarButtons, function(btn) { hideNavbarButton(btn.id); });
-       notifyShellButtonsChanged('hideNavbarButton');
-     }
-     /**
-     * @ngdoc method
-     * @name showAllNavbarButtons
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Show all navigation buttons. All user buttons in are made visible in Navbar
-     */
-     function showAllNavbarButtons() {
-       _.each(navbarButtons, function(btn) { showNavbarButton(btn.id); });
-       notifyShellButtonsChanged('hideNavbarButton');
-     }
-     /**
-     * @ngdoc method
-     * @name disableNavbarButtons
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Disable/Enable all navigation buttons.
-     * @param {boolean} onOff - disable or enable flag
-     */
-     function disableNavbarButtons(onOff) {
-       shellState.freezeNavButtons = onOff;
-     }
-     /**
-     * @ngdoc method
-     * @name navbarButtonClicked
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Get the button that was clicked - it is available in the time interval between the mouse down and
-     * click events. Useful for 'on-blur' processing.
-     * @param {boolean} onOff - disable or enable flag
-     */
-     function navbarButtonClicked() {
-       return shellState.navButtonClicked;
-     }
-     //<<<<<--------------- Navbar Buttons --------------------------
-
-     /**
-     * @ngdoc method
-     * @name momentumScrollingEnabled
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Enable/disable momentum scrolling
-     * @param {boolean} onOff - disable or enable flag
-     */
-     function momentumScrollingEnabled(onOff) {
-       if (onOff !== undefined) {
-         shellState.momentumScrollingEnabled = onOff;
-       }
-       return shellState.momentumScrollingEnabled;
-     }
-
-     /**
-     * @ngdoc method
-     * @name allowVerticalScroll
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Enable/disable vertical scrolling
-     * @param {boolean} onOff - disable or enable flag
-     */
-     function allowVerticalScroll(onOff) {
-       if (onOff !== undefined) {
-         shellState.allowVerticalScroll = onOff;
-       }
-       return shellState.allowVerticalScroll;
-     }
-
-     /**
-     * @ngdoc method
-     * @name viewAnimation
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Set the current route to view animation
-     * @param {string} animation - current animation route
-     */
-     function viewAnimation(animation) {
-       if (animation !== undefined) {
-         shellState.viewAnimation = epShellConfig.options.enableViewAnimations ? animation : '';
-       }
-       return shellState.viewAnimation;
-     }
-
-     /**
-     * @ngdoc method
-     * @name getViewDimensions
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Get current view dimensions
-     */
-     function getViewDimensions() {
-       return shellState.viewDimensions;
-     }
-
-     /**
-     * @ngdoc method
-     * @name isHomeLocation
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Returns true if we are on home location
-     */
-     function isHomeLocation() {
-       return (epShellConfig.homeRoute && epShellConfig.homeRoute.route === $location.url());
-     }
-
-     /**
-     * @ngdoc method
-     * @name goHome
-     * @methodOf ep.shell.service:epShellService
-     * @public
-     * @description
-     * Go to home location
-     */
-     function goHome() {
-       if (epShellConfig.homeRoute) {
-         $location.url(epShellConfig.homeRoute.route);
-       }
-     }
-
-     initialize();
-
-     return {
-       // --- For internal module usage only --->
-       __state: shellState,
-       __setCurrentModeFlags: setCurrentModeFlags,
-       __viewSettings: viewSettings,
-       // <-------------------------------------------
-       init: init,
-       saveState: saveState,
-       restoreState: restoreState,
-       // Progress Indicator
-       showProgressIndicator: showProgressIndicator,
-       hideProgressIndicator: hideProgressIndicator,
-       resetProgressIndicator: resetProgressIndicator,
-       // Events
-       registerViewEvent: registerViewEvent,
-       cleanupViewEvents: cleanupViewEvents,
-       notifyStateChanged: notifyStateChanged,
-       notifyShellButtonsChanged: notifyShellButtonsChanged,
-       notifySizeChanged: notifySizeChanged,
-       // General Settings
-       setPageTitle: setPageTitle,
-       initViewBackground: initViewBackground,
-       getPageTitle: getPageTitle,
-       toggleBrand: toggleBrand,
-       showBrand: showBrand,
-       setBrandHTML: setBrandHTML,
-       getBrandHTML: getBrandHTML,
-       setBrandTarget: setBrandTarget,
-       getBrandTarget: getBrandTarget,
-       centerBrand: centerBrand,
-       setInfo: setInfo,
-       clearInfo: clearInfo,
-       suspend: suspend,
-       resume: resume,
-       getMediaMode: getMediaMode,
-       isMediaModeLarge: isMediaModeLarge,
-       getViewDimensions: getViewDimensions,
-       momentumScrollingEnabled: momentumScrollingEnabled,
-       allowVerticalScroll: allowVerticalScroll,
-       themingDisabled: themingDisabled,
-       enableFeedback: enableFeedback,
-       enableViewFeedback: enableViewFeedback,
-       toggleViewFeedback: toggleViewFeedback,
-       feedbackCallback: feedbackCallback,
-       showHomeButton: showHomeButton,
-       hideHomeButton: hideHomeButton,
-       //Sidebar functions
-       hideLeftToggleButton: hideLeftToggleButton,
-       showLeftToggleButton: showLeftToggleButton,
-       hideRightToggleButton: hideRightToggleButton,
-       showRightToggleButton: showRightToggleButton,
-       toggleLeftSidebar: toggleLeftSidebar,
-       showLeftSidebar: showLeftSidebar,
-       hideLeftSidebar: hideLeftSidebar,
-       disableLeftSidebar: disableLeftSidebar,
-       enableLeftSidebar: enableLeftSidebar,
-       clearLeftSidebar: clearLeftSidebar,
-       toggleRightSidebar: toggleRightSidebar,
-       showRightSidebar: showRightSidebar,
-       hideRightSidebar: hideRightSidebar,
-       enableRightSidebar: enableRightSidebar,
-       disableRightSidebar: disableRightSidebar,
-       clearRightSidebar: clearRightSidebar,
-       getShowLeftSidebar: getShowLeftSidebar,
-       getShowRightSidebar: getShowRightSidebar,
-       setLeftTemplate: setLeftTemplate,
-       setRightTemplate: setRightTemplate,
-       setLeftTemplateUrl: setLeftTemplateUrl,
-       setRightTemplateUrl: setRightTemplateUrl,
-       //Navigation bar functions
-       showNavbar: showNavbar,
-       hideNavbar: hideNavbar,
-       toggleNavbar: toggleNavbar,
-       //Footer
-       showFooter: showFooter,
-       hideFooter: hideFooter,
-       toggleFooter: toggleFooter,
-       setFooterHTML: setFooterHTML,
-       getFooterHTML: getFooterHTML,
-       setFooterTarget: setFooterTarget,
-       getFooterTarget: getFooterTarget,
-       //Nav Buttons
-       clearNavbarButtons: clearNavbarButtons,
-       updateNavbarButtons: updateNavbarButtons,
-       addNavbarButtons: addNavbarButtons,
-       deleteNavbarButton: deleteNavbarButton,
-       getNavbarButtons: getNavbarButtons,
-       getNavbarButton: getNavbarButton,
-       showNavbarButton: showNavbarButton,
-       hideNavbarButton: hideNavbarButton,
-       showAllNavbarButtons: showAllNavbarButtons,
-       hideAllNavbarButtons: hideAllNavbarButtons,
-       enableNavbarButton: enableNavbarButton,
-       disableNavbarButton: disableNavbarButton,
-       disableNavbarButtons: disableNavbarButtons,
-       navbarButtonClicked: navbarButtonClicked,
-       viewAnimation: viewAnimation,
-       isHomeLocation: isHomeLocation,
-       goHome: goHome
-     };
-   }]
-  );
+    'use strict';
+
+    angular.module('ep.shell').service('epShellService',
+        /*@ngInject*/
+        ['$compile', '$document', '$location', '$q', '$rootScope', '$sce', '$timeout', 'epConsoleService', 'epEmbeddedAppsService', 'epFeatureDetectionService', 'epShellConfig', 'epShellConstants', 'epSidebarService', 'epThemeService', function($compile, $document, $location, $q, $rootScope, $sce, $timeout,
+                 epConsoleService, epEmbeddedAppsService, epFeatureDetectionService,
+                 epShellConfig, epShellConstants, epSidebarService, epThemeService) {
+
+            epConsoleService.initialize();
+
+            $rootScope.shellServiceInitComplete = false;
+
+            /**
+             * @private
+             * @description
+             * Holds the current shell state. Almost all settings are here
+             */
+            var shellState = {
+                showProgressIndicator: false,
+                progressIndicatorlevel: 0,
+                enableFeedback: false,
+                enableEmbeddedApps: true,
+                fnOnFeedback: undefined,
+                suspend: false,
+                showBrand: true,
+                brandHTML: 'Mobile Access <sup>2.0</sup>',
+                brandTarget: '',
+                footerHTML: '',
+                footerTarget: '',
+                freezeNavButtons: false,
+                viewContainerScope: null,
+                viewSettings: {
+                    sidebar: {},
+                    small: {
+                        animateViewContainer: true,
+                        autoActivateSidebar: false,
+                        showLeftSidebar: false,
+                        enableLeftSidebar: true,
+                        showLeftToggleButton: false,
+                        showRightToggleButton: false,
+                        showNavbar: false,
+                        showFooter: false,
+                        showHomeButton: false,
+                        showBrand: false,
+                        centerBrand: true
+                    },
+                    large: {
+                        animateViewContainer: true,
+                        autoActivateSidebar: true,
+                        showLeftSidebar: false,
+                        enableLeftSidebar: true,
+                        showLeftToggleButton: false,
+                        showRightToggleButton: false,
+                        showNavbar: false,
+                        showFooter: false,
+                        showHomeButton: false,
+                        showBrand: false,
+                        centerBrand: false
+                    }
+                },
+                pageTitle: '',
+                colorScheme: {},
+                mediaMode: epShellConstants.MEDIA_MODE_SMALL,
+                date: {
+                    weekday: 'Tuesday',
+                    month: 'October',
+                    day: 21
+                },
+                viewDimensions: {
+                    offset: {top: 0, left: 0},
+                    size: {width: 0, height: 0}
+                },
+                infoMessage: '',
+                infoIcon: 'fa fa-3x fa-warning',
+                executeButton: function(btn) {
+                    shellState.navButtonClicked = null;
+                    if (btn.confirm) {
+                        btn.confirm(btn.action);
+                    } else if (shellState.freezeNavButtons !== true && btn.enabled !== false) {
+                        btn.action();
+                    }
+                },
+                buttonMouseDown: function(btn) {
+                    //record buttonClicked (for ng-blur events). it will be dismissed after real click.
+                    shellState.navButtonClicked = btn;
+                },
+                momentumScrollingEnabled: true,
+                allowVerticalScroll: true,
+                //Stores the nav button that is clicked on mouse down event. This state is cleared on actual click event.
+                //Useful for blur processing
+                navButtonClicked: null
+            };
+
+            /**
+             * @private
+             * @description
+             * After saveState() is called, savedState contains certain properties of current shell state
+             * that are needed to restore later.
+             */
+            var savedState = {};
+
+            /**
+             * @private
+             * @description
+             * Contains the navigation buttons array
+             */
+            var navbarButtons = [];
+
+            /**
+             * @private
+             * @description
+             * Contains the bound view events
+             */
+            var boundViewEvents = {};
+
+            /**
+             * @private
+             * @description
+             * Certain things we initialize at the first reference of the service
+             */
+            function initialize() {
+                //setup the epFeatureDetectionService enquireService registration at 800 px so that we can
+                //perform Javascript operations when the UI goes into large / small mode
+                epFeatureDetectionService.registerMediaQuery(epShellConstants.MEDIA_SIZE_BREAKPOINT, function() {
+                    shellState.mediaMode = epShellConstants.MEDIA_MODE_LARGE;
+                    notifyStateChanged('setMediaMode');
+                    toggleLeftSidebarBackdrop();
+                }, function() {
+                    shellState.mediaMode = epShellConstants.MEDIA_MODE_SMALL;
+                    notifyStateChanged('setMediaMode');
+                    toggleLeftSidebarBackdrop();
+                });
+
+                //Any time the size of the shell window changes fire an event to the views
+                function sendResizeEvent() {
+                    notifySizeChanged('size');
+                }
+
+                //this is to ensure it only happens one time
+                var lazySendResize = _.debounce(sendResizeEvent, 100);
+                angular.element(window).on('resize', lazySendResize);
+                $timeout(sendResizeEvent, 100);
+                $rootScope.$on('$routeChangeSuccess', sendResizeEvent);
+
+                setPageTitle(epShellConfig.options.pageTitle);
+                setBrandHTML(epShellConfig.options.brandHTML);
+                setFooterHTML(epShellConfig.options.footerHTML);
+
+                if (epShellConfig.options.includeEmbeddedApps !== undefined) {
+                    if (epShellConfig.options.includeEmbeddedApps) {
+                        $rootScope.$watch('initComplete', function(complete) {
+                            if (complete) {
+                                //place here whatever needs to be initialized after initComplete
+                                epEmbeddedAppsService.initialize();
+                            }
+                        });
+                    }
+                }
+            }
+
+            /**
+             * @private
+             * @description
+             * Set flags depending on current mode (small or large)
+             */
+            function setCurrentModeFlags(viewScope) {
+                var mode = shellState.viewSettings[shellState.mediaMode];
+                mode.autoActivateSidebar = mode.autoActivateSidebar !== false;
+
+                shellState.showLeftToggleButton = mode.enableLeftSidebar;
+                shellState.enableLeftSidebar = mode.enableLeftSidebar;
+                shellState.showRightToggleButton = mode.enableRightSidebar;
+                shellState.enableRightSidebar = mode.enableRightSidebar;
+                shellState.showNavbar = mode.showNavbar;
+                shellState.showFooter = mode.showFooter;
+                shellState.showHomeButton = mode.showHomeButton;
+                shellState.showBrand = mode.showBrand;
+                shellState.centerBrand = mode.centerBrand;
+                shellState.autoActivateSidebar = mode.autoActivateSidebar;
+                shellState.viewContainerScope = viewScope;
+                shellState.enableFeedback = (epShellConfig.options.enableFeedback && mode.enableFeedback === true);
+                shellState.animationIn = mode.animationIn;
+                shellState.animationOut = mode.animationOut;
+                shellState.animationSpeed = mode.animationSpeed;
+
+                if (shellState.showBrand && mode.brandHTML) {
+                    if (mode.brandHTML) {
+                        setBrandHTML(mode.brandHTML, viewScope);
+                    }
+                    if (mode.brandTarget) {
+                        setBrandTarget(mode.brandTarget);
+                    }
+                }
+                if (shellState.showFooter) {
+                    if (mode.footerHTML) {
+                        setFooterHTML(mode.footerHTML, viewScope);
+                    }
+                    if (mode.footerTarget) {
+                        setFooterTarget(mode.footerTarget);
+                    }
+                }
+                if (mode.autoActivateSidebar) {
+                    if (mode.enableLeftSidebar && (isMediaModeLarge() || shellState.suspend)) {
+                        showLeftSidebar();
+                    } else {
+                        hideLeftSidebar();
+                    }
+                }
+                hideRightSidebar(false);
+                shellState.allowVerticalScroll = !!mode.allowVerticalScroll;
+                shellState.animateViewContainer = mode.animateViewContainer !== false;
+                shellState.momentumScrollingEnabled = mode.momentumScrollingEnabled !== false;
+                notifyStateChanged();
+            }
+
+            /**
+             * @private
+             * @description
+             * Set or Get the viewSettings
+             */
+            function viewSettings(settings) {
+                if (settings !== undefined) {
+                    shellState.viewSettings = settings;
+                }
+                return shellState.viewSettings;
+            }
+
+            //--------  Public Functions ----------------------->>>>
+
+            /**
+             * @ngdoc method
+             * @name init
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Initialization of the shell. To be called by application upon start-up
+             */
+            function init() {
+                window.addEventListener('load', function() {
+                    FastClick.attach(document.body);
+                }, false);
+
+                $timeout(epThemeService.initialize, 200);
+
+                var windowWidth = $(window).width();
+                shellState.mediaMode = windowWidth >= epShellConstants.MEDIA_SIZE_BREAKPOINT ?
+                    epShellConstants.MEDIA_MODE_LARGE : epShellConstants.MEDIA_MODE_SMALL;
+                // initialize the sidebar as "shown" if we're in large mode, otherwise false.
+                shellState.showSidebar = isMediaModeLarge();
+                $rootScope.initComplete = true;
+            }
+
+            /**
+             * @ngdoc method
+             * @name saveState
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * save current shell state for later usage by restoreState(). Used by embedded applications to store
+             * shell state when embedded app is started and then to restore back when exiting embedded app
+             * @returns {object} saved state data
+             */
+            function saveState() {
+                savedState = {
+                    pageTitle: getPageTitle(),
+                    brandHTML: getBrandHTML(),
+                    navbarButtons: angular.extend([], navbarButtons)
+                };
+                return savedState;
+            }
+
+            /**
+             * @ngdoc method
+             * @name restoreState
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Used in conjunction with saveState(). This method will restore some properties
+             * of shell state to what they were at the time of saveState() call.
+             * @param {object} state - optional parameter that contains saved state data. If not
+             * provided, internal saved state data will be used
+             */
+            function restoreState(state) {
+                var oldState = (state) ? state : savedState;
+                if (oldState && oldState !== {}) {
+                    if (oldState.navbarButtons) {
+                        updateNavbarButtons(oldState.navbarButtons);
+                    }
+                    if (oldState.pageTitle) {
+                        setPageTitle(oldState.pageTitle);
+                    }
+                    if (oldState.brandHTML) {
+                        setBrandHTML(oldState.brandHTML, oldState.viewContainerScope);
+                    }
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name showProgressIndicator
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Show progress indicator in the middle of the current view of the shell
+             */
+            function showProgressIndicator() {
+                shellState.showProgressIndicator = true;
+                shellState.progressIndicatorlevel++;
+            }
+
+            /**
+             * @ngdoc method
+             * @name hideProgressIndicator
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Hides progress indicator. Since showProgressIndicator() are stackable (queue)
+             * the hideProgressIndicator() will decrement the show calls and will actually hide when bottom of
+             * queue is reached.
+             * @param {boolean} immediate - optional parameter - if true the progress indicator is stopped
+             * immediately, otherwise after a timeout
+             */
+            function hideProgressIndicator(immediate) {
+                shellState.progressIndicatorlevel--;
+                shellState.progressIndicatorlevel = Math.max(shellState.progressIndicatorlevel, 0);
+                if (shellState.progressIndicatorlevel === 0) {
+                    if (immediate) {
+                        shellState.showProgressIndicator = false;
+                    } else {
+                        $timeout(function() {
+                            shellState.showProgressIndicator = false;
+                        });
+                    }
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name resetProgressIndicator
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Hides and resets progress indicator. Since showProgressIndicator() are stackable (queue)
+             * the hideProgressIndicator() will decrement the show calls and will actually hide when bottom of
+             * queue is reached. This method allows to hide immediately, reseeting the queue.
+             */
+            function resetProgressIndicator() {
+                shellState.progressIndicatorlevel = 0;
+                hideProgressIndicator(true);
+            }
+
+            /**
+             * @ngdoc method
+             * @name getMediaMode
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Returns the current media mode: MEDIA_MODE_LARGE or MEDIA_MODE_SMALL (epShellConstants)
+             * @returns {string} current media mode: MEDIA_MODE_LARGE or MEDIA_MODE_SMALL (epShellConstants)
+             */
+            function getMediaMode() {
+                return shellState.mediaMode;
+            }
+
+            /**
+             * @ngdoc method
+             * @name isMediaModeLarge
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Checks if the current media mode is MEDIA_MODE_LARGE (epShellConstants)
+             */
+            function isMediaModeLarge() {
+                return shellState.mediaMode === epShellConstants.MEDIA_MODE_LARGE;
+            }
+
+            /**
+             * @ngdoc method
+             * @name themingDisabled
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @param {boolean} onOff - if true theming is turned on, if false set as off
+             * @description
+             * Returns the state of theming flag as set by sysconfig.json. True - if theming is disabled.
+             * Can also be used to turn off and on theming in the shell by passing the disabled parameter
+             * @returns {boolean} current media mode: MEDIA_MODE_LARGE or MEDIA_MODE_SMALL (epShellConstants)
+             */
+            function themingDisabled(onOff) {
+                return epThemeService.disableTheming(onOff);
+            }
+
+            function registerViewEvent(id, eventName, callback) {
+                // clean up the old event if there is one
+                if (boundViewEvents[id]) {
+                    boundViewEvents[id]();
+                }
+
+                // register the given event in the boundViewEvents collection.
+                boundViewEvents[id] = $rootScope.$on(eventName, callback);
+            }
+
+            function cleanupViewEvents() {
+                // clean up any events that have been registered.
+                _.each(boundViewEvents, function(unregister) {
+                    unregister();
+                });
+                boundViewEvents = {};
+            }
+
+            /**
+             * @ngdoc method
+             * @name setInfo
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Set the Info Message view overlay, that will cover the current view
+             * @param {string} icon - icon to be displayed
+             * @param {string} message - icon to be displayed
+             */
+            function setInfo(icon, message) {
+                shellState.infoIcon = icon;
+                shellState.infoMessage = message;
+            }
+
+            /**
+             * @ngdoc method
+             * @name clearInfo
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Clears the Info Message view overlay, that covers the current view.
+             */
+            function clearInfo() {
+                shellState.infoIcon = '';
+                shellState.infoMessage = '';
+            }
+
+            /**
+             * @ngdoc method
+             * @name setPageTitle
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Set the title of the page on the browser
+             */
+            function setPageTitle(val) {
+                shellState.pageTitle = val;
+                $document[0].title = shellState.pageTitle;
+            }
+
+            /**
+             * @ngdoc method
+             * @name initViewBackground
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Set the the background color of the view for an animation
+             */
+            function initViewBackground() {
+                if (epShellConfig.options.enableViewAnimations !== false) {
+                    $('#viewStyle').remove();
+                    var color = $('body').css('background-color');
+                    var opaqueColor = getOpaqueColor(color);
+                    var style = '.view { background-color: ' + opaqueColor + '; }';
+                    $('head').append('<style id="viewStyle">' + style + '</style>');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name getOpaqueColor
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Get the fully opaque color for the given color
+             */
+            function getOpaqueColor(color) {
+                var newVals;
+                if (color.indexOf('rgb') === 0) {
+                    var numbers = color.replace('rgb', '').replace('a', '').replace('(', '').replace(')', '');
+                    var vals = numbers.split(',').map(function(v) {
+                        return v.trim();
+                    });
+
+                    if (vals.length === 4) {
+                        vals[3] = '1';
+                    } else if (vals.length === 3) {
+                        vals.push('1');
+                    }
+
+                    newVals = vals.join(', ');
+                }
+                //else {
+                //  TODO: support parsing hex code
+                //}
+                return 'rgba(' + newVals + ')';
+            }
+
+            /**
+             * @ngdoc method
+             * @name getPageTitle
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Get the title of the page (from shell state)
+             * @returns {string} page title
+             */
+            function getPageTitle() {
+                return shellState.pageTitle;
+            }
+
+            /**
+             * @ngdoc method
+             * @name toggleBrand
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Toggles the display of the brand in the shell
+             */
+            function toggleBrand() {
+                shellState.showBrand = !shellState.showBrand;
+                shellState.viewSettings[shellState.mediaMode].showBrand = shellState.showBrand;
+            }
+
+            /**
+             * @ngdoc method
+             * @name showBrand
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Turns on and off the display of the brand in the shell
+             * @param {boolean} onOff - if true brand is turned on, if false set as off
+             */
+            function showBrand(onOff) {
+                shellState.showBrand = (onOff === undefined) ? true : onOff;
+                shellState.viewSettings[shellState.mediaMode].showBrand = shellState.showBrand;
+            }
+
+            /**
+             * @ngdoc method
+             * @name setBrandHTML
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Sets the branding HTML.
+             * @param {string} html - branding html
+             * @param {object} viewScope - (optional) The scope to use when compiling the html as a template
+             */
+            function setBrandHTML(html, viewScope) {
+
+                shellState.brandHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;
+                shellState.viewSettings[shellState.mediaMode].brandHTML = shellState.brandHTML;
+
+                if (viewScope) {
+                    $timeout(function() {
+                        $compile(angular.element('#apptitle').contents())(viewScope);
+                    })
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name setBrandTarget
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Sets the branding target url.
+             * @param {string} target - url to follow when clicking on the brand
+             */
+            function setBrandTarget(target) {
+
+                shellState.brandTarget = target;
+                shellState.viewSettings[shellState.mediaMode].brandTarget = shellState.brandTarget;
+            }
+
+            /**
+             * @ngdoc method
+             * @name centerBrand
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Turns on and off the centering of the brand in the navbar
+             * @param {boolean} onOff - if true brand centering is turned on, if false set as off
+             */
+            function centerBrand(onOff) {
+                shellState.centerBrand = (onOff === undefined) ? true : onOff;
+                shellState.viewSettings[shellState.mediaMode].centerBrand = shellState.centerBrand;
+            }
+
+            /**
+             * @ngdoc method
+             * @name getBrandHTML
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Returns the branding html. (The html returned is compiled by $sce)
+             * @returns {string} brand html
+             */
+            function getBrandHTML() {
+                return shellState.brandHTML;
+            }
+
+            /**
+             * @ngdoc method
+             * @name getBrandTarget
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Returns the branding target. (The url followed when clicking on the brand link.)
+             * @returns {string} brand target
+             */
+            function getBrandTarget() {
+                return shellState.brandTarget;
+            }
+
+            /**
+             * @ngdoc method
+             * @name setFooterHTML
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Sets the footer HTML.
+             * @param {string} html - footer html
+             * @param {object} viewScope - (optional) The scope to use when compiling the html as a template
+             */
+            function setFooterHTML(html, viewScope) {
+                shellState.footerHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;
+                shellState.viewSettings[shellState.mediaMode].footerHTML = shellState.footerHTML;
+
+                if (viewScope) {
+                    $timeout(function() {
+                        $compile(angular.element('#footerElement').contents())(viewScope);
+                    });
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name getBrandHTML
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Returns the branding html. (The html returned is compiled by $sce)
+             * @returns {string} brand html
+             */
+            function getFooterHTML() {
+                return shellState.footerHTML;
+            }
+
+            /**
+             * @ngdoc method
+             * @name setFooterTarget
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Sets the footer target url.
+             * @param {string} target - url to follow when clicking on the footer
+             */
+            function setFooterTarget(target) {
+                shellState.footerTarget = target;
+                shellState.viewSettings[shellState.mediaMode].footerTarget = shellState.footerTarget;
+            }
+
+            /**
+             * @ngdoc method
+             * @name getFooterTarget
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Returns the footer target. (The url followed when clicking on the footer link.)
+             * @returns {string} footer target
+             */
+            function getFooterTarget() {
+                return shellState.footerTarget;
+            }
+
+            function notifyShellButtonsChanged(event) {
+                navbarButtons = _.sortBy(navbarButtons, function(btn) {
+                    return btn.index;
+                });
+                $rootScope.$emit(epShellConstants.SHELL_NAV_BUTTONS_CHANGED_EVENT, event);
+
+                $timeout(function() {
+                    $rootScope.$apply();
+                });
+            }
+
+            function suspend() {
+                shellState.suspend = true;
+            }
+
+            function resume() {
+                shellState.suspend = false;
+            }
+
+            /**
+             * @ngdoc method
+             * @name feedbackCallback
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Set the callback function for Feedback which is called after the feedback form is displayed
+             * and user data is entered. The applicatio will then do whatever it nneds to do to forward the
+             * feedback appropriately.
+             */
+            function feedbackCallback(fnOnFeedback) {
+                //set or get feedback callback function which will do actual submission of user data.
+                //Function must return a promise.
+                if (fnOnFeedback !== undefined) {
+                    shellState.fnOnFeedback = fnOnFeedback;
+                }
+                return shellState.fnOnFeedback;
+            }
+
+            /**
+             * @ngdoc method
+             * @name enableFeedback
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Enable the feedback button functionality (by default on, can be overriden by sysconfig)
+             * @param {bool} onOff - turn feature on / off
+             */
+            function enableFeedback(onOff) {
+                epShellConfig.options.enableFeedback = onOff;
+            }
+
+            /**
+             * @ngdoc method
+             * @name enableViewFeedback
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Enable the feedback button on current view
+             * @param {bool} onOff - turn feedback on / off on current view
+             */
+            function enableViewFeedback(onOff) {
+                if (epShellConfig.options.enableFeedback) {
+                    shellState.enableFeedback = onOff;
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name toggleViewFeedback
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Toggle the feedback button on current view
+             */
+            function toggleViewFeedback() {
+                if (epShellConfig.options.enableFeedback) {
+                    shellState.enableFeedback = !shellState.enableFeedback;
+                }
+            }
+
+            function notifyStateChanged(event) {
+                $rootScope.$emit(epShellConstants.SHELL_STATE_CHANGE_EVENT, event);
+            }
+
+            function notifySizeChanged(event) {
+                // use timeout to wait until the animation is complete before publishing the resize event
+                $timeout(function() {
+                    $rootScope.$emit(epShellConstants.SHELL_SIZE_CHANGE_EVENT, event);
+                }, 310);
+            }
+
+            /**
+             * @ngdoc method
+             * @name hideHomeButton
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Hide home button (can be overriden by viewcontainer options)
+             */
+            function hideHomeButton() {
+                if (shellState.showHomeButton) {
+                    shellState.showHomeButton = false;
+                    notifyShellButtonsChanged('hideHomeButton');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name showHomeButton
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Show home button (can be overriden by viewcontainer options)
+             */
+            function showHomeButton() {
+                if (!shellState.showHomeButton) {
+                    shellState.showHomeButton = true;
+                    notifyShellButtonsChanged('showHomeButton');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name hideLeftToggleButton
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Hide the left panel toggle button
+             */
+            function hideLeftToggleButton() {
+                if (shellState.showLeftToggleButton) {
+                    shellState.showLeftToggleButton = false;
+                    notifyShellButtonsChanged('hideLeftToggleButton');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name showLeftToggleButton
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Show the left panel toggle button
+             */
+            function showLeftToggleButton() {
+                if (!shellState.showLeftToggleButton) {
+                    shellState.showLeftToggleButton = true;
+                    notifyShellButtonsChanged('showLeftToggleButton');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name hideRightToggleButton
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Hide the right panel toggle button
+             */
+            function hideRightToggleButton() {
+                if (shellState.showRightToggleButton) {
+                    shellState.showRightToggleButton = false;
+
+                    notifyShellButtonsChanged('hideRightToggleButton');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name showLeftToggleButton
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Show the right panel toggle button
+             */
+            function showRightToggleButton() {
+                if (!shellState.showRightToggleButton) {
+                    shellState.showRightToggleButton = true;
+
+                    notifyShellButtonsChanged('showRightToggleButton');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name toggleLeftSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Toggle left side bar
+             */
+            function toggleLeftSidebar() {
+                shellState.showLeftSidebar = !shellState.showLeftSidebar;
+                shellState.viewSettings[shellState.mediaMode].showLeftSidebar = shellState.showLeftSidebar;
+                toggleLeftSidebarBackdrop();
+
+                notifySizeChanged(shellState.showLeftSidebar ? 'showLeftSidebar' : 'hideLeftSidebar');
+            }
+
+            /**
+             * @ngdoc method
+             * @name showLeftSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Show left side bar
+             */
+            function showLeftSidebar() {
+                if (!shellState.showLeftSidebar) {
+                    shellState.showLeftSidebar = true;
+                    shellState.viewSettings[shellState.mediaMode].showLeftSidebar = true;
+
+                    notifySizeChanged('showLeftSidebar');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name hideLeftSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Hide left side bar
+             */
+            function hideLeftSidebar() {
+                if (shellState.showLeftSidebar) {
+                    shellState.showLeftSidebar = false;
+                    shellState.viewSettings[shellState.mediaMode].showLeftSidebar = false;
+                    shellState.showViewContainerBackdrop = false;
+
+                    notifySizeChanged('hideLeftSidebar');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name disableLeftSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Disable left side bar
+             */
+            function disableLeftSidebar() {
+                if (shellState.enableLeftSidebar) {
+                    shellState.enableLeftSidebar = false;
+                    shellState.viewSettings.large.enableLeftSidebar = false;
+                    shellState.viewSettings.small.enableLeftSidebar = false;
+
+                    hideLeftSidebar();
+                    hideLeftToggleButton();
+                    notifyStateChanged('disableLeftSidebar');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name enableLeftSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Enable left side bar
+             */
+            function enableLeftSidebar() {
+                if (!shellState.enableLeftSidebar) {
+                    shellState.enableLeftSidebar = true;
+                    shellState.viewSettings.large.enableLeftSidebar = true;
+                    shellState.viewSettings.small.enableLeftSidebar = true;
+
+                    if (isMediaModeLarge()) {
+                        showLeftSidebar();
+                    }
+                    showLeftToggleButton();
+                    notifyStateChanged('enableLeftSidebar');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name executeLeftSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * get coordinates for the swipe event
+             */
+            function executeLeftSidebar(event) {
+                return event.touches[0].clientX;
+            }
+
+            /**
+             * @ngdoc method
+             * @name clearLeftSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Clear content of the left side bar
+             */
+            function clearLeftSidebar() {
+                epSidebarService.clearLeftSidebar();
+            }
+
+            /**
+             * @ngdoc method
+             * @name toggleRightSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Toggle the right side bar
+             */
+            function toggleRightSidebar() {
+                shellState.showRightSidebar = !shellState.showRightSidebar;
+                shellState.viewSettings[shellState.mediaMode].showRightSidebar = shellState.showRightSidebar;
+                toggleRightSidebarBackdrop();
+
+                notifySizeChanged(shellState.showRightSidebar ? 'showRightSidebar' : 'hideRightSidebar');
+
+            }
+
+            /**
+             * @ngdoc method
+             * @name showRightSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Show the right side bar
+             */
+            function showRightSidebar() {
+                if (!shellState.showRightSidebar) {
+                    shellState.showRightSidebar = true;
+                    shellState.viewSettings[shellState.mediaMode].showRightSidebar = true;
+
+                    notifyStateChanged('showRightSidebar');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name toggleLeftSidebarBackdrop
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Toggles backdrop on view container while toggling the left sidebar
+             */
+            function toggleLeftSidebarBackdrop() {
+                if (shellState.showLeftSidebar && getMediaMode() === epShellConstants.MEDIA_MODE_SMALL) {
+                    hideRightSidebar();
+                    shellState.showViewContainerBackdrop = true;
+                } else {
+                    if (!shellState.showRightSidebar) {
+                        shellState.showViewContainerBackdrop = false;
+                    }
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name toggleRightSidebarBackdrop
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Toggles backdrop on view container while toggling the right sidebar
+             */
+            function toggleRightSidebarBackdrop() {
+                if (shellState.showRightSidebar) {
+                    if (getMediaMode() === epShellConstants.MEDIA_MODE_SMALL) {
+                        hideLeftSidebar();
+                    }
+                    shellState.showViewContainerBackdrop = true;
+                } else {
+                    shellState.showViewContainerBackdrop = false;
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name hideRightSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Hide the right side bar
+             */
+            function hideRightSidebar() {
+                if (shellState.showRightSidebar) {
+                    shellState.showRightSidebar = false;
+                    shellState.viewSettings[shellState.mediaMode].showRightSidebar = false;
+                    shellState.showViewContainerBackdrop = false;
+
+                    notifySizeChanged('hideRightSidebar');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name disableRightSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Disable the right side bar
+             */
+            function disableRightSidebar() {
+                if (shellState.enableRightSidebar) {
+                    shellState.enableRightSidebar = false;
+                    shellState.viewSettings.large.enableRightSidebar = false;
+                    shellState.viewSettings.small.enableRightSidebar = false;
+
+                    hideRightSidebar();
+                    hideRightToggleButton();
+                    notifyStateChanged('disableRightSidebar');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name enableRightSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Enable the right side bar
+             */
+            function enableRightSidebar() {
+                if (!shellState.enableRightSidebar) {
+                    shellState.enableRightSidebar = true;
+                    shellState.viewSettings.large.enableRightSidebar = true;
+                    shellState.viewSettings.small.enableRightSidebar = true;
+
+                    showRightToggleButton();
+                    notifyStateChanged('enableRightSidebar');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name clearRightSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Clear the content of the right side bar
+             */
+            function clearRightSidebar() {
+                epSidebarService.clearRightSidebar();
+            }
+
+            /**
+             * @ngdoc method
+             * @name getShowLeftSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Returns visibility flag of left side bar
+             * @returns {boolean} true if left bar is visible
+             */
+            function getShowLeftSidebar() {
+                return shellState.showLeftSidebar;
+            }
+
+            /**
+             * @ngdoc method
+             * @name getShowRightSidebar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Returns visibility flag of right side bar
+             * @returns {boolean} true if right bar is visible
+             */
+            function getShowRightSidebar() {
+                return shellState.showRightSidebar;
+            }
+
+            /**
+             * @ngdoc method
+             * @name setLeftTemplate
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Set the left sidabar html
+             * @param {string} html - html of template to be loaded in left sidebar
+             */
+            function setLeftTemplate(html) {
+                epSidebarService.setLeftTemplate(html);
+            }
+
+            /**
+             * @ngdoc method
+             * @name setRightTemplate
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Set the right sidabar html
+             * @param {string} html - html of template to be loaded in right sidebar
+             */
+            function setRightTemplate(html) {
+                epSidebarService.setRightTemplate(html);
+            }
+
+            /**
+             * @ngdoc method
+             * @name setLeftTemplateUrl
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Set the left sidabar html
+             * @param {string} url - url of template to be loaded in left sidebar
+             */
+            function setLeftTemplateUrl(url) {
+                epSidebarService.setLeftTemplateUrl(url);
+            }
+
+            /**
+             * @ngdoc method
+             * @name setRightTemplateUrl
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Set the right sidabar html
+             * @param {string} url - url of template to be loaded in right sidebar
+             */
+            function setRightTemplateUrl(url) {
+                epSidebarService.setRightTemplateUrl(url);
+            }
+
+            /**
+             * @ngdoc method
+             * @name hideNavbar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Hide navigation bar
+             */
+            function hideNavbar() {
+                if (shellState.showNavbar) {
+                    shellState.showNavbar = false;
+                    notifyStateChanged('hideNavbar');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name showNavbar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Show navigation bar
+             */
+            function showNavbar() {
+                if (!shellState.showNavbar) {
+                    shellState.showNavbar = true;
+                    notifyStateChanged('showNavbar');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name toggleNavbar
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Toggle show/hide navigation bar
+             */
+            function toggleNavbar() {
+                if (!shellState.showNavbar) {
+                    shellState.showNavbar = true;
+                    notifyStateChanged('showNavbar');
+                } else {
+                    shellState.showNavbar = false;
+                    notifyStateChanged('hideNavbar');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name hideFooter
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Hide Footer
+             */
+            function hideFooter() {
+                if (shellState.showFooter) {
+                    shellState.showFooter = false;
+                    notifyStateChanged('hideFooter');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name showFooter
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Show Footer
+             */
+            function showFooter() {
+                if (!shellState.showFooter) {
+                    shellState.showFooter = true;
+                    notifyStateChanged('showFooter');
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name toggleFooter
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Toggle show/hide Footer
+             */
+            function toggleFooter() {
+                if (!shellState.showFooter) {
+                    shellState.showFooter = true;
+                    notifyStateChanged('showFooter');
+                } else {
+                    shellState.showFooter = false;
+                    notifyStateChanged('hideFooter');
+                }
+            }
+
+            //---------> Navbar Buttons--------------->>>>>>
+
+            /**
+             * @ngdoc method
+             * @name iterateNavbarButton
+             * @methodOf ep.shell.service:epShellService
+             * @private
+             * @description
+             * Iterate through buttons and call func(button, index). If func returns
+             * true, then notifyShellButtonsChanged(eventName) is called
+             * @param {array} arrIds - an array of button id's
+             * @param {string} eventName - event name passed to notifyShellButtonsChanged
+             * @param {function} func - function called for each matched button id
+             */
+            function iterateNavbarButton(arrIds, eventName, func) {
+                //you can pass one or more id's seperated by comma
+                var hasFound = false;
+                if (arrIds !== undefined) {
+                    _.each(arrIds, function(arg) {
+                        var idx = _.findIndex(navbarButtons, function(value) {
+                            return value.id === arg;
+                        });
+                        if (idx !== -1 && func(navbarButtons[idx], idx)) {
+                            hasFound = true;
+                        }
+                    });
+                }
+                if (hasFound) {
+                    notifyShellButtonsChanged(eventName);
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name clearNavbarButtons
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Clear (delete) navigation buttons
+             */
+            function clearNavbarButtons() {
+                navbarButtons = [];
+                notifyShellButtonsChanged('clearNavbarButtons');
+            }
+
+            /**
+             * @ngdoc method
+             * @name updateNavbarButtons
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Update navigation buttons. Old buttons are cleared.
+             * @param {array} buttons - an array of button objects
+             */
+            function updateNavbarButtons(buttons) {
+                navbarButtons = [];
+                addNavbarButtons(buttons);
+                notifyShellButtonsChanged('updateNavbarButtons');
+            }
+
+            /**
+             * @ngdoc method
+             * @name addNavbarButtons
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Add navigation buttons. They will be merged with existing buttons, but without duplication
+             */
+            function addNavbarButtons(buttons) {
+                if (!angular.isArray(buttons)) {
+                    buttons = [buttons];
+                }
+                var btns = _.union(navbarButtons, buttons);
+                btns.forEach(function(btn) {
+                    if (!btn.type) {
+                        btn.type = 'button';
+                    }
+                });
+                navbarButtons = _.uniq(btns, false, function(value) {
+                    return value.id || value.title;
+                });
+                notifyShellButtonsChanged('addNavbarButtons');
+            }
+
+            /**
+             * @ngdoc method
+             * @name deleteNavbarButton
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Delete navigation button(s). Buttons are removed from the list for matched button id's
+             * @param {object} buttons - an array/arguments of button id's
+             * @example
+             * deleteNavbarButton('myButton1', 'myButton2');
+             * deleteNavbarButton(['myButton1', 'myButton2']);
+             */
+            function deleteNavbarButton() {
+                var args = _.flatten(arguments, true);
+                iterateNavbarButton(args, 'deleteNavbarButton', function(b, idx) {
+                    navbarButtons.splice(idx, 1);
+                    return true;
+                });
+            }
+
+            /**
+             * @ngdoc method
+             * @name getNavbarButtons
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Return all navigation buttons - the current array of buttons is returned
+             * @returns {Array} array of button objects
+             */
+            function getNavbarButtons() {
+                return navbarButtons;
+            }
+
+            /**
+             * @ngdoc method
+             * @name getNavbarButton
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Return navigation button - for matched button id
+             * @returns {object} button object or null
+             */
+            function getNavbarButton(id) {
+                return _.find(navbarButtons, function(btn) {
+                    return btn.id === id;
+                });
+            }
+
+            /**
+             * @ngdoc method
+             * @name hideNavbarButton
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Hide navigation button(s). Buttons are hidden for matched button id's
+             * @param {object} buttons - an array/arguments of button id's
+             * @example
+             * hideNavbarButton('myButton1', 'myButton2');
+             * hideNavbarButton(['myButton1', 'myButton2']);
+             */
+            function hideNavbarButton() {
+                //you can pass one or more id's seperated by comma
+                var args = _.flatten(arguments, true);
+                iterateNavbarButton(args, 'hideNavbarButton', function(b) {
+                    b.hidden = true;
+                    return true;
+                });
+            }
+
+            /**
+             * @ngdoc method
+             * @name showNavbarButton
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Show navigation button(s). Buttons are made visible for matched button id's
+             * @param {object} buttons - an array/arguments of button id's
+             * @example
+             * showNavbarButton('myButton1', 'myButton2');
+             * showNavbarButton(['myButton1', 'myButton2']);
+             */
+            function showNavbarButton() {
+                //you can pass one or more id's seperated by comma
+                var args = _.flatten(arguments, true);
+                iterateNavbarButton(args, 'showNavbarButton', function(b) {
+                    if (b.fnVisible && angular.isFunction(b.fnVisible)) {
+                        b.hidden = !b.fnVisible();
+                    } else if (b.enabled && angular.isFunction(b.enabled)) {
+                        //Obsolete - enabled should not be used for show/hide!!!
+                        //Only temporary for EMA
+                        b.hidden = !b.enabled();
+                    } else {
+                        b.hidden = false;
+                    }
+                    return true;
+                });
+            }
+
+            /**
+             * @ngdoc method
+             * @name enableNavbarButton
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Enable navigation button(s). Buttons are made visible for matched button id's
+             * @param {object} buttons - an array/arguments of button id's
+             * @example
+             * enableNavbarButton('myButton1', 'myButton2');
+             * enableNavbarButton(['myButton1', 'myButton2']);
+             */
+            function enableNavbarButton() {
+                //you can pass one or more id's seperated by comma
+                var args = _.flatten(arguments, true);
+                iterateNavbarButton(args, 'enableNavbarButton', function(b) {
+                    b.enabled = true;
+                    return true;
+                });
+            }
+
+            /**
+             * @ngdoc method
+             * @name disableNavbarButton
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Disable navigation button(s). Buttons are made visible for matched button id's
+             * @param {object} buttons - an array/arguments of button id's
+             * @example
+             * disableNavbarButton('myButton1', 'myButton2');
+             * disableNavbarButton(['myButton1', 'myButton2']);
+             */
+            function disableNavbarButton() {
+                //you can pass one or more id's seperated by comma
+                var args = _.flatten(arguments, true);
+                iterateNavbarButton(args, 'disableNavbarButton', function(b) {
+                    b.enabled = false;
+                    return true;
+                });
+            }
+
+            /**
+             * @ngdoc method
+             * @name hideAllNavbarButtons
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Hide all navigation buttons. All user buttons in are made hidden in Navbar
+             */
+            function hideAllNavbarButtons() {
+                _.each(navbarButtons, function(btn) {
+                    hideNavbarButton(btn.id);
+                });
+                notifyShellButtonsChanged('hideNavbarButton');
+            }
+
+            /**
+             * @ngdoc method
+             * @name showAllNavbarButtons
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Show all navigation buttons. All user buttons in are made visible in Navbar
+             */
+            function showAllNavbarButtons() {
+                _.each(navbarButtons, function(btn) {
+                    showNavbarButton(btn.id);
+                });
+                notifyShellButtonsChanged('hideNavbarButton');
+            }
+
+            /**
+             * @ngdoc method
+             * @name disableNavbarButtons
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Disable/Enable all navigation buttons.
+             * @param {boolean} onOff - disable or enable flag
+             */
+            function disableNavbarButtons(onOff) {
+                shellState.freezeNavButtons = onOff;
+            }
+
+            /**
+             * @ngdoc method
+             * @name navbarButtonClicked
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Get the button that was clicked - it is available in the time interval between the mouse down and
+             * click events. Useful for 'on-blur' processing.
+             */
+            function navbarButtonClicked() {
+                return shellState.navButtonClicked;
+            }
+
+            //<<<<<--------------- Navbar Buttons --------------------------
+
+            /**
+             * @ngdoc method
+             * @name momentumScrollingEnabled
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Enable/disable momentum scrolling
+             * @param {boolean} onOff - disable or enable flag
+             */
+            function momentumScrollingEnabled(onOff) {
+                if (onOff !== undefined) {
+                    shellState.momentumScrollingEnabled = onOff;
+                }
+                return shellState.momentumScrollingEnabled;
+            }
+
+            /**
+             * @ngdoc method
+             * @name allowVerticalScroll
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Enable/disable vertical scrolling
+             * @param {boolean} onOff - disable or enable flag
+             */
+            function allowVerticalScroll(onOff) {
+                if (onOff !== undefined) {
+                    shellState.allowVerticalScroll = onOff;
+                }
+                return shellState.allowVerticalScroll;
+            }
+
+            /**
+             * @ngdoc method
+             * @name viewAnimation
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Set the current route to view animation
+             * @param {string} animation - current animation route
+             */
+            function viewAnimation(animation) {
+                if (animation !== undefined) {
+                    shellState.viewAnimation = epShellConfig.options.enableViewAnimations ? animation : '';
+                }
+                return shellState.viewAnimation;
+            }
+
+            /**
+             * @ngdoc method
+             * @name getViewDimensions
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Get current view dimensions
+             */
+            function getViewDimensions() {
+                return shellState.viewDimensions;
+            }
+
+            /**
+             * @ngdoc method
+             * @name isHomeLocation
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Returns true if we are on home location
+             */
+            function isHomeLocation() {
+                return (epShellConfig.homeRoute && epShellConfig.homeRoute.route === $location.url());
+            }
+
+            /**
+             * @ngdoc method
+             * @name goHome
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Go to home location
+             */
+            function goHome() {
+                if (epShellConfig.homeRoute) {
+                    $location.url(epShellConfig.homeRoute.route);
+                }
+            }
+
+            initialize();
+
+            return {
+                // --- For internal module usage only --->
+                __state: shellState,
+                __setCurrentModeFlags: setCurrentModeFlags,
+                __viewSettings: viewSettings,
+                // <-------------------------------------------
+                init: init,
+                saveState: saveState,
+                restoreState: restoreState,
+                // Progress Indicator
+                showProgressIndicator: showProgressIndicator,
+                hideProgressIndicator: hideProgressIndicator,
+                resetProgressIndicator: resetProgressIndicator,
+                // Events
+                registerViewEvent: registerViewEvent,
+                cleanupViewEvents: cleanupViewEvents,
+                notifyStateChanged: notifyStateChanged,
+                notifyShellButtonsChanged: notifyShellButtonsChanged,
+                notifySizeChanged: notifySizeChanged,
+                // General Settings
+                setPageTitle: setPageTitle,
+                initViewBackground: initViewBackground,
+                getPageTitle: getPageTitle,
+                toggleBrand: toggleBrand,
+                showBrand: showBrand,
+                setBrandHTML: setBrandHTML,
+                getBrandHTML: getBrandHTML,
+                setBrandTarget: setBrandTarget,
+                getBrandTarget: getBrandTarget,
+                centerBrand: centerBrand,
+                setInfo: setInfo,
+                clearInfo: clearInfo,
+                suspend: suspend,
+                resume: resume,
+                getMediaMode: getMediaMode,
+                isMediaModeLarge: isMediaModeLarge,
+                getViewDimensions: getViewDimensions,
+                momentumScrollingEnabled: momentumScrollingEnabled,
+                allowVerticalScroll: allowVerticalScroll,
+                themingDisabled: themingDisabled,
+                enableFeedback: enableFeedback,
+                enableViewFeedback: enableViewFeedback,
+                toggleViewFeedback: toggleViewFeedback,
+                feedbackCallback: feedbackCallback,
+                showHomeButton: showHomeButton,
+                hideHomeButton: hideHomeButton,
+                //Sidebar functions
+                hideLeftToggleButton: hideLeftToggleButton,
+                showLeftToggleButton: showLeftToggleButton,
+                hideRightToggleButton: hideRightToggleButton,
+                showRightToggleButton: showRightToggleButton,
+                toggleLeftSidebar: toggleLeftSidebar,
+                showLeftSidebar: showLeftSidebar,
+                hideLeftSidebar: hideLeftSidebar,
+                disableLeftSidebar: disableLeftSidebar,
+                enableLeftSidebar: enableLeftSidebar,
+                clearLeftSidebar: clearLeftSidebar,
+                toggleRightSidebar: toggleRightSidebar,
+                showRightSidebar: showRightSidebar,
+                hideRightSidebar: hideRightSidebar,
+                enableRightSidebar: enableRightSidebar,
+                disableRightSidebar: disableRightSidebar,
+                clearRightSidebar: clearRightSidebar,
+                getShowLeftSidebar: getShowLeftSidebar,
+                getShowRightSidebar: getShowRightSidebar,
+                setLeftTemplate: setLeftTemplate,
+                setRightTemplate: setRightTemplate,
+                setLeftTemplateUrl: setLeftTemplateUrl,
+                setRightTemplateUrl: setRightTemplateUrl,
+                executeLeftSidebar: executeLeftSidebar,
+                //Navigation bar functions
+                showNavbar: showNavbar,
+                hideNavbar: hideNavbar,
+                toggleNavbar: toggleNavbar,
+                //Footer
+                showFooter: showFooter,
+                hideFooter: hideFooter,
+                toggleFooter: toggleFooter,
+                setFooterHTML: setFooterHTML,
+                getFooterHTML: getFooterHTML,
+                setFooterTarget: setFooterTarget,
+                getFooterTarget: getFooterTarget,
+                //Nav Buttons
+                clearNavbarButtons: clearNavbarButtons,
+                updateNavbarButtons: updateNavbarButtons,
+                addNavbarButtons: addNavbarButtons,
+                deleteNavbarButton: deleteNavbarButton,
+                getNavbarButtons: getNavbarButtons,
+                getNavbarButton: getNavbarButton,
+                showNavbarButton: showNavbarButton,
+                hideNavbarButton: hideNavbarButton,
+                showAllNavbarButtons: showAllNavbarButtons,
+                hideAllNavbarButtons: hideAllNavbarButtons,
+                enableNavbarButton: enableNavbarButton,
+                disableNavbarButton: disableNavbarButton,
+                disableNavbarButtons: disableNavbarButtons,
+                navbarButtonClicked: navbarButtonClicked,
+                viewAnimation: viewAnimation,
+                isHomeLocation: isHomeLocation,
+                goHome: goHome,
+                toggleLeftSidebarBackdrop: toggleRightSidebarBackdrop,
+                toggleRightSidebarBackdrop: toggleRightSidebarBackdrop
+            };
+        }]
+    );
 })();
 
 /**
@@ -14879,7 +17624,7 @@ angular.module('ep.record.editor').
                     // this event is bound programmatically so that it doesn't
                     // participate in the ng-click lifecycle (which causes sporadic
                     // problems with click events on child elements)
-                    $('#viewPlaceholder').bind('click', dismissSidebars);
+                    $('#viewContainerBackdrop').bind('click', dismissSidebars);
                 }
 
                 $rootScope.$watch('initComplete', function(initComplete) {
@@ -14960,7 +17705,7 @@ angular.module('ep.shell').service('epSidebarService', [
              setLeftTemplateUrl: setLeftTemplateUrl,
              setRightTemplateUrl: setRightTemplateUrl,
              setLeftTemplate: setLeftTemplate,
-             setRightTemplate: setRightTemplate,
+             setRightTemplate: setRightTemplate
          };
      }
 ]);
@@ -14971,17 +17716,116 @@ angular.module('ep.shell').service('epSidebarService', [
  * @restrict E
  *
  * @description
- * Represents the shell view container directive.
+ * This represents the view containers that are used to display content inside of the shell.  The following properties
+ * can be used to control the behavior of the view declaratively.
+ *
+ * @property {object} sidebarsettings:object
+ *  This property will allow you to designate a left or right sidebar template URL.
+ *  <br/><br/>
+ *  sidebarsettings='{"left": {"templateUrl": "/home-lsidebar.html"}, "right": {"templateUrl": "/home-rsidebar.html"}'
+
+ * @property {object} smallmodesettings:object
+ *  This property will allow you to designate options on how the view behaves in small mode (800px or below).
+ *  <br/><br/>
+ *  smallmodesettings='{[mode setting options]}'
+
+ * @property {object} largemodesettings:object
+ *  This property will allow you to designate options on how the view behaves in large mode (800px or above).
+ *  <br/><br/>
+ *  largemodesettings='{[mode setting options]}'
+
+ * @property {boolean} modesetting:enableLeftSidebar:boolean
+ * This mode setting controls whether the left sidebar will be shown in the view.
+ *  <br/><br/>
+ *  smallmodesettings='{"enableLeftSidebar"=true/false}'
+ *  <br/>
+ *  largemodesettings='{"enableLeftSidebar"=true/false}'
+
+ * @property {boolean} modesetting:enableRightSidebar:boolean
+ * This mode setting controls whether the right sidebar will be shown in the view.
+ *  <br/><br/>
+ *  smallmodesettings='{"enableRightSidebar"=true/false}'
+ *  <br/>
+ *  largemodesettings='{"enableRightSidebar"=true/false}'
+
+ * @property {boolean} modesetting:autoActivateSidebar:boolean
+ * This mode setting controls whether the left sidebar will be automatically shown in the view in large mode (800px or above).
+ *  <br/><br/>
+ *  largemodesettings='{"autoActivateSidebar"=true/false}'
+
+ * @property {boolean} modesetting:showNavbar:boolean
+ * This mode setting controls whether the navigation bar will be shown in the view.
+ *  <br/><br/>
+ *  smallmodesettings='{"showNavbar"=true/false}'
+ *  <br/>
+ *  largemodesettings='{"showNavbar"=true/false}'
+
+ * @property {boolean} modesetting:showHomeButton:boolean
+ * This mode setting controls whether the home button will be shown on the navigation bar.
+ *  <br/><br/>
+ *  smallmodesettings='{"showHomeButton"=true/false}'
+ *  <br/>
+ *  largemodesettings='{"showHomeButton"=true/false}'
+
+ * @property {boolean} modesetting:showBrand:boolean
+ * This mode setting controls whether the brand text will be shown on the navigation bar.
+ *  <br/><br/>
+ *  smallmodesettings='{"showBrand"=true/false}'
+ *  <br/>
+ *  largemodesettings='{"showBrand"=true/false}'
+
+ * @property {boolean} modesetting:centerBrand:boolean
+ * This mode setting controls what brand text will be in the center of the view on the navigation bar.
+ *  <br/><br/>
+ *  smallmodesettings='{"centerBrand"=true/false}'
+ *  <br/>
+ *  largemodesettings='{"centerBrand"=true/false}'
+
+ * @property {boolean} modesetting:animateViewContainer:boolean
+ * This mode setting controls whether the view will participate in the animation.
+ *  <br/><br/>
+ *  smallmodesettings='{"animateViewContainer"=true/false}'
+ *  <br/>
+ *  largemodesettings='{"animateViewContainer"=true/false}'
+
+ * @property {boolean} modesetting:allowVerticalScroll:boolean
+ * This mode setting controls whether the view will allow vertical scrolling beyond the displayed content.
+ *  <br/><br/>
+ *  smallmodesettings='{"allowVerticalScroll"=true/false}'
+ *  <br/>
+ *  largemodesettings='{"allowVerticalScroll"=true/false}'
+
+ * @property {string} modesetting:animationIn:string
+ * This mode setting sets an animation to the page when it is displayed. Allowed valued are slide-left, slide-right, slide-up and slide-down
+ *  <br/><br/>
+ *  smallmodesettings='{"animationIn"="slide-left/slide-right/slide-up/slide-down/fade-in"}'
+ *  <br/>
+ *  largemodesettings='{"animationIn"="slide-left/slide-right/slide-up/slide-down/fade-in"}'
+
+ * @property {string} modesetting:animationOut:string
+ * This mode setting sets an animation to the page when it goes off from display. Allowed valued are slide-left, slide-right, slide-up and slide-down
+ *  <br/><br/>
+ *  smallmodesettings='{"animationOut"="slide-left/slide-right/slide-up/slide-down/fade-out"}'
+ *  <br/>
+ *  largemodesettings='{"animationOut"="slide-left/slide-right/slide-up/slide-down/fade-out"}'
+
+ * @property {string} modesetting:animationSpeed:string
+ * This mode setting sets an animation speed. Allowed valued are 250, 500, 750, 1000, 1250. All values are in milliseconds
+ *  <br/><br/>
+ *  smallmodesettings='{"animationSpeed"="250/500/750/1000/1250"}'
+ *  <br/>
+ *  largemodesettings='{"animationSpeed"="250/500/750/1000/1250"}'
+
  */
 (function() {
     'use strict';
 
     angular.module('ep.shell').directive('epShellViewContainer',
         /*ngInject*/
-        ['$log', '$parse', '$rootScope', '$timeout', 'epShellService', 'epSidebarService', 'epViewContainerService', 'epShellConstants', function($log, $parse, $rootScope, $timeout, epShellService, epSidebarService,
-            epViewContainerService, epShellConstants) {
+        ['$location', '$log', '$parse', '$rootScope', '$timeout', 'epShellService', 'epSidebarService', 'epViewContainerService', 'epShellConstants', 'epViewCacheService', function($location, $log, $parse, $rootScope, $timeout, epShellService, epSidebarService,
+            epViewContainerService, epShellConstants, epViewCacheService) {
 
-            function setSidebarSettings(sidebar, scope, updateIfChanged) {
+            function setSidebarSettings(sidebar, updateIfChanged) {
                 if (sidebar.left) {
                     if (sidebar.left.template) {
                         epSidebarService.setLeftTemplate(sidebar.left.template, updateIfChanged);
@@ -15039,11 +17883,16 @@ angular.module('ep.shell').service('epSidebarService', [
                     var currentMode = '';
                     return {
                         pre: function($scope, $elem, $attrs) {
-                            var shellState = epShellService.__state;
-                            $scope.state = shellState;
+                            $scope.state = epShellService.__state;
                             epShellService.clearInfo();
+                            // media mode is either "large" or "small" depending on the horizontal resolution
+                            // by default the breakpoint is @ 800px
                             currentMode = epShellService.getMediaMode();
+
+                            // Share scope with the current sidebar
                             epSidebarService.setScope($scope);
+
+                            // parse the setting that control the view and sidebar
                             var viewSettings = {
                                 sidebar: $scope.sidebarsettings ? JSON.parse($scope.sidebarsettings) : {},
                                 small: $scope.smallmodesettings ? JSON.parse($scope.smallmodesettings) : {},
@@ -15052,15 +17901,23 @@ angular.module('ep.shell').service('epSidebarService', [
                             viewSettings = epShellService.__viewSettings(viewSettings);
 
                             if (viewSettings[currentMode]) {
-                                epShellService.__setCurrentModeFlags();
+                                epShellService.__setCurrentModeFlags($scope);
                             }
+
                             if (viewSettings.sidebar) {
-                                setSidebarSettings(viewSettings.sidebar, $scope);
+                                setSidebarSettings(viewSettings.sidebar, false);
                             }
+
+                            //setting classes for animation in and out
+                            $scope.state.animationIn = 'ep-' + $scope.state.animationIn + '-in';
+                            $scope.state.animationOut = 'ep-' + $scope.state.animationOut + '-out';
+                            //setting animation speed to ng-view dynamically
+                            $scope.state.animationSpeed = $scope.state.animationSpeed || '500';
 
                             if (epViewContainerService.state.cleanup) {
                                 epViewContainerService.state.cleanup();
                             }
+
                             epViewContainerService.state.cleanup =
                                 $rootScope.$on(epShellConstants.SHELL_STATE_CHANGE_EVENT, function() {
                                     if (currentMode !== epShellService.getMediaMode()) {
@@ -15069,13 +17926,36 @@ angular.module('ep.shell').service('epSidebarService', [
                                             epShellService.__setCurrentModeFlags();
                                         }
                                         if (viewSettings.sidebar) {
-                                            setSidebarSettings(viewSettings.sidebar, $scope, true);
+                                            setSidebarSettings(viewSettings.sidebar, true);
                                         }
                                         $timeout(function() {
                                             $scope.$apply();
                                         });
                                     }
                                 });
+                            function bindButtonAttributes(scope, def) {
+                                // wire up the "action" function on the view's controller
+                                bindScopeProperty(scope, def, 'action', false);
+                                // wire up the "confirm" function, if it exists.
+                                bindScopeProperty(scope, def, 'confirm', false);
+                                // The "hidden" property is evaluated immediately
+                                bindScopeProperty(scope, def, 'hidden', true);
+                                // The "enabled" property is also evaluated immediately.
+                                bindScopeProperty(scope, def, 'enabled', true);
+                            }
+                            function configureButton(scope, def) {
+                                if (!def.type) {
+                                    def.type = 'button';
+                                }
+                                if (scope && def.type === 'button') {
+                                    bindButtonAttributes(scope, def);
+                                } else if (scope && def.type === 'select' && def.option && def.options.length) {
+                                    // Wire up the options
+                                    def.options.forEach(function(optBtn) {
+                                        configureButton(scope, optBtn);
+                                    });
+                                }
+                            }
                             var buttonDefs = Object.keys($attrs).filter(function(key) {
                                 return key.indexOf('btn') === 0;
                             }).map(function(key) {
@@ -15090,20 +17970,10 @@ angular.module('ep.shell').service('epSidebarService', [
                                 if (!def.id) {
                                     def.id = key;
                                 }
-
-                                var viewScope = $scope.$parent;
-                                if (viewScope) {
-                                    // wire up the "action" function on the view's controller
-                                    bindScopeProperty(viewScope, def, 'action', false);
-                                    // wire up the "confirm" function, if it exists.
-                                    bindScopeProperty(viewScope, def, 'confirm', false);
-                                    // The "hidden" property is evaluated immediately
-                                    bindScopeProperty(viewScope, def, 'hidden', true);
-                                    // The "enabled" property is also evaluated immediately.
-                                    bindScopeProperty(viewScope, def, 'enabled', true);
-                                }
+                                configureButton($scope.$parent, def);
                                 return def;
                             });
+
                             if (buttonDefs.length) {
                                 epShellService.updateNavbarButtons(buttonDefs);
                             }
@@ -15112,12 +17982,79 @@ angular.module('ep.shell').service('epSidebarService', [
                                 $rootScope.$emit(epShellConstants.SHELL_VIEW_CHANGE_EVENT, viewSettings);
                             });
                         },
-                        post: function() {
+                        post: function($scope) {
+                            $scope.showFromCache = true;
+                            $scope.cacheKey = $location.url().replace('/', '-');
+                            $scope.hasCacheKey = epViewCacheService.hasCachedView($scope.cacheKey);
+                            if ($scope.showFromCache) {
+                                var unBind = $rootScope.$on('$routeChangeStart', function(event, newRoute, oldRoute) {
+                                    if ($scope.showFromCache && oldRoute) {
+                                        $scope.cacheKey = oldRoute.$$route.originalPath.replace('/', '-');
+                                        epViewCacheService.addViewToCache($scope.cacheKey,
+                                            '#viewTemplate', oldRoute.scope);
+                                    }
+                                    unBind();
+                                });
+                            }
                         }
                     };
                 }
             };
-        }]);
+        }]).factory('epViewCacheService',
+        /*ngInject*/
+        function epViewCacheService() {
+            var viewCache = {};
+
+            function addViewToCache(key, selector, scope) {
+                var nodeSource = $(selector);
+                if (nodeSource.length) {
+                    viewCache[key] = {node: nodeSource, scope: scope};
+                }
+            }
+
+            function removeViewFromCache(key) {
+                delete viewCache[key];
+            }
+
+            function getViewFromCache(key) {
+                return viewCache[key];
+            }
+
+            function hasCachedView(key) {
+                return !!viewCache[key];
+            }
+
+            return {
+                addViewToCache: addViewToCache,
+                removeViewFromCache: removeViewFromCache,
+                getViewFromCache: getViewFromCache,
+                hasCachedView: hasCachedView
+            }
+        })
+        .directive('epCachedView',
+            /*ngInject*/
+            ['$rootScope', '$timeout', '$compile', 'epViewCacheService', function epCachedView($rootScope, $timeout, $compile, epViewCacheService) {
+                /*@ngInject*/
+                epCachedViewController.$inject = ['$scope'];
+                function epCachedViewController($scope) {
+                    var cache = epViewCacheService.getViewFromCache($scope.key);
+                    $timeout(function() {
+                        var targetNode = $('#epCacheTarget-' + $scope.key);
+                        cache.scope.hasCacheKey = false;
+                        var content = $compile(cache.node)(cache.scope);
+                       targetNode.replaceWith(content);
+                    });
+                }
+                return {
+                    restrict: 'E',
+                    replace: true,
+                    controller: epCachedViewController,
+                    template: '<div class="ep-fullscreen" id="epCacheTarget-{{key}}"></div>',
+                    scope: {
+                        key: '='
+                    }
+                }
+            }]);
 })();
 
 /**
@@ -15254,16 +18191,16 @@ angular.module('ep.signature').directive('epSignature',
 
         function drawText(ctx, text, x, y) {
             if (text) {
+                ctx.strokeText(text, x, y);
                 ctx.fillText(text, x, y);
             }
         }
 
         // Adds the text ($scope.ulText, $scope.llText, etc) to the corners of the canvas
-        function stampText($scope) {
-            var canvas = $('canvas');
-            var ctx = canvas[0].getContext('2d');
-            var canvasHeight = canvas.attr('height');
-            var canvasWidth = canvas.attr('width');
+        function stampText($scope, $canvas) {
+            var ctx = $canvas[0].getContext('2d');
+            var canvasHeight = $canvas.attr('height');
+            var canvasWidth = $canvas.attr('width');
             ctx.shadowColor = '';
             ctx.shadowOffsetX = 0;
             ctx.shadowOffsetY = 0;
@@ -15290,18 +18227,20 @@ angular.module('ep.signature').directive('epSignature',
             drawText(ctx, lrTxt, lrx, lry);
         }
 
-        function resizeCanvasToDataUrl($canvas, width, height) {
+        function resizeCanvasToDataUrl($scope, $canvas) {
             var deferred = $q.defer();
-
+            var width = $scope.imageSizeWidth;
+            var height = $scope.imageSizeHeight;
             var workingImg = new Image();
             workingImg.onload = function() {
                 var workingCanvas = $document[0].createElement('canvas');
                 workingCanvas.width = width;
                 workingCanvas.height = height;
                 var workingCtx = workingCanvas.getContext('2d');
-                workingCtx.fillStyle = "#fff";
+                workingCtx.fillStyle = '#fff';
                 workingCtx.fillRect(0, 0, width, height);
                 workingCtx.drawImage(workingImg, 0, 0, width, height);
+                stampText($scope, $(workingCanvas));
                 deferred.resolve(workingCanvas.toDataURL('image/jpeg', 1.0));
             };
             workingImg.onerror = function(err) {
@@ -15344,7 +18283,7 @@ angular.module('ep.signature').directive('epSignature',
                     $scope.isEnabled = false;
                     $scope.drawText = true;
                     $timeout(function() {
-                        stampText($scope);
+
                         var $canvas = $('canvas.jSignature');
                         var canvas = $canvas[0];
                         if ($scope.imageSizeWidth || $scope.imageSizeHeight) {
@@ -15361,11 +18300,12 @@ angular.module('ep.signature').directive('epSignature',
                             } else if ($scope.imageSizeHeight && !$scope.imageSizeWidth) {
                                 $scope.imageSizeWidth = Math.floor($scope.imageSizeHeight * currentAspect);
                             }
-                            resizeCanvasToDataUrl($canvas, $scope.imageSizeWidth, $scope.imageSizeHeight).then(
+                            resizeCanvasToDataUrl($scope, $canvas).then(
                                 function(dataUrl) {
                                     $scope.onAccept(dataUrl.replace('data:image/jpeg;base64,', ''));
                                 });
                         } else {
+                            stampText($scope, $canvas);
                             $scope.onAccept(canvas.toDataURL('image/jpeg', 1.0).replace('data:image/jpeg;base64,', ''));
                         }
 
@@ -15744,7 +18684,6 @@ angular.module('ep.signature').directive('epSignature',
     function($scope) {
 
         $scope.isLoading = true;
-        $scope.isStriped = $scope.striped ? JSON.parse($scope.striped.toLowerCase()) : '';
         $scope.headers = $scope.columnHeaders ? $scope.columnHeaders.split(',')
             .map(function(c) { return c.trim(); }) : [];
         $scope.colCount = $scope.headers.length;
@@ -15758,7 +18697,7 @@ angular.module('ep.signature').directive('epSignature',
                 $scope.data.forEach(function(dr) { dr.$isSelected = false; });
                 row.$isSelected = true;
                 if ($scope.onSelectRow) {
-                    $scope.onSelectRow({ '$selectedRow': row, '$event': $event });
+                    $scope.onSelectRow({ 'row': row, '$event': $event });
                 }
             }
         };
@@ -15770,6 +18709,11 @@ angular.module('ep.signature').directive('epSignature',
                 $scope.selectRow($scope.data[0]);
             }
         });
+        $scope.onDblClick = function(row, $event) {
+            if ($scope.data && $scope.data.length && $scope.onDoubleClickRow) {
+                $scope.onDoubleClickRow({ 'row': row, '$event': $event });
+            }
+        };
     }
     ]);
 })();
@@ -15793,12 +18737,13 @@ angular.module('ep.signature').directive('epSignature',
             restrict: 'E',
             replace: true,
             scope: {
-                trackSelectedRow: '@',
                 data: '=',
                 columnHeaders: '@',
                 columnProperties: '@',
-                striped: '@',
-                onSelectRow: '&'
+                trackSelectedRow: '=',
+                striped: '=',
+                onSelectRow: '&',
+                onDoubleClickRow: '&',
             },
             controller: 'epTableCtrl',
             templateUrl: 'src/components/ep.table/table.html'
@@ -15875,6 +18820,17 @@ angular.module('ep.signature').directive('epSignature',
             * @propertyOf ep.theme.object:epThemeConfig
             * @public
             * @description
+            * The path to theme override css files. The override for each theme has to be located
+            * in this fiolder and have name <original theme file name>_custom.css
+            */
+            customPath: '',
+
+            /**
+            * @ngdoc property
+            * @name themes
+            * @propertyOf ep.theme.object:epThemeConfig
+            * @public
+            * @description
             * Represents the collection of available themes
             */
             themes: [
@@ -15930,18 +18886,22 @@ angular.module('ep.signature').directive('epSignature',
         //The $get is called automatically when AngularJS encounters a DI.
         //
         //we use the epSysConfig provider to perform the $http read against sysconfig.json
-        this.$get = ['epSysConfig', function(epSysConfig) {
-            epSysConfig.mergeSection('ep.theme', config);
+        this.$get = ['epSysConfig', 'epApplicationConfig', function(epSysConfig, epApplicationConfig) {
+            var sysCfg = epSysConfig.mergeSection('ep.theme', config);
             if (config.defaultPath === 'emf') {
-                config.defaultPath = '../lib/bower/emf/assets/css/themes';
-                config.themes = assetsThemes;
+                var libPath = epApplicationConfig.libPath ? epApplicationConfig.libPath : './lib';
+                config.defaultPath = libPath + '/bower/emf/assets/css/themes';
+                if (!angular.isArray(sysCfg.themes) || sysCfg.themes.length < 1) {
+                    //set to default fukll list of themes only if no themes were provided
+                    config.themes = assetsThemes;
+                }
             }
             if (config.appendThemes && angular.isArray(config.appendThemes)) {
                 //append extra themes
                 angular.forEach(config.appendThemes, function(th) {
                     var old = _.find(config.themes, function(t) { return t.name === th.name; });
                     if (old) {
-                        old.cssFilename = th.cssFilename;
+                        old.cssFilename = th.cssFilename || old.cssFilename;
                     } else {
                         config.themes.push(th);
                     }
@@ -15970,14 +18930,27 @@ angular.module('ep.signature').directive('epSignature',
     'epThemeService',
     'epThemeConstants',
     function($log, $rootScope, epThemeService, epThemeConstants) {
-        function setHref(attr) {
+        function setHref(attr, element) {
+            var href = '';
+            var th;
             if (epThemeService.disableTheming() !== true) {
-                var th = epThemeService.theme();
-                if (th && (attr.href !== th.cssPath)) {
-                    attr.$set('href', th.cssPath);
+                th = epThemeService.theme();
+                if (th) {
+                    href = th.cssPath;
                 }
-            } else {
-                attr.$set('href', '');
+            }
+            if (attr.href !== href) {
+                attr.$set('href', href);
+                angular.element('#epThemeCustomHref').remove();
+                if (th) {
+                    var hrefCustom = epThemeService.getCustomThemeCss(th);
+                    if (hrefCustom) {
+                        var customEl =
+                            angular.element('<link id="epThemeCustomHref" rel="stylesheet" type="text/css" href="' +
+                            hrefCustom + '" />');
+                        customEl.insertAfter(element);
+                    }
+                }
             }
         }
         return {
@@ -15986,13 +18959,13 @@ angular.module('ep.signature').directive('epSignature',
             link: function(scope, element, attr) {
                 if (element[0].tagName === 'LINK') {
                     epThemeService.initialize(false).then(function() {
-                        setHref(attr);
+                        setHref(attr, element);
                     });
                     $rootScope.$on(epThemeConstants.THEME_CHANGE_EVENT, function() {
-                        setHref(attr);
+                        setHref(attr, element);
                     });
                     $rootScope.$on(epThemeConstants.STATE_CHANGE_EVENT, function() {
-                        setHref(attr);
+                        setHref(attr, element);
                     });
                 } else {
                     $log.warn('ep-theme-href can only be used on an <link> tag');
@@ -16049,6 +19022,7 @@ angular.module('ep.signature').directive('epSignature',
         var _theme;
         var _themes;
         var _initialized;
+        var _initializedProvider;
         var _defaultTheme;
 
         /**
@@ -16065,33 +19039,33 @@ angular.module('ep.signature').directive('epSignature',
             if ((!_initialized || refresh) && epThemeConfig.disableTheming !== true) {
                 _initialized = true;
 
-                var curTheme = isPersisting() ? epLocalStorageService.get(_localStorageId) : _theme;
-
+                var storedTheme = epLocalStorageService.get(_localStorageId);
                 var provider = epThemeConfig.provider;
                 if (provider && provider !== 'sysconfig' && sysconfig !== true) {
                     try {
                         var customProvider = epUtilsService.getService(provider);
-                        var th = customProvider.getThemes(refresh);
-                        if (th.then) {
-                            th.then(function(themes) {
-                                if (!themes || themes.length === 0) {
-                                    _initialized = false;
-                                } else {
-                                    _themes = themes;
-                                    setItemsFullPath();
-                                    theme(curTheme);
+
+                        var th = $q.when(customProvider.getThemes(refresh));
+                        th.then(function(themes) {
+                            if (!themes || themes.length === 0) {
+                                _initialized = false;
+                            } else {
+                                if (!_initializedProvider) {
+                                    _initializedProvider = true;
+                                    init(themes);
                                 }
-                            });
-                            return th;
-                        } else {
-                            _themes = th;
-                        }
+                                _themes = themes;
+                                setItemsFullPath();
+                                theme(isPersisting() ? storedTheme : _theme);
+                            }
+                        });
+                        return th;
                     } catch (e) {
                         $log.warn('Custom themes provider not found or failed: ' + provider);
                     }
                 }
                 setItemsFullPath();
-                theme(curTheme);
+                theme(isPersisting() ? storedTheme : _theme);
             }
             var deferred = $q.defer();
             deferred.resolve(_themes);
@@ -16137,7 +19111,9 @@ angular.module('ep.signature').directive('epSignature',
             if (newTheme) {
                 var _old = _theme;
                 var _key = angular.isObject(newTheme) ? newTheme.name : newTheme;
-                _theme = _.find(_themes, function(t) { return t.name.toLowerCase() === _key.toLowerCase(); });
+                if (_key) {
+                    _theme = _.find(_themes, function(t) { return t.name.toLowerCase() === _key.toLowerCase(); });
+                }
 
                 // if the one that is set is not found then default it back
                 if (!_theme) {
@@ -16209,6 +19185,28 @@ angular.module('ep.signature').directive('epSignature',
 
         /**
         * @ngdoc method
+        * @name theme
+        * @methodOf ep.theme.service:epThemeService
+        * @public
+        * @param {object} theme - theme item or theme name to set. Can be omiited to return current
+        * @description
+        * sets the theme by name. Upon change epThemeConstants.THEME_CHANGE_EVENT is broadcasted
+        * returns current theme
+        */
+        function getCustomThemeCss(theme) {
+            if (epThemeConfig.customPath) {
+                var key = angular.isObject(theme) ? theme.name : theme;
+                var th = getTheme(key);
+                if (th) {
+                    var customFile = th.cssFilename.replace('.css', '.custom.css');
+                    return getFilePath(epThemeConfig.customPath, customFile);
+                }
+            }
+            return '';
+        }
+
+        /**
+        * @ngdoc method
         * @name setItemsFullPath
         * @methodOf ep.theme.service:epThemeService
         * @private
@@ -16223,6 +19221,29 @@ angular.module('ep.signature').directive('epSignature',
 
         /**
         * @ngdoc method
+        * @name getFilePath
+        * @methodOf ep.theme.service:epThemeService
+        * @private
+        * @description
+        * Gets full path
+        */
+        function getFilePath(path, fileName) {
+            var ret = '';
+            var p = path;
+            if (p && fileName) {
+                p = p.trim();
+                if (p.lastIndexOf('/') === p.length - 1) {
+                    p = p.substr(0, p.length - 1);
+                }
+                ret = p + '/' + fileName;
+            } else {
+                ret = fileName;
+            }
+            return ret;
+        }
+
+        /**
+        * @ngdoc method
         * @name setItemFullPath
         * @methodOf ep.theme.service:epThemeService
         * @private
@@ -16230,16 +19251,7 @@ angular.module('ep.signature').directive('epSignature',
         * Sets full path to cssPath property to given item
         */
         function setItemFullPath(item) {
-            var p = epThemeConfig.defaultPath;
-            if (p && item.cssFilename) {
-                p = p.trim();
-                if (p.lastIndexOf('/') === p.length - 1) {
-                    p = p.substr(0, p.length - 1);
-                }
-                item.cssPath = p + '/' + item.cssFilename;
-            } else {
-                item.cssPath = item.cssFilename;
-            }
+            item.cssPath = getFilePath(epThemeConfig.defaultPath, item.cssFilename);
         }
 
         /**
@@ -16250,9 +19262,10 @@ angular.module('ep.signature').directive('epSignature',
         * @description
         * Some things to do at startup
         */
-        function init() {
+        function init(themeList) {
             _localStorageId = (epThemeConfig.id || 'emf') + '.theme.current';
-            _themes = epThemeConfig.themes;
+            //_themes = epThemeConfig.themes;
+            _themes = (themeList && themeList.length) ? themeList : epThemeConfig.themes;
 
             if (_themes.length > 1) {
                 _theme = _.find(_themes, function(t) {
@@ -16260,22 +19273,24 @@ angular.module('ep.signature').directive('epSignature',
                 });
             }
 
+            _defaultTheme = {};
             if (!_theme) {
                 _theme = _themes[0];
+            } else {
+                angular.copy(_theme, _defaultTheme);
             }
-
-            _defaultTheme = {};
-            angular.copy(_theme, _defaultTheme);
 
             if (isPersisting()) {
                 _theme = epLocalStorageService.getOrAdd(_localStorageId, _defaultTheme);
             }
-            if (!_theme) {
+            if (!_theme && _defaultTheme && _defaultTheme.name) {
                 _theme = _defaultTheme;
             }
 
             setItemsFullPath(); //make sure path is set
-            setItemFullPath(_theme);
+            if (_theme) {
+                setItemFullPath(_theme);
+            }
         }
 
         /**
@@ -16299,7 +19314,8 @@ angular.module('ep.signature').directive('epSignature',
             theme: theme,
             reset: reset,
             defaultTheme: defaultTheme,
-            disableTheming: disableTheming
+            disableTheming: disableTheming,
+            getCustomThemeCss: getCustomThemeCss
         };
     }]);
 })();
@@ -16357,12 +19373,12 @@ angular.module('ep.signature').directive('epSignature',
 (function() {
     'use strict';
 
-    epTileCtrl.$inject = ['$scope', '$timeout', '$http', '$q', '$log', 'epTileConfig', 'epUtilsService'];
+    epTileCtrl.$inject = ['$scope', '$timeout', '$http', '$q', '$log', 'epTileConfig', 'epUtilsService', 'epApplicationConfig'];
     angular.module('ep.tile')
         .controller('epTileCtrl', epTileCtrl);
 
     /*@ngInject*/
-    function epTileCtrl($scope, $timeout, $http, $q, $log, epTileConfig, epUtilsService) {
+    function epTileCtrl($scope, $timeout, $http, $q, $log, epTileConfig, epUtilsService, epApplicationConfig) {
 
         /**
             * @ngdoc method
@@ -16387,12 +19403,15 @@ angular.module('ep.signature').directive('epSignature',
         function retrieveBing(numImages) {
             var deferred = $q.defer();
 
+            var libPath = epApplicationConfig.libPath ? epApplicationConfig.libPath : './lib';
+            var imgPath = libPath + '/bower/emf/assets/ep.tile/bing';
+
             var fnError = function onError(message) {
                 $log.error('Error parsing retrieving bing images: ' + message);
                 var imgs = { images: [] };
                 for (var i = 1; i < 6; i++) {
                     imgs.images.push({
-                        src: '../lib/bower/emf/assets/ep.tile/bing' + i + '.jpg',
+                        src: imgPath + i + '.jpg',
                         title: 'Bing Image of the day (offline)'
                     });
                 }
@@ -17096,7 +20115,7 @@ function epTilesMenuFavoritesDirective() {
 
 /**
  * @ngdoc controller
- * @name ep.tile.controller:epTileCtrl
+ * @name ep.login.controller:epLoginCtrl
  * @description
  * Represents the login controller.
  * This controller negotiates the login/logout requests with the token factory.
@@ -17249,7 +20268,7 @@ function epTilesMenuFavoritesDirective() {
             /**
             * @ngdoc property
             * @name restUri
-            * @propertyOf ep.token.object:tokenConfig
+            * @propertyOf ep.token.object:epTokenConfig
             * @public
             * @description
             * Represents the URI for the REST service that provides the token auth login
@@ -17258,7 +20277,7 @@ function epTilesMenuFavoritesDirective() {
             /**
             * @ngdoc property
             * @name tokenId
-            * @propertyOf ep.token.object:tokenConfig
+            * @propertyOf ep.token.object:epTokenConfig
             * @public
             * @description
             * Represents the Id for the cookie that will store username and token
@@ -17267,7 +20286,7 @@ function epTilesMenuFavoritesDirective() {
             /**
             * @ngdoc property
             * @name timeout
-            * @propertyOf ep.token.object:tokenConfig
+            * @propertyOf ep.token.object:epTokenConfig
             * @public
             * @description
             * Set timeout of the token in seconds. This can override the actual token timeout if it is smaller
@@ -17276,7 +20295,7 @@ function epTilesMenuFavoritesDirective() {
             /**
             * @ngdoc property
             * @name warnExpire
-            * @propertyOf ep.token.object:tokenConfig
+            * @propertyOf ep.token.object:epTokenConfig
             * @public
             * @description
             * Should we give a warning on token expiration with renewal option
@@ -17285,7 +20304,7 @@ function epTilesMenuFavoritesDirective() {
             /**
             * @ngdoc property
             * @name warnExpireDuration
-            * @propertyOf ep.token.object:tokenConfig
+            * @propertyOf ep.token.object:epTokenConfig
             * @public
             * @description
             * How many seconds prior to expiration should we warn the user
@@ -17294,7 +20313,7 @@ function epTilesMenuFavoritesDirective() {
             /**
             * @ngdoc property
             * @name storePassword
-            * @propertyOf ep.token.object:tokenConfig
+            * @propertyOf ep.token.object:epTokenConfig
             * @public
             * @description
             * Store the password for renewal
@@ -17303,7 +20322,7 @@ function epTilesMenuFavoritesDirective() {
             /**
             * @ngdoc property
             * @name autoRenew
-            * @propertyOf ep.token.object:tokenConfig
+            * @propertyOf ep.token.object:epTokenConfig
             * @public
             * @description
             * Auto renew token if renewal warning turned off
@@ -17312,7 +20331,7 @@ function epTilesMenuFavoritesDirective() {
             /**
             * @ngdoc property
             * @name debug
-            * @propertyOf ep.token.object:tokenConfig
+            * @propertyOf ep.token.object:epTokenConfig
             * @public
             * @description
             * If debug is on, the token service is not invoked and dummy results returned
@@ -17439,8 +20458,16 @@ function epTilesMenuFavoritesDirective() {
          * @returns {object} object that represents current token
          */
         function getToken() {
-            return epLocalStorageService.get(epTokenConfig.tokenId);
             //return $cookies.getObject(epTokenConfig.tokenId);
+            var tkn = epLocalStorageService.get(epTokenConfig.tokenId);
+            if (tkn && tkn.expiresInSecs) {
+                var secs = getExpiresIn(tkn);
+                if (!secs) {
+                    logout();
+                    tkn = null;
+                }
+            }
+            return tkn;
         }
 
         /**
@@ -17449,12 +20476,12 @@ function epTilesMenuFavoritesDirective() {
          * @methodOf ep.token.factory:epTokenService
          * @public
          * @description
-         * Retruns in how many seconds token will expire
-         *
+         * Returns in how many seconds token will expire
+         * @param {object} token - token to be checked. If ommited then retrievd from storage
          * @returns {int} number of secs
          */
-        function getExpiresIn() {
-            var tkn = getToken();
+        function getExpiresIn(token) {
+            var tkn = token || getToken();
             var ret = 0;
             if (tkn) {
                 var dateNow = new Date();
@@ -17576,6 +20603,9 @@ function epTilesMenuFavoritesDirective() {
             var exp = getExpiresIn();
             if (exp) {
                 doSetTimeout(exp);
+            } else {
+                //remove token if it has expired
+                logout();
             }
         }
 
@@ -18076,8 +21106,9 @@ function epTilesMenuFavoritesDirective() {
  */
 (function() {
     'use strict';
-    angular.module('ep.utils').service('epUtilsService', ['$document', '$log', '$q', '$timeout',
-        function($document, $log, $q, $timeout) {
+    angular.module('ep.utils').service('epUtilsService',
+        /*@ngInject*/
+        ['$document', '$log', '$q', '$timeout', function($document, $log, $q, $timeout) {
 
             /**
              * @ngdoc method
@@ -18098,7 +21129,7 @@ function epTilesMenuFavoritesDirective() {
                 var ret = str;
                 if (arguments.length > 1) {
                     var tempArgs = arguments;
-                    ret = ret.replace(/\{\d+\}/g, function(match) {
+                    ret = ret.replace(/\{\d+}/g, function(match) {
                         var index = +match.slice(1, -1);
                         var arg = null;
 
@@ -18157,27 +21188,32 @@ function epTilesMenuFavoritesDirective() {
              * @methodOf ep.utils.service:epUtilsService
              * @public
              * @description
-             * Copies properties from source to dest
+             * Copies properties from source to destination
              * The property is copied only if source property is not null
              * This is useful to copy new properties values over default object
              * but only when new property is provided.
+             * @param {object} source - object source from which properties are copied
+             * @param {object} destination - object target to which properties are copied
+             * @param {bool} override - if false, then existing properties in source are not overriden
              * @returns {object} copied object
              */
-            function copyProperties(source, dest) {
-                if (!source || !dest) {
-                    return;
+            function copyProperties(source, destination, override) {
+                if (!source || !destination) {
+                    return source || destination;
                 }
                 angular.forEach(source, function(value, propName) {
                     if (source[propName] !== null) {
                         if (angular.isArray(source[propName])) {
-                            dest[propName] = source[propName];
+                            destination[propName] = source[propName];
                         } else if (angular.isObject(source[propName])) {
-                            if (!angular.isObject(dest[propName])) {
-                                dest[propName] = {};
+                            if (!angular.isObject(destination[propName])) {
+                                destination[propName] = {};
                             }
-                            copyProperties(source[propName], dest[propName]);
+                            copyProperties(source[propName], destination[propName]);
                         } else {
-                            dest[propName] = source[propName];
+                            if (override !== false || (destination[propName] === undefined)) {
+                                destination[propName] = source[propName];
+                            }
                         }
                     }
                 });
@@ -18229,7 +21265,7 @@ function epTilesMenuFavoritesDirective() {
              * @methodOf ep.utils.service:epUtilsService
              * @public
              * @description
-             * Creates path by concatination of input arguments which can be strings, array of
+             * Creates path by concatenation of input arguments which can be strings, array of
              * strings or arguments object passed from another function
              * @returns {string} path
              * @example
@@ -18326,22 +21362,22 @@ function epTilesMenuFavoritesDirective() {
              * @description
              * Wait for a condition to be accomplished by performing iterative calls at
              * given interval. Alternative to deferred results.
-             * @param {object} fnCondtion - function that represents condition. Must return true/false
+             * @param {function} fnCondition - function that represents condition. Must return true/false
              * @param {int} attempts - how many max attempts can be performed
              * @param {int} interval - interval in ms between each new attempt
-             * @param {object} fnExecute - function that is executed when condition is met
-             * @param {object} fnFail - optional function that is executed when condition is not met after all attempts
+             * @param {function} fnExecute - function that is executed when condition is met
+             * @param {function} fnFail - optional function that is executed when condition is not met after all attempts
              * @example
              *   wait( function() { return state; }, 10, 250, function() { alert('complete'); });
              */
-            function wait(fnCondtion, attempts, interval, fnExecute, fnFail) {
+            function wait(fnCondition, attempts, interval, fnExecute, fnFail) {
                 attempts--;
                 if (attempts >= 0) {
-                    if (fnCondtion()) {
+                    if (fnCondition()) {
                         fnExecute();
                     } else {
                         $timeout(function() {
-                            wait(fnCondtion, attempts, interval, fnExecute);
+                            wait(fnCondition, attempts, interval, fnExecute, fnFail);
                         }, interval);
                     }
                 } else if (fnFail) {
@@ -18400,7 +21436,6 @@ function epTilesMenuFavoritesDirective() {
 
              *
              * @param {Object} dst Destination object.
-             * @param {...Object} src Source object(s).
              * @returns {Object} Reference to `dst`.
              */
             function merge(dst) {
@@ -18443,9 +21478,94 @@ function epTilesMenuFavoritesDirective() {
         }]);
 })();
 
+(function() {
+'use strict';
+
+/**
+ * @ngdoc controller
+ * @name ep.viewmodal.controller:epViewmodalCtrl
+ * @description
+ * This this similar to the ep.modaldialog however it allows you to define a modal wrapper inside of your view that is
+ * overlays the view instead of popping up on top of it.  This gives you more flexibility for the content that is displayed
+ * and also has a nice animation effect from the top to the bottom.
+ *
+ * @example
+ *
+ */
+    epViewmodalCtrl.$inject = ['$scope'];
+    angular.module('ep.viewmodal')
+        .controller('epViewmodalCtrl', epViewmodalCtrl);
+
+    /*@ngInject*/
+    function epViewmodalCtrl($scope) {
+        $scope.peek = false;
+
+        //click event to close the viewmodal
+        $scope.closeClick = function() {
+            //reset peek mode
+            $scope.peek = false;
+
+            var closeModal = true;
+
+            if ($scope.options.onClose) {
+                closeModal = $scope.options.onClose($scope.options);
+            }
+
+            //close
+            $scope.options.showViewModal = !closeModal;
+        };
+
+        $scope.peekClick = function() {
+            $scope.peek = !$scope.peek;
+        };
+    }
+}());
+
+(function() {
+'use strict';
+/**
+* @ngdoc directive
+* @name ep.viewmodal.directive:epViewmodal
+* @restrict E
+*
+* @description
+* This directive can be used to display a full screen modal within your view controller.  This is different than the
+ * modal dialog because it can be used in conjunction with a modal dialog.  The view modal can share your view controller
+ * and be invoked directly from your view controller by setting the options.showViewModal = true.
+*
+* @example
+*/
+angular.module('ep.viewmodal').
+    directive('epViewmodal', epViewmodalDirective);
+
+    /*@ngInject*/
+    function epViewmodalDirective() {
+        return {
+            restrict: 'E',
+            replace: true,
+            transclude: true,
+            controller: 'epViewmodalCtrl',
+            templateUrl: 'src/components/ep.viewmodal/ep-viewmodal.html',
+            scope: {
+                'options': '='
+            },
+        };
+    }
+}());
+
 //# sourceMappingURL=app.min.js.map
 angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   'use strict';
+
+  $templateCache.put('src/components/ep.accordion.menu/ep-accordion-menu-item_template.html',
+    "<div class=\"clearfix list-group-item\" ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\"><div class=\"clearfix container-fluid\" id=mnu_{{item.id}} ng-keydown=\"($event.which === 13 && item.menuitems.length === 0)? navigate(item, false, $event) : onKeydown(item, $event)\" role=group tabindex=0 ng-click=\"item.isExpanded = !item.isExpanded\"><div id=menuItem class=\"list-group-item row\" ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\" ng-if=\"!(item.menuitems && item.menuitems.length)\" ng-click=\"navigate(item, false, $event)\"><!-- Menu item caption/text --><span class=\"clearfix ep-vertical-align-center\"><span class=\"pull-left col-xs-10 {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></span><!--Open in new window--> <i class=\"fa fa-lg fa-clone pull-left\" ng-click=\"navigateExternal(item, $event)\"></i><!-- Favorite icon --><!-- Favorite icon --> <i ng-if=\"(item.hideFavorite !== true)\" class=\"fa fa-lg col-xs-2 pull-left\" ng-click=\"toggleFavorite(item, $event)\" ng-class=\"{ 'fa-star-o': !item.favorite, 'fa-star text-warning': item.favorite }\"></i></span></div><div class=\"ep-submenu-header list-group-item row\" ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\" ng-if=item.menuitems.length><!-- Menu item caption/text --><span class=\"clearfix ep-vertical-align-center\"><span class=\"pull-left col-xs-10 {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></span><!-- Expand icon --> <i class=\"fa fa-lg col-xs-2\" ng-class=\"{ 'fa-caret-right': !item.isExpanded, 'fa-caret-down': item.isExpanded }\"></i></span></div></div><div class=col-xs-12 ng-click=\"navigate(item, false, $event)\" ng-if=\"item.description && (!item.menuitems.length || !item.isExpanded) && !hideDescription\"><div class=ep-accordion-menu-desc><sup class=text-info ng-bind=item.description></sup></div></div><!-- Sub-menu --><div class=list-group-submenu ng-class=\"{'collapsed': !item.isExpanded }\" id=mnu_children ng-if=\"item.isExpanded && item.menuitems.length\"><ep-accordion-menu-item ng-repeat=\"child in item.menuitems | orderBy:orderByMenu\" item=child hide-description=hideDescription commit-menu-state=commitMenuState navigate=navigate navigate-external=navigateExternal toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.accordion.menu/ep-accordion-menu_template.html',
+    "<div id=MainMenu class=ep-accordion-menu><form class=ep-mlm-search ng-hide=searchDisabled><input type=search class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-keydown=onKeydown($event) ng-focus=\"isRightToLeft = false\"></form><div ng-show=state.searchTerm><div class=\"bg-primary ep-menu-header\"><span ng-bind=searchResultsHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in currentItems | orderBy:orderByMenu\" id={{item.id}} hide-description=false item=item navigate=navigate navigate-external=navigateExternal toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div><div ng-show=!state.searchTerm><div class=\"bg-primary ep-menu-header\" ng-if=\"data.favorites && data.favorites.length\"><span ng-bind=favoritesHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in data.favorites | orderBy:orderByMenu\" id={{item.id}} hide-description=false item=item navigate=navigate navigate-external=navigateExternal toggle-favorite=toggleFavorite></ep-accordion-menu-item></div><div class=\"bg-primary ep-menu-header\"><span ng-bind=mainHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in menu.menuitems | orderBy:orderByMenu\" id={{item.id}} hide-description=true commit-menu-state=commitMenuState item=item navigate=navigate navigate-external=navigateExternal toggle-favorite=toggleFavorite on-expand=onExpand></ep-accordion-menu-item></div></div></div>"
+  );
+
 
   $templateCache.put('src/components/ep.action.set/action-menu/action-menu.html',
     "<div id=ep-actions-menu-ctr ng-show=actionMenuCtrl.actions><ul class=\"dropdown-menu ep-actions-menu list-unstyled noselect\" role=menu><li ng-repeat=\"action in actionMenuCtrl.actions\" ng-if=\"!action.switch || action.switch(action.switchParams) == action.switchResult\" ng-switch=action.type ng-class=\"{'hidden': action.switch != null && action.switch == false}\"><a ng-switch-when=action class=ep-actions-menu-item ng-click=\"actionMenuCtrl.invokeAction($event, action)\"><span class=\"icon {{action.icon}}\"></span><span>{{::action.title}}</span></a><div ng-switch-when=separator class=ep-actions-menu-item-separator></div></li><li class=ep-actions-menu-item-mobile><a class=\"ep-actions-menu-item edd-red separate\" ng-click=actionMenuCtrl.close()><span class=\"icon icon-clear\"></span><span>Close</span></a></li></ul></div>"
@@ -18472,8 +21592,18 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   );
 
 
+  $templateCache.put('src/components/ep.color.selector/color_selector.html',
+    "<div class=\"ep-color-selector-container vertical-align\"><div class=input-group><input class=form-control value=\"{{selectedColor}}\"><div class=input-group-btn><button type=button class=\"btn btn-default dropdown-toggle\" colorpicker colorpicker-position=\"{{position ? position : 'bottom'}}\" colorpicker-size=\"{{size ? size : '100'}}\" ng-model=ngModel ng-style=\"{'background-color': selectedColor}\"><span></span></button></div></div></div>"
+  );
+
+
   $templateCache.put('src/components/ep.color.tile/ep-color-tile.html',
     "<!-- Color Tile Component --><div class=\"ep-color-tile ep-align-container {{colorclass}}\" ng-style=\"{'background-color': color}\"><h3>{{title}}</h3><h5>{{description}}</h5><small>{{fineprint}}</small><div class=\"ep-color-tile-icon ep-align-content ep-align-vcenter\"><i class=\"fa {{icon}}\"></i></div></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.contacts.list/contacts_list.html',
+    "<div class=ep-contacts-list-container><div class=\"ep-list-search-container vertical-align\"><input ng-model=contactListSearch placeholder=Search class=form-control id=ep-contacts-list-search><label for=ep-contacts-list-search class=\"glyphicon glyphicon-search\" rel=tooltip title=search></label></div><div class=ep-contacts-list><div class=ep-contacts-list-inner><div ng-repeat=\"(key, value) in nameList\"><div class=ep-group-heading ng-if=\"filterVal.length > 0\" id=\"list-group-{{key == '#' ? 1 : (key | uppercase)}}\">{{key | uppercase}}</div><ul><li ng-repeat=\"name in filterVal = (value | filter: contactListSearch)\" ng-click=handler(name)>{{ name }}</li></ul></div></div></div><ul class=\"ep-index-list large-index-list\" ng-hide=contactListSearch><li ng-repeat=\"key in indexKeys\" ng-click=goToLink(key)>{{key}}</li></ul><ul class=\"ep-index-list small-index-list\" ng-hide=contactListSearch><li ng-repeat=\"key in smallIndexKeys track by $index\" ng-click=goToLink(key)><span ng-if=\"key == '.'\" class=\"fa fa-circle\"></span> <span ng-if=\"key !='.'\">{{key}}</span></li></ul></div>"
   );
 
 
@@ -18512,8 +21642,28 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   );
 
 
+  $templateCache.put('src/components/ep.filter.list/filter_list.html',
+    "<div class=\"ep-search-list-container vertical-align\"><input ng-model=searchBy placeholder=Search class=form-control id=ep-search-list><label for=ep-search-list class=\"glyphicon glyphicon-search\" rel=tooltip title=search></label></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.icon.selector/icon_selector.html',
+    "<div class=ep-icon-selector-container ng-style=\"{ 'width': width }\"><div class=input-group><input class=form-control ng-model=ngModel><div class=input-group-btn><button type=button class=\"btn btn-default dropdown-toggle\" data-toggle=dropdown aria-expanded=false><span class=\"fa {{ngModel}}\"></span></button><div class=\"dropdown-menu dropdown-menu-right\" role=menu ng-style=\"{ 'width': iconListWidth }\"><div class=\"icon-filter-field vertical-align text-center\"><input class=form-control placeholder=\"Type to filter\" ng-model=filteredIcon></div><ul class=icon-list ng-style=\"{ 'max-height': iconListHeight }\"><li ng-repeat=\"icon in icons | orderBy | filter: filteredIcon\" ng-click=selectIcon(icon)><span class=\"fa fa-{{icon}}\"></span>fa-{{icon}}</li></ul></div></div></div></div>"
+  );
+
+
   $templateCache.put('src/components/ep.list/ep-list.html',
     "<!--This is a partial for the ep-list directive --><div class=ep-list><ul id={{config.id}}><li ng-repeat=\"item in config.items\"></li></ul></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.menu.builder/context.menu/ep-context-menu.html',
+    "<span class=\"ep-relative ep-context-menu-owner\"><span class=\"ep-actionset ep-interactivity-context-menu\"><span class=ep-context-menu ng-click=contextMenuCtrl.onDynamicMenuCall($event)></span></span></span>"
+  );
+
+
+  $templateCache.put('src/components/ep.menu.builder/dynamic.menu/ep-dynamic-menu.html',
+    "<div id=ep-dynamic-menu ng-show=dynamicMenuCtrl.menuItems><ul class=\"dropdown-menu ep-actions-menu list-unstyled noselect\" role=menu><li ng-repeat=\"menuItem in dynamicMenuCtrl.menuItems\" ng-switch=menuItem.type><a ng-switch-when=action class=ep-actions-menu-item ng-click=\"dynamicMenuCtrl.invokeAction($event, menuItem, dynamicMenuCtrl.context)\"><span class=\"icon {{menuItem.icon}}\"></span><span>{{::menuItem.caption}}</span></a><div ng-switch-when=separator class=ep-actions-menu-item-separator></div></li><li class=ep-actions-menu-item-mobile><a class=\"ep-actions-menu-item edd-red separate\" ng-click=dynamicMenuCtrl.closeMenu()><span class=\"icon icon-clear\"></span><span>Close</span></a></li></ul></div>"
   );
 
 
@@ -18533,61 +21683,57 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.multi.level.menu/multi-level-menu.html',
-    "<div class=ep-mlm-container ng-class=\"{'ep-left-to-right': !isRightToLeft, 'ep-right-to-left': isRightToLeft}\"><form class=ep-mlm-search ng-hide=searchDisabled><input class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-focus=\"isRightToLeft = false\"></form><div ng-if=data.next class=\"ep-mlm-content ep-fadein-animation\"><div ng-hide=state.searchTerm class=ep-mlm-header ng-class=\"{ 'pointer': data.next._parent._id !== 'topmenu'}\" ng-click=\"navigate(data.next._parent, true, $event)\"><span ng-if=\"data.next._parent._id !== 'topmenu'\" class=\"ep-mlm-back-button pull-left fa fa-lg fa-caret-left\"></span> <span>{{data.next.caption}}</span></div><div ng-show=state.searchTerm class=ep-mlm-header><span>Search Results</span></div><ul><li ng-repeat=\"mi in currentItems | orderBy:orderByMenu\" class=\"ep-mlm-item clearfix ep-repeat-animation\"><div ng-if=\"mi.separator && !mi.separator.isBottom\" class=\"ep-mlm-separator ep-mlm-separator-top {{mi.separator.class}}\"><i ng-if=mi.separator.icon class=\"ep-mlm-separator-icon fa fa-lg pull-left {{mi.separator.icon}}\"></i><div ng-if=mi.separator.text class=ep-mlm-separator-text>{{mi.separator.text}}</div></div><i ng-if=\"mi.icon && !iconDisabled\" class=\"ep-mlm-icon fa fa-lg pull-left {{mi.icon}}\"></i><div class=\"pull-left clearfix ep-mlm-item-div\" ng-class=\"{ 'ep-mlm-item-div-icon': mi.icon }\" ng-click=\"navigate(mi, false, $event)\"><div class=\"ep-mlm-item-text pull-left {{mi.captionClass}}\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"(mi._type === 'item' && mi.hideFavorite !== true)\" class=\"ep-mlm-favorite fa fa-lg pull-right\" ng-click=toggleFavorite(mi) ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star text-warning': mi.favorite}\"></i> <i ng-if=\"mi._type === 'menu'\" class=\"ep-mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=\"navigate(mi, false, $event)\"></i><div ng-if=\"mi.separator && mi.separator.isBottom\"><br><div class=\"ep-mlm-separator ep-mlm-separator-top {{mi.separator.class}}\"><i ng-if=mi.separator.icon class=\"ep-mlm-separator-icon fa fa-lg pull-left {{mi.separator.icon}}\"></i><div ng-if=mi.separator.text class=ep-mlm-separator-text>{{mi.separator.text}}</div></div></div></li></ul><uib-alert class=\"ep-mlm-alert ep-fadein-animation\" ng-show=\"state.searchTerm && (!currentItems || currentItems.length === 0)\" type=warning>The term \"{{state.searchTerm}}\" did not match any menu items.</uib-alert></div></div>"
+    "<div class=ep-mlm-container ng-class=\"{'ep-left-to-right': !isRightToLeft, 'ep-right-to-left': isRightToLeft}\"><form class=ep-mlm-search ng-hide=searchDisabled><input class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-focus=\"isRightToLeft = false\"></form><div ng-if=data.next class=\"ep-mlm-content ep-fadein-animation\"><div ng-hide=state.searchTerm class=ep-mlm-header ng-class=\"{ 'pointer': data.next._parent._id !== 'topmenu'}\" ng-click=\"navigate(data.next._parent, true, $event)\"><span ng-if=\"data.next._parent._id !== 'topmenu'\" class=\"ep-mlm-back-button pull-left fa fa-lg fa-caret-left\"></span> <span>{{data.next.caption}}</span></div><div ng-show=state.searchTerm class=ep-mlm-header><span>Search Results</span></div><ul><li ng-repeat=\"mi in currentItems | orderBy:orderByMenu\" class=\"ep-mlm-item clearfix ep-repeat-animation\"><div ng-if=\"mi.separator && !mi.separator.isBottom\" class=\"ep-mlm-separator ep-mlm-separator-top {{mi.separator.class}}\"><i ng-if=mi.separator.icon class=\"ep-mlm-separator-icon fa fa-lg pull-left {{mi.separator.icon}}\"></i><div ng-if=mi.separator.text class=ep-mlm-separator-text>{{mi.separator.text}}</div></div><i ng-if=\"mi.icon && !iconDisabled\" class=\"ep-mlm-icon fa fa-lg pull-left {{mi.icon}}\"></i><div class=\"pull-left clearfix ep-mlm-item-div\" ng-class=\"{ 'ep-mlm-item-div-icon': mi.icon }\" ng-click=\"navigate(mi, false, $event)\"><div class=\"ep-mlm-item-text pull-left {{mi.captionClass}}\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"(mi._type === 'item' && mi.hideFavorite !== true)\" class=\"ep-mlm-favorite fa fa-lg pull-right\" ng-click=\"toggleFavorite(mi, $event)\" ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star text-warning': mi.favorite}\"></i> <i ng-if=\"mi._type === 'menu'\" class=\"ep-mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=\"navigate(mi, false, $event)\"></i><div ng-if=\"mi.separator && mi.separator.isBottom\"><br><div class=\"ep-mlm-separator ep-mlm-separator-top {{mi.separator.class}}\"><i ng-if=mi.separator.icon class=\"ep-mlm-separator-icon fa fa-lg pull-left {{mi.separator.icon}}\"></i><div ng-if=mi.separator.text class=ep-mlm-separator-text>{{mi.separator.text}}</div></div></div></li></ul><uib-alert class=\"ep-mlm-alert ep-fadein-animation\" ng-show=\"state.searchTerm && (!currentItems || currentItems.length === 0)\" type=warning>The term \"{{state.searchTerm}}\" did not match any menu items.</uib-alert></div></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.photo.browser/ep-photo-browser.html',
+    "<!--This is a partial for the ep-photo-browser directive --><div class=content ng-controller=epPhotoBrowserCtrl><ng-gallery images=images show-preview=showPreview></ng-gallery></div>"
   );
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-checkbox-editor.html',
-    "<section class=\"ep-editor-checkbox ep-center-item editor\" tabindex=0 ng-keyup=handleKey($event) ng-click=ctx.toggleValue(ctx,$event) ng-hide=ctx.fnDoValidations(this)><span ng-class=\"{'fa-square-o': !ctx.state.activeRecord[ctx.columnIndex], 'fa-check-square-o': ctx.state.activeRecord[ctx.columnIndex]}\" class=\"fa fa-lg\"></span></section>"
+    "<section class=\"ep-editor-checkbox ep-center-item editor\" tabindex=0 ng-keyup=handleKey($event) ng-click=ctx.toggleValue(ctx,$event) ng-hide=ctx.fnDoValidations()><span ng-class=\"{'fa-square-o': !value, 'fa-check-square-o': value}\" class=\"fa fa-{{ctx.checkBoxSize}}\"></span></section>"
   );
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-date-editor.html',
-    "<section><input id=dd_{{ctx.name}} ng-model=ctx.state.activeRecord[ctx.columnIndex] ep-date-convert=toDate ng-hide=\"true\"><div class=\"input-group date datepicker\" id=dp_{{ctx.name}} ng-if=!ctx.useDateInput><input size=16 ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor\" ng-hide=ctx.fnDoValidations(this) ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) pattern={{ctx.pattern}} ng-keydown=ctx.fnDateKeyDown($event) uib-datepicker-popup={{ctx.format}} datepicker-options111={{ctx.dateOptions}} placeholder={{ctx.format}} ng-pattern={{ctx.pattern}} is-open=\"ctx.dateOpened\"> <span class=input-group-addon ng-click=ctx.fnDateOpen($event) ng-style=\"{ 'cursor': ctx.disabled ? 'not-allowed' : 'pointer' }\"><a ng-if=!ctx.disabled><i class=\"fa fa-calendar\"></i></a> <i ng-if=ctx.disabled class=\"fa fa-calendar\"></i></span></div><div class=\"input-group date\" id=dp_{{ctx.name}} ng-if=\"ctx.useDateInput === true\"><input size=16 type=date ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor\" ng-hide=ctx.fnDoValidations(this) ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=\"ctx.fnBlur($event)\"></div></section>"
+    "<section><input id=dd_{{ctx.name}} ng-model=value ep-date-convert=toDate ng-hide=\"true\"><div class=\"input-group date datepicker\" id=dp_{{ctx.name}} ng-if=!ctx.useDateInput><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input size=16 ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor\" ng-hide=ctx.fnDoValidations() ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) pattern={{ctx.pattern}} ng-keydown=ctx.fnDateKeyDown($event) uib-datepicker-popup={{ctx.format}} data-container=body datepicker-options111={{ctx.dateOptions}} placeholder={{ctx.format}} ng-pattern={{ctx.pattern}} is-open=\"ctx.dateOpened\"> <span class=input-group-addon ng-click=ctx.fnDateOpen($event) ng-style=\"{ 'cursor': ctx.disabled ? 'not-allowed' : 'pointer' }\"><a ng-if=!ctx.disabled><i class=\"fa fa-calendar\"></i></a> <i ng-if=ctx.disabled class=\"fa fa-calendar\"></i></span> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div><div class=\"input-group date\" id=dp_{{ctx.name}} ng-if=\"ctx.useDateInput === true\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input size=16 type=date ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor\" ng-hide=ctx.fnDoValidations(this) ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=\"ctx.fnBlur($event)\"> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
+  );
+
+
+  $templateCache.put('src/components/ep.record.editor/editors/ep-editor-control.html',
+    "<div class=\"ep-editor-control {{ctx.sizeClass}}\" ng-hide=ctx.hidden ep-drop-area drop-enabled=\"isDropEnabled === true\" drop-handler=handleDrop drop-item-types=typeEditorCtrl ng-style=ctx.style><fieldset class=\"form-group ep-record-editor-container\" ng-class=\"{'has-error': ctx.invalidFlag}\" ep-draggable drag-enabled=\"isDragEnabled === true\" drag-item=ctx drag-item-type=\"'typeEditorCtrl'\"><label class=ep-editor-label for={{ctx.name}}>{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label><section id=xtemplate></section></fieldset></div>"
   );
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-image-editor.html',
-    "<section><img alt={{ctx.label}} id={{ctx.name}} ng-src={{ctx.state.activeRecord[ctx.columnIndex]}} width={{ctx.imageWidth}} height=\"{{ctx.imageHeight}}\"></section>"
+    "<section><img alt={{ctx.label}} id={{ctx.name}} ng-src={{value}} width={{ctx.imageWidth}} height=\"{{ctx.imageHeight}}\"></section>"
   );
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-multiline-editor.html',
-    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span><textarea id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=ctx.state.activeRecord[ctx.columnIndex] ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-hide=ctx.fnDoValidations(this) maxlength={{ctx.maxlength}} ng-style=\"{'text-align': ctx.justification }\">\r" +
-    "\n" +
-    "\r" +
-    "\n" +
-    "        <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\">\r" +
-    "\n" +
-    "            <i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i>\r" +
-    "\n" +
-    "            <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a>\r" +
-    "\n" +
-    "        </span>\r" +
-    "\n" +
-    "    </div>\r" +
-    "\n" +
-    "</section>"
+    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span><textarea id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=value ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-hide=ctx.fnDoValidations() maxlength={{ctx.maxlength}} ng-style=\"{'text-align': ctx.justification }\"></textarea><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
   );
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-number-editor.html',
-    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input id={{ctx.name}} ng-cloak name={{ctx.name}} type=number ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=ctx.state.activeRecord[ctx.columnIndex] ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-style=\"{ 'text-align': ctx.justification }\" maxlength={{ctx.maxlength}} min={{ctx.min}} max={{ctx.max}} ng-hide=ctx.fnDoValidations(this) pattern=\"{{ctx.pattern}}\"> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
+    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input id={{ctx.name}} ng-cloak name={{ctx.name}} type=number ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=value ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-style=\"{ 'text-align': ctx.justification }\" maxlength={{ctx.maxlength}} min={{ctx.min}} max={{ctx.max}} ng-hide=ctx.fnDoValidations() pattern=\"{{ctx.pattern}}\"> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
   );
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-select-editor.html',
-    "<section><select class=\"form-control editor\" id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) ng-hide=ctx.fnDoValidations(this) ng-model=ctx.state.activeRecord[ctx.columnIndex]><option ng-repeat=\"opt in ctx.options\" label={{opt.label}} value={{opt.value}} ng-selected=opt.getIsSelected()>{{opt.label}}</option></select></section>"
+    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span><select class=\"form-control editor\" id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) ng-hide=ctx.fnDoValidations() ng-model=value><option ng-repeat=\"opt in ctx.options\" label={{opt.label}} value={{opt.value}} ng-selected=opt.getIsSelected()>{{opt.label}}</option></select><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
   );
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-text-editor.html',
-    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input id={{ctx.name}} ng-cloak name={{ctx.name}} type={{ctx.type}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=ctx.state.activeRecord[ctx.columnIndex] ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-hide=ctx.fnDoValidations(this) maxlength={{ctx.maxlength}} ng-style=\"{ 'text-align': ctx.justification }\"> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
+    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input id={{ctx.name}} ng-cloak name={{ctx.name}} type={{ctx.type}} placeholder={{ctx.placeholder}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=value ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-hide=ctx.fnDoValidations() maxlength={{ctx.maxlength}} ng-style=\"{ 'text-align': ctx.justification }\"> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
   );
 
 
   $templateCache.put('src/components/ep.record.editor/ep-record-editor.html',
-    "<div class=ep-record-editor><div ng-repeat=\"(key, ctx) in state.editorContexts | epOrderObjectBy:'visibleIndex'\" class=\"ep-record-editor-column {{ctx.sizeClass}}\"><section class=ep-record-editor-container ng-class=\"{'has-error': ctx.invalidFlag}\" ng-hide=ctx.hidden><label class=ep-editor-label for={{ctx.name}}>{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label><ep-include user-data=ctx template=ctx.editorDirective template-ctrl=state.editorController></ep-include></section></div></div>"
+    "<div class=\"row ep-record-editor\"><ep-editor-control ng-repeat=\"(key, ctrl) in state.controls | epOrderObjectBy:'seq'\" class=ep-record-editor-column column=ctrl.col value=state.activeRecord[ctrl.columnIndex] options=ctrl.options is-drag-enabled=state.dragEnabled is-drop-enabled=state.dropEnabled></ep-editor-control></div>"
   );
 
 
@@ -18602,22 +21748,22 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/menu/ep-shell-menu.html',
-    "<div ng-controller=epShellMenuCtrl><ep-multi-level-menu menu=menuOptions.menu menu-id=menuId search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu></div>"
+    "<div ng-controller=epShellMenuCtrl><ep-multi-level-menu ng-if=\"menuOptions.menuType !== 'accordion'\" menu=menuOptions.menu menu-id=menuId search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu><ep-accordion-menu ng-if=\"menuOptions.menuType === 'accordion'\" menu=menuOptions.menu menu-id=menuId main-header=\"menuOptions.title || 'Menu'\" favorites-header=\"menuOptions.favoritesHeader || 'Favorites'\" search-results-header=\"menuOptions.searchResultsHeader || 'Search Results'\" search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-expand=menuOptions.onExpand commit-menu-state=commitMenuState on-menu-init=menuOptions.onMenuInit(factory)></ep-accordion-menu></div>"
   );
 
 
   $templateCache.put('src/components/ep.shell/shell.html',
-    "<div><section ng-controller=epShellCtrl class=ep-shell ng-cloak><div ng-show=state.showProgressIndicator class=ep-progress-idicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\"></a></li><li ng-repeat=\"button in leftNavButtons | orderBy:'index':true\" index={{button.index}} ng-class=\"{'hidden': button.hidden}\"><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"pull-left fa {{button.icon}} fa-2x ep-navbar-button left-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button) ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"pull-left fa {{button.icon}} fa-2x ep-navbar-button left-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"></a><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\"><a ng-click=opt.action() ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa {{opt.icon}}\"></i><span class=ep-navmenu-item-text>{{opt.title}}</span></span></a></li></ul></li><li ng-if=\"{hidden: !state.showBrand}\" ng-class=\"{'ep-center-brand': state.centerBrand}\"><a id=apptitle ng-if=state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-href=#{{(state.brandTarget)}} ng-bind-html=state.brandHTML></a> <span id=apptitle ng-if=!state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-bind-html=state.brandHTML></span></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in rightNavButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.enabled === false}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button)></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false></a><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\"><a ng-click=opt.action() ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa {{opt.icon}}\"></i><span class=ep-navmenu-item-text>{{opt.title}}</span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div class=ep-fullscreen><div ng-view class=\"ep-fullscreen ep-view{{options.enableViewAnimations? ' ep-view-transition' : ''}}\" ng-class=state.viewAnimation></div></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" ng-if=state.footerTarget ng-href={{state.footerTarget}}><sup ng-bind-html=state.footerHTML></sup></a> <sup ng-if=!state.footerTarget ng-bind-html=state.footerHTML></sup></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.enableFeedback ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
+    "<div><section ng-controller=epShellCtrl class=ep-shell ng-cloak><div ng-show=state.showProgressIndicator class=ep-progress-idicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\"></a></li><li ng-repeat=\"button in leftNavButtons | orderBy:'index':true\" index={{button.index}} ng-class=\"{'hidden': button.hidden}\"><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"pull-left fa {{button.icon}} fa-2x ep-navbar-button left-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button) ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"pull-left ep-navbar-button left-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"><i class=\"fa {{button.icon}} fa-2x\"></i><span ng-bind=button.title style=\"padding-right: 5px\"></span><span class=caret></span></a><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator'\" ng-click=state.executeButton(opt) ng-mousedown=state.buttonMouseDown(opt)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i><span class=ep-navmenu-item-text>{{opt.title}}</span></span></a></li></ul></li><li id=brandItem ng-hide=\"state.showBrand === false\" ng-class=\"{'ep-center-brand': state.centerBrand}\"><a id=apptitle ng-cloak=\"\" ng-if=state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-href=#{{(state.brandTarget)}} ng-bind-html=state.brandHTML></a> <span id=apptitle ng-cloak=\"\" ng-if=!state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-bind-html=state.brandHTML></span></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in rightNavButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.enabled === false}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button) ng-mousedown=state.buttonMouseDown(button)></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false><i class=\"fa {{button.icon}} fa-2x\"></i><span ng-bind=button.title style=\"padding-right: 5px\"></span><span class=caret></span></a><ul ng-if=\"button.type === 'select'\" class=\"dropdown-menu dropdown-menu-right\" ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator'\" ng-click=state.executeButton(opt) ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i><span class=ep-navmenu-item-text ng-bind=opt.title></span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div class=ep-fullscreen><div ng-view class=\"ep-fullscreen ep-anim-speed-{{state.animationSpeed}} {{state.animationIn}} {{state.animationOut}} ep-view{{options.enableViewAnimations? ' ep-view-transition' : ''}}\" ng-class=state.viewAnimation></div></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" ng-if=state.footerTarget ng-href={{state.footerTarget}}><sup id=footerElement ng-bind-html=state.footerHTML></sup></a> <sup ng-if=!state.footerTarget id=footerElement ng-bind-html=state.footerHTML></sup></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.enableFeedback ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
   );
 
 
   $templateCache.put('src/components/ep.shell/sidebar/sidebar.html',
-    "<div class=ep-shell-container ng-class=\"{ 'nav-padding': shellState.showNavbar, 'footer-padding': shellState.showFooter, 'ep-disable-left-sidebar': !shellState.enableLeftSidebar, 'ep-hide-left-sidebar': (!shellState.showLeftSidebar) || (!shellState.enableLeftSidebar), 'ep-hide-right-sidebar': (!shellState.showRightSidebar) || !(shellState.enableRightSidebar)}\"><!-- Left Sidebar --><div id=leftSidebar class=\"ep-sidebar-nav ep-sidebar-nav-left well ep-ease-animation\" ng-class=\"{'ep-with-navbar': shellState.showNavbar, 'ep-with-footer': shellState.showFooter, 'cordova-ios': platform.app==='Cordova' && platform.os=='mac'}\" ng-click=dismissRightSidebar()></div><div id=viewPlaceholder class=\"ep-view-placeholder ep-fullscreen\" ng-transclude><!--VIEW CONTENT HERE--></div><!-- Right Sidebar --><div class=\"ep-sidebar-nav ep-sidebar-nav-right well ep-ease-animation\"></div></div>"
+    "<div class=ep-shell-container ng-controller=epShellCtrl ng-class=\"{ 'nav-padding': shellState.showNavbar, 'footer-padding': shellState.showFooter}\"><!-- Backdrop to disable view container when sidebars are on --><div ng-swipe-right=showSwipeLeftSidebar($event) ng-swipe-left=showSwipeRightSidebar() id=viewContainerBackdrop ng-class=\"{'ep-view-container-backdrop': shellState.showViewContainerBackdrop}\"></div><!-- Left Sidebar --><div id=leftSidebar ng-show=\"shellState.showLeftSidebar && shellState.enableLeftSidebar\" class=\"ep-sidebar-nav ep-sidebar-nav-left well ep-ease-animation\" ng-class=\"{'ep-with-navbar': shellState.showNavbar, 'ep-with-footer': shellState.showFooter, 'cordova-ios': platform.app==='Cordova' && platform.os=='mac'}\" ng-click=dismissRightSidebar() ng-swipe-left=closeLeftSidebar()></div><div id=viewPlaceholder class=\"ep-view-placeholder ep-fullscreen\" ng-transclude><!--VIEW CONTENT HERE--></div><!-- Right Sidebar --><div id=rightSidebar ng-show=\"shellState.showRightSidebar && shellState.enableRightSidebar\" class=\"ep-sidebar-nav ep-sidebar-nav-right well ep-ease-animation\" ng-swipe-right=closeRightSidebar()></div></div>"
   );
 
 
   $templateCache.put('src/components/ep.shell/view-container/view-container.html',
-    "<div id=viewContainer class=ep-view-container ng-class=\"{ 'ep-with-navbar': !!state.showNavbar,\r" +
+    "<div id=viewContainer ng-controller=epShellCtrl my-touchstart=getTouchXPoint() ng-swipe-right=showSwipeLeftSidebar() ng-swipe-left=showSwipeRightSidebar() class=ep-view-container ng-class=\"{ 'ep-with-navbar': !!state.showNavbar,\r" +
     "\n" +
     "                                    'ep-with-footer': !!state.showFooter,\r" +
     "\n" +
@@ -18625,7 +21771,11 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
     "\n" +
     "                                    'ep-scroll-y': !!state.allowVerticalScroll,\r" +
     "\n" +
-    "                                    'ep-momentum-scrolling-enabled': !!state.momentumScrollingEnabled }\"><div id=viewMessage class=ep-container-message ng-if=state.infoMessage ng-style=\"{'width': state.viewDimensions.size.width + 'px', 'height': state.viewDimensions.size.height + 'px'}\"><p class=\"ep-container-message-text ep-center-item\"><i class={{state.infoIcon}}></i><br>{{state.infoMessage}}</p></div><div class=ep-fullscreen ng-transclude></div></div>"
+    "                                    'ep-momentum-scrolling-enabled': !!state.momentumScrollingEnabled }\"><div id=viewMessage class=ep-container-message ng-if=state.infoMessage ng-style=\"{'width': state.viewDimensions.size.width + 'px', 'height': state.viewDimensions.size.height + 'px'}\"><p class=\"ep-container-message-text ep-center-item\"><i class={{state.infoIcon}}></i><br>{{state.infoMessage}}</p></div><!--<ep-cached-view ng-if=\"showFromCache && hasCacheKey\" key=\"cacheKey\"></ep-cached-view>--><!--\r" +
+    "\n" +
+    "    <div class=\"ep-fullscreen\" ng-if=\"!showFromCache || !hasCacheKey\" id=\"viewTemplate\" ng-transclude></div>\r" +
+    "\n" +
+    "--><div class=ep-fullscreen id=viewTemplate ng-transclude></div></div>"
   );
 
 
@@ -18645,7 +21795,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.table/table.html',
-    "<table class=table ng-class=\"{'table-striped' : isStriped}\"><tr><th ng-repeat=\"oneTh in headers track by $index\">{{oneTh}}</th></tr><tr ng-show=isLoading><td colspan={{colCount}}><div class=\"progress progress-striped active\"><div class=progress-bar role=progressbar aria-valuenow=1 aria-valuemin=0 aria-valuemax=1 style=\"width: 100%\"></div></div></td></tr><tr ng-show=loadError><td colspan={{colCount}}><p class=\"text-danger text-center\"><i class=\"fa fa-exclamation-triangle\"></i> {{loadError}}</p></td></tr><tr ng-repeat=\"row in data\" class=ep-table-row ng-class=\"{ 'info': row.$isSelected }\" ng-click=selectRow(row)><td ng-repeat=\"cell in props track by $index\" class=ep-table-cell>{{row[cell]}}</td></tr></table>"
+    "<table class=table ng-class=\"{'table-striped' : striped}\"><tr><th ng-repeat=\"oneTh in headers track by $index\">{{oneTh}}</th></tr><tr ng-show=isLoading><td colspan={{colCount}}><div class=\"progress progress-striped active\"><div class=progress-bar role=progressbar aria-valuenow=1 aria-valuemin=0 aria-valuemax=1 style=\"width: 100%\"></div></div></td></tr><tr ng-show=loadError><td colspan={{colCount}}><p class=\"text-danger text-center\"><i class=\"fa fa-exclamation-triangle\"></i> {{loadError}}</p></td></tr><tr ng-repeat=\"row in data\" class=ep-table-row ng-class=\"{ 'info': row.$isSelected }\" ng-click=selectRow(row,$event) ng-dblclick=onDblClick(row,$event)><td ng-repeat=\"cell in props track by $index\" class=ep-table-cell>{{row[cell]}}</td></tr></table>"
   );
 
 
@@ -18676,6 +21826,11 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
   $templateCache.put('src/components/ep.ui.range.slider/ep-range-slider.html',
     "<div class=ep-range-slider-ctr><div ng-show=touch><div class=ep-range-slider-value-ctr ng-click=toggleRangeInputMode()>{{rangeMin}} - {{rangeMax}}</div><div class=ep-range-slider-value-axis><div class=ep-range-ctr><div class=ep-range></div></div><div class=\"ep-range-slide-handle ep-range-slide-handle-min js-handle-min\"></div><div class=\"ep-range-slide-handle ep-range-slide-handle-max js-handle-max\"></div></div><div class=ep-range-steps-ctr><span class=\"ep-range-step ep-range-step-{{::step}}\" ng-repeat=\"step in steps\"></span></div></div><div ng-show=!touch><input class=\"form-control ep-range-input-min\" name=tbMin ng-model=rangeMin ng-model-options=\"{ debounce: 500 }\"><label for=tbMax>and</label><input class=\"form-control ep-range-input-max\" name=tbMax ng-model=rangeMax ng-model-options=\"{ debounce: 500 }\"><div class=range-slider-mode-toggle-ctr><small class=ep-range-slider-toggle-mode ng-click=toggleRangeInputMode()>Switch to slider</small></div></div></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.viewmodal/ep-viewmodal.html',
+    "<!--This is a partial for the ep-viewmodal directive --><div class=ep-viewmodal ng-class=\"{'ep-viewmodal-show': options.showViewModal, 'ep-viewmodal-peek': peek}\"><div class=\"ep-viewmodal-header modal-header bg-primary modal-title\"><i class=\"pull-left ep-padding-top\" ng-class=\"'fa fa-lg ' + options.lefticon\" ng-if=options.lefticon></i><h5>{{options.title}} <span ng-if=peek class=text-warning><strong>(Peek Mode)</strong></span> <i class=pull-right><a class=\"fa fa-times fa-2x ep-viewmodal-icon\" ng-click=closeClick()></a></i> <i class=pull-right><a class=\"fa fa-eye fa-2x ep-viewmodal-icon\" ng-click=peekClick()></a></i></h5></div><div class=ep-viewmodal-body ng-hide=peek ng-transclude></div></div>"
   );
 
 }]);

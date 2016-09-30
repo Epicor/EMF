@@ -1,3 +1,115 @@
+/*
+ * emf (Epicor Mobile Framework) 
+ * version:1.0.8 built: 30-09-2016
+*/
+.ep-accordion-menu .list-group .panel > .list-group-item {
+  color: transparent;
+  border-radius: 0;
+  cursor: pointer;
+}
+.ep-accordion-menu .ep-menu-header {
+  border-radius: 0 !important;
+  cursor: pointer;
+  padding: 10px;
+}
+.ep-accordion-menu .list-group-item {
+  border-radius: 0 !important;
+  border-left: none;
+  border-right: none;
+  cursor: pointer;
+  padding: 5px 0 5px 0;
+}
+.ep-accordion-menu .list-group-item:last-child {
+  border-bottom: none;
+}
+.ep-accordion-menu .container-fluid {
+  padding-left: 0;
+}
+.ep-accordion-menu .container-fluid:focus {
+  outline: none;
+  background-color: #0071b3;
+}
+.ep-accordion-menu .container-fluid:hover {
+  outline: none;
+  background-color: #0083D0;
+}
+.ep-accordion-menu .container-fluid:focus .ep-submenu-header {
+  outline: none;
+  background-color: transparent;
+  color: white;
+}
+.ep-accordion-menu .container-fluid:focus #menuItem {
+  outline: none;
+  background-color: transparent;
+  color: white;
+}
+.ep-accordion-menu .container-fluid:hover .ep-submenu-header {
+  background-color: transparent;
+  color: white;
+}
+.ep-accordion-menu .container-fluid:hover #menuItem {
+  background-color: transparent;
+  color: white;
+}
+.ep-accordion-menu .list-group-item:first-child {
+  border-top: none;
+}
+.ep-accordion-menu .list-group-item {
+  margin-left: 4px;
+}
+.ep-accordion-menu .list-group > .list-group-item {
+  margin-left: 0px;
+}
+.ep-accordion-menu .list-group > .list-group-item:focus {
+  outline: none;
+}
+.ep-accordion-menu .panel {
+  margin-bottom: 0;
+}
+.ep-accordion-menu .ep-accordion-menu-desc {
+  margin-left: 5px;
+}
+.ep-accordion-menu .ep-accordion-expanded {
+  padding-bottom: 6px;
+}
+.ep-accordion-menu .ep-submenu-header.ep-accordion-expanded {
+  font-weight: bold;
+}
+.ep-accordion-menu .list-group-submenu.ep-accordion-expanded.ep-accordion-expanded-odd {
+  background-color: gainsboro;
+}
+.ep-accordion-menu .ep-accordion-expanded.ep-accordion-expanded-odd {
+  background-color: gainsboro;
+}
+.ep-accordion-menu .list-group-submenu.ep-accordion-expanded.ep-accordion-expanded-even {
+  background-color: aliceblue;
+}
+.ep-accordion-menu .ep-accordion-expanded.ep-accordion-expanded-even {
+  background-color: aliceblue;
+}
+.ep-accordion-menu-animate {
+  -webkit-transition: .5s linear all;
+  /* Chrome */
+  transition: .5s linear all;
+}
+.ep-accordion-menu .list-group-submenu {
+  max-height: 2500px;
+}
+.ep-accordion-menu .list-group-submenu.collapsed {
+  max-height: 0px;
+}
+.ep-accordion-menu .col-xs-10,
+.ep-accordion-menu .col-xs-12 {
+  padding-left: 0 !important;
+}
+.ep-accordion-menu form {
+  padding: 5px;
+}
+.ep-vertical-align-center {
+  display: flex;
+  align-items: center;
+}
+
 .ep-relative {
   position: relative;
 }
@@ -234,6 +346,13 @@
   max-height: 100%;
 }
 
+.ep-color-selector-container .btn {
+  background-color: #F5F5F5;
+}
+.ep-color-selector-container .btn span {
+  display: inline-block;
+}
+
 .ep-color-tile {
   position: relative;
   overflow: hidden;
@@ -359,6 +478,14 @@
 .ep-padding-horizontal {
   padding-left: 10px;
 }
+/**Overriding font-awesome to work in windows devices*/
+@font-face {
+  font-family: 'FontAwesome';
+  src: url('../font-awesome/fonts/fontawesome-webfont.eot');
+  src: url('../font-awesome/fonts/fontawesome-webfont.eot?#iefix') format('embedded-opentype'), url('../font-awesome/fonts/fontawesome-webfont.woff2') format('woff2'), url('../font-awesome/fonts/fontawesome-webfont.woff') format('woff'), url('../font-awesome/fonts/fontawesome-webfont.ttf') format('truetype'), url('../font-awesome/fonts/fontawesome-webfont.svg?#fontawesomeregular') format('svg');
+  font-weight: normal;
+  font-style: normal;
+}
 /* Custom Icon font */
 @font-face {
   font-family: 'ep-custom-icon';
@@ -415,6 +542,15 @@
 .ep-ci-calendar:before {
   content: "\e90a";
 }
+.ep-ci-offline-storage:before {
+  content: "\e90c";
+}
+.ep-ci-gps-tracker:before {
+  content: "\e90d";
+}
+.ep-ci-email-composer:before {
+  content: "\e90e";
+}
 
 .ep-console-warning {
   color: orange;
@@ -424,6 +560,98 @@
 }
 .ep-console-info {
   color: blue;
+}
+
+.ep-contacts-list-container {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+.ep-contacts-list-container li {
+  list-style-type: none;
+}
+.ep-contacts-list {
+  overflow-x: hidden;
+  overflow-y: scroll;
+  -webkit-overflow-scrolling: touch;
+  height: 100%;
+  position: absolute;
+  width: 100%;
+  padding-left: 5%;
+  padding-top: 50px;
+  top: 0;
+}
+.ep-contacts-list-inner {
+  width: 100%;
+  height: calc(100% + 1px);
+}
+.ep-contacts-list li {
+  border-bottom: 1px solid #eee;
+  line-height: 44px;
+  height: 44px;
+}
+.ep-index-list {
+  position: absolute;
+  right: 0;
+  font-size: 12px;
+  text-align: center;
+  display: inline-block;
+  z-index: 998;
+  padding: 0;
+  margin: 0;
+  background-color: #fafafa;
+  width: 20px;
+  top: 0;
+  padding-top: 50px;
+  height: 100%;
+}
+.ep-index-list a {
+  text-decoration: none !important;
+  font-weight: bold;
+}
+.ep-index-list li {
+  color: #129ff4;
+  font-weight: bold;
+}
+.ep-index-list.small-index-list {
+  display: none;
+}
+.ep-index-list.small-index-list li {
+  line-height: 4vh;
+}
+.ep-index-list .fa-circle {
+  font-size: 8px;
+}
+.ep-group-heading {
+  font-weight: bold;
+  background: #fafafa;
+  box-shadow: -60px 0 0 #fafafa;
+  line-height: 28px;
+  height: 28px;
+}
+.ep-contacts-list ul {
+  padding: 0;
+  margin: 0;
+}
+#ep-contacts-list-search {
+  padding: 10px 10px 10px 30px;
+  border-radius: 5px;
+  width: 90%;
+}
+.ep-list-search-container {
+  position: absolute;
+  width: 100%;
+  background-color: #CAC9CE;
+  z-index: 999;
+  height: 50px;
+  padding-left: 5%;
+  top: 0;
+}
+.ep-list-search-container .glyphicon {
+  position: absolute;
+  left: 10px;
+  top: 17px;
+  padding-left: 5%;
 }
 
 /* ----->>>> Pagination styling taken from dataTables.jqueryui.css -------------->>>>*/
@@ -817,6 +1045,11 @@
   padding: 0px 1px 0px 0px;
 }
 
+.ep-drop-active.ep-drop-highlight {
+  opacity: 0.5;
+  border: 1px dashed darkblue;
+}
+
 .ep-dropdown-btn .ep-dropdown-btn-chk {
   margin-right: 2px;
 }
@@ -837,6 +1070,107 @@
   text-align: center;
 }
 
+.ep-search-list-container {
+  position: relative;
+  width: 100%;
+  background-color: #CAC9CE;
+  z-index: 3;
+  height: 50px;
+  padding-left: 5%;
+}
+.ep-search-list-container input {
+  padding: 10px 10px 10px 30px;
+  border-radius: 5px;
+  width: 90%;
+}
+.ep-search-list-container .glyphicon {
+  position: absolute;
+  left: 10px;
+  top: 17px;
+  padding-left: 5%;
+}
+
+.ep-icon-selector-container .icon-filter-field {
+  width: 100%;
+  position: absolute;
+  height: 40px;
+  padding: 0 10%;
+  background-color: #ddd;
+}
+.ep-icon-selector-container .dropdown-menu {
+  width: 295px;
+}
+.ep-icon-selector-container .icon-list {
+  margin-top: 40px;
+  max-height: 300px;
+  width: 100%;
+  overflow-x: hidden;
+  overflow-y: auto;
+  padding: 0;
+}
+.ep-icon-selector-container .icon-list li {
+  list-style-type: none;
+  padding: 5px 25px 5px 15px;
+}
+.ep-icon-selector-container .icon-list li:hover {
+  cursor: pointer;
+  background-color: #F5F5F5;
+  font-weight: bold;
+}
+.ep-icon-selector-container .icon-list li span {
+  padding-right: 5px;
+}
+.ep-icon-selector-container .input-group-btn .btn {
+  background-color: #F5F5F5;
+}
+
+
+.ep-context-menu {
+  /*properties can be specified if needed*/
+}
+.ep-hover-context-menu {
+  /* parent class for the context menu.
+	To be supplied in case context menu has to be displayed on hover */
+}
+.ep-hover-context-menu:hover .ep-actionset {
+  display: inline-block;
+}
+.ep-interactivity-context-menu {
+  text-align: center;
+  line-height: 100% !important;
+}
+@media only screen and (max-width: 768px) {
+  .ep-context-menu-owner {
+    display: block;
+    line-height: inherit !important;
+  }
+}
+
+@media only screen and (max-width: 768px) {
+  #ep-dynamic-menu,
+  .edd-overlay-ctr {
+    position: fixed !important;
+    top: auto !important;
+    right: auto !important;
+    bottom: 0 !important;
+    left: 0 !important;
+    width: 100%;
+    height: 100%;
+    color: black;
+    z-index: 3000;
+    background-color: rgba(48, 60, 67, 0.7);
+  }
+}
+@media only screen and (min-width: 768px) {
+  #ep-dynamic-menu {
+    position: absolute;
+    color: black;
+    z-index: 1000;
+  }
+}
+#ep-dynamic-menu .dropdown-menu {
+  display: block !important;
+}
 
 .ep-modaldialog .ep-dlg-buttons {
   width: 100%;
@@ -1265,6 +1599,284 @@
   opacity: 1;
 }
 
+.ep-photo-browser {
+  /* Loading - from http://loading.io */
+}
+.ep-photo-browser .ng-gallery {
+  width: 100%;
+  height: 100%;
+  display: inline-block;
+}
+.ep-photo-browser img.ng-thumb {
+  height: 90px;
+  float: left;
+  display: block;
+  cursor: pointer;
+  margin: 6px 6px 2px 2px;
+}
+.ep-photo-browser .ng-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background: #000;
+  opacity: 1;
+  z-index: 9999;
+  -webkit-user-select: none;
+  -khtml-user-select: none;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.ep-photo-browser .ng-gallery-content {
+  position: fixed;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 10000;
+  text-align: center;
+}
+.ep-photo-browser .ng-gallery-content > a.close-popup {
+  font-size: 42px !important;
+  float: right !important;
+  color: #fff !important;
+  text-decoration: none !important;
+  margin: 0 30px 0 0 !important;
+  cursor: pointer !important;
+  position: absolute !important;
+  top: 20px !important;
+  right: 0 !important;
+}
+.ep-photo-browser .ng-gallery-content > a.rotate {
+  font-size: 34px !important;
+  float: right !important;
+  color: #fff !important;
+  text-decoration: none !important;
+  margin: 0 10px 0 0 !important;
+  cursor: pointer !important;
+  position: absolute !important;
+  top: 20px !important;
+  right: 310px !important;
+}
+.ep-photo-browser .ng-gallery-content > a.stop-rotate {
+  font-size: 34px !important;
+  float: right !important;
+  color: #fff !important;
+  text-decoration: none !important;
+  margin: 0 10px 0 0 !important;
+  cursor: pointer !important;
+  position: absolute !important;
+  top: 20px !important;
+  right: 280px !important;
+}
+.ep-photo-browser .ng-gallery-content > a.download-image {
+  font-size: 42px;
+  float: right;
+  color: #fff;
+  text-decoration: none;
+  margin: 0 30px 0 0;
+  cursor: pointer;
+  position: absolute;
+  top: 20px;
+  right: 63px;
+}
+.ep-photo-browser .ng-gallery-content > a.nav-left,
+.ep-photo-browser .ng-gallery-content > a.nav-right {
+  color: #fff;
+  text-decoration: none;
+  font-size: 60px;
+  cursor: pointer;
+  outline: none;
+}
+.ep-photo-browser .ng-gallery-content > a.nav-left {
+  position: fixed;
+  left: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.ep-photo-browser .ng-gallery-content > a.nav-right {
+  position: fixed;
+  right: 30px;
+  top: 50%;
+  transform: translateY(-50%);
+}
+.ep-photo-browser .ng-gallery-content > img {
+  height: 300px !important;
+  width: 280px !important;
+  position: relative;
+  display: block;
+  margin: 0 auto 0 auto;
+  top: 50%;
+  transform: translateY(-50%);
+  -webkit-transform: translateY(-50%);
+  cursor: pointer;
+  -moz-user-select: none;
+  -ms-user-select: none;
+  user-select: none;
+  -webkit-user-drag: none;
+}
+.ep-photo-browser .ng-gallery-content > img.effect {
+  animation: fadeIn 0.5s;
+}
+@keyframes fadeIn {
+  from {
+    opacity: 0.3;
+  }
+  to {
+    opacity: 1;
+  }
+}
+.ep-photo-browser .ng-gallery-content > span.info-text {
+  color: #fff;
+  display: inline-block;
+  width: 100%;
+  height: 20px;
+  font-weight: bold;
+  text-align: center;
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 100px;
+}
+.ep-photo-browser .ng-gallery-content > .ng-thumbnails-wrapper {
+  width: 400px;
+  height: 70px;
+  text-align: center;
+  position: fixed;
+  bottom: 0px;
+  left: 0;
+  right: 0;
+  margin-left: auto;
+  margin-right: auto;
+  overflow-x: hidden;
+}
+.ep-photo-browser .ng-gallery-content > .ng-thumbnails-wrapper > .ng-thumbnails {
+  width: 4000px;
+  height: 70px;
+}
+.ep-photo-browser .ng-gallery-content > .ng-thumbnails-wrapper > .ng-thumbnails > div > img {
+  width: auto;
+  height: 70px;
+  float: left;
+  margin-right: 10px;
+  cursor: pointer;
+  opacity: 0.6;
+}
+.ep-photo-browser .ng-gallery-content > .ng-thumbnails-wrapper > .ng-thumbnails > div > img:hover,
+.ep-photo-browser .ng-gallery-content > .ng-thumbnails-wrapper > .ng-thumbnails > div > img.active {
+  transition: opacity 0.25s ease;
+  opacity: 1;
+}
+.ep-photo-browser uiload {
+  display: inline-block;
+  position: relative;
+}
+.ep-photo-browser uiload > div {
+  position: relative;
+}
+@-webkit-keyframes uil-ring-anim {
+  0% {
+    -ms-transform: rotate(0deg);
+    -moz-transform: rotate(0deg);
+    -webkit-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  100% {
+    -ms-transform: rotate(360deg);
+    -moz-transform: rotate(360deg);
+    -webkit-transform: rotate(360deg);
+    -o-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
+@-moz-keyframes uil-ring-anim {
+  0% {
+    -ms-transform: rotate(0deg);
+    -moz-transform: rotate(0deg);
+    -webkit-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  100% {
+    -ms-transform: rotate(360deg);
+    -moz-transform: rotate(360deg);
+    -webkit-transform: rotate(360deg);
+    -o-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
+@-ms-keyframes uil-ring-anim {
+  0% {
+    -ms-transform: rotate(0deg);
+    -moz-transform: rotate(0deg);
+    -webkit-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  100% {
+    -ms-transform: rotate(360deg);
+    -moz-transform: rotate(360deg);
+    -webkit-transform: rotate(360deg);
+    -o-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
+@keyframes uil-ring-anim {
+  0% {
+    -ms-transform: rotate(0deg);
+    -moz-transform: rotate(0deg);
+    -webkit-transform: rotate(0deg);
+    -o-transform: rotate(0deg);
+    transform: rotate(0deg);
+  }
+  100% {
+    -ms-transform: rotate(360deg);
+    -moz-transform: rotate(360deg);
+    -webkit-transform: rotate(360deg);
+    -o-transform: rotate(360deg);
+    transform: rotate(360deg);
+  }
+}
+.ep-photo-browser .uil-ring-css {
+  background: none;
+  position: relative;
+  top: 0;
+  margin: 180px auto 0 auto;
+  width: 100px;
+  height: 100px;
+}
+.ep-photo-browser .uil-ring-css > div {
+  position: absolute;
+  display: block;
+  width: 80px;
+  height: 80px;
+  top: 20px;
+  left: 20px;
+  border-radius: 40px;
+  box-shadow: 0 6px 0 0 #fff;
+  -ms-animation: uil-ring-anim 1s linear infinite;
+  -moz-animation: uil-ring-anim 1s linear infinite;
+  -webkit-animation: uil-ring-anim 1s linear infinite;
+  -o-animation: uil-ring-anim 1s linear infinite;
+  animation: uil-ring-anim 1s linear infinite;
+}
+@media screen and (orientation: landscape) {
+  .ep-photo-browser .ng-gallery-content > img {
+    height: 200px;
+    width: 240px;
+    top: 50%;
+    height: 350px;
+    width: 450px;
+  }
+  .ep-photo-browser .ng-gallery-content > a.stop-rotate {
+    right: 500px !important;
+  }
+}
+
 .ep-record-editor {
   margin-left: 10px;
   /*margin-right: 30px;*/
@@ -1289,36 +1901,24 @@
   margin-top: 8px;
   margin-right: 8px;
 }
-.ep-record-editor .ep-record-editor-container .input-group {
+.ep-editor-control .ep-record-editor-container .input-group {
   width: 100%;
 }
-.ep-record-editor .ep-record-editor-container .ep-editor-label {
+.ep-editor-control .ep-record-editor-container .ep-editor-label {
   display: block;
 }
-.ep-record-editor .ep-editor-checkbox {
+.ep-editor-control .ep-editor-checkbox {
   width: 100%;
   cursor: pointer;
 }
-.ep-record-editor .ep-editor-checkbox > span {
-  padding: 14px;
-}
-.ep-record-editor textarea.form-control.editor {
+/*.ep-editor-control .ep-editor-checkbox >span {
+    padding: 14px;
+}*/
+.ep-editor-control textarea.form-control.editor {
   height: 145px;
 }
-.ep-record-editor .form-control.editor[disabled] {
+.ep-editor-control .form-control.editor[disabled] {
   cursor: default;
-}
-.ep-record-editor .standard-width {
-  width: 300px;
-}
-.ep-record-editor .standard-widthTimes1 {
-  width: 33%;
-}
-.ep-record-editor .standard-widthTimes2 {
-  width: 66%;
-}
-.ep-record-editor .standard-widthTimes3 {
-  width: 100%;
 }
 
 .ep-shell .ep-shell-feedback-btn {
@@ -1584,24 +2184,28 @@ View Animation
   transition: all 200ms ease-out;
 }
 /* Slide animations */
+.ep-slide-left-add,
 .ep-slide-left.ep-view.ng-enter {
   left: 100%;
 }
 .ep-slide-left.ep-view.ng-enter.ng-enter-active {
   left: 0;
 }
+.ep-slide-right-add,
 .ep-slide-right.ep-view.ng-enter {
   left: -100%;
 }
 .ep-slide-right.ep-view.ng-enter.ng-enter-active {
   left: 0;
 }
+.ep-slide-down-add,
 .ep-slide-down.ep-view.ng-enter {
   top: -100%;
 }
 .ep-slide-down.ep-view.ng-enter.ng-enter-active {
   top: 0;
 }
+.ep-slide-up-add,
 .ep-slide-up.ep-view.ng-enter {
   top: 100%;
 }
@@ -1650,7 +2254,7 @@ SIDEBAR
 .ep-shell .ep-sidebar-nav-right {
   right: 0;
 }
-.ep-shell .ep-shell-container.ep-hide-left-sidebar .ep-sidebar-nav-left {
+.ep-shell .ep-shell-container .ep-sidebar-nav-left.ng-hide {
   -moz-transform: translateX(-250px);
   -ms-transform: translateX(-250px);
   -o-transform: translateX(-250px);
@@ -1667,7 +2271,7 @@ SIDEBAR
   -webkit-transform: translate3d(-250px, 0, 0);
   transform: translate3d(-250px, 0, 0);
 }
-.ep-shell .ep-shell-container.ep-hide-right-sidebar .ep-sidebar-nav-right {
+.ep-shell .ep-shell-container .ep-sidebar-nav-right.ng-hide {
   -moz-transform: translateX(250px);
   -ms-transform: translateX(250px);
   -o-transform: translateX(250px);
@@ -1683,12 +2287,6 @@ SIDEBAR
   -o-transform: translate3d(250px, 0, 0);
   -webkit-transform: translate3d(250px, 0, 0);
   transform: translate3d(250px, 0, 0);
-}
-.ep-shell .ep-shell-container.ep-disable-left-sidebar .ep-sidebar-nav-left {
-  visibility: hidden;
-}
-.ep-shell .ep-shell-container.ep-disable-right-sidebar .ep-sidebar-nav-right {
-  visibility: hidden;
 }
 .ep-shell .ep-sidebar-nav div.callout {
   width: 10px;
@@ -1754,6 +2352,9 @@ VIEW CONTAINER [ep-view-container]
 .ep-shell .ep-view-container.ep-scroll-y {
   overflow-y: auto;
 }
+.ep-shell .ep-view-container.ep-scroll-y .ep-fullscreen {
+  overflow-y: auto;
+}
 @media (max-width: 800px) {
   .ep-shell .ep-view-container {
     /* The order is important on these rules, proceed with care */
@@ -1775,7 +2376,8 @@ VIEW CONTAINER [ep-view-container]
     width: 100%;
   }
 }
-.ep-shell .ep-shell-container.ep-hide-left-sidebar .ep-view-container {
+/* This transition ensures that view shifts together with left sidebar */
+.ep-shell .ep-sidebar-nav-left.ng-hide ~ .ep-view-placeholder .ep-view-container {
   /* The order is important on these rules, proceed with care */
   -moz-transform: translateX(0);
   -ms-transform: translateX(0);
@@ -1793,6 +2395,107 @@ VIEW CONTAINER [ep-view-container]
   -webkit-transform: translate3d(0, 0, 0);
   transform: translate3d(0, 0, 0);
   width: 100%;
+}
+.ep-shell .ep-shell-container .ep-view-container-backdrop {
+  background-color: rgba(0, 0, 0, 0.3);
+  bottom: 0;
+  left: 0;
+  position: fixed;
+  right: 0;
+  top: 0;
+  z-index: 999;
+}
+.ep-anim-speed-250 {
+  -webkit-transition: all 250ms ease;
+  transition: all 250ms ease;
+}
+.ep-anim-speed-500 {
+  -webkit-transition: all 500ms ease;
+  transition: all 500ms ease;
+}
+.ep-anim-speed-750 {
+  -webkit-transition: all 750ms ease;
+  transition: all 750ms ease;
+}
+.ep-anim-speed-1000 {
+  -webkit-transition: all 1000ms ease;
+  transition: all 1000ms ease;
+}
+.ep-anim-speed-1250 {
+  -webkit-transition: all 1250ms ease;
+  transition: all 1250ms ease;
+}
+.ep-slide-left-in,
+.ep-slide-left-out,
+.ep-slide-right-in,
+.ep-slide-right-out,
+.ep-slide-up-in,
+.ep-slide-up-out,
+.ep-slide-down-in,
+.ep-slide-down-up {
+  position: absolute;
+  width: 100%;
+  height: 100%;
+}
+.ep-slide-left-in.ng-enter {
+  left: 100%;
+}
+.ep-slide-left-in.ng-enter.ng-enter-active {
+  left: 0;
+}
+.ep-slide-left-out.ng-leave {
+  left: 0;
+}
+.ep-slide-left-out.ng-leave.ng-leave-active {
+  left: -100%;
+}
+.ep-slide-right-in.ng-enter {
+  left: -100%;
+}
+.ep-slide-right-in.ng-enter.ng-enter-active {
+  left: 0;
+}
+.ep-slide-right-out.ng-leave {
+  left: 0;
+}
+.ep-slide-right-out.ng-leave.ng-leave-active {
+  left: 100%;
+}
+.ep-slide-up-in.ng-enter {
+  top: 100%;
+}
+.ep-slide-up-in.ng-enter.ng-enter-active {
+  top: 0;
+}
+.ep-slide-up-out.ng-leave {
+  top: 0;
+}
+.ep-slide-up-out.ng-leave.ng-leave-active {
+  top: -100%;
+}
+.ep-slide-down-in.ng-enter {
+  top: -100%;
+}
+.ep-slide-down-in.ng-enter.ng-enter-active {
+  top: 0;
+}
+.ep-slide-down-out.ng-leave {
+  top: 0;
+}
+.ep-slide-down-out.ng-leave.ng-leave-active {
+  top: 100%;
+}
+.ep-fade-in-in.ng-enter {
+  opacity: 0;
+}
+.ep-fade-in-in.ng-enter.ng-enter-active {
+  opacity: 1;
+}
+.ep-fade-out-out.ng-leave {
+  opacity: 1;
+}
+.ep-fade-out-out.ng-leave.ng-leave-active {
+  opacity: 0;
 }
 
 
@@ -2072,4 +2775,42 @@ VIEW CONTAINER [ep-view-container]
   margin-right: 10px;
   margin-left: 10px;
   display: inline-block;
+}
+
+div.ep-viewmodal-show {
+  transform: translateY(0%);
+}
+div.ep-viewmodal-peek.ep-viewmodal {
+  background-color: rgba(64, 64, 64, 0.3);
+}
+.ep-viewmodal-header {
+  height: 40px;
+}
+.ep-viewmodal-header a:hover,
+a:focus {
+  text-decoration: none;
+}
+.modal-header.ep-viewmodal-header {
+  padding-left: 5px;
+  padding-right: 5px;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+.ep-viewmodal-icon {
+  color: white;
+  padding-right: 10px;
+  font-size: 24px;
+  margin-top: -3px;
+  cursor: pointer;
+}
+.ep-viewmodal {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-color: white;
+  z-index: 10000;
+  transition: all 250ms ease-in;
+  transform: translateY(-100%);
 }
