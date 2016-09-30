@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.182 built: 30-09-2016
+ * version:1.0.10-dev.1 built: 30-09-2016
 */
 (function() {
     'use strict';
@@ -684,7 +684,7 @@ angular.module('ep.viewmodal', [
                         };
                     }
                 }
-            }
+            };
         }])
         .directive('epAccordionMenuItem',
             /*@ngInclude*/
@@ -706,8 +706,8 @@ angular.module('ep.viewmodal', [
                     controller: ['$rootScope', '$scope', function($rootScope, $scope) {
                         $scope.$watch('item.isExpanded', function(val) {
                             if (val !== undefined) {
-                                $scope.onExpand && $scope.onExpand($scope.item);
-                                $scope.commitMenuState && $scope.commitMenuState();
+                                if ($scope.onExpand) { $scope.onExpand($scope.item); }
+                                if ($scope.commitMenuState) { $scope.commitMenuState(); }
                             }
                         });
 
@@ -750,7 +750,7 @@ angular.module('ep.viewmodal', [
                         };
                     }]
                 };
-            })
+            });
 })();
 
 /**
@@ -5254,6 +5254,7 @@ angular.module('ep.datagrid').
                 }
 
                 if ($scope[attrs.overHandler]) {
+                    /*jshint validthis:true */
                     var item = dragOperation.dragItem || this;
                     /*jshint validthis:true */
                     $scope[attrs.overHandler].call(item, dragOperation, evt);
@@ -5274,6 +5275,7 @@ angular.module('ep.datagrid').
                 $(ele).removeClass('ep-drop-active ep-drop-highlight');
                 if ($scope[attrs.overHandler]) {
                     var dragOperation = getDragOperationFnc();
+                    /*jshint validthis:true */
                     var item = dragOperation.dragItem || this;
                     /*jshint validthis:true */
                     $scope[attrs.overHandler].call(item, dragOperation, evt);
@@ -6395,9 +6397,10 @@ angular.module('ep.embedded.apps')
 
                                 // queue up each script in the list
                                 list.forEach(function(url) {
-                                    epUtilsService.loadScript(url, epEmbeddedAppsCacheService.scriptCache).then(function(id) {
-                                        onLoadScript(id);
-                                    }).then(dec, dec);
+                                    epUtilsService.loadScript(url, epEmbeddedAppsCacheService.scriptCache).then(
+                                        function(id) {
+                                            onLoadScript(id);
+                                        }).then(dec, dec);
                                 });
                                 return deferred.promise;
                             }
@@ -6419,9 +6422,10 @@ angular.module('ep.embedded.apps')
                                 // next get the module script syncronously
                                 var url = config.resources.scripts.module;
                                 return epUtilsService.loadScript(
-                                    getAppPath(config.id, url), epEmbeddedAppsCacheService.scriptCache).then(function(id) {
-                                    onLoadScript(id);
-                                });
+                                    getAppPath(config.id, url), epEmbeddedAppsCacheService.scriptCache).then(
+                                    function(id) {
+                                        onLoadScript(id);
+                                    });
                             }).then(function() {
                                 // finally load the rest of the app's scripts
                                 var appScripts = config.resources.scripts.app.map(function(url) {
@@ -7507,7 +7511,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 msg += ' ]';
                 $log.error(msg);
                 deferred.reject(msg);
-            }
+            };
         }
 
         /**
@@ -8625,30 +8629,31 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         function draftAnEmail(settings) {
             try {
                 cordova.plugins.email.isAvailable(
-                       function(isAvailable) {
-                           var defaults = {
-                               to: [],
-                               cc: [],
-                               bcc: [],
-                               subject: '[No Subject]',
-                               body: '',
-                               isHtml: false,
-                               attachments: [],
-                               app: 'gmail'
-                           };
-                           var emailSettings = angular.extend(defaults, settings);
-                           if (!angular.isArray(emailSettings.attachments)) {
-                               emailSettings.attachments = [emailSettings.attachments];
-                           }
-                           cordova.plugins.email.open(emailSettings, function(e) {
-                               $log.error('An error occurred while attempting to launch the email application.' + e);
-                           });
-                       }, function() {
-                           $log.debug('Email service not available');
-                       });
+                    /*jshint validthis:true */
+                    function(isAvailable) {
+                        var defaults = {
+                            to: [],
+                            cc: [],
+                            bcc: [],
+                            subject: '[No Subject]',
+                            body: '',
+                            isHtml: false,
+                            attachments: [],
+                            app: 'gmail'
+                        };
+                        var emailSettings = angular.extend(defaults, settings);
+                        if (!angular.isArray(emailSettings.attachments)) {
+                            emailSettings.attachments = [emailSettings.attachments];
+                        }
+                        cordova.plugins.email.open(emailSettings, function(e) {
+                            $log.error('An error occurred while attempting to launch the email application.' + e);
+                        });
+                    }, function() {
+                        $log.debug('Email service not available');
+                    });
             }
             catch (ex) {
-                $log.error('An error occurred while attempting to launch the email application. ' + ex)
+                $log.error('An error occurred while attempting to launch the email application. ' + ex);
             }
         }
 
@@ -9737,12 +9742,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * To read the icon classes from icon css file.
          */
         function getIconList() {
-            var icons = $.map($.map(document.styleSheets, function (s) {
+            var icons = $.map($.map(document.styleSheets, function(s) {
                 if (s.href && s.href.endsWith('font-awesome.min.css')) {
                     return s;
                 }
                 return null;
-            })[0].rules, function (r) {
+            })[0].rules, function(r) {
                 if (r.cssText.indexOf('::before { content: ') > 0) {
                     var multipleCSS = [];
                     var count = (r.cssText.match(/::before/g) || []).length;
@@ -10995,13 +11000,13 @@ angular.module('ep.menu.builder').
                         if (cfg.helpTemplateOptions) {
                             if (!cfg.helpTemplateOptions.templateScope) {
                                 cfg.helpTemplateOptions.templateScope = $scope;
-                            }
+                            };
                             $scope.helpButtonClick = function() {
                                 $scope.showHelp = !$scope.showHelp;
                             };
                             $scope.closeHelp = function() {
                                 $scope.showHelp = false;
-                            }
+                            };
                         }
 
                         if (cfg.templateOptions && !cfg.templateOptions.templateScope) {
@@ -11639,15 +11644,14 @@ angular.module('ep.menu.builder').
             }
             /**
              * @ngdoc method
-             * @name navigate
+             * @name navigateExternal
              * @methodOf ep.multilevel.menu.controller:epMultiLevelMenuCtrl
              * @public
              * @description
              * Handles the navigate request.
              *
-             * @param {object} mi the menu item
-             * @param {bool} isHeader - is header clicked (backwards or top menu, otherwise triggered from item)
-             * @param {object} ev - event object from UI
+             * @param {object} mi - the menu item
+             * @param {object} event - event object from UI
              */
             function navigateExternal(mi, event) {
                 if (!mi) {
@@ -11659,7 +11663,7 @@ angular.module('ep.menu.builder').
                     mi.actionExternal(mi);
                 }
 
-              event && event.stopPropagation();
+                if (event) { event.stopPropagation(); }
             }
             /**
              * @ngdoc method
@@ -12117,7 +12121,7 @@ angular.module('ep.menu.builder').
                 if (scope.onFavoriteChange) {
                     scope.onFavoriteChange({ menuItem: mi, favorites: data.favorites });
                 }
-                event && event.stopPropagation();
+                if (event) { event.stopPropagation(); }
                 scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_FAVORITES_CHANGED);
             }
             /**
@@ -12838,6 +12842,7 @@ angular.module('ep.menu.builder').
             var logicalOp = (isOr) ? ' or ' : ' and ';
             odataObject.$filter = ((odataObject && odataObject.$filter) ? (odataObject.$filter + logicalOp) : '') +
                 expression;
+            /*jshint validthis: true */
             return this;
         }
 
@@ -15350,7 +15355,7 @@ angular.module('ep.record.editor').
 
                 var providers = $scope.menuOptions.providers;
                 $scope.count = providers.length;
-                var keys = providers.map(function(p) { return p.getCacheKey()});
+                var keys = providers.map(function(p) { return p.getCacheKey(); });
                 $scope.commitMenuState = function commitMenuState() {
                     keys
                         .forEach(function(key) {
@@ -15385,7 +15390,7 @@ angular.module('ep.record.editor').
                                     cache[key] = m;
                                     epLocalStorageService.update('menu.' + key, m);
                                     provider.restore(m);
-                                    merge(m)
+                                    merge(m);
                                 });
                             }
                         }
@@ -15489,8 +15494,8 @@ angular.module('ep.record.editor').
     'use strict';
     angular.module('ep.shell').directive('myTouchstart', [function() {
         return function(scope, element, attr) {
-            element.bind('touchstart', function(event) {
-                scope.$apply(attr['myTouchstart']);
+            element.bind('touchstart', function() {
+                scope.$apply(attr.myTouchstart);
             });
         };
     }])
@@ -15614,6 +15619,7 @@ angular.module('ep.record.editor').
         }
     ]);
 })();
+
 /**
      * @ngdoc directive
      * @name ep.shell.directive:epshell
@@ -17945,7 +17951,9 @@ angular.module('ep.shell').service('epSidebarService', [
                                     bindButtonAttributes(scope, def);
                                 } else if (scope && def.type === 'select' && def.option && def.options.length) {
                                     // Wire up the options
-                                    def.options.forEach(function(optBtn) { configureButton(scope, optBtn); })
+                                    def.options.forEach(function(optBtn) {
+                                        configureButton(scope, optBtn);
+                                    });
                                 }
                             }
                             var buttonDefs = Object.keys($attrs).filter(function(key) {
@@ -17982,7 +17990,8 @@ angular.module('ep.shell').service('epSidebarService', [
                                 var unBind = $rootScope.$on('$routeChangeStart', function(event, newRoute, oldRoute) {
                                     if ($scope.showFromCache && oldRoute) {
                                         $scope.cacheKey = oldRoute.$$route.originalPath.replace('/', '-');
-                                        epViewCacheService.addViewToCache($scope.cacheKey, "#viewTemplate", oldRoute.scope);
+                                        epViewCacheService.addViewToCache($scope.cacheKey,
+                                            '#viewTemplate', oldRoute.scope);
                                     }
                                     unBind();
                                 });
@@ -18030,7 +18039,7 @@ angular.module('ep.shell').service('epSidebarService', [
                 function epCachedViewController($scope) {
                     var cache = epViewCacheService.getViewFromCache($scope.key);
                     $timeout(function() {
-                        var targetNode = $("#epCacheTarget-" + $scope.key);
+                        var targetNode = $('#epCacheTarget-' + $scope.key);
                         cache.scope.hasCacheKey = false;
                         var content = $compile(cache.node)(cache.scope);
                        targetNode.replaceWith(content);
@@ -18704,7 +18713,7 @@ angular.module('ep.signature').directive('epSignature',
             if ($scope.data && $scope.data.length && $scope.onDoubleClickRow) {
                 $scope.onDoubleClickRow({ 'row': row, '$event': $event });
             }
-        }
+        };
     }
     ]);
 })();
@@ -21492,7 +21501,7 @@ function epTilesMenuFavoritesDirective() {
         $scope.peek = false;
 
         //click event to close the viewmodal
-        $scope.closeClick = function(){
+        $scope.closeClick = function() {
             //reset peek mode
             $scope.peek = false;
 
@@ -21504,14 +21513,12 @@ function epTilesMenuFavoritesDirective() {
 
             //close
             $scope.options.showViewModal = !closeModal;
-        }
+        };
 
-        $scope.peekClick = function(){
+        $scope.peekClick = function() {
             $scope.peek = !$scope.peek;
-        }
+        };
     }
-
-
 }());
 
 (function() {
