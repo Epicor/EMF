@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.180 built: 29-09-2016
+ * version:1.0.8-dev.181 built: 30-09-2016
 */
 (function() {
     'use strict';
@@ -677,7 +677,9 @@ angular.module('ep.viewmodal', [
                             var target = $(e.target);
 
                             if (key === 40) {
-                                target.parents().nextAll().filter(':visible').not('.ep-menu-header').find('.container-fluid').first().focus();
+                                target.parents().nextAll().filter(':visible')
+                                    .not('.ep-menu-header').find('.container-fluid')
+                                    .first().focus();
                             }
                         };
                     }
@@ -724,17 +726,24 @@ angular.module('ep.viewmodal', [
                                     item.isExpanded = true;
                                     break;
                                 case 38: // arrow up
-                                    if (target.parents().prevAll().filter(':visible').first().parent().hasClass('ep-accordion-expanded')) {
+                                    if (target.parents().prevAll().filter(':visible').first().parent()
+                                        .hasClass('ep-accordion-expanded')) {
                                         target.parents().prevAll().filter(':visible').first().focus();
                                     } else {
-                                        target.parents().prevAll().filter(':visible').not('.ep-menu-header').first().find('.container-fluid, .form-control').focus();
+                                        target.parents().prevAll().filter(':visible')
+                                            .not('.ep-menu-header').first()
+                                            .find('.container-fluid, .form-control')
+                                            .focus();
                                     }
                                     break;
                                 case 40: // arrow down
                                     if (target.parent().hasClass('ep-accordion-expanded')) {
-                                        target.next().find('.container-fluid').first().focus();
+                                        target.next().find('.container-fluid')
+                                            .first().focus();
                                     } else {
-                                        target.parents().nextAll().filter(':visible').find('.container-fluid').first().focus();
+                                        target.parents().nextAll().filter(':visible')
+                                            .find('.container-fluid')
+                                            .first().focus();
                                     }
                                     break;
                             }
@@ -9005,7 +9014,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                                 map: map
                             });
 
-                            google.maps.event.addListener(marker, 'click', mapClick.bind(this, marker, i, locations, map));
+                            google.maps.event.addListener(marker, 'click', mapClick
+                                .bind(this, marker, i, locations, map));
 
                             bounds.extend(latLng);
                             //  Fit the bounds to map
@@ -15248,7 +15258,6 @@ angular.module('ep.record.editor').
                 menuitems: []
             };
 
-
             if ($scope.menuOptions.menuType !== 'accordion') {
                 $scope.menuGets = $scope.menuOptions.fnGetMenu;
                 if (angular.isFunction($scope.menuOptions.fnGetMenu)) {
@@ -15298,7 +15307,7 @@ angular.module('ep.record.editor').
                         // If we've read the menu out of memory, it doesn't need to be restored
                         merge(cached);
                     } else {
-                        cached = epLocalStorageService.get('menu.'+key);
+                        cached = epLocalStorageService.get('menu.' + key);
                         if (cached && cached._timestamp + interval > now) {
                             provider.restore(cached);
                             cache[key] = cached;
