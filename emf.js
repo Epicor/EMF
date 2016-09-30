@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.8-dev.178 built: 29-09-2016
+ * version:1.0.8-dev.179 built: 29-09-2016
 */
 (function() {
     'use strict';
@@ -672,7 +672,7 @@ angular.module('ep.viewmodal', [
                         });
 
                         //on arrow down then select the first node of the search results
-                        $scope.onKeydown = function (e) {
+                        $scope.onKeydown = function(e) {
                             var key = e.keyCode;
                             var target = $(e.target);
 
@@ -1747,7 +1747,7 @@ app.directive('epCardTitle',
             },
             templateUrl: 'src/components/ep.color.selector/color_selector.html',
             link: function(scope) {
-                scope.$on('colorpicker-selected', function (event, colorObject) {
+                scope.$on('colorpicker-selected', function(event, colorObject) {
                     scope.selectedColor = colorObject.value;
                 });
 
@@ -4562,7 +4562,7 @@ angular.module('ep.datagrid').directive('epDataGrid', [
                 /// <summary>
                 ///   Resizes the table and invokes the DataTables api to retrieve more records, if necessary.
                 /// </summary>
-                if(scope.state.$table && scope.state.$table.is(':visible')) {
+                if (scope.state.$table && scope.state.$table.is(':visible')) {
                     $timeout.cancel(scope.resizeTimeout);
                     scope.resizeTimeout = $timeout(function() {
                         if (scope.state.dataTable) {
@@ -5104,7 +5104,7 @@ angular.module('ep.datagrid').
 
                         scope.$watch('dragEnabled', function(newValue) {
                             if (newValue !== undefined) {
-                                ele.attr('draggable', newValue === false ? 'false': 'true');
+                                ele.attr('draggable', newValue === false ? 'false' : 'true');
                             }
                         });
 
@@ -5150,12 +5150,12 @@ angular.module('ep.datagrid').
 (function() {
     'use strict';
 
-    epDropAreaCtrl.$inject = ['$scope', '$parse'];
+    epDropAreaCtrl.$inject = ['$scope'];
     angular.module('ep.drag.drop')
         .controller('epDropAreaCtrl', epDropAreaCtrl);
 
     /*@ngInject*/
-    function epDropAreaCtrl($scope, $parse) {
+    function epDropAreaCtrl($scope) {
         //Place the main closure function on the scope for access from directive
         $scope.register = register;
 
@@ -5245,7 +5245,6 @@ angular.module('ep.datagrid').
                 }
 
                 if ($scope[attrs.overHandler]) {
-                    var dragOperation = getDragOperationFnc();
                     var item = dragOperation.dragItem || this;
                     /*jshint validthis:true */
                     $scope[attrs.overHandler].call(item, dragOperation, evt);
@@ -5341,7 +5340,7 @@ angular.module('ep.datagrid').
      * dropped to this area. This value will be used by ep-drop-area directive to check whether this drop is
      * supported by this area.
      * >     dropHandler,leaveHandler,overHandler attributes are attributes that pass names of the functions acting
-     * as callbacks on the active scope 
+     * as callbacks on the active scope
      * >    'ep-drop-active' class is set on the element when drop area is active
      *
      * @example
@@ -6173,7 +6172,7 @@ angular.module('ep.embedded.apps')
                 return requires;
             }
 
-            function invoke($log, queue, providers){
+            function invoke($log, queue, providers) {
                 var i;
                 var ii;
                 var invokeQueue;
@@ -7823,8 +7822,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      <file name="script.js">
      	angular.module('TestApp', ['ep.hybrid.barcode'])
      		.controller('SampleCtrl',['$scope', '$log', 'epHybridBarcodeService',
-	     		function($scope, epHybridBarcodeService){
-                    $scope.scanBarcode = function () {
+	     		function($scope, epHybridBarcodeService) {
+                    $scope.scanBarcode = function() {
                         epHybridBarcodeService.scan(
 				            onSuccess,
                             onFail
@@ -7911,7 +7910,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      <file name="script.js">
      	angular.module("TestApp", ["ep.hybrid.calendar"])
      		.controller("SampleCtrl",["$scope", "$log", "epHybridCalendarService",
-	     		function($scope, epHybridCalendarService){
+	     		function($scope, epHybridCalendarService) {
                     // create a calendar (iOS only for now)
                     epHybridCalendarService.createCalendar('calendar name',onSuccess,onFail);
 
@@ -8296,8 +8295,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      <file name="script.js">
      	angular.module("TestApp", ["ep.hybrid.contacts"])
      		.controller("SampleCtrl",["$scope", "$log", "epHybridContactsService",
-                function($scope, epHybridContactsService){
-                    $scope.pickContact = function () {
+                function($scope, epHybridContactsService) {
+                    $scope.pickContact = function() {
                         epHybridContactsService.pickContact(
                             onSuccess,
                             onFail
@@ -8391,7 +8390,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      <file name="script.js">
      	angular.module("TestApp", ["ep.hybrid.device"])
      		.controller("SampleCtrl",["$scope", "epHybridDeviceService",
-	     		function($scope, epHybridDeviceService){
+	     		function($scope, epHybridDeviceService) {
                     $scope.deviceModel = epHybridDeviceService.getModel();
                     $scope.devicePlatform = epHybridDeviceService.getPlatform();
                     $scope.deviceId = epHybridDeviceService.getUUID();
@@ -8524,7 +8523,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      <file name="script.js">
      	angular.module('TestApp', ['ep.hybrid.emailcomposer'])
      		.controller('SampleCtrl',['$scope', '$log', 'epHybridEmailComposerService',
-	     		function($scope, epHybridEmailComposerService){
+	     		function($scope, epHybridEmailComposerService) {
 
                     $scope.sendEmail = function() {
                         try {
@@ -8679,14 +8678,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      <file name="script.js">
      	angular.module("TestApp", ["ep.hybrid.flashlight"])
      		.controller("SampleCtrl",["$scope", "epHybridFlashlightService",
-                function($scope, epHybridFlashlightService){
+                function($scope, epHybridFlashlightService) {
                     // Allows to switch on the flashlight
-                    $scope.on = function () {
+                    $scope.on = function() {
                         epHybridFlashlightService.flashOn();
                     }
 
                     // Allows to switch off the flashlight
-                    $scope.off = function () {
+                    $scope.off = function() {
                         epHybridFlashlightService.flashOff();
                     }
             }]);
@@ -8784,11 +8783,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      <file name="script.js">
      	angular.module("TestApp", ["ep.hybrid.geolocation"])
      		.controller("SampleCtrl",["$scope", "epHybridGeolocationService",
-                function($scope, epHybridGeolocationService){
+                function($scope, epHybridGeolocationService) {
 
                     //Specially this method need to be included while using autocomplete textboxes in ios devices
-                    $scope.addNeedClickClass = function () {
-                        $('.pac-container').bind('touchstart', function (event) {
+                    $scope.addNeedClickClass = function() {
+                        $('.pac-container').bind('touchstart', function(event) {
                         event.target.classList.add('needsclick');
                         });
                     };
@@ -8989,7 +8988,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 });
             }
 
-            function mapClick(marker, index, locations, map){
+            function mapClick(marker, index, locations, map) {
                 infowindow.setContent(locations[index][0]);
                 infowindow.open(map, marker);
             }
@@ -9155,7 +9154,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      <file name="script.js">
      	angular.module('TestApp', ['ep.hybrid.gpstracker'])
      		.controller('SampleCtrl',['$scope', '$log', 'epHybridGPSTrackerService',
-	     		function($scope, epHybridGPSTrackerService){  }]);
+	     		function($scope, epHybridGPSTrackerService) {  }]);
      </file>
    </example>
  */
@@ -9285,7 +9284,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      <file name="script.js">
      	angular.module("TestApp", ["ep.hybrid.media"])
      		.controller("SampleCtrl",["$scope", "$log", "epHybridMediaService",
-                function($scope, epHybridMediaService){
+                function($scope, epHybridMediaService) {
                     var audioUrl = "http://www.sounddogs.com/sound-effects/2217/mp3/410647_SOUNDDOGS__wo.mp3";
 
                     $scope.playMusic = function() {
@@ -9478,8 +9477,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      <file name="script.js">
      	angular.module("TestApp", ["ep.hybrid.photo"])
      		.controller("SampleCtrl",["$scope", "$log", "epHybridPhotoService",
-	     		function($scope, epHybridPhotoService){
-                    $scope.takePicture = function () {
+	     		function($scope, epHybridPhotoService) {
+                    $scope.takePicture = function() {
                         epHybridPhotoService.getPicture(
                             onSuccess,
                             onFail,
@@ -9487,7 +9486,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         );
                     };
 
-                    $scope.loadPicture = function () {
+                    $scope.loadPicture = function() {
                         epHybridPhotoService.getPicture(
                             onSuccess,
                             onFail,
@@ -9500,12 +9499,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     };
 
                     function onSuccess(imageData) {
-                        var image = document.getElementById("pictureImage");
+                        var image = document.getElementById('pictureImage');
                         image.src = "data:image/jpeg;base64," + imageData;
                     }
 
                     function onFail(message) {
-                        $log.debug("Failed because: " + message);
+                        $log.debug('Failed because: ' + message);
                     }
             }]);
      </file>
@@ -9614,7 +9613,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      <file name="script.js">
      	angular.module("TestApp", ["ep.hybrid.vibration"])
      		.controller("SampleCtrl",["$scope", "$log", "epHybridVibrationService",
-                function($scope, epHybridVibrationService){
+                function($scope, epHybridVibrationService) {
                     var sec = 3000;
                     $scope.vibration = function() {
                         epHybridVibrationService.vibrateDevice(sec);
@@ -9823,7 +9822,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     var html = sDiv;
                     if (options.templateStyle) {
                         try {
-                            eval('$scope.state.templateScope._templateStyle_ = ' + options.templateStyle);
+                            $scope.state.templateScope._templateStyle_ = $scope.$eval(options.templateStyle);
                         } catch (err) {
                             $log.error('error evaluating style:' + err.message);
                         }
@@ -11898,7 +11897,7 @@ angular.module('ep.menu.builder').
 
                 menu._depth = depth;
                 angular.forEach(menu.menuitems, function(kid) {
-                    if(componentType !== 'epAccordionMenu') {
+                    if (componentType !== 'epAccordionMenu') {
                         // we cannot set the parent with the accordion menu because the menu data is serialized
                         // as JSON, and setting the parent causes a circular structure
                         kid._parent = menu;
@@ -12958,7 +12957,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
             return deferred.promise;
         }
         function showDeviceImage() {
-            document.addEventListener("deviceready", onDeviceReady, false);
+            document.addEventListener('deviceready', onDeviceReady, false);
         }
         function onDeviceReady() {
             window.resolveLocalFileSystemURL(cordova.file.externalRootDirectory, function onFileSystemSuccess(fileSystem) {
@@ -12967,21 +12966,21 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                 directoryReader.readEntries(function(entries) {
                     var i;
                     for (i = 0; i < entries.length; i++) {
-                        if (entries[i].name === "DCIM") {
+                        if (entries[i].name === 'DCIM') {
                             var dcimReader = entries[i].createReader();
                             dcimReader.readEntries(onGetDCIM, false);
                             break;
                         }
                     }
                 }, function() {
-                    window.console.log("fail");
+                    window.console.log('fail');
                 });
             });
         }
         function getFileContentAsBase64(path, callback) {
             window.resolveLocalFileSystemURL(path, gotFile, fail);
             function fail() {
-                window.Console.log("file not found")
+                window.Console.log('file not found')
             }
             function gotFile(fileEntry) {
 
@@ -12999,12 +12998,12 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
         function onGetDCIM(entries) {
             var i;
             for (i = 0; i < entries.length; i++) {
-                if (entries[i].name === "Camera") {
+                if (entries[i].name === 'Camera') {
                     var mediaReader = entries[i].createReader();
                     mediaReader.readEntries(onGetFileNames, false);
                     break;
                 }
-                window.console.log(" the entries name " + entries[i].name);
+                window.console.log(' the entries name ' + entries[i].name);
             }
         }
         function onGetFileNames(entries) {
@@ -13307,9 +13306,9 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
         # nullable {bool}  - nullable
         # list {array}  - array of items for drop down (editor = 'select' ) [{ label, value }]
         # sizeClass {string} - editor size class (bootstrap column sizes like col-md-6, col-lg-8, etc)
-        # sizeClassTarget {object} - if string then acts like selector of closest ancestor and sets size 
+        # sizeClassTarget {object} - if string then acts like selector of closest ancestor and sets size
         #                   class to this element. if node is passed then sets size class on it.
-        #                   
+        #
         # checkBoxSize {string}  - applicable to checkbox only (for now). Can be '1x', '2x', '3x'
         # style {string} - sets inline styling. eg. '{ "color" : "red", "margin" : "0px" }
         # oFormat {object}
@@ -13326,7 +13325,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
         # imageWidth {int} - image width for image editor
         # fnOnFldValidate(ctx, event, inputValue, originalValue) - callback function on validation
         # fnOnChange(ctx, event) - callback function on change
-        # fnOnBlur(ctx, event) - callback function on change    
+        # fnOnBlur(ctx, event) - callback function on change
     *
     * @param {object} value - the value binding for the editor
     * @param {bool} isDropEnabled - is drop enabled for the editor
@@ -13410,7 +13409,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                 $(el).removeClass(function(index, css) {
                     return (css.match(/(^|\s)col-((lg)|(xs)|(sm)|(md))\S+/g) || []).join(' ');
                 });
-                el.addClass(sClass)
+                el.addClass(sClass);
             }
         }
 
@@ -13465,8 +13464,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
 
             if (col.style && angular.isString(col.style)) {
                 try {
-                    var xStyle;
-                    eval('xStyle = ' + col.style);
+                    var xStyle =  scope.$eval(col.style);
                     ctx.style = xStyle;
                 } catch (err) {
                     $log.error('Error in ep-editor-control styling. Error: ' + err.message + '\nStyle: ' + col.style);
@@ -13478,7 +13476,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
             scope.editorDirective = '<' + directive + ' ctx=ctx value=value />';
 
             ctx.fnSetSizeClass = function(sizeClass) {
-                var sClass = col.sizeClass || sizeClass || defaultSizeClass
+                var sClass = col.sizeClass || sizeClass || defaultSizeClass;
                 var isSet = true;
                 if (col.sizeClassTarget) {
                     if (angular.isString(col.sizeClassTarget)) {
@@ -13491,7 +13489,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                     } else {
                         isSet = false;
                     }
-                } 
+                }
                 if (!col.sizeClassTarget || !isSet) {
                     ctx.sizeClass = sClass;
                 }
@@ -15251,7 +15249,7 @@ angular.module('ep.record.editor').
             };
 
 
-            if($scope.menuOptions.menuType !== 'accordion') {
+            if ($scope.menuOptions.menuType !== 'accordion') {
                 $scope.menuGets = $scope.menuOptions.fnGetMenu;
                 if (angular.isFunction($scope.menuOptions.fnGetMenu)) {
                     $scope.menuGets = [$scope.menuOptions.fnGetMenu];
@@ -15272,42 +15270,42 @@ angular.module('ep.record.editor').
             } else {
                // The accordion menu passes a list of menu providers instead of a list of functions
                 // Ensure that the providers object is an array
-                if(!angular.isArray($scope.menuOptions.providers)){
+                if (!angular.isArray($scope.menuOptions.providers)) {
                     $scope.menuOptions.providers = [$scope.menuOptions.providers];
                 }
 
                 var providers = $scope.menuOptions.providers;
                 $scope.count = providers.length;
-                var keys = providers.map(function(p){ return p.getCacheKey()});
-                $scope.commitMenuState = function commitMenuState(){
+                var keys = providers.map(function(p) { return p.getCacheKey()});
+                $scope.commitMenuState = function commitMenuState() {
                     keys
-                        .forEach(function(key){
+                        .forEach(function(key) {
                             var m = cache[key];
                             epLocalStorageService.update('menu.' + key, m);
                         });
                 };
                 var interval = ($scope.menuOptions.refreshInterval || 0) * 1000;
                 var now = new Date().valueOf();
-                providers.forEach(function(provider){
+                providers.forEach(function(provider) {
 
                     var key = provider.getCacheKey();
-                    provider.register(function(){
+                    provider.register(function() {
                         cache[key] = null;
                         epLocalStorageService.update('menu.' + key, null);
                     });
                     var cached = cache[key];
-                    if(cached) {
+                    if (cached) {
                         // If we've read the menu out of memory, it doesn't need to be restored
                         merge(cached);
                     } else {
                         cached = epLocalStorageService.get('menu.'+key);
-                        if(cached && cached._timestamp + interval > now) {
+                        if (cached && cached._timestamp + interval > now) {
                             provider.restore(cached);
                             cache[key] = cached;
                             merge(cached);
                         } else {
                             var fetch = provider.get;
-                            if(fetch) {
+                            if (fetch) {
                                 fetch().then(function(m) {
                                     m._timestamp = now;
                                     cache[key] = m;
@@ -15321,7 +15319,7 @@ angular.module('ep.record.editor').
                 });
             }
         };
-        function merge(m){
+        function merge(m) {
             epMultiLevelMenuService.mergeMenus($scope.menu, m);
             if (--$scope.count === 0) {
                 $scope.menuOptions.menu = $scope.menu;
@@ -17086,7 +17084,7 @@ angular.module('ep.record.editor').
              * Add navigation buttons. They will be merged with existing buttons, but without duplication
              */
             function addNavbarButtons(buttons) {
-                if(!angular.isArray(buttons)){
+                if (!angular.isArray(buttons)) {
                     buttons = [buttons];
                 }
                 var btns = _.union(navbarButtons, buttons);
@@ -17855,7 +17853,7 @@ angular.module('ep.shell').service('epSidebarService', [
                                         });
                                     }
                                 });
-                            function bindButtonAttributes(scope, def){
+                            function bindButtonAttributes(scope, def) {
                                 // wire up the "action" function on the view's controller
                                 bindScopeProperty(scope, def, 'action', false);
                                 // wire up the "confirm" function, if it exists.
@@ -17865,15 +17863,15 @@ angular.module('ep.shell').service('epSidebarService', [
                                 // The "enabled" property is also evaluated immediately.
                                 bindScopeProperty(scope, def, 'enabled', true);
                             }
-                            function configureButton(scope, def){
+                            function configureButton(scope, def) {
                                 if (!def.type) {
                                     def.type = 'button';
                                 }
                                 if (scope && def.type === 'button') {
                                     bindButtonAttributes(scope, def);
-                                } else if (scope && def.type==='select' && def.option && def.options.length){
+                                } else if (scope && def.type === 'select' && def.option && def.options.length) {
                                     // Wire up the options
-                                    def.options.forEach(function(optBtn){ configureButton(scope, optBtn); })
+                                    def.options.forEach(function(optBtn) { configureButton(scope, optBtn); })
                                 }
                             }
                             var buttonDefs = Object.keys($attrs).filter(function(key) {
@@ -17906,9 +17904,9 @@ angular.module('ep.shell').service('epSidebarService', [
                             $scope.showFromCache = true;
                             $scope.cacheKey = $location.url().replace('/', '-');
                             $scope.hasCacheKey = epViewCacheService.hasCachedView($scope.cacheKey);
-                            if($scope.showFromCache) {
-                                var unBind = $rootScope.$on('$routeChangeStart', function(event, newRoute, oldRoute){
-                                    if($scope.showFromCache && oldRoute){
+                            if ($scope.showFromCache) {
+                                var unBind = $rootScope.$on('$routeChangeStart', function(event, newRoute, oldRoute) {
+                                    if ($scope.showFromCache && oldRoute) {
                                         $scope.cacheKey = oldRoute.$$route.originalPath.replace('/', '-');
                                         epViewCacheService.addViewToCache($scope.cacheKey, "#viewTemplate", oldRoute.scope);
                                     }
@@ -17926,7 +17924,7 @@ angular.module('ep.shell').service('epSidebarService', [
 
             function addViewToCache(key, selector, scope) {
                 var nodeSource = $(selector);
-                if(nodeSource.length) {
+                if (nodeSource.length) {
                     viewCache[key] = {node: nodeSource, scope: scope};
                 }
             }
@@ -21450,7 +21448,9 @@ function epTilesMenuFavoritesDirective() {
 * @restrict E
 *
 * @description
-* Represents the ep.viewmodal directive
+* This directive can be used to display a full screen modal within your view controller.  This is different than the
+ * modal dialog because it can be used in conjunction with a modal dialog.  The view modal can share your view controller
+ * and be invoked directly from your view controller by setting the options.showViewModal = true.
 *
 * @example
 */
