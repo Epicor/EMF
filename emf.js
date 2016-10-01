@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.1 built: 30-09-2016
+ * version:1.0.10-dev.2 built: 30-09-2016
 */
 (function() {
     'use strict';
@@ -5811,29 +5811,33 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsShellService', [
         }
 
         function setupViewShellOptions($scope, config, view) {
+            // for backwards compat
+            if(view.sidebarOptions && !view.sidebarSettings){
+                view.sidebarSettings = view.sidebarOptions
+            }
             // inject the new sidebar template
-            if (view.sidebarOptions) {
+            if (view.sidebarSettings) {
                 epShellService.disableLeftSidebar();
-                if (view.sidebarOptions.left) {
+                if (view.sidebarSettings.left) {
                     epShellService.enableLeftSidebar();
-                    if (view.sidebarOptions.left.templateUrl) {
+                    if (view.sidebarSettings.left.templateUrl) {
                         var leftSidebarUrl = $scope.embeddedAppsService.getAppPath(config.id,
-                            view.sidebarOptions.left.templateUrl);
+                            view.sidebarSettings.left.templateUrl);
                         epShellService.setLeftTemplate('<div ng-include="\'' + leftSidebarUrl + '\'"></div>');
-                    } else if (view.sidebarOptions.left.template) {
-                        epShellService.setLeftTemplate(view.sidebarOptions.left.template);
+                    } else if (view.sidebarSettings.left.template) {
+                        epShellService.setLeftTemplate(view.sidebarSettings.left.template);
                     }
                 }
 
                 epShellService.disableRightSidebar();
-                if (view.sidebarOptions.right) {
+                if (view.sidebarSettings.right) {
                     epShellService.enableRightSidebar();
-                    if (view.sidebarOptions.right.templateUrl) {
+                    if (view.sidebarSettings.right.templateUrl) {
                         var rightSidebarUrl = $scope.embeddedAppsService.getAppPath(config.id,
-                            view.sidebarOptions.right.templateUrl);
+                            view.sidebarSettings.right.templateUrl);
                         epShellService.setRightTemplate('<div ng-include="\'' + rightSidebarUrl + '\'"></div>');
-                    } else if (view.sidebarOptions.right.template) {
-                        epShellService.setRightTemplate(view.sidebarOptions.right.template);
+                    } else if (view.sidebarSettings.right.template) {
+                        epShellService.setRightTemplate(view.sidebarSettings.right.template);
                     }
                 }
             } else {
@@ -5947,17 +5951,9 @@ angular.module('ep.embedded.apps').constant('epEmbeddedAppsConstants', {
      * Represents the dialog pane (confirmation) directive. For internal use from epModalDialogService
      *
      */
-angular.module('ep.embedded.apps').directive('epEmbeddedApps', [
-    '$document',
-    '$log',
-    '$rootScope',
-    '$routeParams',
-    '$location',
-    '$timeout',
-    'epEmbeddedAppsService',
-    'epEmbeddedAppsCacheService',
-    'epEmbeddedAppsConstants',
-    function(
+angular.module('ep.embedded.apps').directive('epEmbeddedApps',
+    /*@ngInject*/
+    ['$document', '$log', '$rootScope', '$routeParams', '$location', '$timeout', 'epEmbeddedAppsService', 'epEmbeddedAppsCacheService', 'epEmbeddedAppsConstants', 'epShellService', function(
         $document,
         $log,
         $rootScope,
@@ -5966,7 +5962,8 @@ angular.module('ep.embedded.apps').directive('epEmbeddedApps', [
         $timeout,
         epEmbeddedAppsService,
         epEmbeddedAppsCacheService,
-        epEmbeddedAppsConstants) {
+        epEmbeddedAppsConstants,
+        epShellService) {
         return {
             restrict: 'E',
             templateUrl: 'src/components/ep.embedded.apps/embedded-apps.html',
@@ -5978,14 +5975,12 @@ angular.module('ep.embedded.apps').directive('epEmbeddedApps', [
 
                     var config = epEmbeddedAppsService.configs[appId];
                     if (config) {
-
                         var view;
                         if (state.viewId) {
                             view = config.views[state.viewId];
                         } else {
                             view = config.views[config.startViewId];
                         }
-
                         if (view) {
                             view.parent = config;
                             config.activeViewId = state.viewId;
@@ -6640,7 +6635,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         function getAppsFromConfig() {
             var ret = {
                 Success: true,
-                apps: epEmbeddedAppsProvider.settings.applications,
+                apps: epEmbeddedAppsProvider.settings.applications
             };
 
             var deferred = $q.defer();
@@ -6916,8 +6911,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         * @methodOf ep.embedded.apps.service:epEmbeddedAppsService
         * @public
         * @description
-        * Returns currently loaded menu from all embedded aplications
-        * @returns {array} array of menus from all embedded aplications
+        * Returns currently loaded menu from all embedded applications
+        * @returns {Array} array of menus from all embedded applications
         */
         function currentAppsMenu() {
             var merge = [];
@@ -6936,9 +6931,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         * @public
         * @description
         * Build menu with menu items for each view of the specified application
-        * @param {object} config - the config of specifired app
+        * @param {object} config - the config of specified app
         * @param {bool} all - add all views (not just the ones with captions)
-        * @returns {array} array of object with Menu
+        * @returns {Array} array of object with Menu
         */
         function buildAppViewsMenu(config, all) {
             // build navigation
@@ -16026,7 +16021,7 @@ angular.module('ep.record.editor').
              */
             function viewSettings(settings) {
                 if (settings !== undefined) {
-                    shellState.viewSettings = settings;
+                    shellState.viewSettings = angular.merge(shellState.viewSettings, settings);
                 }
                 return shellState.viewSettings;
             }
@@ -16748,7 +16743,7 @@ angular.module('ep.record.editor').
                     shellState.viewSettings.large.enableLeftSidebar = true;
                     shellState.viewSettings.small.enableLeftSidebar = true;
 
-                    if (isMediaModeLarge()) {
+                    if (isMediaModeLarge() && shellState.viewSettings[getMediaMode()].autoActivateSidebar) {
                         showLeftSidebar();
                     }
                     showLeftToggleButton();
@@ -17191,7 +17186,7 @@ angular.module('ep.record.editor').
              * deleteNavbarButton('myButton1', 'myButton2');
              * deleteNavbarButton(['myButton1', 'myButton2']);
              */
-            function deleteNavbarButton() {
+            function deleteNavbarButton(buttons) {
                 var args = _.flatten(arguments, true);
                 iterateNavbarButton(args, 'deleteNavbarButton', function(b, idx) {
                     navbarButtons.splice(idx, 1);
@@ -17239,7 +17234,7 @@ angular.module('ep.record.editor').
              * hideNavbarButton('myButton1', 'myButton2');
              * hideNavbarButton(['myButton1', 'myButton2']);
              */
-            function hideNavbarButton() {
+            function hideNavbarButton(buttons) {
                 //you can pass one or more id's seperated by comma
                 var args = _.flatten(arguments, true);
                 iterateNavbarButton(args, 'hideNavbarButton', function(b) {
@@ -17260,7 +17255,7 @@ angular.module('ep.record.editor').
              * showNavbarButton('myButton1', 'myButton2');
              * showNavbarButton(['myButton1', 'myButton2']);
              */
-            function showNavbarButton() {
+            function showNavbarButton(buttons) {
                 //you can pass one or more id's seperated by comma
                 var args = _.flatten(arguments, true);
                 iterateNavbarButton(args, 'showNavbarButton', function(b) {
@@ -17289,7 +17284,7 @@ angular.module('ep.record.editor').
              * enableNavbarButton('myButton1', 'myButton2');
              * enableNavbarButton(['myButton1', 'myButton2']);
              */
-            function enableNavbarButton() {
+            function enableNavbarButton(buttons) {
                 //you can pass one or more id's seperated by comma
                 var args = _.flatten(arguments, true);
                 iterateNavbarButton(args, 'enableNavbarButton', function(b) {
@@ -17310,7 +17305,7 @@ angular.module('ep.record.editor').
              * disableNavbarButton('myButton1', 'myButton2');
              * disableNavbarButton(['myButton1', 'myButton2']);
              */
-            function disableNavbarButton() {
+            function disableNavbarButton(buttons) {
                 //you can pass one or more id's seperated by comma
                 var args = _.flatten(arguments, true);
                 iterateNavbarButton(args, 'disableNavbarButton', function(b) {
@@ -21110,6 +21105,8 @@ function epTilesMenuFavoritesDirective() {
         /*@ngInject*/
         ['$document', '$log', '$q', '$timeout', function($document, $log, $q, $timeout) {
 
+            var cache ={};
+
             /**
              * @ngdoc method
              * @name strFormat
@@ -21432,7 +21429,9 @@ function epTilesMenuFavoritesDirective() {
              * @description
              * Deeply extends the destination object `dst` by copying own enumerable properties from the `src` object(s)
              * to `dst`. You can specify multiple `src` objects. If you want to preserve original objects, you can do so
-             * by passing an empty object as the target: `var object = epUtilsService.merge({}, object1, object2)`.
+             * by passing an empty object as the target: `var object = epUtilsService.merge({}, object1, object2)`. This
+             * function differs from the angular.merge function in that undefined values in the source object will cause
+             * the corresponding property in the dst object to be deleted/undefined.
 
              *
              * @param {Object} dst Destination object.
@@ -21461,6 +21460,55 @@ function epTilesMenuFavoritesDirective() {
                 }
                 return ret;
             }
+            /**
+             * @ngdoc method
+             * @name cacheServiceCall
+             * @methodOf ep.utils.service:epUtilsService
+             * @public
+             * @description
+             * Memoizes the result of a service call using a custom key
+             * @param {string, Function} key - the key to cache the result under or a function returning the same
+             * @param {Function} getDataFromService - a function that returns the data that should be cached, or a promise that
+             * resolves the same
+             * @param {boolean} reset - a flag indicating whether the value should be returned from the service instead
+             * of from cache
+             * @param {Function} transform - a function that will transform/extract the required data from the service result
+             * @returns {Object} Returns a promise that resolves with either the data from the cache or the
+             * (potentially extracted) result from the service
+             */
+            function cacheServiceCall(key, getDataFromService, reset, transform){
+                if(angular.isFunction(key)){
+                    key = key();
+                }
+                function finalize(result){
+                    data = transform ? transform(result, key) : result;
+                    cache[key] = data;
+                    return data;
+                }
+
+                var deferred = $q.defer();
+
+                // check in the cache for a result
+                var data = cache[key];
+
+                // if we didn't find the data in the memory-cache or if the resetCache flag is set...
+                if(!data || reset) {
+                    // ...then invoke the service method
+                    var invocationResult = getDataFromService(key);
+                    // if the service returned a promise
+                    if (invocationResult.then) {
+                        // ..then we need to wait for resolution
+                        invocationResult.then(function(result) {
+                            // and store the result in the cache (by calling finalize)
+                            deferred.resolve(finalize(result));
+                        });
+                    } else {
+                        // otherwise it's just a regular value and it can be cached immediately
+                        deferred.resolve(finalize(invocationResult));
+                    }
+                }
+                return deferred.promise;
+            }
 
             return {
                 copyProperties: copyProperties,
@@ -21473,7 +21521,8 @@ function epTilesMenuFavoritesDirective() {
                 merge: merge,
                 strFormat: strFormat,
                 wait: wait,
-                getService: getService
+                getService: getService,
+                cacheServiceCall: cacheServiceCall
             };
         }]);
 })();
