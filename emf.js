@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.17 built: 04-10-2016
+ * version:1.0.10-dev.18 built: 04-10-2016
 */
 (function() {
     'use strict';
@@ -21506,6 +21506,8 @@ function epTilesMenuFavoritesDirective() {
                         // otherwise it's just a regular value and it can be cached immediately
                         deferred.resolve(finalize(invocationResult));
                     }
+                } else{
+                    deferred.resolve(data);
                 }
                 return deferred.promise;
             }
