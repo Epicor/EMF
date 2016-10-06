@@ -2,12 +2,12 @@
   "name": "emf",
   "description": "Epicor Mobile Framework",
   "author": "Epicor Software Corporation",
-  "version": "1.0.10-dev.23",
+  "version": "1.0.10-dev.24",
   "publishConfig": {
     "registry": "http://epichub.americas.epicor.net:4873"
   },
   "devDependencies": {
-    "grunt": "~0.4",
+    "grunt": "^0.4.5",
     "grunt-angular-templates": "~0.5",
     "grunt-bower-task": "^0.4.0",
     "grunt-browser-sync": "^2.0.0",

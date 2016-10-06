@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.23 built: 06-10-2016
+ * version:1.0.10-dev.24 built: 06-10-2016
 */
 (function() {
     'use strict';
@@ -609,13 +609,13 @@ angular.module('ep.viewmodal', [
 
 /**
  * @ngdoc directive
- * @name ep.multi.level.menu.directive:epMultiLevelMenu
+ * @name ep.multi.level.menu.directive:epAccordionMenu
  * @restrict E
  *
  * @description
- * Represents the ep.multi.level.menu directive
+ * Represents the ep.accordion.menu directive
  *
- * Multi-level menu directive.
+ * Accordion menu directive.
  *
  *   # menu {object} (required) - the object containing menu item properties.
  *       menuitems {array} - array of menu items (nested sub menu items
@@ -5798,22 +5798,22 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsShellService', [
                 if (config.epShellNavBar.closeButton) {
                     var btn = config.epShellNavBar.closeButton;
                     epShellService.addNavbarButtons([
-                    {
-                        id: btn.id || 'ep.embedded.app_closeApp',
-                        title: btn.title || 'Close application and return home.',
-                        icon: btn.icon || 'fa-times',
-                        action: function() {
-                            $location.url('/home');
-                        }
-                    }]);
+                        {
+                            id: btn.id || 'ep.embedded.app_closeApp',
+                            title: btn.title || 'Close application and return home.',
+                            icon: btn.icon || 'fa-times',
+                            action: function() {
+                                $location.url('/home');
+                            }
+                        }]);
                 }
             }
         }
 
         function setupViewShellOptions($scope, config, view) {
             // for backwards compat
-            if(view.sidebarOptions && !view.sidebarSettings){
-                view.sidebarSettings = view.sidebarOptions
+            if (view.sidebarOptions && !view.sidebarSettings) {
+                view.sidebarSettings = view.sidebarOptions;
             }
             // inject the new sidebar template
             if (view.sidebarSettings) {
@@ -5887,14 +5887,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsShellService', [
                     if (app.epShellNavBar && app.epShellNavBar.applicationButton) {
                         var btn = app.epShellNavBar.applicationButton;
                         epShellService.addNavbarButtons([
-                        {
-                            id: 'ep.embedded.app_' + app.id,
-                            title: btn.title || app.name,
-                            icon: btn.icon || app.icon,
-                            action: function() {
-                                fnGotoView(app.id);
-                            }
-                        }]);
+                            {
+                                id: 'ep.embedded.app_' + app.id,
+                                title: btn.title || app.name,
+                                icon: btn.icon || app.icon,
+                                action: function() {
+                                    fnGotoView(app.id);
+                                }
+                            }]);
                     }
                     if (app.startupInShell) {
                         appStartup = app;
@@ -5953,7 +5953,7 @@ angular.module('ep.embedded.apps').constant('epEmbeddedAppsConstants', {
      */
 angular.module('ep.embedded.apps').directive('epEmbeddedApps',
     /*@ngInject*/
-    ['$document', '$log', '$rootScope', '$routeParams', '$location', '$timeout', 'epEmbeddedAppsService', 'epEmbeddedAppsCacheService', 'epEmbeddedAppsConstants', 'epShellService', function(
+    ['$document', '$log', '$rootScope', '$routeParams', '$location', '$timeout', 'epEmbeddedAppsService', 'epEmbeddedAppsCacheService', 'epEmbeddedAppsConstants', function(
         $document,
         $log,
         $rootScope,
@@ -5962,8 +5962,7 @@ angular.module('ep.embedded.apps').directive('epEmbeddedApps',
         $timeout,
         epEmbeddedAppsService,
         epEmbeddedAppsCacheService,
-        epEmbeddedAppsConstants,
-        epShellService) {
+        epEmbeddedAppsConstants) {
         return {
             restrict: 'E',
             templateUrl: 'src/components/ep.embedded.apps/embedded-apps.html',
@@ -8515,23 +8514,23 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * @name ep.hybrid.emailcomposer:epHybridEmailComposerService
  * @description
  * Service for accessing Cordova Email Composer plugin. This provides access to the standard interface that manages the editing and sending an email.
-  *
+ *
  * Note: Include cordova.js script file in html file and add
  * {@link https://www.npmjs.com/package/cordova-plugin-email cordova email plugin} into app
  *
  * @example
-    <example module="TestApp">
-     <file name="index.html">
-	     <div ng-controller="SampleCtrl">
-            <div class="panel-body">
-                <div><button class="btn btn-primary btn-block" ng-click="sendEmail()">Send An Email</button></div>
-            </div>
-	      </div>
-     </file>
-     <file name="script.js">
-     	angular.module('TestApp', ['ep.hybrid.emailcomposer'])
-     		.controller('SampleCtrl',['$scope', '$log', 'epHybridEmailComposerService',
-	     		function($scope, epHybridEmailComposerService) {
+ <example module="TestApp">
+ <file name="index.html">
+ <div ng-controller="SampleCtrl">
+ <div class="panel-body">
+ <div><button class="btn btn-primary btn-block" ng-click="sendEmail()">Send An Email</button></div>
+ </div>
+ </div>
+ </file>
+ <file name="script.js">
+ angular.module('TestApp', ['ep.hybrid.emailcomposer'])
+ .controller('SampleCtrl',['$scope', '$log', 'epHybridEmailComposerService',
+ function($scope, epHybridEmailComposerService) {
 
                     $scope.sendEmail = function() {
                         try {
@@ -8593,10 +8592,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             var emailAvailable;
             try {
                 cordova.plugins.email.isAvailable(
-                   function(isAvailable) {
-                       emailAvailable = isAvailable;
-                   }
-            );
+                    function(isAvailable) {
+                        emailAvailable = isAvailable;
+                    }
+                );
             } catch (ex) {
                 emailAvailable = false;
                 $log.debug('Email service not available' + ex);
@@ -8626,25 +8625,29 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 cordova.plugins.email.isAvailable(
                     /*jshint validthis:true */
                     function(isAvailable) {
-                        var defaults = {
-                            to: [],
-                            cc: [],
-                            bcc: [],
-                            subject: '[No Subject]',
-                            body: '',
-                            isHtml: false,
-                            attachments: [],
-                            app: 'gmail'
-                        };
-                        var emailSettings = angular.extend(defaults, settings);
-                        if (!angular.isArray(emailSettings.attachments)) {
-                            emailSettings.attachments = [emailSettings.attachments];
+                        if (isAvailable) {
+                            var defaults = {
+                                to: [],
+                                cc: [],
+                                bcc: [],
+                                subject: '[No Subject]',
+                                body: '',
+                                isHtml: false,
+                                attachments: [],
+                                app: 'gmail'
+                            };
+                            var emailSettings = angular.extend(defaults, settings);
+                            if (!angular.isArray(emailSettings.attachments)) {
+                                emailSettings.attachments = [emailSettings.attachments];
+                            }
+                            cordova.plugins.email.open(emailSettings, function(e) {
+                                $log.error('An error occurred while attempting to launch the email application.' + e);
+                            });
+                        } else {
+                            $log.warn('Email functionality is not available.');
                         }
-                        cordova.plugins.email.open(emailSettings, function(e) {
-                            $log.error('An error occurred while attempting to launch the email application.' + e);
-                        });
                     }, function() {
-                        $log.debug('Email service not available');
+                        $log.warn('Email functionality is not available.');
                     });
             }
             catch (ex) {
@@ -9015,7 +9018,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             });
 
                             google.maps.event.addListener(marker, 'click', mapClick
-                                .bind(this, marker, i, locations, map));
+                                .bind(null, marker, i, locations, map));
 
                             bounds.extend(latLng);
                             //  Fit the bounds to map
@@ -10995,7 +10998,7 @@ angular.module('ep.menu.builder').
                         if (cfg.helpTemplateOptions) {
                             if (!cfg.helpTemplateOptions.templateScope) {
                                 cfg.helpTemplateOptions.templateScope = $scope;
-                            };
+                            }
                             $scope.helpButtonClick = function() {
                                 $scope.showHelp = !$scope.showHelp;
                             };
@@ -15469,6 +15472,11 @@ angular.module('ep.record.editor').
         SHELL_NAV_BUTTONS_CHANGED_EVENT: 'SHELL_NAV_BUTTONS_CHANGED_EVENT',
         SHELL_VIEW_SIZE_CHANGE_EVENT: 'SHELL_VIEW_SIZE_CHANGE_EVENT',
         SHELL_VIEW_CHANGE_EVENT: 'SHELL_VIEW_CHANGE_EVENT',
+
+        SHELL_CACHE_CREATED_EVENT: 'SHELL_CACHE_CREATED_EVENT',
+        SHELL_CACHE_DELETED_EVENT: 'SHELL_CACHE_DELETED_EVENT',
+        SHELL_DATA_CACHED_EVENT: 'SHELL_DATA_CACHED_EVENT',
+        SHELL_CACHE_DATA_DELETED_EVENT: 'SHELL_CACHE_DATA_DELETED_EVENT',
         //SIZE CONSTANTS:
         SIDEBARWIDTH: 250,
         NAVBARHEIGHT: 40,
@@ -15487,25 +15495,17 @@ angular.module('ep.record.editor').
 */
 (function() {
     'use strict';
-    angular.module('ep.shell').directive('myTouchstart', [function() {
-        return function(scope, element, attr) {
-            element.bind('touchstart', function() {
-                scope.$apply(attr.myTouchstart);
-            });
-        };
-    }])
-    angular.module('ep.shell').controller('epShellCtrl', [
-        '$location',
-        '$rootScope',
-        '$route',
-        '$scope',
-        'epShellConfig',
-        'epShellService',
-        'epLocalStorageService',
-        'epShellFeedbackService',
-        'epShellConstants',
-        'epThemeConstants',
-        function($location, $rootScope, $route, $scope, epShellConfig, epShellService, epLocalStorageService,
+    angular.module('ep.shell')
+        .directive('myTouchstart', function() {
+            return function(scope, element, attr) {
+                element.bind('touchstart', function() {
+                    scope.$apply(attr.myTouchstart);
+                });
+            };
+        })
+        .controller('epShellCtrl',
+            /*@ngInject*/
+            ['$location', '$rootScope', '$route', '$scope', 'epShellConfig', 'epShellService', 'epLocalStorageService', 'epShellFeedbackService', 'epShellConstants', 'epThemeConstants', function($location, $rootScope, $route, $scope, epShellConfig, epShellService, epLocalStorageService,
                   epShellFeedbackService, epShellConstants, epThemeConstants) {
 
             // Any logic that requires the immediate use of the emaService or the EmaRestService needs to be executed inside the "init" call in the controller.
@@ -15514,7 +15514,7 @@ angular.module('ep.record.editor').
                 // get the epShellService state so it can be used in the views
                 $scope.state = epShellService.__state;
                 $scope.options = epShellConfig.options;
-                $scope.findXTouch;
+
                 //toggle sidebar event function
                 $scope.toggleLeftSidebar = function() {
                     epShellService.toggleLeftSidebar();
@@ -15544,7 +15544,7 @@ angular.module('ep.record.editor').
                 $scope.getTouchXPoint = function() {
                     $scope.findXTouch = epShellService.executeLeftSidebar(event);
                     return $scope.findXTouch;
-                }
+                };
                 //Close left sidebar on swipping right on left sidebar
                 $scope.closeLeftSidebar = function() {
                     epShellService.hideLeftSidebar();
@@ -15611,8 +15611,8 @@ angular.module('ep.record.editor').
             } catch (ex) {
                 console.log(ex);
             }
-        }
-    ]);
+        }]
+    );
 })();
 
 /**
@@ -15654,124 +15654,124 @@ angular.module('ep.record.editor').
 (function() {
     'use strict';
 
-    angular.module('ep.shell').provider('epShellConfig', [
-    '$routeProvider',
-    function($routeProvider) {
-        var routeProviderReference = $routeProvider;
+    angular.module('ep.shell').provider('epShellConfig',
+        /*@ngInject*/
+        ['$routeProvider', function($routeProvider) {
+            var routeProviderReference = $routeProvider;
 
-        var config = {
-            options: {
-                pageTitle: 'Epicor Mobile',
-                brandHTML: 'Epicor Mobile Framework <sup>2.0</sup>',
-                enableFeedback: true,
-                includeEmbeddedApps: false,
-                enableViewAnimations: true
-            },
+            var config = {
+                options: {
+                    pageTitle: 'Epicor Mobile',
+                    brandHTML: 'Epicor Mobile Framework <sup>2.0</sup>',
+                    enableFeedback: true,
+                    includeEmbeddedApps: false,
+                    enableViewAnimations: true,
+                    enableCache: true
+                },
 
-            /**
-            * @ngdoc property
-            * @name routes
-            * @propertyOf ep.shell.object:epShellConfig
-            * @public
-            * @description
-            * routes is the rounting configuration. example:
-            * routes : [
-            *    { route: '/home', url: './main-application/views/homeview.html', controller: 'HomeCtrl' },
-            *    { route: '/login', url: './main-application/views/loginview.html', controller: 'LoginCtrl', isDefault: true }
-            * ]
-            */
-            routes: [],
+                /**
+                 * @ngdoc property
+                 * @name routes
+                 * @propertyOf ep.shell.object:epShellConfig
+                 * @public
+                 * @description
+                 * routes is the rounting configuration. example:
+                 * routes : [
+                 *    { route: '/home', url: './main-application/views/homeview.html', controller: 'HomeCtrl' },
+                 *    { route: '/login', url: './main-application/views/loginview.html', controller: 'LoginCtrl', isDefault: true }
+                 * ]
+                 */
+                routes: [],
 
-            /**
-            * @ngdoc property
-            * @name homeRoute
-            * @propertyOf ep.shell.object:epShellConfig
-            * @public
-            * @description
-            * This is the route defined as the home route
-            */
-            homeRoute: undefined,
+                /**
+                 * @ngdoc property
+                 * @name homeRoute
+                 * @propertyOf ep.shell.object:epShellConfig
+                 * @public
+                 * @description
+                 * This is the route defined as the home route
+                 */
+                homeRoute: undefined,
 
-            /**
-            * @ngdoc property
-            * @name defaultRoute
-            * @propertyOf ep.shell.object:epShellConfig
-            * @public
-            * @description
-            * This is the route defined as the default route, to which we fallback on any
-            * invalid route. Typically the login page
-            */
-            defaultRoute: undefined
+                /**
+                 * @ngdoc property
+                 * @name defaultRoute
+                 * @propertyOf ep.shell.object:epShellConfig
+                 * @public
+                 * @description
+                 * This is the route defined as the default route, to which we fallback on any
+                 * invalid route. Typically the login page
+                 */
+                defaultRoute: undefined
 
-        };
+            };
 
-        //This $get, is kinda confusing - it does not return the provider, but it returns the "service".
-        //In our case, the "service" is the environment configuration object
-        //The $get is called automatically when AngularJS encounters a DI.
-        //
-        // also knowing despite the (use $http instead of $.ajax) rules on the EMF coders styleguide
-        // There is a problem: $http is an asynchronous call, so its not guaranteed that the
-        // data will be returned with the values read from the sysconfig.json.
-        // To get around we have to make $http a sync call, which is not possible.
-        this.$get = ['epSysConfig', function(epSysConfig) {
-            epSysConfig.mergeSection('ep.shell', config);
+            //This $get, is kinda confusing - it does not return the provider, but it returns the "service".
+            //In our case, the "service" is the environment configuration object
+            //The $get is called automatically when AngularJS encounters a DI.
+            //
+            // also knowing despite the (use $http instead of $.ajax) rules on the EMF coders styleguide
+            // There is a problem: $http is an asynchronous call, so its not guaranteed that the
+            // data will be returned with the values read from the sysconfig.json.
+            // To get around we have to make $http a sync call, which is not possible.
+            this.$get = ['epSysConfig', function(epSysConfig) {
+                epSysConfig.mergeSection('ep.shell', config);
 
-            config.options.enableFeedback = epSysConfig.optionBool(config.options.enableFeedback, false);
-            config.options.enableViewAnimations = epSysConfig.optionBool(config.options.enableViewAnimations, true);
-
-            angular.forEach(config.routes, function(r) {
-                routeProviderReference.when(r.route, {
-                    index: r.index,
-                    templateUrl: r.url,
-                    controller: r.controller,
-                    reloadOnSearch: (r.reloadOnSearch === undefined) ? true : r.reloadOnSearch,
-                    transitions: r.transitions
+                config.options.enableFeedback = epSysConfig.optionBool(config.options.enableFeedback, false);
+                config.options.enableViewAnimations = epSysConfig.optionBool(config.options.enableViewAnimations, true);
+                config.options.enableCache = epSysConfig.optionBool(config.options.enableCache, true);
+                angular.forEach(config.routes, function(r) {
+                    routeProviderReference.when(r.route, {
+                        index: r.index,
+                        templateUrl: r.url,
+                        controller: r.controller,
+                        reloadOnSearch: (r.reloadOnSearch === undefined) ? true : r.reloadOnSearch,
+                        transitions: r.transitions
+                    });
+                    if (r.isDefault === true) {
+                        routeProviderReference.otherwise({redirectTo: r.route});
+                        config.defaultRoute = r;
+                    }
+                    if (r.isHome === true) {
+                        config.homeRoute = r;
+                    }
                 });
-                if (r.isDefault === true) {
-                    routeProviderReference.otherwise({ redirectTo: r.route });
-                    config.defaultRoute = r;
+
+                if (!config.homeRoute) {
+                    config.homeRoute = config.defaultRoute;
                 }
-                if (r.isHome === true) {
-                    config.homeRoute = r;
+
+                if (config.options.includeEmbeddedApps) {
+
+                    //For now this is good enough, consider using injection of embedded apps service
+                    //to retrieve rootRoute
+                    var sectionEmbedded = epSysConfig.section('ep.embedded.apps');
+                    var rootRoute = '/' + (sectionEmbedded.rootRoute || 'app') + '/:appId/:viewId/';
+
+                    routeProviderReference.when(rootRoute, {
+                        templateUrl: 'src/components/ep.shell/views/ep-shell-embedded-apps-container.html'
+                    });
+
+                    routeProviderReference.when(rootRoute + ':p0', {
+                        templateUrl: 'src/components/ep.shell/views/ep-shell-embedded-apps-container.html'
+                    });
+                    routeProviderReference.when(rootRoute + ':p0/:p1', {
+                        templateUrl: 'src/components/ep.shell/views/ep-shell-embedded-apps-container.html'
+                    });
+                    routeProviderReference.when(rootRoute + ':p0/:p1/:p2', {
+                        templateUrl: 'src/components/ep.shell/views/ep-shell-embedded-apps-container.html'
+                    });
+                    routeProviderReference.when(rootRoute + ':p0/:p1/:p2/:p3', {
+                        templateUrl: 'src/components/ep.shell/views/ep-shell-embedded-apps-container.html'
+                    });
+                    routeProviderReference.when(rootRoute + ':p0/:p1/:p2/:p3/:p4', {
+                        templateUrl: 'src/components/ep.shell/views/ep-shell-embedded-apps-container.html'
+                    });
                 }
-            });
 
-            if (!config.homeRoute) {
-                config.homeRoute = config.defaultRoute;
-            }
-
-            if (config.options.includeEmbeddedApps) {
-
-                //For now this is good enough, consider using injection of embedded apps service
-                //to retrieve rootRoute
-                var sectionEmbedded = epSysConfig.section('ep.embedded.apps');
-                var rootRoute = '/' + (sectionEmbedded.rootRoute || 'app') + '/:appId/:viewId/';
-
-                routeProviderReference.when(rootRoute, {
-                    templateUrl: 'src/components/ep.shell/views/ep-shell-embedded-apps-container.html'
-                });
-
-                routeProviderReference.when(rootRoute + ':p0', {
-                    templateUrl: 'src/components/ep.shell/views/ep-shell-embedded-apps-container.html'
-                });
-                routeProviderReference.when(rootRoute + ':p0/:p1', {
-                    templateUrl: 'src/components/ep.shell/views/ep-shell-embedded-apps-container.html'
-                });
-                routeProviderReference.when(rootRoute + ':p0/:p1/:p2', {
-                    templateUrl: 'src/components/ep.shell/views/ep-shell-embedded-apps-container.html'
-                });
-                routeProviderReference.when(rootRoute + ':p0/:p1/:p2/:p3', {
-                    templateUrl: 'src/components/ep.shell/views/ep-shell-embedded-apps-container.html'
-                });
-                routeProviderReference.when(rootRoute + ':p0/:p1/:p2/:p3/:p4', {
-                    templateUrl: 'src/components/ep.shell/views/ep-shell-embedded-apps-container.html'
-                });
-            }
-
-            return config;
-        }];
-    }
-    ]);
+                return config;
+            }];
+        }]);
 })();
 
 /**
@@ -16355,7 +16355,7 @@ angular.module('ep.record.editor').
                 if (viewScope) {
                     $timeout(function() {
                         $compile(angular.element('#apptitle').contents())(viewScope);
-                    })
+                    });
                 }
             }
 
@@ -16572,7 +16572,7 @@ angular.module('ep.record.editor').
              * @methodOf ep.shell.service:epShellService
              * @public
              * @description
-             * Hide home button (can be overriden by viewcontainer options)
+             * Hide home button (can be overridden by viewcontainer options)
              */
             function hideHomeButton() {
                 if (shellState.showHomeButton) {
@@ -17186,7 +17186,7 @@ angular.module('ep.record.editor').
              * deleteNavbarButton('myButton1', 'myButton2');
              * deleteNavbarButton(['myButton1', 'myButton2']);
              */
-            function deleteNavbarButton(buttons) {
+            function deleteNavbarButton() {
                 var args = _.flatten(arguments, true);
                 iterateNavbarButton(args, 'deleteNavbarButton', function(b, idx) {
                     navbarButtons.splice(idx, 1);
@@ -17234,7 +17234,7 @@ angular.module('ep.record.editor').
              * hideNavbarButton('myButton1', 'myButton2');
              * hideNavbarButton(['myButton1', 'myButton2']);
              */
-            function hideNavbarButton(buttons) {
+            function hideNavbarButton() {
                 //you can pass one or more id's seperated by comma
                 var args = _.flatten(arguments, true);
                 iterateNavbarButton(args, 'hideNavbarButton', function(b) {
@@ -17255,7 +17255,7 @@ angular.module('ep.record.editor').
              * showNavbarButton('myButton1', 'myButton2');
              * showNavbarButton(['myButton1', 'myButton2']);
              */
-            function showNavbarButton(buttons) {
+            function showNavbarButton() {
                 //you can pass one or more id's seperated by comma
                 var args = _.flatten(arguments, true);
                 iterateNavbarButton(args, 'showNavbarButton', function(b) {
@@ -17284,7 +17284,7 @@ angular.module('ep.record.editor').
              * enableNavbarButton('myButton1', 'myButton2');
              * enableNavbarButton(['myButton1', 'myButton2']);
              */
-            function enableNavbarButton(buttons) {
+            function enableNavbarButton() {
                 //you can pass one or more id's seperated by comma
                 var args = _.flatten(arguments, true);
                 iterateNavbarButton(args, 'enableNavbarButton', function(b) {
@@ -17305,7 +17305,7 @@ angular.module('ep.record.editor').
              * disableNavbarButton('myButton1', 'myButton2');
              * disableNavbarButton(['myButton1', 'myButton2']);
              */
-            function disableNavbarButton(buttons) {
+            function disableNavbarButton() {
                 //you can pass one or more id's seperated by comma
                 var args = _.flatten(arguments, true);
                 iterateNavbarButton(args, 'disableNavbarButton', function(b) {
@@ -18024,7 +18024,7 @@ angular.module('ep.shell').service('epSidebarService', [
                 removeViewFromCache: removeViewFromCache,
                 getViewFromCache: getViewFromCache,
                 hasCachedView: hasCachedView
-            }
+            };
         })
         .directive('epCachedView',
             /*ngInject*/
@@ -18048,7 +18048,7 @@ angular.module('ep.shell').service('epSidebarService', [
                     scope: {
                         key: '='
                     }
-                }
+                };
             }]);
 })();
 
@@ -21101,432 +21101,625 @@ function epTilesMenuFavoritesDirective() {
  */
 (function() {
     'use strict';
-    angular.module('ep.utils').service('epUtilsService',
-        /*@ngInject*/
-        ['$document', '$log', '$q', '$timeout', function($document, $log, $q, $timeout) {
 
-            var cache ={};
+    epUtilsService.$inject = ['$document', '$log', '$q', '$rootScope', '$timeout', 'epShellConstants', 'epShellConfig'];
+    epIndexedDbService.$inject = ['$q', '$window'];
+    angular.module('ep.utils')
+        .service('epUtilsService', epUtilsService)
+        .service('epIndexedDbService', epIndexedDbService);
 
-            /**
-             * @ngdoc method
-             * @name strFormat
-             * @methodOf ep.utils.service:epUtilsService
-             * @public
-             * @description
-             * Formats the string in the same way as .NET strFormat('first argument is {0}, second is {1}', 'arg1', 'arg2')
-             * will result in 'first argument is arg1, second is arg2'
-             * @example
-             *   var str = epUtilsService.strFormat('The first name is: {0} and the last name {1}','Michael','Jackson');
-             * @returns {string} string with combined arguments
-             */
-            function strFormat(str) {
-                if (!str || arguments.length < 1) {
-                    return '';
-                }
-                var ret = str;
-                if (arguments.length > 1) {
-                    var tempArgs = arguments;
-                    ret = ret.replace(/\{\d+}/g, function(match) {
-                        var index = +match.slice(1, -1);
-                        var arg = null;
+    /*@ngInject*/
+    function epUtilsService($document, $log, $q, $rootScope, $timeout, epShellConstants, epShellConfig) {
 
-                        if (index + 1 < tempArgs.length) {
-                            arg = tempArgs[index + 1];
-                        }
-                        return arg;
-                    });
-                }
-                return ret;
+        var cacheStore = {};
+
+        /**
+         * @ngdoc method
+         * @name strFormat
+         * @methodOf ep.utils.service:epUtilsService
+         * @public
+         * @description
+         * Formats the string in the same way as .NET strFormat('first argument is {0}, second is {1}', 'arg1', 'arg2')
+         * will result in 'first argument is arg1, second is arg2'
+         * @example
+         *   var str = epUtilsService.strFormat('The first name is: {0} and the last name {1}','Michael','Jackson');
+         * @returns {string} string with combined arguments
+         */
+        function strFormat(str) {
+            if (!str || arguments.length < 1) {
+                return '';
             }
+            var ret = str;
+            if (arguments.length > 1) {
+                var tempArgs = arguments;
+                ret = ret.replace(/\{\d+}/g, function(match) {
+                    var index = +match.slice(1, -1);
+                    var arg = null;
 
-            /**
-             * @ngdoc method
-             * @name supportsDragAndDrop
-             * @methodOf ep.utils.service:epUtilsService
-             * @public
-             * @description
-             * Constructs an object out of an array by using
-             * the idAccessor to map each item to a property name.
-             * The idAccessor can be either a string or a function.
-             * If it's a string then it must refer to a property name
-             * that exists on each item of the array.
-             * If it's a function then the function must exist on each
-             * item of the array. The result of the property/function
-             * must yield either a unique string value or a function that yields
-             * a unique string value for each item of the array.
-             * @returns {object} return a map object
-             */
-            function mapArray(arr, idAccessor) {
-                var result = {};
-                arr.forEach(function(obj) {
-                    var id;
-                    var idVal;
-
-                    if (angular.isString(idAccessor)) {
-                        idVal = obj[idAccessor];
-                    } else if (angular.isFunction(idAccessor)) {
-                        idVal = idAccessor(obj);
-                    } else {
-                        throw new Error('mapArray called with an invalid idAccessor.');
+                    if (index + 1 < tempArgs.length) {
+                        arg = tempArgs[index + 1];
                     }
-                    if (angular.isFunction(idVal)) {
-                        id = idVal();
-                    } else {
-                        id = idVal;
-                    }
-                    result[id] = obj;
-                });
-                return result;
-            }
-
-            /**
-             * @ngdoc method
-             * @name copyProperties
-             * @methodOf ep.utils.service:epUtilsService
-             * @public
-             * @description
-             * Copies properties from source to destination
-             * The property is copied only if source property is not null
-             * This is useful to copy new properties values over default object
-             * but only when new property is provided.
-             * @param {object} source - object source from which properties are copied
-             * @param {object} destination - object target to which properties are copied
-             * @param {bool} override - if false, then existing properties in source are not overriden
-             * @returns {object} copied object
-             */
-            function copyProperties(source, destination, override) {
-                if (!source || !destination) {
-                    return source || destination;
-                }
-                angular.forEach(source, function(value, propName) {
-                    if (source[propName] !== null) {
-                        if (angular.isArray(source[propName])) {
-                            destination[propName] = source[propName];
-                        } else if (angular.isObject(source[propName])) {
-                            if (!angular.isObject(destination[propName])) {
-                                destination[propName] = {};
-                            }
-                            copyProperties(source[propName], destination[propName]);
-                        } else {
-                            if (override !== false || (destination[propName] === undefined)) {
-                                destination[propName] = source[propName];
-                            }
-                        }
-                    }
+                    return arg;
                 });
             }
+            return ret;
+        }
 
-            /**
-             * @ngdoc method
-             * @name ensureStartsWith
-             * @methodOf ep.utils.service:epUtilsService
-             * @public
-             * @description
-             * Ensures that a string starts with a given beginning
-             * @returns {string} result
-             * @example
-             *       var str = epUtilsService.ensureStartsWith('root','/');
-             *       //results in '/root'
+        /**
+         * @ngdoc method
+         * @name supportsDragAndDrop
+         * @methodOf ep.utils.service:epUtilsService
+         * @public
+         * @description
+         * Constructs an object out of an array by using
+         * the idAccessor to map each item to a property name.
+         * The idAccessor can be either a string or a function.
+         * If it's a string then it must refer to a property name
+         * that exists on each item of the array.
+         * If it's a function then the function must exist on each
+         * item of the array. The result of the property/function
+         * must yield either a unique string value or a function that yields
+         * a unique string value for each item of the array.
+         * @returns {object} return a map object
+         */
+        function mapArray(arr, idAccessor) {
+            var result = {};
+            arr.forEach(function(obj) {
+                var id;
+                var idVal;
 
-             */
-            function ensureStartsWith(beginning, str) {
-                if (str && str.indexOf(beginning) !== 0) {
-                    return beginning + str;
-                }
-                return str || '';
-            }
-
-            /**
-             * @ngdoc method
-             * @name ensureEndsWith
-             * @methodOf ep.utils.service:epUtilsService
-             * @public
-             * @description
-             * Ensures that a string ends with a given ending
-             * @returns {string} result
-             * @example
-             *       var str = epUtilsService.ensureEndsWith('root','/');
-             *       //results in 'root/'
-
-             */
-            function ensureEndsWith(str, ending) {
-                if (str && str.lastIndexOf(ending) !== str.length - ending.length) {
-                    return str + ending;
-                }
-                return str || '';
-            }
-
-            /**
-             * @ngdoc method
-             * @name makePath
-             * @methodOf ep.utils.service:epUtilsService
-             * @public
-             * @description
-             * Creates path by concatenation of input arguments which can be strings, array of
-             * strings or arguments object passed from another function
-             * @returns {string} path
-             * @example
-             *   var str = epUtilsService.makePath('root','dir1','dir2');
-             *   //result: '/root/dir1/dir2'
-             *
-             *   var str = utilsService.makePath('root', ['dir1', 'dir2'], ['dir3', 'dir4'], 'dir5');
-             *   //result: '/root/dir1/dir2/dir3/dir4/dir5';
-             *
-             */
-            function makePath() {
-                var path = '';
-                var _args = _.flatten(arguments, true);
-                if (_args && _args.length === 1 && angular.isObject(_args[0]) && _args[0].length === 0) {
-                    return path; //special case when caller passed arguments and arguments were empty
-                }
-                angular.forEach(_args, function(arg) {
-                    path += '/' + arg;
-                });
-                return path;
-            }
-
-            /**
-             * @ngdoc method
-             * @name loadScript
-             * @methodOf ep.utils.service:epUtilsService
-             * @public
-             * @description
-             * Adds a new script element to the page with the given url,
-             * optionally checking/adding the script to a given cache
-             * @returns {Promise} a promise that resolves or rejects depending on the result
-             * of adding the script to the page.
-             */
-            function loadScript(url, cache) {
-                var deferred = $q.defer();
-                var scriptId = 'script:' + url;
-                var scriptElement;
-                if (url && cache.get(scriptId)) {
-                    deferred.resolve(scriptId + ' from cache');
+                if (angular.isString(idAccessor)) {
+                    idVal = obj[idAccessor];
+                } else if (angular.isFunction(idAccessor)) {
+                    idVal = idAccessor(obj);
                 } else {
-                    scriptElement = $document[0].createElement('script');
-                    scriptElement.src = url;
-                    scriptElement.onload = function() {
-                        deferred.resolve(scriptId);
-                    };
-                    scriptElement.onerror = function(e) {
-                        $log.error('Error loading url: [' + url + ']');
-                        deferred.reject(e, scriptId);
-                    };
-                    $document[0].documentElement.appendChild(scriptElement);
-                    cache.put(scriptId, 1);
+                    throw new Error('mapArray called with an invalid idAccessor.');
                 }
+                if (angular.isFunction(idVal)) {
+                    id = idVal();
+                } else {
+                    id = idVal;
+                }
+                result[id] = obj;
+            });
+            return result;
+        }
 
-                return deferred.promise;
+        /**
+         * @ngdoc method
+         * @name copyProperties
+         * @methodOf ep.utils.service:epUtilsService
+         * @public
+         * @description
+         * Copies properties from source to destination
+         * The property is copied only if source property is not null
+         * This is useful to copy new properties values over default object
+         * but only when new property is provided.
+         * @param {object} source - object source from which properties are copied
+         * @param {object} destination - object target to which properties are copied
+         * @param {bool} override - if false, then existing properties in source are not overriden
+         * @returns {object} copied object
+         */
+        function copyProperties(source, destination, override) {
+            if (!source || !destination) {
+                return source || destination;
             }
-
-            /**
-             * @ngdoc method
-             * @name hasProperty
-             * @methodOf ep.utils.service:epUtilsService
-             * @public
-             * @description
-             * Check if an object has a nested property. For
-             * @param {object} obj - object whose nested property we want to check
-             * @param {string} property - nested property. Nesting through dot. Eg. 'propA.propAA'
-             * @returns {boolean} true if object has a nested property
-             * @example
-             *   var obj = { propA: { propAA: { propAAA: 'something' }}};
-             *   var result = epUtilsService.hasProperty(obj,'propA.propAA.propAAA');
-             *   //result: true
-             */
-            function hasProperty(obj, property) {
-                var o = obj;
-                if (!angular.isObject(obj)) {
-                    return false;
-                }
-                if (!angular.isString(property) || !property) {
-                    return false;
-                }
-                return !_.find(property.split('.'), function(prop) {
-                    var ret = o.hasOwnProperty(prop);
-                    if (ret) {
-                        o = o[prop];
-                    }
-                    return !ret;
-                });
-            }
-
-            /**
-             * @ngdoc method
-             * @name wait
-             * @methodOf ep.utils.service:epUtilsService
-             * @public
-             * @description
-             * Wait for a condition to be accomplished by performing iterative calls at
-             * given interval. Alternative to deferred results.
-             * @param {function} fnCondition - function that represents condition. Must return true/false
-             * @param {int} attempts - how many max attempts can be performed
-             * @param {int} interval - interval in ms between each new attempt
-             * @param {function} fnExecute - function that is executed when condition is met
-             * @param {function} fnFail - optional function that is executed when condition is not met after all attempts
-             * @example
-             *   wait( function() { return state; }, 10, 250, function() { alert('complete'); });
-             */
-            function wait(fnCondition, attempts, interval, fnExecute, fnFail) {
-                attempts--;
-                if (attempts >= 0) {
-                    if (fnCondition()) {
-                        fnExecute();
+            angular.forEach(source, function(value, propName) {
+                if (source[propName] !== null) {
+                    if (angular.isArray(source[propName])) {
+                        destination[propName] = source[propName];
+                    } else if (angular.isObject(source[propName])) {
+                        if (!angular.isObject(destination[propName])) {
+                            destination[propName] = {};
+                        }
+                        copyProperties(source[propName], destination[propName]);
                     } else {
-                        $timeout(function() {
-                            wait(fnCondition, attempts, interval, fnExecute, fnFail);
-                        }, interval);
-                    }
-                } else if (fnFail) {
-                    fnFail();
-                }
-            }
-
-            function baseMerge(dst, objs, deep) {
-                for (var i = 0, ii = objs.length; i < ii; ++i) {
-                    var obj = objs[i];
-                    if (!_.isObject(obj) && !_.isFunction(obj)) {
-                        continue;
-                    }
-                    var keys = _.union(Object.keys(obj), Object.keys(dst));
-                    for (var j = 0, jj = keys.length; j < jj; j++) {
-                        var key = keys[j];
-                        var src = obj[key];
-
-                        if (deep && _.isObject(src)) {
-                            if (_.isDate(src)) {
-                                dst[key] = new Date(src.valueOf());
-                            } else if (_.isRegExp(src)) {
-                                dst[key] = new RegExp(src);
-                            } else if (src.nodeName) {
-                                dst[key] = src.cloneNode(true);
-                            } else if (_.isElement(src)) {
-                                dst[key] = src.clone();
-                            } else if (_.isNull(src)) {
-                                dst[key] = null;
-                            } else if (_.isUndefined(src)) {
-                                dst[key] = undefined;
-                            } else {
-                                if (!_.isObject(dst[key])) {
-                                    dst[key] = _.isArray(src) ? [] : {};
-                                }
-                                baseMerge(dst[key], [src], true);
-                            }
-                        } else {
-                            dst[key] = src;
+                        if (override !== false || (destination[propName] === undefined)) {
+                            destination[propName] = source[propName];
                         }
                     }
                 }
+            });
+        }
 
-                return dst;
+        /**
+         * @ngdoc method
+         * @name ensureStartsWith
+         * @methodOf ep.utils.service:epUtilsService
+         * @public
+         * @description
+         * Ensures that a string starts with a given beginning
+         * @returns {string} result
+         * @example
+         *       var str = epUtilsService.ensureStartsWith('root','/');
+         *       //results in '/root'
+
+         */
+        function ensureStartsWith(beginning, str) {
+            if (str && str.indexOf(beginning) !== 0) {
+                return beginning + str;
+            }
+            return str || '';
+        }
+
+        /**
+         * @ngdoc method
+         * @name ensureEndsWith
+         * @methodOf ep.utils.service:epUtilsService
+         * @public
+         * @description
+         * Ensures that a string ends with a given ending
+         * @returns {string} result
+         * @example
+         *       var str = epUtilsService.ensureEndsWith('root','/');
+         *       //results in 'root/'
+
+         */
+        function ensureEndsWith(str, ending) {
+            if (str && str.lastIndexOf(ending) !== str.length - ending.length) {
+                return str + ending;
+            }
+            return str || '';
+        }
+
+        /**
+         * @ngdoc method
+         * @name makePath
+         * @methodOf ep.utils.service:epUtilsService
+         * @public
+         * @description
+         * Creates path by concatenation of input arguments which can be strings, array of
+         * strings or arguments object passed from another function
+         * @returns {string} path
+         * @example
+         *   var str = epUtilsService.makePath('root','dir1','dir2');
+         *   //result: '/root/dir1/dir2'
+         *
+         *   var str = utilsService.makePath('root', ['dir1', 'dir2'], ['dir3', 'dir4'], 'dir5');
+         *   //result: '/root/dir1/dir2/dir3/dir4/dir5';
+         *
+         */
+        function makePath() {
+            var path = '';
+            var _args = _.flatten(arguments, true);
+            if (_args && _args.length === 1 && angular.isObject(_args[0]) && _args[0].length === 0) {
+                return path; //special case when caller passed arguments and arguments were empty
+            }
+            angular.forEach(_args, function(arg) {
+                path += '/' + arg;
+            });
+            return path;
+        }
+
+        /**
+         * @ngdoc method
+         * @name loadScript
+         * @methodOf ep.utils.service:epUtilsService
+         * @public
+         * @description
+         * Adds a new script element to the page with the given url,
+         * optionally checking/adding the script to a given cache
+         * @returns {Promise} a promise that resolves or rejects depending on the result
+         * of adding the script to the page.
+         */
+        function loadScript(url, cache) {
+            var deferred = $q.defer();
+            var scriptId = 'script:' + url;
+            var scriptElement;
+            if (url && cache.get(scriptId)) {
+                deferred.resolve(scriptId + ' from cache');
+            } else {
+                scriptElement = $document[0].createElement('script');
+                scriptElement.src = url;
+                scriptElement.onload = function() {
+                    deferred.resolve(scriptId);
+                };
+                scriptElement.onerror = function(e) {
+                    $log.error('Error loading url: [' + url + ']');
+                    deferred.reject(e, scriptId);
+                };
+                $document[0].documentElement.appendChild(scriptElement);
+                cache.put(scriptId, 1);
             }
 
-            /**
-             * @ngdoc method
-             * @name merge
-             * @methodOf ep.utils.service:epUtilsService
-             * @public
-             * @description
-             * Deeply extends the destination object `dst` by copying own enumerable properties from the `src` object(s)
-             * to `dst`. You can specify multiple `src` objects. If you want to preserve original objects, you can do so
-             * by passing an empty object as the target: `var object = epUtilsService.merge({}, object1, object2)`. This
-             * function differs from the angular.merge function in that undefined values in the source object will cause
-             * the corresponding property in the dst object to be deleted/undefined.
+            return deferred.promise;
+        }
 
-             *
-             * @param {Object} dst Destination object.
-             * @returns {Object} Reference to `dst`.
-             */
-            function merge(dst) {
-                return baseMerge(dst, Array.prototype.slice.call(arguments, 1), true);
+        /**
+         * @ngdoc method
+         * @name hasProperty
+         * @methodOf ep.utils.service:epUtilsService
+         * @public
+         * @description
+         * Check if an object has a nested property. For
+         * @param {object} obj - object whose nested property we want to check
+         * @param {string} property - nested property. Nesting through dot. Eg. 'propA.propAA'
+         * @returns {boolean} true if object has a nested property
+         * @example
+         *   var obj = { propA: { propAA: { propAAA: 'something' }}};
+         *   var result = epUtilsService.hasProperty(obj,'propA.propAA.propAAA');
+         *   //result: true
+         */
+        function hasProperty(obj, property) {
+            var o = obj;
+            if (!angular.isObject(obj)) {
+                return false;
             }
-
-            /**
-             * @ngdoc method
-             * @name getService
-             * @methodOf ep.utils.service:epUtilsService
-             * @public
-             * @description
-             * Retrieve an angular injector for a specified service name
-             * @param {string} name - name of injected service
-             * @returns {Object} Returns requested service injector
-             */
-            function getService(name) {
-                var ret;
-                try {
-                    ret = angular.element('html').injector().get(name);
-                } catch (e) {
-                    $log.error('Failed to retrieve service for requested name:' + name);
-                }
-                return ret;
+            if (!angular.isString(property) || !property) {
+                return false;
             }
-            /**
-             * @ngdoc method
-             * @name cacheServiceCall
-             * @methodOf ep.utils.service:epUtilsService
-             * @public
-             * @description
-             * Memoizes the result of a service call using a custom key
-             * @param {string, Function} key - the key to cache the result under or a function returning the same
-             * @param {Function} getDataFromService - a function that returns the data that should be cached, or a promise that
-             * resolves the same
-             * @param {boolean} reset - a flag indicating whether the value should be returned from the service instead
-             * of from cache
-             * @param {Function} transform - a function that will transform/extract the required data from the service result
-             * @returns {Object} Returns a promise that resolves with either the data from the cache or the
-             * (potentially extracted) result from the service
-             */
-            function cacheServiceCall(key, getDataFromService, reset, transform){
-                if(angular.isFunction(key)){
-                    key = key();
+            return !_.find(property.split('.'), function(prop) {
+                var ret = o.hasOwnProperty(prop);
+                if (ret) {
+                    o = o[prop];
                 }
-                function finalize(result){
-                    data = transform ? transform(result, key) : result;
-                    cache[key] = data;
-                    return data;
+                return !ret;
+            });
+        }
+
+        /**
+         * @ngdoc method
+         * @name wait
+         * @methodOf ep.utils.service:epUtilsService
+         * @public
+         * @description
+         * Wait for a condition to be accomplished by performing iterative calls at
+         * given interval. Alternative to deferred results.
+         * @param {function} fnCondition - function that represents condition. Must return true/false
+         * @param {int} attempts - how many max attempts can be performed
+         * @param {int} interval - interval in ms between each new attempt
+         * @param {function} fnExecute - function that is executed when condition is met
+         * @param {function} fnFail - optional function that is executed when condition is not met after all attempts
+         * @example
+         *   wait( function() { return state; }, 10, 250, function() { alert('complete'); });
+         */
+        function wait(fnCondition, attempts, interval, fnExecute, fnFail) {
+            attempts--;
+            if (attempts >= 0) {
+                if (fnCondition()) {
+                    fnExecute();
+                } else {
+                    $timeout(function() {
+                        wait(fnCondition, attempts, interval, fnExecute, fnFail);
+                    }, interval);
                 }
+            } else if (fnFail) {
+                fnFail();
+            }
+        }
 
-                var deferred = $q.defer();
+        function baseMerge(dst, objs, deep) {
+            for (var i = 0, ii = objs.length; i < ii; ++i) {
+                var obj = objs[i];
+                if (!_.isObject(obj) && !_.isFunction(obj)) {
+                    continue;
+                }
+                var keys = _.union(Object.keys(obj), Object.keys(dst));
+                for (var j = 0, jj = keys.length; j < jj; j++) {
+                    var key = keys[j];
+                    var src = obj[key];
 
-                // check in the cache for a result
-                var data = cache[key];
-
-                // if we didn't find the data in the memory-cache or if the resetCache flag is set...
-                if(!data || reset) {
-                    // ...then invoke the service method
-                    var invocationResult = getDataFromService(key);
-                    // if the service returned a promise
-                    if (invocationResult.then) {
-                        // ..then we need to wait for resolution
-                        invocationResult.then(function(result) {
-                            // and store the result in the cache (by calling finalize)
-                            deferred.resolve(finalize(result));
-                        });
+                    if (deep && _.isObject(src)) {
+                        if (_.isDate(src)) {
+                            dst[key] = new Date(src.valueOf());
+                        } else if (_.isRegExp(src)) {
+                            dst[key] = new RegExp(src);
+                        } else if (src.nodeName) {
+                            dst[key] = src.cloneNode(true);
+                        } else if (_.isElement(src)) {
+                            dst[key] = src.clone();
+                        } else if (_.isNull(src)) {
+                            dst[key] = null;
+                        } else if (_.isUndefined(src)) {
+                            dst[key] = undefined;
+                        } else {
+                            if (!_.isObject(dst[key])) {
+                                dst[key] = _.isArray(src) ? [] : {};
+                            }
+                            baseMerge(dst[key], [src], true);
+                        }
                     } else {
-                        // otherwise it's just a regular value and it can be cached immediately
-                        deferred.resolve(finalize(invocationResult));
+                        dst[key] = src;
                     }
-                } else{
-                    deferred.resolve(data);
                 }
-                return deferred.promise;
             }
 
-            return {
-                copyProperties: copyProperties,
-                ensureEndsWith: ensureEndsWith,
-                ensureStartsWith: ensureStartsWith,
-                hasProperty: hasProperty,
-                loadScript: loadScript,
-                makePath: makePath,
-                mapArray: mapArray,
-                merge: merge,
-                strFormat: strFormat,
-                wait: wait,
-                getService: getService,
-                cacheServiceCall: cacheServiceCall
+            return dst;
+        }
+
+        /**
+         * @ngdoc method
+         * @name merge
+         * @methodOf ep.utils.service:epUtilsService
+         * @public
+         * @description
+         * Deeply extends the destination object `dst` by copying own enumerable properties from the `src` object(s)
+         * to `dst`. You can specify multiple `src` objects. If you want to preserve original objects, you can do so
+         * by passing an empty object as the target: `var object = epUtilsService.merge({}, object1, object2)`. This
+         * function differs from the angular.merge function in that undefined values in the source object will cause
+         * the corresponding property in the dst object to be deleted/undefined.
+
+         *
+         * @param {Object} dst Destination object.
+         * @returns {Object} Reference to `dst`.
+         */
+        function merge(dst) {
+            return baseMerge(dst, Array.prototype.slice.call(arguments, 1), true);
+        }
+
+        /**
+         * @ngdoc method
+         * @name getService
+         * @methodOf ep.utils.service:epUtilsService
+         * @public
+         * @description
+         * Retrieve an angular injector for a specified service name
+         * @param {string} name - name of injected service
+         * @returns {Object} Returns requested service injector
+         */
+        function getService(name) {
+            var ret;
+            try {
+                ret = angular.element('html').injector().get(name);
+            } catch (e) {
+                $log.error('Failed to retrieve service for requested name: ' + name + '.');
+            }
+            return ret;
+        }
+
+        function reify(val) {
+            if (angular.isFunction(val)) {
+                return val.apply(null);
+            } else {
+                return val;
+            }
+        }
+
+        /**
+         * @ngdoc method
+         * @name getCache
+         * @methodOf ep.utils.service:epUtilsService
+         * @public
+         * @description
+         * Memoize the result of a service call using a custom key
+         * @param {string|Function} cacheId - the id of the cache where the data will be stored/read or a function returning the same
+
+         * @returns {Object} An object that represents the isolated cache
+         */
+        function getCache(cacheId) {
+            cacheId = reify(cacheId);
+            cacheStore[cacheId] = cacheStore[cacheId] || {};
+            return cacheStore[cacheId];
+        }
+
+        /**
+         * @ngdoc method
+         * @name cacheServiceCall
+         * @methodOf ep.utils.service:epUtilsService
+         * @public
+         * @description
+         * Memoize the result of a service call using a custom key
+         * @param {string|Function} cacheId - the id of the cache where the data will be stored/read or a function returning the same
+         * @param {string|Function} key - the key to cache the result under or a function returning the same
+         * @param {Function} getDataFromService - a function that returns the data that should be cached, or a promise that
+         * resolves the same
+         * @param {boolean} reset - a flag indicating whether the value should be returned from the service instead
+         * of from cache
+         * @param {Function} transform - a function that will transform/extract the required data from the service result
+         * @returns {Object} Returns a promise that resolves with either the data from the cache or the
+         * (potentially transformed) result from the service
+         */
+        function cacheServiceCall(cacheId, key, getDataFromService, reset, transform) {
+
+            var cache = getCache(cacheId);
+            key = reify(key);
+
+            function finalize(result) {
+                data = transform ? transform(result, key) : result;
+                cacheData(cacheId, key, data);
+
+                return data;
+            }
+
+            var deferred = $q.defer();
+            // check in the cache for a result
+            var data = cache[key];
+
+            // if we didn't find the data in the memory-cache or if the resetCache flag is set...
+            if (!data || reset || !epShellConfig.options.enableCache) {
+                $log.debug('Invoking service call for key "' + key + '".');
+                // ...then invoke the service method
+                var invocationResult = getDataFromService(key);
+                // if the service returned a promise
+                if (invocationResult.then) {
+                    // ..then we need to wait for resolution
+                    invocationResult.then(function(result) {
+                        // and store the result in the cache (by calling finalize)
+                        deferred.resolve(finalize(result));
+                    }, function(err) {
+                        $log.warn('An error occurred while invoking service call with key "' + key + '". ' + err);
+                        deferred.reject(err);
+                    });
+                } else {
+                    // otherwise it's just a regular value and it can be cached & returned immediately
+                    deferred.resolve(finalize(invocationResult));
+                }
+            } else {
+                $log.debug('Resolving service call data from cache "' + cacheId + '" for key "' + key + '".');
+                deferred.resolve(data);
+            }
+            return deferred.promise;
+        }
+
+        /**
+         * @ngdoc method
+         * @name deleteAllCaches
+         * @methodOf ep.utils.service:epUtilsService
+         * @public
+         * @description
+         * Clears all cached data
+         */
+        function deleteAllCaches() {
+            Object.keys(cacheStore).forEach(function(cacheId) {
+                deleteCache(cacheId);
+            });
+        }
+
+        /**
+         * @ngdoc method
+         * @name deleteCache
+         * @methodOf ep.utils.service:epUtilsService
+         * @public
+         * @description
+         * Clears a cache with the given id
+         * @param {string|Function} cacheId - the id of the cache to be deleted or a function returning the same
+         */
+        function deleteCache(cacheId) {
+            cacheId = reify(cacheId);
+            if (cacheStore[cacheId]) {
+                delete cacheStore[cacheId];
+                $rootScope.$emit(epShellConstants.SHELL_CACHE_DELETED_EVENT, {cacheId: cacheId});
+                $log.debug('Cache "' + cacheId + '" deleted.');
+            }
+        }
+
+        /**
+         * @ngdoc method
+         * @name deleteCacheKey
+         * @methodOf ep.utils.service:epUtilsService
+         * @public
+         * @description
+         * Clears data with the given key from the cache with the given id
+         * @param {string|Function} cacheId - the id of the cache where the data will be removed or a function returning the same
+         * @param {string|Function} key - the key to the data that will be removed from the cache
+         */
+        function deleteCacheKey(cacheId, key) {
+            var cache = getCache(cacheId);
+            key = reify(key);
+            delete cache[key];
+            $rootScope.$emit(epShellConstants.SHELL_CACHE_DATA_DELETED_EVENT, {cacheId: reify(cacheId), key: key});
+        }
+
+        /**
+         * @ngdoc method
+         * @name getCachedData
+         * @methodOf ep.utils.service:epUtilsService
+         * @public
+         * @description
+         * Returns the data with the given key from the cache with the given id
+         * @param {string|Function} cacheId - the id of the cache where the data is stored or a function returning the same
+         * @param {string|Function} key - the key to the data that will be returned from the cache
+         * @param {Object} [defaultValue] - optional value to store and return in case the value is not available in the cache.
+         */
+        function getCachedData(cacheId, key, defaultValue) {
+            var cache = getCache(cacheId);
+            var data = cache[key];
+            if(angular.isUndefined(data)){
+                data = (cache[key] = defaultValue);
+            }
+            return data;
+        }
+
+        /**
+         * @ngdoc method
+         * @name cacheData
+         * @methodOf ep.utils.service:epUtilsService
+         * @public
+         * @description
+         * Stores the data with the given key in the cache with the given id
+         * @param {string|Function} cacheId - the id of the cache where the data will be stored or a function returning the same
+         * @param {string|Function} key - the key to the data that will be stored in the cache
+         * @param {Object} data - the data that will be stored in the cache
+         */
+        function cacheData(cacheId, key, data) {
+            if(epShellConfig.options.enableCache) {
+                var cache = getCache(cacheId);
+                key = reify(key);
+                cache[key] = data;
+                $rootScope.$emit(epShellConstants.SHELL_DATA_CACHED_EVENT,
+                    {cacheId: reify(cacheId), key: key, data: data});
+            }
+        }
+
+        return {
+            copyProperties: copyProperties,
+            ensureEndsWith: ensureEndsWith,
+            ensureStartsWith: ensureStartsWith,
+            hasProperty: hasProperty,
+            loadScript: loadScript,
+            makePath: makePath,
+            mapArray: mapArray,
+            merge: merge,
+            strFormat: strFormat,
+            wait: wait,
+            getService: getService,
+            cacheServiceCall: cacheServiceCall,
+            deleteAllCaches: deleteAllCaches,
+            deleteCache: deleteCache,
+            deleteCacheKey: deleteCacheKey,
+            getCachedData: getCachedData,
+            cacheData: cacheData
+        };
+    }
+
+    var schemas = {};
+
+    function Schema(name) {
+        this.name = name;
+        this.versions = [];
+        this.versionDefinitionFuncs = {};
+    }
+
+    Schema.prototype.defineVersion = function(version, definitionFunc) {
+        this.versions.push(version);
+        this.versionDefinitionFuncs['version ' + version] = definitionFunc;
+    };
+
+    Schema.prototype.upgrade = function(db, version) {
+        var upgradeFunc = this.versionDefinitionFuncs['version ' + version];
+        if (upgradeFunc) {
+            upgradeFunc(db);
+        }
+    };
+
+    /*@ngInject*/
+    function epIndexedDbService($q, $window) {
+        var indexedDB = $window.indexedDB || $window.mozIndexedDB || $window.webkitIndexedDB || $window.msIndexedDB;
+
+        function createSchema(databaseName) {
+            schemas[databaseName] = new Schema(name);
+            return schemas[databaseName];
+        }
+
+        function openDatabase(id, version) {
+            var deferred = $q.defer();
+            var openRequest = indexedDB.open(id, version);
+            openRequest.onsucess = function(event) {
+                deferred.resolve(event);
             };
-        }]);
+            openRequest.onerror = function(event) {
+                deferred.reject(event);
+            };
+            openRequest.onupgradeneeded = function(event) {
+                var db = event.target.result;
+                var schema = schemas[id];
+                if (!schema) {
+                    deferred.reject('No database schema with the name ' + id + ' has been defined.');
+                } else {
+                    // call each schema upgrade function from the old version to the new version in order
+                    for (var v = event.oldVersion; v <= event.newVersion; v++) {
+                        schema.upgrade(db, v);
+                    }
+                }
+            };
+            return deferred.promise;
+        }
+
+        return {
+            createSchema: createSchema,
+            openDatabase: openDatabase
+        };
+    }
 })();
 
 (function() {
