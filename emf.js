@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.42 built: 10-10-2016
+ * version:1.0.10-dev.43 built: 11-10-2016
 */
 (function() {
     'use strict';
@@ -15934,6 +15934,12 @@ angular.module('ep.record.editor').
 
                 //Any time the size of the shell window changes fire an event to the views
                 function sendResizeEvent() {
+                    if (isMediaModeLarge()) {
+                        showLeftSidebar();
+                    }
+                    else {
+                        hideLeftSidebar();
+                    }
                     notifySizeChanged('size');
                 }
 
