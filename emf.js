@@ -1,7 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.47 built: 12-10-2016
+ * version:1.0.10-dev.48 built: 12-10-2016
 */
+
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.48","built":"2016-10-12"}};
+
 (function() {
     'use strict';
 
@@ -125,7 +128,6 @@ angular.module('ep.card', [
     angular.module('ep.console', [
         'ep.templates',
         'ep.sysconfig',
-        'ep.datagrid',
         'ep.modaldialog'
     ]);
 })();
@@ -432,15 +434,12 @@ angular.module('ep.record.editor', [
         'ep.templates',
         'ep.feature.detection',
         'ep.local.storage',
+        'ep.include',
         'ep.theme',
         'ep.utils',
         'ep.sysconfig',
         'ep.application',
-        'ep.console',
-        'ep.multi.level.menu',
-        'ep.accordion.menu',
-        'ep.embedded.apps',
-        'ep.tiles.panel'
+        'ep.modaldialog'
     ]);
 })();
 
@@ -1539,12 +1538,53 @@ angular.module('ep.signature', [
                 * path to libs
                 */
                 libPath: './lib',
+                /**
+                * @ngdoc property
+                * @name assetsPath
+                * @propertyOf ep.application.object:epApplicationConfig
+                * @public
+                * @description
+                * path to assets
+                */
+                assetsPath: './lib/bower/emf/assets',
+
+                /**
+                * @ngdoc property
+                * @name emfBuildInfo
+                * @propertyOf ep.application.object:epApplicationConfig
+                * @public
+                * @description
+                * This information about libraries that are built
+                */
+                emfBuildInfo: {}
             };
 
             //we use the epSysConfig provider to perform the $http read against sysconfig.json
             //epSysConfig.mergeSection() function merges the defaults with sysconfig.json settings
             this.$get = ['epSysConfig', function(epSysConfig) {
                 epSysConfig.mergeSection('ep.application', config);
+                if (!config.libPath) {
+                    config.libPath = './lib';
+                }
+                if (__ep_build_info) {
+                    config.emfBuildInfo = __ep_build_info;
+                }
+
+                config.getEmfLibPath = function (libName) {
+                    var ret = './lib/bower/emf';
+                    if (config.emfBuildInfo[libName] && libName !== 'emf') {
+                        ret = './lib/bower/emf/emf.' + config.emfBuildInfo[libName].libName
+                    }
+                    return ret;
+                }
+                config.getAssetsPath = function(libName, fileName) {
+                    var ret = config.getEmfLibPath(libName) + '/assets';
+                    if (fileName) {
+                        ret += '/' + fileName;
+                    }
+                    return ret;
+                }
+
                 return config;
             }];
         });
@@ -1883,12 +1923,12 @@ app.directive('epCardTitle',
 (function() {
     'use strict';
 
-    epConsoleService.$inject = ['$log', 'epUtilsService', 'epDataGridService'];
+    epConsoleService.$inject = ['$log', 'epUtilsService'];
     angular.module('ep.console').
     service('epConsoleService', epConsoleService);
 
     /*@ngInject*/
-    function epConsoleService($log, epUtilsService, epDataGridService) {
+    function epConsoleService($log, epUtilsService) {
 
         /**
          * @private
@@ -1964,6 +2004,19 @@ app.directive('epCardTitle',
          * This method will show a dialog box with all of the log entries.
          */
         function showLog(dialogOptions) {
+            var epDataGridService;
+            if (angular.module('ep.datagrid')) {
+                epUtilsService.getService('epDataGridService').then(function(svc) {                    
+                    if (svc) {
+                        epDataGridService = svc;
+                    }
+                });
+            }
+            if (!epDataGridService) {
+                $log.warn('ep.datagrid module is not available for console. Verify that it is included');
+                return;
+            }
+
             var modalDialogOptions = {
                 size: 'fullscreen',
                 windowClass: 'ep-console-dialog',
@@ -9848,7 +9901,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     var html = sDiv;
                     if (options.templateStyle) {
                         try {
-                            $scope.state.templateScope._templateStyle_ = $scope.$eval(options.templateStyle);
+                            $scope.state.templateScope._templateStyle_ = angular.isString(options.templateStyle) ?
+                                $scope.$eval(options.templateStyle) : options.templateStyle;
                         } catch (err) {
                             $log.error('error evaluating style:' + err.message);
                         }
@@ -11530,6 +11584,164 @@ angular.module('ep.menu.builder').
         };
     }
 }());
+
+/**
+ * @ngdoc controller
+ * @name ep.shell.controller:epShellMenuCtrl
+ * @description
+ * Represents shell's menu controller.
+ */
+(function() {
+    'use strict';
+
+    epShellMenuCtrl.$inject = ['$q', '$scope', 'epLocalStorageService', 'epMultiLevelMenuService', 'epUtilsService'];
+    angular.module('ep.multi.level.menu').controller('epShellMenuCtrl', epShellMenuCtrl);
+
+    var cache = {};
+    /*@ngInject*/
+    function epShellMenuCtrl($q, $scope, epLocalStorageService, epMultiLevelMenuService, epUtilsService) {
+
+        $scope.onMenuOptions = function onMenuOptions() {
+
+            $scope.menuOptions.onMenuInit = function(factory) {
+                $scope.menuOptions.factory = factory;
+            };
+            $scope.onTopMenuClick = function topMenuClicked() {
+                if ($scope.menuOptions.onTopMenuClick) {
+                    $scope.menuOptions.onTopMenuClick();
+                }
+            };
+
+            $scope.menu = {
+                id: 'root',
+                caption: $scope.menuOptions.title || 'Main Menu',
+                menuitems: []
+            };
+
+            if ($scope.menuOptions.menuType !== 'accordion') {
+                var arr = $scope.menuOptions.fnGetMenu || [];
+                if (!angular.isArray(arr)) {
+                    arr = [$scope.menuOptions.fnGetMenu];
+                }
+                if ($scope.includeEmbeddedMenu) {
+                    var svc = epUtilsService.getService('epEmbeddedAppsService');
+                    if (svc) {
+                        $scope.menuGets.push(svc.retrieveAppsMenu);
+                    }
+                }
+                $scope.count = arr.length;
+
+                angular.forEach(arr, function(fn) {
+                    $q.when(fn()).then(function(m) {
+                        epMultiLevelMenuService.mergeMenus($scope.menu, m);
+                        if (--$scope.count === 0) {
+                            $scope.menuOptions.menu = $scope.menu;
+                        }
+                    });
+                });
+            } else {
+               // The accordion menu passes a list of menu providers instead of a list of functions
+                // Ensure that the providers object is an array
+                if (!angular.isArray($scope.menuOptions.providers)) {
+                    $scope.menuOptions.providers = [$scope.menuOptions.providers];
+                }
+
+                var providers = $scope.menuOptions.providers;
+                $scope.count = providers.length;
+                var keys = providers.map(function(p) { return p.getCacheKey(); });
+                $scope.commitMenuState = function commitMenuState() {
+                    keys
+                        .forEach(function(key) {
+                            var m = cache[key];
+                            epLocalStorageService.update('menu.' + key, m);
+                        });
+                };
+                var interval = ($scope.menuOptions.refreshInterval || 0) * 1000;
+                var now = new Date().valueOf();
+                providers.forEach(function(provider) {
+
+                    var key = provider.getCacheKey();
+                    provider.register(function() {
+                        cache[key] = null;
+                        epLocalStorageService.update('menu.' + key, null);
+                    });
+                    var cached = cache[key];
+                    if (cached) {
+                        // If we've read the menu out of memory, it doesn't need to be restored
+                        merge(cached);
+                    } else {
+                        cached = epLocalStorageService.get('menu.' + key);
+                        if (cached && cached._timestamp + interval > now) {
+                            provider.restore(cached);
+                            cache[key] = cached;
+                            merge(cached);
+                        } else {
+                            var fetch = provider.get;
+                            if (fetch) {
+                                fetch().then(function(m) {
+                                    m._timestamp = now;
+                                    cache[key] = m;
+                                    epLocalStorageService.update('menu.' + key, m);
+                                    provider.restore(m);
+                                    merge(m);
+                                });
+                            }
+                        }
+                    }
+                });
+            }
+        };
+        function merge(m) {
+            epMultiLevelMenuService.mergeMenus($scope.menu, m);
+            if (--$scope.count === 0) {
+                $scope.menuOptions.menu = $scope.menu;
+            }
+        }
+    }
+})();
+
+/**
+* @ngdoc directive
+* @name ep.shell.directive:epShellMenuDirective
+* @restrict E
+*
+* @description
+* Represents epShellMenuDirective directive
+*
+* @example
+*/
+(function() {
+    'use strict';
+
+    angular.module('ep.multi.level.menu').
+    directive('epShellMenu', epShellMenuDirective);
+
+    /*@ngInject*/
+    function epShellMenuDirective() {
+        return {
+            restrict: 'E',
+            controller: 'epShellMenuCtrl',
+            templateUrl: 'src/components/ep.multi.level.menu/menu/ep-shell-menu.html',
+            scope: {
+                menuId: '=',
+                menuOptions: '=',
+                includeEmbeddedMenu: '='
+            },
+            compile: function() {
+                return {
+                    pre: function() { },
+                    post: function($scope) {
+                        $scope.$watch('menuOptions', function(newValue) {
+                            if (newValue !== undefined) {
+                                $scope.onMenuOptions();
+                            }
+                        });
+                    }
+                };
+            }
+        };
+    }
+})();
 
 /**
  * @ngdoc object
@@ -15307,161 +15519,6 @@ angular.module('ep.record.editor').
 })();
 
 /**
- * @ngdoc controller
- * @name ep.shell.controller:epShellMenuCtrl
- * @description
- * Represents shell's menu controller.
- */
-(function() {
-    'use strict';
-
-    epShellMenuCtrl.$inject = ['$q', '$scope', 'epEmbeddedAppsService', 'epLocalStorageService', 'epMultiLevelMenuService'];
-    angular.module('ep.shell').controller('epShellMenuCtrl', epShellMenuCtrl);
-
-    var cache = {};
-    /*@ngInject*/
-    function epShellMenuCtrl($q, $scope, epEmbeddedAppsService, epLocalStorageService, epMultiLevelMenuService) {
-
-        $scope.onMenuOptions = function onMenuOptions() {
-
-            $scope.menuOptions.onMenuInit = function(factory) {
-                $scope.menuOptions.factory = factory;
-            };
-            $scope.onTopMenuClick = function topMenuClicked() {
-                if ($scope.menuOptions.onTopMenuClick) {
-                    $scope.menuOptions.onTopMenuClick();
-                }
-            };
-
-            $scope.menu = {
-                id: 'root',
-                caption: $scope.menuOptions.title || 'Main Menu',
-                menuitems: []
-            };
-
-            if ($scope.menuOptions.menuType !== 'accordion') {
-                $scope.menuGets = $scope.menuOptions.fnGetMenu;
-                if (angular.isFunction($scope.menuOptions.fnGetMenu)) {
-                    $scope.menuGets = [$scope.menuOptions.fnGetMenu];
-                }
-
-                if ($scope.includeEmbeddedMenu) {
-                    $scope.menuGets.push(epEmbeddedAppsService.retrieveAppsMenu);
-                }
-                $scope.count = $scope.menuGets.length;
-                angular.forEach($scope.menuGets, function(fn) {
-                    $q.when(fn()).then(function(m) {
-                        epMultiLevelMenuService.mergeMenus($scope.menu, m);
-                        if (--$scope.count === 0) {
-                            $scope.menuOptions.menu = $scope.menu;
-                        }
-                    });
-                });
-            } else {
-               // The accordion menu passes a list of menu providers instead of a list of functions
-                // Ensure that the providers object is an array
-                if (!angular.isArray($scope.menuOptions.providers)) {
-                    $scope.menuOptions.providers = [$scope.menuOptions.providers];
-                }
-
-                var providers = $scope.menuOptions.providers;
-                $scope.count = providers.length;
-                var keys = providers.map(function(p) { return p.getCacheKey(); });
-                $scope.commitMenuState = function commitMenuState() {
-                    keys
-                        .forEach(function(key) {
-                            var m = cache[key];
-                            epLocalStorageService.update('menu.' + key, m);
-                        });
-                };
-                var interval = ($scope.menuOptions.refreshInterval || 0) * 1000;
-                var now = new Date().valueOf();
-                providers.forEach(function(provider) {
-
-                    var key = provider.getCacheKey();
-                    provider.register(function() {
-                        cache[key] = null;
-                        epLocalStorageService.update('menu.' + key, null);
-                    });
-                    var cached = cache[key];
-                    if (cached) {
-                        // If we've read the menu out of memory, it doesn't need to be restored
-                        merge(cached);
-                    } else {
-                        cached = epLocalStorageService.get('menu.' + key);
-                        if (cached && cached._timestamp + interval > now) {
-                            provider.restore(cached);
-                            cache[key] = cached;
-                            merge(cached);
-                        } else {
-                            var fetch = provider.get;
-                            if (fetch) {
-                                fetch().then(function(m) {
-                                    m._timestamp = now;
-                                    cache[key] = m;
-                                    epLocalStorageService.update('menu.' + key, m);
-                                    provider.restore(m);
-                                    merge(m);
-                                });
-                            }
-                        }
-                    }
-                });
-            }
-        };
-        function merge(m) {
-            epMultiLevelMenuService.mergeMenus($scope.menu, m);
-            if (--$scope.count === 0) {
-                $scope.menuOptions.menu = $scope.menu;
-            }
-        }
-    }
-})();
-
-/**
-* @ngdoc directive
-* @name ep.shell.directive:epShellMenuDirective
-* @restrict E
-*
-* @description
-* Represents epShellMenuDirective directive
-*
-* @example
-*/
-(function() {
-    'use strict';
-
-    angular.module('ep.shell').
-    directive('epShellMenu', epShellMenuDirective);
-
-    /*@ngInject*/
-    function epShellMenuDirective() {
-        return {
-            restrict: 'E',
-            controller: 'epShellMenuCtrl',
-            templateUrl: 'src/components/ep.shell/menu/ep-shell-menu.html',
-            scope: {
-                menuId: '=',
-                menuOptions: '=',
-                includeEmbeddedMenu: '='
-            },
-            compile: function() {
-                return {
-                    pre: function() { },
-                    post: function($scope) {
-                        $scope.$watch('menuOptions', function(newValue) {
-                            if (newValue !== undefined) {
-                                $scope.onMenuOptions();
-                            }
-                        });
-                    }
-                };
-            }
-        };
-    }
-})();
-
-/**
  * @ngdoc object
  * @name ep.shell.object:epShellConstants
  * @description
@@ -18931,10 +18988,9 @@ angular.module('ep.signature').directive('epSignature',
         this.$get = ['epSysConfig', 'epApplicationConfig', function(epSysConfig, epApplicationConfig) {
             var sysCfg = epSysConfig.mergeSection('ep.theme', config);
             if (config.defaultPath === 'emf') {
-                var libPath = epApplicationConfig.libPath ? epApplicationConfig.libPath : './lib';
-                config.defaultPath = libPath + '/bower/emf/assets/css/themes';
+                config.defaultPath = epApplicationConfig.getAssetsPath('shell', 'ep.theme/themes');
                 if (!angular.isArray(sysCfg.themes) || sysCfg.themes.length < 1) {
-                    //set to default fukll list of themes only if no themes were provided
+                    //set to default full list of themes only if no themes were provided
                     config.themes = assetsThemes;
                 }
             }
@@ -19037,29 +19093,26 @@ angular.module('ep.signature').directive('epSignature',
     });
 })();
 
-/**
- * @ngdoc service
- * @name ep.theme.service:epThemeService
- * @description
- * Service for the ep.theme module
- * This service returns a list of themes installed in the \css\themes directory.
- * Upon theme change epThemeConstants.THEME_CHANGE_EVENT is broadcasted
- *
- * @example
- *
- */
 (function() {
     'use strict';
+    /**
+     * @ngdoc service
+     * @name ep.theme.service:epThemeService
+     * @description
+     * Service for the ep.theme module
+     * This service returns a list of themes installed in the \css\themes directory.
+     * Upon theme change epThemeConstants.THEME_CHANGE_EVENT is broadcasted
+     *
+     * @example
+     *
+     */
+    epThemeService.$inject = ['$q', '$log', '$rootScope', 'epThemeConfig', 'epThemeConstants', 'epLocalStorageService', 'epUtilsService'];
+    angular.module('ep.theme').service('epThemeService', epThemeService);
 
-    angular.module('ep.theme').service('epThemeService', [
-    '$q',
-    '$log',
-    '$rootScope',
-    'epThemeConfig',
-    'epThemeConstants',
-    'epLocalStorageService',
-    'epUtilsService',
-    function($q, $log, $rootScope, epThemeConfig, epThemeConstants, epLocalStorageService, epUtilsService) {
+    /*@ngInject*/
+    function epThemeService($q, $log, $rootScope,
+        epThemeConfig, epThemeConstants, epLocalStorageService, epUtilsService) {
+
         var _localStorageId;
         var _theme;
         var _themes;
@@ -19359,8 +19412,8 @@ angular.module('ep.signature').directive('epSignature',
             disableTheming: disableTheming,
             getCustomThemeCss: getCustomThemeCss
         };
-    }]);
-})();
+    }
+}());
 
 /**
  * @ngdoc object
@@ -19445,9 +19498,7 @@ angular.module('ep.signature').directive('epSignature',
         function retrieveBing(numImages) {
             var deferred = $q.defer();
 
-            var libPath = epApplicationConfig.libPath ? epApplicationConfig.libPath : './lib';
-            var imgPath = libPath + '/bower/emf/assets/ep.tile/bing';
-
+            var imgPath = epApplicationConfig.getAssetsPath('shell', 'ep.tile/bing');
             var fnError = function onError(message) {
                 $log.error('Error parsing retrieving bing images: ' + message);
                 var imgs = { images: [] };
@@ -19880,6 +19931,7 @@ angular.module('ep.signature').directive('epSignature',
 
         $scope.$watch('menuId', function(newValue) {
             if (newValue) {
+
                 $scope.menuFactory = epMultiLevelMenuService.getMenuFactory(newValue);
                 if ($scope.menuFactory) {
                     $scope.$watch($scope.menuFactory.data, function() {
@@ -19969,7 +20021,7 @@ angular.module('ep.signature').directive('epSignature',
     directive('epTilesMenuFavorites', epTilesMenuFavoritesDirective);
 
     /*@ngInject*/
-function epTilesMenuFavoritesDirective() {
+    function epTilesMenuFavoritesDirective() {
         return {
             restrict: 'E',
             controller: 'epTilesMenuFavoritesCtrl',
@@ -21986,6 +22038,11 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   );
 
 
+  $templateCache.put('src/components/ep.multi.level.menu/menu/ep-shell-menu.html',
+    "<div ng-controller=epShellMenuCtrl><ep-multi-level-menu ng-if=\"menuOptions.menuType !== 'accordion'\" menu=menuOptions.menu menu-id=menuId search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu><ep-accordion-menu ng-if=\"menuOptions.menuType === 'accordion'\" menu=menuOptions.menu menu-id=menuId main-header=\"menuOptions.title || 'Menu'\" favorites-header=\"menuOptions.favoritesHeader || 'Favorites'\" search-results-header=\"menuOptions.searchResultsHeader || 'Search Results'\" search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-expand=menuOptions.onExpand commit-menu-state=commitMenuState on-menu-init=menuOptions.onMenuInit(factory)></ep-accordion-menu></div>"
+  );
+
+
   $templateCache.put('src/components/ep.multi.level.menu/multi-level-menu.html',
     "<div class=ep-mlm-container ng-class=\"{'ep-left-to-right': !isRightToLeft, 'ep-right-to-left': isRightToLeft}\"><form class=ep-mlm-search ng-hide=searchDisabled><input class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-focus=\"isRightToLeft = false\"></form><div ng-if=data.next class=\"ep-mlm-content ep-fadein-animation\"><div ng-hide=state.searchTerm class=ep-mlm-header ng-class=\"{ 'pointer': data.next._parent._id !== 'topmenu'}\" ng-click=\"navigate(data.next._parent, true, $event)\"><span ng-if=\"data.next._parent._id !== 'topmenu'\" class=\"ep-mlm-back-button pull-left fa fa-lg fa-caret-left\"></span> <span>{{data.next.caption}}</span></div><div ng-show=state.searchTerm class=ep-mlm-header><span>Search Results</span></div><ul><li ng-repeat=\"mi in currentItems | orderBy:orderByMenu\" class=\"ep-mlm-item clearfix ep-repeat-animation\"><div ng-if=\"mi.separator && !mi.separator.isBottom\" class=\"ep-mlm-separator ep-mlm-separator-top {{mi.separator.class}}\"><i ng-if=mi.separator.icon class=\"ep-mlm-separator-icon fa fa-lg pull-left {{mi.separator.icon}}\"></i><div ng-if=mi.separator.text class=ep-mlm-separator-text>{{mi.separator.text}}</div></div><i ng-if=\"mi.icon && !iconDisabled\" class=\"ep-mlm-icon fa fa-lg pull-left {{mi.icon}}\"></i><div class=\"pull-left clearfix ep-mlm-item-div\" ng-class=\"{ 'ep-mlm-item-div-icon': mi.icon }\" ng-click=\"navigate(mi, false, $event)\"><div class=\"ep-mlm-item-text pull-left {{mi.captionClass}}\" title={{mi.caption}}>{{mi.caption}}</div></div><i ng-if=\"(mi._type === 'item' && mi.hideFavorite !== true)\" class=\"ep-mlm-favorite fa fa-lg pull-right\" ng-click=\"toggleFavorite(mi, $event)\" ng-class=\"{ 'fa-star-o': !mi.favorite, 'fa-star text-warning': mi.favorite}\"></i> <i ng-if=\"mi._type === 'menu'\" class=\"ep-mlm-submenu fa fa-lg fa-caret-right pull-right\" ng-click=\"navigate(mi, false, $event)\"></i><div ng-if=\"mi.separator && mi.separator.isBottom\"><br><div class=\"ep-mlm-separator ep-mlm-separator-top {{mi.separator.class}}\"><i ng-if=mi.separator.icon class=\"ep-mlm-separator-icon fa fa-lg pull-left {{mi.separator.icon}}\"></i><div ng-if=mi.separator.text class=ep-mlm-separator-text>{{mi.separator.text}}</div></div></div></li></ul><uib-alert class=\"ep-mlm-alert ep-fadein-animation\" ng-show=\"state.searchTerm && (!currentItems || currentItems.length === 0)\" type=warning>The term \"{{state.searchTerm}}\" did not match any menu items.</uib-alert></div></div>"
   );
@@ -22048,11 +22105,6 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
   $templateCache.put('src/components/ep.shell/feedback/feedback_dialog.html',
     "<div class=form-group><label>{{config.summaryLabel}} <span class=\"required-indicator text-danger fa fa-asterisk\"></span></label><input class=form-control ng-model=config.feedback.summary ng-required=\"true\"></div><div class=form-group><label>{{config.descriptionLabel}} <span class=\"required-indicator text-danger fa fa-asterisk\"></span></label><textarea class=form-control ng-model=config.feedback.description ng-required=true></textarea></div><div class=form-group><label>{{config.customerNameLabel}}</label><input class=form-control ng-model=\"config.feedback.customerName\"></div><div class=form-group><label>{{config.customerEmailLabel}}</label><input class=form-control ng-model=\"config.feedback.customerEmail\"></div>"
-  );
-
-
-  $templateCache.put('src/components/ep.shell/menu/ep-shell-menu.html',
-    "<div ng-controller=epShellMenuCtrl><ep-multi-level-menu ng-if=\"menuOptions.menuType !== 'accordion'\" menu=menuOptions.menu menu-id=menuId search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu><ep-accordion-menu ng-if=\"menuOptions.menuType === 'accordion'\" menu=menuOptions.menu menu-id=menuId main-header=\"menuOptions.title || 'Menu'\" favorites-header=\"menuOptions.favoritesHeader || 'Favorites'\" search-results-header=\"menuOptions.searchResultsHeader || 'Search Results'\" search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-expand=menuOptions.onExpand commit-menu-state=commitMenuState on-menu-init=menuOptions.onMenuInit(factory)></ep-accordion-menu></div>"
   );
 
 
