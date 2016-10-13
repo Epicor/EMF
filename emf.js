@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.48 built: 12-10-2016
+ * version:1.0.10-dev.49 built: 12-10-2016
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.48","built":"2016-10-12"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.49","built":"2016-10-12"}};
 
 (function() {
     'use strict';
@@ -11626,7 +11626,7 @@ angular.module('ep.menu.builder').
                 if ($scope.includeEmbeddedMenu) {
                     var svc = epUtilsService.getService('epEmbeddedAppsService');
                     if (svc) {
-                        $scope.menuGets.push(svc.retrieveAppsMenu);
+                        arr.push(svc.retrieveAppsMenu);
                     }
                 }
                 $scope.count = arr.length;

@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.48 built: 12-10-2016
+ * version:1.0.10-dev.49 built: 12-10-2016
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -489,8 +489,8 @@
 /* Custom Icon font */
 @font-face {
   font-family: 'ep-custom-icon';
-  src: url('lib/bower/emf/assets/ep.common/custom-fonts/ep-custom-icon.eot');
-  src: url('lib/bower/emf/assets/ep.common/custom-fonts/ep-custom-icon.eot#iefix') format('embedded-opentype'), url('lib/bower/emf/assets/ep.common/custom-fonts/ep-custom-icon.ttf') format('truetype'), url('lib/bower/emf/assets/ep.common/custom-fonts/ep-custom-icon.woff') format('woff'), url('lib/bower/emf/assets/ep.common/custom-fonts/ep-custom-icon.svg#ep-custom-icon') format('svg');
+  src: url('assets/ep.common/custom-fonts/ep-custom-icon.eot');
+  src: url('assets/ep.common/custom-fonts/ep-custom-icon.eot#iefix') format('embedded-opentype'), url('assets/ep.common/custom-fonts/ep-custom-icon.ttf') format('truetype'), url('assets/ep.common/custom-fonts/ep-custom-icon.woff') format('woff'), url('assets/ep.common/custom-fonts/ep-custom-icon.svg#ep-custom-icon') format('svg');
   font-weight: normal;
   font-style: normal;
 }
