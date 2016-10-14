@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.55 built: 14-10-2016
+ * version:1.0.10-dev.56 built: 14-10-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.10-dev.55","built":"2016-10-14"};
+__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.10-dev.56","built":"2016-10-14"};
 
 (function() {
   'use strict';
@@ -91,6 +91,17 @@ angular.module('ep.signature', [
         'ep.sysconfig',
         'ep.modaldialog'
     ]);
+})();
+
+(function() {
+	'use strict';
+    /**
+     * @ngdoc overview
+     * @name ep.cache
+     * @description
+     * Provides in-memory and persistent cache mechanism
+     */
+    angular.module('ep.cache', ['ep.indexeddb', 'ep.sysconfig']);
 })();
 
 /**
@@ -1369,6 +1380,258 @@ angular.module('ep.signature').directive('epSignature',
             clearLog: clearLog,
             showLog: showLog
         };
+    }
+})();
+
+(function() {
+    'use strict';
+    epCacheService.$inject = ['$log', '$q', '$rootScope', 'epIndexedDbService', 'epShellConstants', 'epShellConfig'];
+    angular.module('ep.cache')
+        .service('epCacheService', epCacheService);
+
+    /*@ngInject*/
+    function epCacheService($log, $q, $rootScope,epIndexedDbService, epShellConstants, epShellConfig){
+        var cacheStore = {};
+        //define the cache database
+        epIndexedDbService.createSchema('ep-cache-db')
+            .defineVersion(1, function(db) {
+                var cacheTable = db.createObjectStore('ep-cache', {keyPath: 'key'});
+                cacheTable.createIndex('cacheId', 'cacheId', {unique: false});
+            });
+
+        function reify(val) {
+            if (angular.isFunction(val)) {
+                return val.apply(null);
+            } else {
+                return val;
+            }
+        }
+
+        /**
+         * @ngdoc method
+         * @name getCache
+         * @methodOf ep.cache:epUtilsService
+         * @public
+         * @description
+         * Get the in-memory cache with the given Id
+         * @param {string|Function} cacheId - the id of the cache where the data will be stored/read or a function returning the same
+
+         * @returns {Object} An object that represents the isolated cache
+         */
+        function getCache(cacheId) {
+            cacheId = reify(cacheId);
+            cacheStore[cacheId] = cacheStore[cacheId] || {};
+            return cacheStore[cacheId];
+        }
+
+        /**
+         * @ngdoc method
+         * @name cacheServiceCall
+         * @methodOf ep.cache:epCacheService
+         * @public
+         * @description
+         * Memoize the result of a service call using a custom key
+         * @param {string|Function} cacheId - the id of the cache where the data will be stored/read or a function returning the same
+         * @param {string|Function} key - the key to cache the result under or a function returning the same
+         * @param {Function} getDataFromService - a function that returns the data that should be cached, or a promise that
+         * resolves the same
+         * @param {boolean} reset - a flag indicating whether the value should be returned from the service instead
+         * of from cache
+         * @returns {Object} Returns a promise that resolves with either the data from the cache or the
+         * (potentially transformed) result from the service
+         */
+        function cacheServiceCall(cacheId, key, getDataFromService, reset) {
+
+            var cache = getCache(cacheId);
+            key = reify(key);
+
+            var deferred = $q.defer();
+            if(reset){
+                resolveServiceCall(deferred, key, null, getDataFromService);
+            } else{
+                var data = cache[key];
+                if(!data){
+                    getPersistedCacheValue(key).then(function(result){
+                        if (result) {
+                            cache[key] = result;
+                            $log.debug('Resolving service call data from persistent cache "' + cacheId + '" for key "' + key + '".');
+                            deferred.resolve(result);
+                        } else {
+                            $log.debug('Cached record "' + key + '" not found in persistent cache');
+                            resolveServiceCall(deferred, key, cacheId, getDataFromService);
+                        }
+                    }, function(){
+                        $log.debug('An error occurred while retrieving cached record for key: "' + key + '".');
+                        resolveServiceCall(deferred, key, cacheId, getDataFromService);
+                    });
+                }else{
+                    $log.debug('Resolving service call data from cache "' + cacheId + '" for key "' + key + '".');
+                    deferred.resolve(data);
+                }
+            }
+            return deferred.promise;
+        }
+
+        function resolveServiceCall(deferred, key, cacheId, getDataFromService){
+
+            function finalize(result) {
+                if (cacheId){
+                    cacheData(cacheId, key, result);
+                }
+                return result;
+            }
+
+            $log.debug('Invoking service call for key "' + key + '".');
+            // ...then invoke the service method
+            var invocationResult = getDataFromService(key);
+            // if the service returned a promise
+            if (invocationResult.then) {
+                // ..then we need to wait for resolution
+                invocationResult.then(function(result) {
+                    // and store the result in the cache (by calling finalize)
+                    deferred.resolve(finalize(result));
+                }, function(err) {
+                    $log.warn('An error occurred while invoking service call with key "' + key + '". ' + err);
+                    deferred.reject(err);
+                });
+            } else {
+                // otherwise it's just a regular value and it can be cached & returned immediately
+                deferred.resolve(finalize(invocationResult));
+            }
+        }
+
+        function getPersistedCacheValue(key) {
+            return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
+                var store = db.getObjectStore('ep-cache');
+                return store.get(key).then(function(cacheEntry){
+                    return cacheEntry && cacheEntry.value;
+                })
+            });
+        }
+
+        function savePersistedCacheValue(key, cacheId, value) {
+            var cacheEntry = {key: key, cacheId: cacheId, value:value};
+            return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db){
+                var store = db.getObjectStore('ep-cache');
+                return store.put(cacheEntry);
+            })
+        }
+
+        /**
+         * @ngdoc method
+         * @name deleteAllCaches
+         * @methodOf ep.cache:epCacheService
+         * @public
+         * @description
+         * Clears all cached data
+         */
+        function deleteAllCaches() {
+            Object.keys(cacheStore).forEach(function(cacheId) {
+                deleteCache(cacheId);
+            });
+            epIndexedDbService.deleteDatabase('ep-cache-db');
+        }
+
+        /**
+         * @ngdoc method
+         * @name deleteCache
+         * @methodOf ep.utils.service:epUtilsService
+         * @public
+         * @description
+         * Clears a cache with the given id
+         * @param {string|Function} cacheId - the id of the cache to be deleted or a function returning the same
+         */
+        function deleteCache(cacheId) {
+            cacheId = reify(cacheId);
+            if (cacheStore[cacheId]) {
+                delete cacheStore[cacheId];
+                $log.debug('Cache "' + cacheId + '" deleted from memory cache.');
+            }
+            epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db){
+                db.getObjectStore('ep-cache').deleteByIndex('cacheId', cacheId);
+                $rootScope.$emit(epShellConstants.SHELL_CACHE_DELETED_EVENT, {cacheId: cacheId});
+                $log.debug('Cache "' + cacheId + '" deleted from database cache.');
+            });
+        }
+
+        /**
+         * @ngdoc method
+         * @name deleteCacheKey
+         * @methodOf ep.cache:epCacheService
+         * @public
+         * @description
+         * Clears data with the given key from the cache with the given id
+         * @param {string|Function} cacheId - the id of the cache where the data will be removed or a function returning the same
+         * @param {string|Function} key - the key to the data that will be removed from the cache
+         */
+        function deleteCacheKey(cacheId, key) {
+            var cache = getCache(cacheId);
+            key = reify(key);
+            if(cache && cache[key]) {
+                delete cache[key];
+            }
+            epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db){
+                db.getObjectStore('ep-cache').delete(key);
+                $log.debug('Value with key "' + key + '" deleted from database.');
+            });
+            $rootScope.$emit(epShellConstants.SHELL_CACHE_DATA_DELETED_EVENT, {cacheId: reify(cacheId), key: key});
+        }
+
+        /**
+         * @ngdoc method
+         * @name getCachedData
+         * @methodOf ep.cache:epCacheService
+         * @public
+         * @description
+         * Returns the data with the given key from the cache with the given id
+         * @param {string|Function} cacheId - the id of the cache where the data is stored or a function returning the same
+         * @param {string|Function} key - the key to the data that will be returned from the cache
+         * @param {Object} [defaultValue] - optional value to store and return in case the value is not available in the cache.
+         */
+        function getCachedData(cacheId, key, defaultValue) {
+            var cache = getCache(cacheId);
+            var data = cache[key];
+            if (angular.isUndefined(data)) {
+                data = (cache[key] = defaultValue);
+            }
+            return data;
+        }
+
+        /**
+         * @ngdoc method
+         * @name cacheData
+         * @methodOf ep.cache:epCacheService
+         * @public
+         * @description
+         * Stores the data with the given key in the cache with the given id
+         * @param {string|Function} cacheId - the id of the cache where the data will be stored or a function returning the same
+         * @param {string|Function} key - the key to the data that will be stored in the cache
+         * @param {Object} data - the data that will be stored in the cache
+         */
+        function cacheData(cacheId, key, data) {
+            if (epShellConfig.options.enableCache) {
+                var cache = getCache(cacheId);
+                key = reify(key);
+                cache[key] = data;
+                savePersistedCacheValue(key, cacheId, data).then(function(){
+                    $log.debug('Cached value with key:"' + key + '" in cache: "' + cacheId + '".');
+                    $rootScope.$emit(epShellConstants.SHELL_DATA_CACHED_EVENT,
+                        {cacheId: reify(cacheId), key: key, data: data});
+                }, function(e){
+                    $log.warn('Unable to open cache database: ' + e);
+                });
+            }
+        }
+
+        return {
+            cacheServiceCall: cacheServiceCall,
+            deleteAllCaches: deleteAllCaches,
+            deleteCache: deleteCache,
+            deleteCacheKey: deleteCacheKey,
+            getCachedData: getCachedData,
+            cacheData: cacheData
+        }
+
     }
 })();
 

@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.55 built: 14-10-2016
+ * version:1.0.10-dev.56 built: 14-10-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.55","built":"2016-10-14"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.56","built":"2016-10-14"};
 
 (function() {
    'use strict';
@@ -75,6 +75,11 @@ __ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.55","built":
     angular.module('ep.local.storage', [
         'ep.sysconfig'
     ]);
+})();
+
+(function() {
+	'use strict';
+    angular.module('ep.indexeddb', []);
 })();
 
 /**
@@ -1693,6 +1698,343 @@ angular.module('ep.embedded.apps', ['ep.templates', 'ep.sysconfig', 'ep.utils'])
             clear: clear
         };
     }]);
+})();
+
+/**
+ * Created by brent on 10/12/16.
+ */
+(function() {
+    'use strict';
+    epIndexedDbService.$inject = ['$log', '$q', '$window'];
+    angular.module('ep.indexeddb')
+        .service('epIndexedDbService', epIndexedDbService);
+
+    var schemas = {};
+    var openDatabaseMap = {};
+
+    function Schema(name) {
+        this.name = name;
+        this.versions = [];
+        this.versionDefinitionFuncs = {};
+    }
+    Schema.prototype.defineVersion = function(version, definitionFunc) {
+        this.versions.push(version);
+        this.versionDefinitionFuncs['version ' + version] = definitionFunc;
+    };
+    Schema.prototype.upgrade = function(db, version) {
+        var upgradeFunc = this.versionDefinitionFuncs['version ' + version];
+        if (upgradeFunc) {
+            upgradeFunc(db);
+        }
+    };
+
+    function DatabaseWrapper($log, $q, db) {
+        this.$log = $log;
+        this.$q = $q;
+        this.db = db;
+    }
+    DatabaseWrapper.prototype.getObjectStore = function(objectStoreName) {
+        return new ObjectStoreWrapper(this.$log, this.$q, this.db, objectStoreName);
+    };
+
+    var proto = {
+        get: function(key) {
+            return this._execute('readonly', function(store) {
+                return store.get(key);
+            });
+        },
+        getAll: function() {
+            return this._execute('readonly', function(store) {
+                return store.getAll();
+            });
+        },
+        getAllKeys: function() {
+            return this._execute('readonly', function(store) {
+                return store.getAllKeys();
+            });
+        },
+        clear: function() {
+            return this._execute('readwrite', function(store) {
+                return store.clear();
+            });
+        },
+        count: function() {
+            return this._execute('readonly', function(store) {
+                return store.count;
+            });
+        }
+    };
+    function ObjectStoreWrapper($log, $q, db, name) {
+        this.$log = $log;
+        this.$q = $q;
+        this.db = db;
+        this.name = name;
+    }
+    ObjectStoreWrapper.prototype._execute = function(mode, activity) {
+        var self = this;
+        var deferred = self.$q.defer();
+        var transaction = this.db.transaction(self.name, mode);
+        transaction.oncomplete = function() {
+            self.$log.debug('Transaction completed on ' + self.name);
+        };
+        transaction.onerror = function(e) {
+            self.$log.warn('Transaction error occurred on ' + self.name + '. ' + e);
+            deferred.reject(e)
+        };
+
+        var store = transaction.objectStore(self.name);
+        var request = activity(store);
+        request.onsuccess = function(e) {
+            var result = e && e.target && e.target.result;
+            deferred.resolve(result);
+        };
+        request.onerror = function(e) {
+            self.$log.warn('Request error occurred on ' + self.name + '. ' + e);
+            deferred.reject(e);
+        };
+
+        return deferred.promise;
+    };
+    ObjectStoreWrapper.prototype.openCursor = function() {
+        var self = this;
+        var deferred = $q.defer();
+        var objectStore = self.db.transaction(this.name, 'readwrite').objectStore(self.name);
+        var cursorRequest = objectStore.openCursor();
+        cursorRequest.onsuccess = function(e) {
+            var cursor = e.target.result;
+            if (cursor) {
+                deferred.notify(cursor.value);
+                cursor.continue();
+            } else {
+                deferred.resolve();
+            }
+        };
+        cursorRequest.onerror = function(e) {
+            deferred.reject(e);
+        };
+        return deferred.promise;
+    };
+    ObjectStoreWrapper.prototype.openKeyCursor = function(keyRange, direction) {
+        var self = this;
+        var deferred = $q.defer();
+        var objectStore = self.db.transaction(this.name, 'readwrite').objectStore(self.name);
+        var cursorRequest = objectStore.openKeyCursor(keyRange, direction);
+        cursorRequest.onsuccess = function(e) {
+            var cursor = e.target.result;
+            if (cursor) {
+                deferred.notify(cursor.value);
+                cursor.continue();
+            } else {
+                deferred.resolve();
+            }
+        };
+        cursorRequest.onerror = function(e) {
+            deferred.reject(e);
+        };
+        return deferred.promise;
+    };
+    ObjectStoreWrapper.prototype.delete = function(key) {
+        return this._execute('readwrite', function(store) {
+            return store.delete(key);
+        });
+    };
+    ObjectStoreWrapper.prototype.put = function(value) {
+        return this._execute('readwrite', function(store) {
+            return store.put(value);
+        });
+    };
+    ObjectStoreWrapper.prototype.add = function(value) {
+        return this._execute('readwrite', function(store) {
+            return store.add(value);
+        })
+    };
+    ObjectStoreWrapper.prototype.index = function(name) {
+        var self = this;
+        return this._execute('readonly', function(store) {
+            return new IndexWrapper(self.$log, self.$q, self.db, store.index(name), name);
+        });
+    };
+    ObjectStoreWrapper.prototype.deleteByIndex = function(indexName, indexValue) {
+        var self = this;
+        var deferred = self.$q.defer();
+        var trans = self.db.transaction(self.name, 'readwrite');
+        var store = trans.objectStore(self.name);
+        var idx = store.index(indexName);
+        var deleteRequest = idx.openKeyCursor(IDBKeyRange.only(indexValue));
+        deleteRequest.onsuccess = function() {
+            var cursor = deleteRequest.result;
+            if (cursor) {
+                store.delete(cursor.primaryKey);
+                cursor.continue();
+                deferred.notify();
+            } else {
+                deferred.resolve(true);
+            }
+        };
+        deleteRequest.onerror = function(e) {
+            deferred.reject(e);
+        };
+        return deferred.promise;
+    };
+    ObjectStoreWrapper.prototype.queryByIndex = function(indexName, indexValue) {
+        var self = this;
+        var deferred = self.$q.defer();
+        var trans = self.db.transaction(self.name, 'readwrite');
+        var store = trans.objectStore(self.name);
+        var idx = store.index(indexName);
+        var result = [];
+        var request = idx.openKeyCursor(IDBKeyRange.only(indexValue));
+        request.onsuccess = function() {
+            var cursor = request.result;
+            if (cursor) {
+                var getRequest = store.get(cursor.primaryKey);
+                getRequest.onsuccess = function(e){
+                    var row = e && e.result && e.result.target;
+                    result.push(row);
+                    cursor.continue();
+                    deferred.notify(row);
+                };
+                getRequest.onerror = function(){
+                    self.$log.warn('An error occurred while executing query ' + indexName + '=' + indexValue);
+                    cursor.continue();
+                }
+            } else {
+                deferred.resolve(result);
+            }
+        };
+        request.onerror = function(e) {
+            deferred.reject(e);
+        };
+        return deferred.promise;
+    };
+
+    angular.extend(ObjectStoreWrapper.prototype, proto);
+
+    function IndexWrapper($log, $q, db, index, name) {
+        this.$q = $q;
+        this.$log = $log;
+        this.db = db;
+        this.index = index;
+        this.name = name;
+    }
+    IndexWrapper.prototype._execute = function(mode, activity) {
+        var self = this;
+        var deferred = self.$q.defer();
+
+        var request = activity(self.index);
+        request.onsuccess = function(e) {
+            var result = e && e.target && e.target.result;
+            deferred.resolve(result);
+        };
+        request.onerror = function(e) {
+            self.$log.warn('Request error occurred on ' + self.name + '. ' + e);
+            deferred.reject(e);
+        };
+
+        return deferred.promise;
+    };
+    IndexWrapper.prototype.openCursor = function() {
+        var self = this;
+        var deferred = $q.defer();
+        var cursorRequest = self.index.openCursor();
+        cursorRequest.onsuccess = function(e) {
+            var cursor = e.target.result;
+            if (cursor) {
+                deferred.notify(cursor.value);
+                cursor.continue();
+            } else {
+                deferred.resolve();
+            }
+        };
+        cursorRequest.onerror = function(e) {
+            deferred.reject(e);
+        };
+        return deferred.promise;
+    };
+    IndexWrapper.prototype.openKeyCursor = function() {
+        var self = this;
+        var deferred = $q.defer();
+        var cursorRequest = self.index.openCursor();
+        cursorRequest.onsuccess = function(e) {
+            var cursor = e.target.result;
+            if (cursor) {
+                deferred.notify(cursor.value);
+                cursor.continue();
+            } else {
+                deferred.resolve();
+            }
+        };
+        cursorRequest.onerror = function(e) {
+            deferred.reject(e);
+        };
+        return deferred.promise;
+    };
+    angular.extend(IndexWrapper.prototype, proto);
+
+    /*@ngInject*/
+    function epIndexedDbService($log, $q, $window) {
+
+        var indexedDB = $window.indexedDB || $window.mozIndexedDB || $window.webkitIndexedDB || $window.msIndexedDB;
+
+        function createSchema(databaseName) {
+            schemas[databaseName] = new Schema(name);
+            return schemas[databaseName];
+        }
+
+        function closeDatabase(id) {
+            delete openDatabaseMap[id]
+        }
+
+        function openDatabase(id, version) {
+            var deferred = $q.defer();
+            if (openDatabaseMap[id]) {
+                deferred.resolve(openDatabaseMap[id]);
+            } else {
+                var openRequest = indexedDB.open(id, version);
+                openRequest.onsuccess = function() {
+                    var db = openRequest.result;
+                    var wrapper = new DatabaseWrapper($log, $q, db);
+                    openDatabaseMap[id] = wrapper;
+                    deferred.resolve(wrapper);
+                };
+                openRequest.onerror = function(event) {
+                    deferred.reject(event);
+                };
+                openRequest.onupgradeneeded = function(event) {
+                    var db = event.target.result;
+                    var schema = schemas[id];
+                    if (!schema) {
+                        deferred.reject('No database schema with the name ' + id + ' has been defined.');
+                    } else {
+                        // call each schema upgrade function from the old version to the new version in order
+                        for (var v = event.oldVersion; v <= event.newVersion; v++) {
+                            schema.upgrade(db, v);
+                        }
+                    }
+                };
+            }
+            return deferred.promise;
+        }
+
+        function deleteDatabase(id) {
+            var deferred = $q.defer();
+            var deleteRequest = indexedDB.deleteDatabase(id);
+            deleteRequest.onsuccess = function() {
+                deferred.resolve(true);
+            };
+            deleteRequest.onerror = function(event) {
+                deferred.reject(event);
+            };
+            return deferred.promise;
+        }
+
+        return {
+            createSchema: createSchema,
+            openDatabase: openDatabase,
+            closeDatabase: closeDatabase,
+            deleteDatabase: deleteDatabase
+        };
+    }
 })();
 
 /**
