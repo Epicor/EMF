@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.52 built: 13-10-2016
+ * version:1.0.10-dev.53 built: 13-10-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.52","built":"2016-10-13"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.53","built":"2016-10-13"};
 
 (function() {
    'use strict';
@@ -31,10 +31,7 @@ __ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.52","built":
  */
 (function() {
     'use strict';
-
-    angular.module('ep.utils', [
-    'ep.sysconfig'
-    ]);
+    angular.module('ep.utils', []);
 })();
 
 /**
@@ -442,17 +439,13 @@ angular.module('ep.embedded.apps', ['ep.templates', 'ep.sysconfig', 'ep.utils'])
 (function() {
     'use strict';
 
-    epUtilsService.$inject = ['$document', '$log', '$q', '$rootScope', '$timeout', 'epShellConstants', 'epShellConfig'];
-    epIndexedDbService.$inject = ['$q', '$window'];
+    epUtilsService.$inject = ['$document', '$log', '$q', '$timeout'];
     angular.module('ep.utils')
-        .service('epUtilsService', epUtilsService)
-        .service('epIndexedDbService', epIndexedDbService);
+        .service('epUtilsService', epUtilsService);
+
 
     /*@ngInject*/
-    function epUtilsService($document, $log, $q, $rootScope, $timeout, epShellConstants, epShellConfig) {
-
-        var cacheStore = {};
-
+    function epUtilsService($document, $log, $q,  $timeout) {
         /**
          * @ngdoc method
          * @name strFormat
@@ -820,180 +813,6 @@ angular.module('ep.embedded.apps', ['ep.templates', 'ep.sysconfig', 'ep.utils'])
             return fn();
         }
 
-        function reify(val) {
-            if (angular.isFunction(val)) {
-                return val.apply(null);
-            } else {
-                return val;
-            }
-        }
-
-        /**
-         * @ngdoc method
-         * @name getCache
-         * @methodOf ep.utils.service:epUtilsService
-         * @public
-         * @description
-         * Memoize the result of a service call using a custom key
-         * @param {string|Function} cacheId - the id of the cache where the data will be stored/read or a function returning the same
-
-         * @returns {Object} An object that represents the isolated cache
-         */
-        function getCache(cacheId) {
-            cacheId = reify(cacheId);
-            cacheStore[cacheId] = cacheStore[cacheId] || {};
-            return cacheStore[cacheId];
-        }
-
-        /**
-         * @ngdoc method
-         * @name cacheServiceCall
-         * @methodOf ep.utils.service:epUtilsService
-         * @public
-         * @description
-         * Memoize the result of a service call using a custom key
-         * @param {string|Function} cacheId - the id of the cache where the data will be stored/read or a function returning the same
-         * @param {string|Function} key - the key to cache the result under or a function returning the same
-         * @param {Function} getDataFromService - a function that returns the data that should be cached, or a promise that
-         * resolves the same
-         * @param {boolean} reset - a flag indicating whether the value should be returned from the service instead
-         * of from cache
-         * @param {Function} transform - a function that will transform/extract the required data from the service result
-         * @returns {Object} Returns a promise that resolves with either the data from the cache or the
-         * (potentially transformed) result from the service
-         */
-        function cacheServiceCall(cacheId, key, getDataFromService, reset, transform) {
-
-            var cache = getCache(cacheId);
-            key = reify(key);
-
-            function finalize(result) {
-                data = transform ? transform(result, key) : result;
-                cacheData(cacheId, key, data);
-
-                return data;
-            }
-
-            var deferred = $q.defer();
-            // check in the cache for a result
-            var data = cache[key];
-
-            // if we didn't find the data in the memory-cache or if the resetCache flag is set...
-            if (!data || reset || !epShellConfig.options.enableCache) {
-                $log.debug('Invoking service call for key "' + key + '".');
-                // ...then invoke the service method
-                var invocationResult = getDataFromService(key);
-                // if the service returned a promise
-                if (invocationResult.then) {
-                    // ..then we need to wait for resolution
-                    invocationResult.then(function(result) {
-                        // and store the result in the cache (by calling finalize)
-                        deferred.resolve(finalize(result));
-                    }, function(err) {
-                        $log.warn('An error occurred while invoking service call with key "' + key + '". ' + err);
-                        deferred.reject(err);
-                    });
-                } else {
-                    // otherwise it's just a regular value and it can be cached & returned immediately
-                    deferred.resolve(finalize(invocationResult));
-                }
-            } else {
-                $log.debug('Resolving service call data from cache "' + cacheId + '" for key "' + key + '".');
-                deferred.resolve(data);
-            }
-            return deferred.promise;
-        }
-
-        /**
-         * @ngdoc method
-         * @name deleteAllCaches
-         * @methodOf ep.utils.service:epUtilsService
-         * @public
-         * @description
-         * Clears all cached data
-         */
-        function deleteAllCaches() {
-            Object.keys(cacheStore).forEach(function(cacheId) {
-                deleteCache(cacheId);
-            });
-        }
-
-        /**
-         * @ngdoc method
-         * @name deleteCache
-         * @methodOf ep.utils.service:epUtilsService
-         * @public
-         * @description
-         * Clears a cache with the given id
-         * @param {string|Function} cacheId - the id of the cache to be deleted or a function returning the same
-         */
-        function deleteCache(cacheId) {
-            cacheId = reify(cacheId);
-            if (cacheStore[cacheId]) {
-                delete cacheStore[cacheId];
-                $rootScope.$emit(epShellConstants.SHELL_CACHE_DELETED_EVENT, {cacheId: cacheId});
-                $log.debug('Cache "' + cacheId + '" deleted.');
-            }
-        }
-
-        /**
-         * @ngdoc method
-         * @name deleteCacheKey
-         * @methodOf ep.utils.service:epUtilsService
-         * @public
-         * @description
-         * Clears data with the given key from the cache with the given id
-         * @param {string|Function} cacheId - the id of the cache where the data will be removed or a function returning the same
-         * @param {string|Function} key - the key to the data that will be removed from the cache
-         */
-        function deleteCacheKey(cacheId, key) {
-            var cache = getCache(cacheId);
-            key = reify(key);
-            delete cache[key];
-            $rootScope.$emit(epShellConstants.SHELL_CACHE_DATA_DELETED_EVENT, {cacheId: reify(cacheId), key: key});
-        }
-
-        /**
-         * @ngdoc method
-         * @name getCachedData
-         * @methodOf ep.utils.service:epUtilsService
-         * @public
-         * @description
-         * Returns the data with the given key from the cache with the given id
-         * @param {string|Function} cacheId - the id of the cache where the data is stored or a function returning the same
-         * @param {string|Function} key - the key to the data that will be returned from the cache
-         * @param {Object} [defaultValue] - optional value to store and return in case the value is not available in the cache.
-         */
-        function getCachedData(cacheId, key, defaultValue) {
-            var cache = getCache(cacheId);
-            var data = cache[key];
-            if(angular.isUndefined(data)){
-                data = (cache[key] = defaultValue);
-            }
-            return data;
-        }
-
-        /**
-         * @ngdoc method
-         * @name cacheData
-         * @methodOf ep.utils.service:epUtilsService
-         * @public
-         * @description
-         * Stores the data with the given key in the cache with the given id
-         * @param {string|Function} cacheId - the id of the cache where the data will be stored or a function returning the same
-         * @param {string|Function} key - the key to the data that will be stored in the cache
-         * @param {Object} data - the data that will be stored in the cache
-         */
-        function cacheData(cacheId, key, data) {
-            if(epShellConfig.options.enableCache) {
-                var cache = getCache(cacheId);
-                key = reify(key);
-                cache[key] = data;
-                $rootScope.$emit(epShellConstants.SHELL_DATA_CACHED_EVENT,
-                    {cacheId: reify(cacheId), key: key, data: data});
-            }
-        }
-
         return {
             copyProperties: copyProperties,
             ensureEndsWith: ensureEndsWith,
@@ -1005,72 +824,7 @@ angular.module('ep.embedded.apps', ['ep.templates', 'ep.sysconfig', 'ep.utils'])
             merge: merge,
             strFormat: strFormat,
             wait: wait,
-            getService: getService,
-            cacheServiceCall: cacheServiceCall,
-            deleteAllCaches: deleteAllCaches,
-            deleteCache: deleteCache,
-            deleteCacheKey: deleteCacheKey,
-            getCachedData: getCachedData,
-            cacheData: cacheData
-        };
-    }
-
-    var schemas = {};
-
-    function Schema(name) {
-        this.name = name;
-        this.versions = [];
-        this.versionDefinitionFuncs = {};
-    }
-
-    Schema.prototype.defineVersion = function(version, definitionFunc) {
-        this.versions.push(version);
-        this.versionDefinitionFuncs['version ' + version] = definitionFunc;
-    };
-
-    Schema.prototype.upgrade = function(db, version) {
-        var upgradeFunc = this.versionDefinitionFuncs['version ' + version];
-        if (upgradeFunc) {
-            upgradeFunc(db);
-        }
-    };
-
-    /*@ngInject*/
-    function epIndexedDbService($q, $window) {
-        var indexedDB = $window.indexedDB || $window.mozIndexedDB || $window.webkitIndexedDB || $window.msIndexedDB;
-
-        function createSchema(databaseName) {
-            schemas[databaseName] = new Schema(name);
-            return schemas[databaseName];
-        }
-
-        function openDatabase(id, version) {
-            var deferred = $q.defer();
-            var openRequest = indexedDB.open(id, version);
-            openRequest.onsucess = function(event) {
-                deferred.resolve(event);
-            };
-            openRequest.onerror = function(event) {
-                deferred.reject(event);
-            };
-            openRequest.onupgradeneeded = function(event) {
-                var db = event.target.result;
-                var schema = schemas[id];
-                if (!schema) {
-                    deferred.reject('No database schema with the name ' + id + ' has been defined.');
-                } else {
-                    // call each schema upgrade function from the old version to the new version in order
-                    for (var v = event.oldVersion; v <= event.newVersion; v++) {
-                        schema.upgrade(db, v);
-                    }
-                }
-            };
-            return deferred.promise;
-        }
-
-        return {
-            createSchema: createSchema,
-            openDatabase: openDatabase
+            getService: getService
         };
     }
 })();
