@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.69 built: 17-10-2016
+ * version:1.0.10-dev.70 built: 17-10-2016
 */
 .ep-photo-browser {
   /* Loading - from http://loading.io */
@@ -299,14 +299,4 @@
   left: 10px;
   top: 17px;
   padding-left: 5%;
-}
-
-.ep-console-warning {
-  color: orange;
-}
-.ep-console-error {
-  color: orangered;
-}
-.ep-console-info {
-  color: blue;
 }

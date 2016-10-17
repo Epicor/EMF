@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.69 built: 17-10-2016
+ * version:1.0.10-dev.70 built: 17-10-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.10-dev.69","built":"2016-10-17"};
+__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.10-dev.70","built":"2016-10-17"};
 
 (function() {
   'use strict';
@@ -77,20 +77,9 @@ angular.module('ep.signature', [
     angular.module('ep.filter.list', []);
 })();
 
-/**
- * @ngdoc overview
- * @name ep.console
- * @description
- * This is the module that provides access to log entries displayed in a console dialog.
- */
 (function() {
-    'use strict';
-
-    angular.module('ep.console', [
-        'ep.templates',
-        'ep.sysconfig',
-        'ep.modaldialog'
-    ]);
+	'use strict';
+    angular.module('ep.indexeddb', []);
 })();
 
 (function() {
@@ -1127,254 +1116,338 @@ angular.module('ep.signature').directive('epSignature',
 })();
 
 /**
- * @ngdoc object
- * @name ep.console.object:epConsoleConfig
- * @description
- * This is the provider for epConsoleConfig.
- * It gets the configuration options from sysconfig.json or default.
+ * Created by brent on 10/12/16.
  */
 (function() {
     'use strict';
+    epIndexedDbService.$inject = ['$log', '$q', '$window'];
+    angular.module('ep.indexeddb')
+        .service('epIndexedDbService', epIndexedDbService);
 
-    angular.module('ep.console').provider('epConsoleConfig',
-    function() {
-        var config = {
+    var schemas = {};
+    var openDatabaseMap = {};
+
+    function Schema(name) {
+        this.name = name;
+        this.versions = [];
+        this.versionDefinitionFuncs = {};
+    }
+    Schema.prototype.defineVersion = function(version, definitionFunc) {
+        this.versions.push(version);
+        this.versionDefinitionFuncs['version ' + version] = definitionFunc;
+    };
+    Schema.prototype.upgrade = function(db, version) {
+        var upgradeFunc = this.versionDefinitionFuncs['version ' + version];
+        if (upgradeFunc) {
+            upgradeFunc(db);
+        }
+    };
+
+    function DatabaseWrapper($log, $q, db) {
+        this.$log = $log;
+        this.$q = $q;
+        this.db = db;
+    }
+    DatabaseWrapper.prototype.getObjectStore = function(objectStoreName) {
+        return new ObjectStoreWrapper(this.$log, this.$q, this.db, objectStoreName);
+    };
+
+    var proto = {
+        get: function(key) {
+            return this._execute('readonly', function(store) {
+                return store.get(key);
+            });
+        },
+        getAll: function() {
+            return this._execute('readonly', function(store) {
+                return store.getAll();
+            });
+        },
+        getAllKeys: function() {
+            return this._execute('readonly', function(store) {
+                return store.getAllKeys();
+            });
+        },
+        clear: function() {
+            return this._execute('readwrite', function(store) {
+                return store.clear();
+            });
+        },
+        count: function() {
+            return this._execute('readonly', function(store) {
+                return store.count;
+            });
+        }
+    };
+    function ObjectStoreWrapper($log, $q, db, name) {
+        this.$log = $log;
+        this.$q = $q;
+        this.db = db;
+        this.name = name;
+    }
+    ObjectStoreWrapper.prototype._execute = function(mode, activity) {
+        var self = this;
+        var deferred = self.$q.defer();
+        var transaction = this.db.transaction(self.name, mode);
+        transaction.oncomplete = function() {
+            self.$log.debug('Transaction completed on ' + self.name);
+        };
+        transaction.onerror = function(e) {
+            self.$log.warn('Transaction error occurred on ' + self.name + '. ' + e);
+            deferred.reject(e)
         };
 
-        //we use the epSysConfig provider to perform the $http read against sysconfig.json
-        this.$get = ['epSysConfig', function(epSysConfig) {
-            epSysConfig.mergeSection('ep.console', config);
-            return config;
-        }];
-    });
-})();
+        var store = transaction.objectStore(self.name);
+        var request = activity(store);
+        request.onsuccess = function(e) {
+            var result = e && e.target && e.target.result;
+            deferred.resolve(result);
+        };
+        request.onerror = function(e) {
+            self.$log.warn('Request error occurred on ' + self.name + '. ' + e);
+            deferred.reject(e);
+        };
 
-/**
- * @ngdoc service
- * @name ep.console.service:epConsoleService
- * @description
- * This is the service for the ep.console module which provides access to log entries displayed in a console dialog.
- * This service requires datatables library in order to present the log entries to the user.
- *
- * @example
- *      $log.error('my test error!'); //record your error
- *      $log.warn('my test warning!'); //record your warning
- *      $log.info('my test information!'); //record your info message
- *      ....
- *      epConsoleService.showLog(); //display dialog with log entries
- *      ....
- *      epConsoleService.showLog({title: 'My log entries' }); //override dialog options
- *
- */
-(function() {
-    'use strict';
+        return deferred.promise;
+    };
+    ObjectStoreWrapper.prototype.openCursor = function() {
+        var self = this;
+        var deferred = $q.defer();
+        var objectStore = self.db.transaction(this.name, 'readwrite').objectStore(self.name);
+        var cursorRequest = objectStore.openCursor();
+        cursorRequest.onsuccess = function(e) {
+            var cursor = e.target.result;
+            if (cursor) {
+                deferred.notify(cursor.value);
+                cursor.continue();
+            } else {
+                deferred.resolve();
+            }
+        };
+        cursorRequest.onerror = function(e) {
+            deferred.reject(e);
+        };
+        return deferred.promise;
+    };
+    ObjectStoreWrapper.prototype.openKeyCursor = function(keyRange, direction) {
+        var self = this;
+        var deferred = $q.defer();
+        var objectStore = self.db.transaction(this.name, 'readwrite').objectStore(self.name);
+        var cursorRequest = objectStore.openKeyCursor(keyRange, direction);
+        cursorRequest.onsuccess = function(e) {
+            var cursor = e.target.result;
+            if (cursor) {
+                deferred.notify(cursor.value);
+                cursor.continue();
+            } else {
+                deferred.resolve();
+            }
+        };
+        cursorRequest.onerror = function(e) {
+            deferred.reject(e);
+        };
+        return deferred.promise;
+    };
+    ObjectStoreWrapper.prototype.delete = function(key) {
+        return this._execute('readwrite', function(store) {
+            return store.delete(key);
+        });
+    };
+    ObjectStoreWrapper.prototype.put = function(value) {
+        return this._execute('readwrite', function(store) {
+            return store.put(value);
+        });
+    };
+    ObjectStoreWrapper.prototype.add = function(value) {
+        return this._execute('readwrite', function(store) {
+            return store.add(value);
+        })
+    };
+    ObjectStoreWrapper.prototype.index = function(name) {
+        var self = this;
+        return this._execute('readonly', function(store) {
+            return new IndexWrapper(self.$log, self.$q, self.db, store.index(name), name);
+        });
+    };
+    ObjectStoreWrapper.prototype.deleteByIndex = function(indexName, indexValue) {
+        var self = this;
+        var deferred = self.$q.defer();
+        var trans = self.db.transaction(self.name, 'readwrite');
+        var store = trans.objectStore(self.name);
+        var idx = store.index(indexName);
+        var deleteRequest = idx.openKeyCursor(IDBKeyRange.only(indexValue));
+        deleteRequest.onsuccess = function() {
+            var cursor = deleteRequest.result;
+            if (cursor) {
+                store.delete(cursor.primaryKey);
+                cursor.continue();
+                deferred.notify();
+            } else {
+                deferred.resolve(true);
+            }
+        };
+        deleteRequest.onerror = function(e) {
+            deferred.reject(e);
+        };
+        return deferred.promise;
+    };
+    ObjectStoreWrapper.prototype.queryByIndex = function(indexName, indexValue) {
+        var self = this;
+        var deferred = self.$q.defer();
+        var trans = self.db.transaction(self.name, 'readwrite');
+        var store = trans.objectStore(self.name);
+        var idx = store.index(indexName);
+        var result = [];
+        var request = idx.openKeyCursor(IDBKeyRange.only(indexValue));
+        request.onsuccess = function() {
+            var cursor = request.result;
+            if (cursor) {
+                var getRequest = store.get(cursor.primaryKey);
+                getRequest.onsuccess = function(e){
+                    var row = e && e.result && e.result.target;
+                    result.push(row);
+                    cursor.continue();
+                    deferred.notify(row);
+                };
+                getRequest.onerror = function(){
+                    self.$log.warn('An error occurred while executing query ' + indexName + '=' + indexValue);
+                    cursor.continue();
+                }
+            } else {
+                deferred.resolve(result);
+            }
+        };
+        request.onerror = function(e) {
+            deferred.reject(e);
+        };
+        return deferred.promise;
+    };
 
-    epConsoleService.$inject = ['$log', 'epUtilsService'];
-    angular.module('ep.console').
-    service('epConsoleService', epConsoleService);
+    angular.extend(ObjectStoreWrapper.prototype, proto);
+
+    function IndexWrapper($log, $q, db, index, name) {
+        this.$q = $q;
+        this.$log = $log;
+        this.db = db;
+        this.index = index;
+        this.name = name;
+    }
+    IndexWrapper.prototype._execute = function(mode, activity) {
+        var self = this;
+        var deferred = self.$q.defer();
+
+        var request = activity(self.index);
+        request.onsuccess = function(e) {
+            var result = e && e.target && e.target.result;
+            deferred.resolve(result);
+        };
+        request.onerror = function(e) {
+            self.$log.warn('Request error occurred on ' + self.name + '. ' + e);
+            deferred.reject(e);
+        };
+
+        return deferred.promise;
+    };
+    IndexWrapper.prototype.openCursor = function() {
+        var self = this;
+        var deferred = $q.defer();
+        var cursorRequest = self.index.openCursor();
+        cursorRequest.onsuccess = function(e) {
+            var cursor = e.target.result;
+            if (cursor) {
+                deferred.notify(cursor.value);
+                cursor.continue();
+            } else {
+                deferred.resolve();
+            }
+        };
+        cursorRequest.onerror = function(e) {
+            deferred.reject(e);
+        };
+        return deferred.promise;
+    };
+    IndexWrapper.prototype.openKeyCursor = function() {
+        var self = this;
+        var deferred = $q.defer();
+        var cursorRequest = self.index.openCursor();
+        cursorRequest.onsuccess = function(e) {
+            var cursor = e.target.result;
+            if (cursor) {
+                deferred.notify(cursor.value);
+                cursor.continue();
+            } else {
+                deferred.resolve();
+            }
+        };
+        cursorRequest.onerror = function(e) {
+            deferred.reject(e);
+        };
+        return deferred.promise;
+    };
+    angular.extend(IndexWrapper.prototype, proto);
 
     /*@ngInject*/
-    function epConsoleService($log, epUtilsService) {
+    function epIndexedDbService($log, $q, $window) {
 
-        /**
-         * @private
-         * @description
-         * the array for storing all log messages
-         */
-        var logMessages = [];
+        var indexedDB = $window.indexedDB || $window.mozIndexedDB || $window.webkitIndexedDB || $window.msIndexedDB;
 
-        /**
-         * @ngdoc method
-         * @name init
-         * @methodOf ep.console.service:epConsoleService
-         * @private
-         * @description
-         * This is the internal initialization routine that gets kicked off when this module is created.
-         */
-        function init() {
-            // Creating instances of log object
-            $log.getInstance = function(context) {
-                return {
-                    log: enhanceLogging($log.log, context, 'info'),
-                    info: enhanceLogging($log.info, context, 'info'),
-                    warn: enhanceLogging($log.warn, context, 'warning'),
-                    debug: enhanceLogging($log.debug, context, 'debug'),
-                    error: enhanceLogging($log.error, context, 'error')
+        function createSchema(databaseName) {
+            schemas[databaseName] = new Schema(name);
+            return schemas[databaseName];
+        }
+
+        function closeDatabase(id) {
+            delete openDatabaseMap[id]
+        }
+
+        function openDatabase(id, version) {
+            var deferred = $q.defer();
+            if (openDatabaseMap[id]) {
+                deferred.resolve(openDatabaseMap[id]);
+            } else {
+                var openRequest = indexedDB.open(id, version);
+                openRequest.onsuccess = function() {
+                    var db = openRequest.result;
+                    var wrapper = new DatabaseWrapper($log, $q, db);
+                    openDatabaseMap[id] = wrapper;
+                    deferred.resolve(wrapper);
                 };
-            };
-
-            $log.log = enhanceLogging($log.log, '', 'info');
-            $log.info = enhanceLogging($log.info, '', 'info');
-            $log.warn = enhanceLogging($log.warn, '', 'warning');
-            $log.debug = enhanceLogging($log.debug, '', 'debug');
-            $log.error = enhanceLogging($log.error, '', 'error');
-        }
-
-        /**
-         * @ngdoc method
-         * @name enhanceLogging
-         * @methodOf ep.console.service:epConsoleService
-         * @private
-         * @description
-         * This method will enhance the log for showing messages with datestamp in the browser console
-         * as well as storing messages in an array.
-         */
-        function enhanceLogging(loggingFunc, context, type) {
-            return function() {
-                var modifiedArguments = [].slice.call(arguments);
-                var timestamp = moment().format();
-                loggingFunc.apply(null, modifiedArguments);
-                logMessages.push({message: modifiedArguments[0], type: type, timestamp: timestamp, context: context});
-            };
-        }
-
-        /**
-         * @ngdoc method
-         * @name clearLog
-         * @methodOf ep.console.service:epConsoleService
-         * @public
-         * @description
-         * This method clears all the log messages.
-         */
-        function clearLog() {
-            logMessages.length = 0;
-        }
-
-        /**
-         * @ngdoc method
-         * @name showLog
-         * @methodOf ep.console.service:epConsoleService
-         * @public
-         * @param {object} dialogOptions - set/override dialog options
-         * @description
-         * This method will show a dialog box with all of the log entries.
-         */
-        function showLog(dialogOptions) {
-            var epDataGridService;
-            if (angular.module('ep.datagrid')) {
-                epDataGridService = epUtilsService.getService('epDataGridService');
-            }
-            if (!epDataGridService) {
-                $log.warn('ep.datagrid module is not available for console. Verify that it is included');
-                return;
-            }
-
-            var modalDialogOptions = {
-                size: 'fullscreen',
-                windowClass: 'ep-console-dialog',
-                title: 'Console log output',
-                icon: 'fa fa-cogs fa-2x',
-                buttons: [
-                    {
-                        isCancel: false,
-                        id: 'clear_btn',
-                        value: 'clear',
-                        text: 'Clear logs',
-                        action: function() {
-                            clearLog();
-                        }
-                    },
-                    {
-                        isDefault: false,
-                        text: 'Ok',
-                        type: 'primary'
-                    }
-                ]
-            };
-            epUtilsService.copyProperties(dialogOptions, modalDialogOptions);
-
-            var timeFmt = { FormatString: 'MM/DD/YY hh:mm:ss' };
-            var gridOptions = {
-                metadata: {
-                    columns: [
-                        { sName: 'icon', sTitle: '', width: 10, orderable: false, align: 'center' },
-                        { mData: 0, sName: 'message', sTitle: 'Message' },
-                        { mData: 1, sName: 'type', sTitle: 'Type', widthFactor: 0.6 },
-                        {
-                            mData: 2, sName: 'timestamp', sTitle: 'TimeStamp', sDataType: 'DateTime',
-                            oFormat: timeFmt
-                        },
-                        { mData: 3, sName: 'context', sTitle: 'Context' }
-                    ]
-                },
-                fnOnRenderGridCell: function(data, type, row, meta, col, currentReturn) {
-                    var ret = currentReturn;
-                    if (col && col.userColumnDef && col.sName === 'icon') {
-                        if (row[1] === 'error') {
-                            ret = '<div class=\'fa fa-lg fa-exclamation-circle ep-console-error\'></div>';
-                        } else if (row[1] === 'warning') {
-                            ret = '<div class=\'fa fa-lg fa-exclamation-circle ep-console-warning\'></div>';
-                        } else {
-                            ret = '<div class=\'fa fa-lg fa-info ep-console-info\'></div>';
+                openRequest.onerror = function(event) {
+                    deferred.reject(event);
+                };
+                openRequest.onupgradeneeded = function(event) {
+                    var db = event.target.result;
+                    var schema = schemas[id];
+                    if (!schema) {
+                        deferred.reject('No database schema with the name ' + id + ' has been defined.');
+                    } else {
+                        // call each schema upgrade function from the old version to the new version in order
+                        for (var v = event.oldVersion; v <= event.newVersion; v++) {
+                            schema.upgrade(db, v);
                         }
                     }
-                    return ret;
-                }
+                };
+            }
+            return deferred.promise;
+        }
+
+        function deleteDatabase(id) {
+            var deferred = $q.defer();
+            var deleteRequest = indexedDB.deleteDatabase(id);
+            deleteRequest.onsuccess = function() {
+                deferred.resolve(true);
             };
-
-            var dataSet = messages().map(function(msg) {
-                return _.values(msg);
-            });
-            epDataGridService.showGridDialog(modalDialogOptions, gridOptions, dataSet);
+            deleteRequest.onerror = function(event) {
+                deferred.reject(event);
+            };
+            return deferred.promise;
         }
-
-        /**
-         * @ngdoc method
-         * @name messages
-         * @methodOf ep.console.service:epConsoleService
-         * @public
-         * @description
-         * This method will return an array of log entries.
-         */
-        function messages() {
-            return logMessages;
-        }
-        /**
-         * @ngdoc method
-         * @name restoreLog
-         * @methodOf ep.console.service:epConsoleService
-         * @public
-         * @description
-         * This method will assign the log messages to the given values.
-         * This is useful for apps that persist their log messages
-         */
-        function restoreLog(messages) {
-            logMessages = messages;
-        }
-
-        /**
-         * @ngdoc method
-         * @name hasLog
-         * @methodOf ep.console.service:epConsoleService
-         * @public
-         * @description
-         * This method will return true if there are any entries in the log.
-         */
-        function hasLog() {
-            return messages().length > 0;
-        }
-
-        /**
-         * @ngdoc method
-         * @name initialize
-         * @methodOf ep.console.service:epConsoleService
-         * @public
-         * @description
-         * This method will initialize the logging.
-         */
-        function initialize() {
-            //this currently does nothing but expose initialize method to kick-off the service
-        }
-
-        init();
 
         return {
-            initialize: initialize,
-            messages: messages,
-            restoreLog: restoreLog,
-            hasLog: hasLog,
-            clearLog: clearLog,
-            showLog: showLog
+            createSchema: createSchema,
+            openDatabase: openDatabase,
+            closeDatabase: closeDatabase,
+            deleteDatabase: deleteDatabase
         };
     }
 })();

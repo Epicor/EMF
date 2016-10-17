@@ -1,15 +1,17 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.69 built: 17-10-2016
+ * version:1.0.10-dev.70 built: 17-10-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.69","built":"2016-10-17"};
+__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.70","built":"2016-10-17"};
 
 (function() {
     'use strict';
 
-    angular.module('ep.color.selector', ['colorpicker.module']);
+    angular.module('ep.color.selector', [
+        'ep.templates'
+    ]);
 })();
 
 /**
@@ -63,6 +65,7 @@ angular.module('ep.record.editor', [
  * Represents color selector
  *
  * Note: Include css/colorpicker.css and js/bootstrap-colorpicker-module.js in index file from lib/bower/angular-bootstrap-colorpicker.
+ * 'colorpicker.module' must be added to the application modules list
  * The JS file should be included before including emf.js
  *
  * @property {object} ngModel:object

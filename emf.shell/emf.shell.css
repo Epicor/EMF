@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.69 built: 17-10-2016
+ * version:1.0.10-dev.70 built: 17-10-2016
 */
 .ep-ease-animation {
   -moz-backface-visibility: hidden;
@@ -209,6 +209,16 @@ a:focus {
 .ep-drop-active.ep-drop-highlight {
   opacity: 0.5;
   border: 1px dashed darkblue;
+}
+
+.ep-console-warning {
+  color: orange;
+}
+.ep-console-error {
+  color: orangered;
+}
+.ep-console-info {
+  color: blue;
 }
 
 .ep-modaldialog .ep-dlg-buttons {
@@ -443,22 +453,6 @@ a:focus {
   border-radius: 0;
   box-shadow: none;
   overflow: auto;
-}
-
-#appHost {
-  height: 100%;
-}
-#splash {
-  position: absolute;
-  height: 100%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  width: 100%;
-}
-#splashContainer {
-  width: 100%;
-  text-align: center;
 }
 
 .ep-shell .ep-shell-feedback-btn {

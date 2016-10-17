@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.69 built: 17-10-2016
+ * version:1.0.10-dev.70 built: 17-10-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.10-dev.69","built":"2016-10-17"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.10-dev.70","built":"2016-10-17"};
 
 (function() {
     'use strict';
@@ -248,7 +248,7 @@ angular.module('ep.menu.builder', [
         return {
             restrict: 'E',
             controller: 'epShellMenuCtrl',
-            templateUrl: 'src/components/ep.multi.level.menu/ep.shell.menu/ep-shell-menu.html',
+            templateUrl: 'src/components/ep.multi.level.menu/ep-shell-menu/ep-shell-menu.html',
             scope: {
                 menuId: '=',
                 menuOptions: '=',
@@ -2516,7 +2516,7 @@ angular.module('ep.menu.builder').
 angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   'use strict';
 
-  $templateCache.put('src/components/ep.multi.level.menu/ep.shell.menu/ep-shell-menu.html',
+  $templateCache.put('src/components/ep.multi.level.menu/ep-shell-menu/ep-shell-menu.html',
     "<div ng-controller=epShellMenuCtrl><ep-multi-level-menu ng-if=\"menuOptions.menuType !== 'accordion'\" menu=menuOptions.menu menu-id=menuId search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu><ep-accordion-menu ng-if=\"menuOptions.menuType === 'accordion'\" menu=menuOptions.menu menu-id=menuId main-header=\"menuOptions.title || 'Menu'\" favorites-header=\"menuOptions.favoritesHeader || 'Favorites'\" search-results-header=\"menuOptions.searchResultsHeader || 'Search Results'\" search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-expand=menuOptions.onExpand commit-menu-state=commitMenuState on-menu-init=menuOptions.onMenuInit(factory)></ep-accordion-menu></div>"
   );
 

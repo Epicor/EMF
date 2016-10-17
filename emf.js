@@ -1,10 +1,34 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.69 built: 17-10-2016
+ * version:1.0.10-dev.70 built: 17-10-2016
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.69","built":"2016-10-17"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.70","built":"2016-10-17"}};
 
+if (!epEmfGlobal) {
+    var epEmfGlobal = {
+        epModules: [],
+
+        initialize: function() {
+            (function(orig) {
+                angular.module = function() {
+                    if (arguments.length > 1 && arguments[0].indexOf('ep.') === 0) {
+                        epEmfGlobal.epModules.push(arguments[0]);
+                    }
+                    return orig.apply(null, arguments);
+                }
+            })(angular.module);
+        }
+    };
+    epEmfGlobal.initialize();
+}
+
+/**
+ * @ngdoc overview
+ * @name ep.accordion.menu
+ * @description
+ * Represents the accordion menu
+ */
 (function() {
     'use strict';
 
@@ -112,7 +136,9 @@ angular.module('ep.card', [
 (function() {
     'use strict';
 
-    angular.module('ep.color.selector', ['colorpicker.module']);
+    angular.module('ep.color.selector', [
+        'ep.templates'
+    ]);
 })();
 
 /**
@@ -138,8 +164,7 @@ angular.module('ep.card', [
 
     angular.module('ep.console', [
         'ep.templates',
-        'ep.sysconfig',
-        'ep.modaldialog'
+        'ep.sysconfig'
     ]);
 })();
 
@@ -455,7 +480,8 @@ angular.module('ep.record.editor', [
         'ep.utils',
         'ep.sysconfig',
         'ep.application',
-        'ep.modaldialog'
+        'ep.modaldialog',
+        'ep.console'
     ]);
 })();
 
@@ -2042,6 +2068,7 @@ app.directive('epCardTitle',
  * Represents color selector
  *
  * Note: Include css/colorpicker.css and js/bootstrap-colorpicker-module.js in index file from lib/bower/angular-bootstrap-colorpicker.
+ * 'colorpicker.module' must be added to the application modules list
  * The JS file should be included before including emf.js
  *
  * @property {object} ngModel:object
@@ -12227,7 +12254,7 @@ angular.module('ep.menu.builder').
         return {
             restrict: 'E',
             controller: 'epShellMenuCtrl',
-            templateUrl: 'src/components/ep.multi.level.menu/ep.shell.menu/ep-shell-menu.html',
+            templateUrl: 'src/components/ep.multi.level.menu/ep-shell-menu/ep-shell-menu.html',
             scope: {
                 menuId: '=',
                 menuOptions: '=',
@@ -22301,7 +22328,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   );
 
 
-  $templateCache.put('src/components/ep.multi.level.menu/ep.shell.menu/ep-shell-menu.html',
+  $templateCache.put('src/components/ep.multi.level.menu/ep-shell-menu/ep-shell-menu.html',
     "<div ng-controller=epShellMenuCtrl><ep-multi-level-menu ng-if=\"menuOptions.menuType !== 'accordion'\" menu=menuOptions.menu menu-id=menuId search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu><ep-accordion-menu ng-if=\"menuOptions.menuType === 'accordion'\" menu=menuOptions.menu menu-id=menuId main-header=\"menuOptions.title || 'Menu'\" favorites-header=\"menuOptions.favoritesHeader || 'Favorites'\" search-results-header=\"menuOptions.searchResultsHeader || 'Search Results'\" search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-expand=menuOptions.onExpand commit-menu-state=commitMenuState on-menu-init=menuOptions.onMenuInit(factory)></ep-accordion-menu></div>"
   );
 
