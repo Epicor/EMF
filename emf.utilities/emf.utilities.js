@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.67 built: 17-10-2016
+ * version:1.0.10-dev.68 built: 17-10-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.10-dev.67","built":"2016-10-17"};
+__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.10-dev.68","built":"2016-10-17"};
 
 (function() {
   'use strict';
@@ -1252,11 +1252,7 @@ angular.module('ep.signature').directive('epSignature',
         function showLog(dialogOptions) {
             var epDataGridService;
             if (angular.module('ep.datagrid')) {
-                epUtilsService.getService('epDataGridService').then(function(svc) {                    
-                    if (svc) {
-                        epDataGridService = svc;
-                    }
-                });
+                epDataGridService = epUtilsService.getService('epDataGridService');
             }
             if (!epDataGridService) {
                 $log.warn('ep.datagrid module is not available for console. Verify that it is included');

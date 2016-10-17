@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.67 built: 17-10-2016
+ * version:1.0.10-dev.68 built: 17-10-2016
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.67","built":"2016-10-17"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.68","built":"2016-10-17"}};
 
 (function() {
     'use strict';
@@ -2271,11 +2271,7 @@ app.directive('epCardTitle',
         function showLog(dialogOptions) {
             var epDataGridService;
             if (angular.module('ep.datagrid')) {
-                epUtilsService.getService('epDataGridService').then(function(svc) {                    
-                    if (svc) {
-                        epDataGridService = svc;
-                    }
-                });
+                epDataGridService = epUtilsService.getService('epDataGridService');
             }
             if (!epDataGridService) {
                 $log.warn('ep.datagrid module is not available for console. Verify that it is included');
@@ -12094,98 +12090,6 @@ angular.module('ep.menu.builder').
     }
     ]);
 })();
-
-(function() {
-'use strict';
-/**
-* @ngdoc directive
-* @name ep.menu.directive:epMenu
-* @restrict E
-*
-* @description
-* A simpler version of ep-multi-level-menu directive
-*
-*   The following are attributes (parameters) for the directive:
-*   # menuId {string} (required) - the unique menu id
-*   # menuOptions {object} (required) - the options for the menu
-*       - title {string} - title for the menu
-*       - fnGetMenu {function} - function or an array of functions that return menu
-*
-* @example
-*   //HTML:
-*       <ep-menu menu-id="'someMenuId'" menu-options="menuOptions"></ep-menu>
-*
-*   //JS:
-*       //To load single menu provider
-*       $scope.menuOptions = {
-*           title: 'Some Menu Title',
-*           fnGetMenu: function() { return menu; }
-*       };
-*
-*
-*       //To load multiple menu providers supply several functions that retrieve menu
-*       $scope.menuOptions = {
-*           title: 'Some Menu Title',
-*           fnGetMenu: [
-*               function1, function2, ... functionN
-*           ]
-*       };
-*/
-    epMenuDirective.$inject = ['$q', 'epMultiLevelMenuService'];
-    angular.module('ep.multi.level.menu').
-    directive('epMenu', epMenuDirective);
-
-    /*@ngInject*/
-    function epMenuDirective($q, epMultiLevelMenuService) {
-        return {
-            restrict: 'E',
-            template: '<div><ep-multi-level-menu menu=menuOptions.menu menu-id=menuId ' +
-                'on-menu-init=onMenuInit(factory)></ep-multi-level-menu></div>',
-            scope: {
-                menuId: '=',
-                menuOptions: '='
-            },
-            link: function(scope, element) {
-                scope.state = {
-                    theElement: element
-                };
-
-                scope.init = function() {
-                    scope.onMenuInit = function(factory) {
-                        scope.menuOptions.factory = factory;
-                    };
-
-                    scope.menu = {
-                        id: 'root',
-                        caption: scope.menuOptions.title || 'Menu',
-                        menuitems: []
-                    };
-
-                    var arr = scope.menuOptions.fnGetMenu || [];
-                    if (!angular.isArray(arr)) {
-                        arr = [scope.menuOptions.fnGetMenu];
-                    }
-                    scope.count = arr.length;
-
-                    angular.forEach(arr, function(fn) {
-                        $q.when(fn()).then(function(m) {
-                            epMultiLevelMenuService.mergeMenus(scope.menu, m);
-                            if (--scope.count === 0) {
-                                scope.menuOptions.menu = scope.menu;
-                            }
-                        });
-                    });
-                };
-
-                scope.$watch('menuOptions', function(newValue) {
-                    if (newValue) {
-                        scope.init();
-                    }
-                });
-            }
-        };
-    }
-}());
 
 /**
  * @ngdoc controller
@@ -22397,7 +22301,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   );
 
 
-  $templateCache.put('src/components/ep.multi.level.menu/menu/ep-shell-menu.html',
+  $templateCache.put('src/components/ep.multi.level.menu/ep.shell.menu/ep-shell-menu.html',
     "<div ng-controller=epShellMenuCtrl><ep-multi-level-menu ng-if=\"menuOptions.menuType !== 'accordion'\" menu=menuOptions.menu menu-id=menuId search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu><ep-accordion-menu ng-if=\"menuOptions.menuType === 'accordion'\" menu=menuOptions.menu menu-id=menuId main-header=\"menuOptions.title || 'Menu'\" favorites-header=\"menuOptions.favoritesHeader || 'Favorites'\" search-results-header=\"menuOptions.searchResultsHeader || 'Search Results'\" search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-expand=menuOptions.onExpand commit-menu-state=commitMenuState on-menu-init=menuOptions.onMenuInit(factory)></ep-accordion-menu></div>"
   );
 
