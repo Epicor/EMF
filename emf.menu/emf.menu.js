@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.68 built: 17-10-2016
+ * version:1.0.10-dev.69 built: 17-10-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.10-dev.68","built":"2016-10-17"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.10-dev.69","built":"2016-10-17"};
 
 (function() {
     'use strict';
@@ -248,7 +248,7 @@ angular.module('ep.menu.builder', [
         return {
             restrict: 'E',
             controller: 'epShellMenuCtrl',
-            templateUrl: 'src/components/ep.multi.level.menu/menu/ep-shell-menu.html',
+            templateUrl: 'src/components/ep.multi.level.menu/ep.shell.menu/ep-shell-menu.html',
             scope: {
                 menuId: '=',
                 menuOptions: '=',
