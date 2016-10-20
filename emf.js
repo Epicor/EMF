@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.78 built: 19-10-2016
+ * version:1.0.10-dev.79 built: 19-10-2016
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.78","built":"2016-10-19"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.79","built":"2016-10-19"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -1765,7 +1765,7 @@ angular.module('ep.signature', [
         /**
          * @ngdoc method
          * @name getCache
-         * @methodOf ep.cache:epUtilsService
+         * @methodOf ep.cache:epCacheService
          * @public
          * @description
          * Get the in-memory cache with the given Id
@@ -1890,7 +1890,7 @@ angular.module('ep.signature', [
         /**
          * @ngdoc method
          * @name deleteCache
-         * @methodOf ep.utils.service:epUtilsService
+         * @methodOf ep.cache:epCacheService
          * @public
          * @description
          * Clears a cache with the given id
@@ -10535,15 +10535,46 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
         var indexedDB = $window.indexedDB || $window.mozIndexedDB || $window.webkitIndexedDB || $window.msIndexedDB;
 
+        /**
+         * @ngdoc method
+         * @name createSchema
+         * @methodOf ep.indexedDbService
+         * @public
+         * @description
+         * Create a new database schema
+         * @param {string} databaseName - the name of the database to create
+         * @returns {Schema} The newly created schema object.
+         */
         function createSchema(databaseName) {
             schemas[databaseName] = new Schema(name);
             return schemas[databaseName];
         }
 
+        /**
+         * @ngdoc method
+         * @name closeDatabase
+         * @methodOf ep.indexedDbService
+         * @public
+         * @description
+         * Closes an open database
+         * @param {string} id - the id of the database to close
+         */
         function closeDatabase(id) {
             delete openDatabaseMap[id]
         }
 
+        /**
+         * @ngdoc method
+         * @name openDatabase
+         * @methodOf ep.indexedDbService
+         * @public
+         * @description
+         * Opens a database that has been previously defined.
+         * @param {string} id - the id of the database to open
+         * @param {number} version - version of the database to open
+         * @returns {Promise} A promise that resolves with a DatabaseWrapper instance when the database is opened,
+         * or rejected on failure
+         */
         function openDatabase(id, version) {
             var deferred = $q.defer();
             if (openDatabaseMap[id]) {
@@ -10558,6 +10589,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 };
                 openRequest.onerror = function(event) {
                     deferred.reject(event);
+                };
+                openRequest.onblocked = function(){
+                    deferred.reject('Unable to open database. The request is blocked.');
                 };
                 openRequest.onupgradeneeded = function(event) {
                     var db = event.target.result;
@@ -10574,7 +10608,16 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             }
             return deferred.promise;
         }
-
+        /**
+         * @ngdoc method
+         * @name deleteDatabase
+         * @methodOf ep.indexedDbService
+         * @public
+         * @description
+         * Deletes a database that has been previously defined.
+         * @param {string} id - the id of the database to delete
+         * @returns {Promise} A promise that resolves once the database is deleted, or rejected on failure.
+         */
         function deleteDatabase(id) {
             var deferred = $q.defer();
             var deleteRequest = indexedDB.deleteDatabase(id);
@@ -13961,7 +14004,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                         }
                         var vCur = scope.ctx.fnGetCurrentValue();
                         if (vCur !== dd) {
-                            scope.value = dd;
+                            scope.ctx.fnSetCurrentValue(dd);
                         }
                         return value;
                     });
@@ -14308,8 +14351,16 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
             }
 
             //TO DO - validate buttons pre/post seq etc
-            var directive = ctx.editor === 'custom' ? col.editorDirective : ('ep-' + ctx.editor + '-editor');
-            scope.editorDirective = '<' + directive + ' ctx=ctx value=value />';
+            if (ctx.editor === 'template') {
+                ctx.templateOptions = col.templateOptions || {
+                    template: col.template,
+                    templateScope: scope
+                };
+                scope.editorDirective = '<ep-include options="ctx.templateOptions" user-data="ctx"></ep-include>';
+            } else {
+                var directive = ctx.editor === 'custom' ? col.editorDirective : ('ep-' + ctx.editor + '-editor');
+                scope.editorDirective = '<' + directive + ' ctx=ctx value=value />';
+            }
 
             ctx.fnSetSizeClass = function(sizeClass) {
                 var sClass = col.sizeClass || sizeClass || defaultSizeClass;

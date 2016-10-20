@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.78 built: 19-10-2016
+ * version:1.0.10-dev.79 built: 19-10-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.10-dev.78","built":"2016-10-19"};
+__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.10-dev.79","built":"2016-10-19"};
 
 (function() {
   'use strict';
@@ -1391,15 +1391,46 @@ angular.module('ep.signature').directive('epSignature',
 
         var indexedDB = $window.indexedDB || $window.mozIndexedDB || $window.webkitIndexedDB || $window.msIndexedDB;
 
+        /**
+         * @ngdoc method
+         * @name createSchema
+         * @methodOf ep.indexedDbService
+         * @public
+         * @description
+         * Create a new database schema
+         * @param {string} databaseName - the name of the database to create
+         * @returns {Schema} The newly created schema object.
+         */
         function createSchema(databaseName) {
             schemas[databaseName] = new Schema(name);
             return schemas[databaseName];
         }
 
+        /**
+         * @ngdoc method
+         * @name closeDatabase
+         * @methodOf ep.indexedDbService
+         * @public
+         * @description
+         * Closes an open database
+         * @param {string} id - the id of the database to close
+         */
         function closeDatabase(id) {
             delete openDatabaseMap[id]
         }
 
+        /**
+         * @ngdoc method
+         * @name openDatabase
+         * @methodOf ep.indexedDbService
+         * @public
+         * @description
+         * Opens a database that has been previously defined.
+         * @param {string} id - the id of the database to open
+         * @param {number} version - version of the database to open
+         * @returns {Promise} A promise that resolves with a DatabaseWrapper instance when the database is opened,
+         * or rejected on failure
+         */
         function openDatabase(id, version) {
             var deferred = $q.defer();
             if (openDatabaseMap[id]) {
@@ -1414,6 +1445,9 @@ angular.module('ep.signature').directive('epSignature',
                 };
                 openRequest.onerror = function(event) {
                     deferred.reject(event);
+                };
+                openRequest.onblocked = function(){
+                    deferred.reject('Unable to open database. The request is blocked.');
                 };
                 openRequest.onupgradeneeded = function(event) {
                     var db = event.target.result;
@@ -1430,7 +1464,16 @@ angular.module('ep.signature').directive('epSignature',
             }
             return deferred.promise;
         }
-
+        /**
+         * @ngdoc method
+         * @name deleteDatabase
+         * @methodOf ep.indexedDbService
+         * @public
+         * @description
+         * Deletes a database that has been previously defined.
+         * @param {string} id - the id of the database to delete
+         * @returns {Promise} A promise that resolves once the database is deleted, or rejected on failure.
+         */
         function deleteDatabase(id) {
             var deferred = $q.defer();
             var deleteRequest = indexedDB.deleteDatabase(id);
@@ -1479,7 +1522,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name getCache
-         * @methodOf ep.cache:epUtilsService
+         * @methodOf ep.cache:epCacheService
          * @public
          * @description
          * Get the in-memory cache with the given Id
@@ -1604,7 +1647,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name deleteCache
-         * @methodOf ep.utils.service:epUtilsService
+         * @methodOf ep.cache:epCacheService
          * @public
          * @description
          * Clears a cache with the given id

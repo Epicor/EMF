@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.78 built: 19-10-2016
+ * version:1.0.10-dev.79 built: 19-10-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.78","built":"2016-10-19"};
+__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.79","built":"2016-10-19"};
 
 (function() {
     'use strict';
@@ -611,7 +611,7 @@ angular.module('ep.record.editor', [
                         }
                         var vCur = scope.ctx.fnGetCurrentValue();
                         if (vCur !== dd) {
-                            scope.value = dd;
+                            scope.ctx.fnSetCurrentValue(dd);
                         }
                         return value;
                     });
@@ -958,8 +958,16 @@ angular.module('ep.record.editor', [
             }
 
             //TO DO - validate buttons pre/post seq etc
-            var directive = ctx.editor === 'custom' ? col.editorDirective : ('ep-' + ctx.editor + '-editor');
-            scope.editorDirective = '<' + directive + ' ctx=ctx value=value />';
+            if (ctx.editor === 'template') {
+                ctx.templateOptions = col.templateOptions || {
+                    template: col.template,
+                    templateScope: scope
+                };
+                scope.editorDirective = '<ep-include options="ctx.templateOptions" user-data="ctx"></ep-include>';
+            } else {
+                var directive = ctx.editor === 'custom' ? col.editorDirective : ('ep-' + ctx.editor + '-editor');
+                scope.editorDirective = '<' + directive + ' ctx=ctx value=value />';
+            }
 
             ctx.fnSetSizeClass = function(sizeClass) {
                 var sClass = col.sizeClass || sizeClass || defaultSizeClass;
