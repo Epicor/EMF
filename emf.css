@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.97 built: 24-10-2016
+ * version:1.0.10-dev.98 built: 24-10-2016
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -16,52 +16,31 @@
   border-radius: 0 !important;
   border-left: none;
   border-right: none;
+  margin-left: 4px;
   cursor: pointer;
   padding: 5px 0 5px 0;
 }
 .ep-accordion-menu .list-group-item:last-child {
   border-bottom: none;
 }
+.ep-accordion-menu .list-group-item:first-child {
+  border-top: none;
+}
 .ep-accordion-menu .container-fluid {
-  padding-left: 0;
-}
-.ep-accordion-menu .container-fluid:focus {
   outline: none;
-  background-color: #0071b3;
 }
-.ep-accordion-menu .container-fluid:hover {
-  outline: none;
-  background-color: #0083D0;
-}
-.ep-accordion-menu .container-fluid:focus .ep-submenu-header {
-  outline: none;
-  background-color: transparent;
-  color: white;
-}
+.ep-accordion-menu .container-fluid:focus .ep-submenu-header,
 .ep-accordion-menu .container-fluid:focus #menuItem {
-  outline: none;
   background-color: transparent;
   color: white;
 }
-.ep-accordion-menu .container-fluid:hover .ep-submenu-header {
-  background-color: transparent;
-  color: white;
-}
+.ep-accordion-menu .container-fluid:hover .ep-submenu-header,
 .ep-accordion-menu .container-fluid:hover #menuItem {
   background-color: transparent;
   color: white;
 }
-.ep-accordion-menu .list-group-item:first-child {
-  border-top: none;
-}
-.ep-accordion-menu .list-group-item {
-  margin-left: 4px;
-}
 .ep-accordion-menu .list-group > .list-group-item {
   margin-left: 0px;
-}
-.ep-accordion-menu .list-group > .list-group-item:focus {
-  outline: none;
 }
 .ep-accordion-menu .panel {
   margin-bottom: 0;
@@ -71,21 +50,11 @@
 }
 .ep-accordion-menu .ep-accordion-expanded {
   padding-bottom: 6px;
+  color: inherit;
 }
 .ep-accordion-menu .ep-submenu-header.ep-accordion-expanded {
   font-weight: bold;
-}
-.ep-accordion-menu .list-group-submenu.ep-accordion-expanded.ep-accordion-expanded-odd {
-  background-color: gainsboro;
-}
-.ep-accordion-menu .ep-accordion-expanded.ep-accordion-expanded-odd {
-  background-color: gainsboro;
-}
-.ep-accordion-menu .list-group-submenu.ep-accordion-expanded.ep-accordion-expanded-even {
-  background-color: aliceblue;
-}
-.ep-accordion-menu .ep-accordion-expanded.ep-accordion-expanded-even {
-  background-color: aliceblue;
+  color: white;
 }
 .ep-accordion-menu-animate {
   -webkit-transition: .5s linear all;
@@ -350,7 +319,38 @@
   background-color: #F5F5F5;
 }
 .ep-color-selector-container .btn span {
+  color: #000;
   display: inline-block;
+}
+.ep-color-selector-container .colorpicker-position-top.dropdown,
+.ep-color-selector-container .colorpicker-position-bottom.dropdown {
+  right: 0 !important;
+  left: auto !important;
+}
+.ep-color-selector-container .colorpicker-position-left.dropdown {
+  right: 50px !important;
+  left: auto !important;
+}
+.ep-color-selector-container .colorpicker-position-right.dropdown {
+  left: 50px !important;
+}
+.ep-color-selector-container .colorpicker-position-top .dropdown-menu:before,
+.ep-color-selector-container .colorpicker-position-bottom .dropdown-menu:before {
+  left: auto;
+  right: 15px;
+}
+.ep-color-selector-container .colorpicker-position-top .dropdown-menu:after,
+.ep-color-selector-container .colorpicker-position-bottom .dropdown-menu:after {
+  left: auto;
+  right: 16px;
+}
+.ep-color-selector-container .colorpicker-position-left .dropdown-menu:before {
+  left: auto;
+  right: -6px;
+}
+.ep-color-selector-container .colorpicker-position-left .dropdown-menu:after {
+  left: auto;
+  right: -5px;
 }
 
 .ep-color-tile {

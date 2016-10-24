@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.97 built: 24-10-2016
+ * version:1.0.10-dev.98 built: 24-10-2016
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.97","built":"2016-10-24"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.98","built":"2016-10-24"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -2077,8 +2077,17 @@ app.directive('epCardTitle',
  * @property {string} position:string
  * This is the position of the color selector dropdown. Allowed values are top, right, bottom, left. Default is bottom.
  *
- * @property {string} size:string
+ * @property {numeric} size:numeric
  * This is the size of color selector dropdown in pixels. Example values 200, 300 etc...Default is 100.
+ *
+ * @property {boolean} closeOnSelect:boolean
+ * This is a boolean property determines whether to close the color picker on selection. Default is false.
+ *
+ * @property {string} width:string
+ * This is the width of entire color selector component. Example values 500px, 80% etc...Default is 100%.
+ *
+ * @property {boolean} applyColorToBtn:boolean
+ * This is a boolean property which decides whether selected color should be applied to the button which opens up the color picker. Default is false.
  *
  * @example
  *  <pre>
@@ -2097,15 +2106,12 @@ app.directive('epCardTitle',
             scope: {
                 ngModel: '=',
                 position: '@',
-                size: '@'
+                size: '@',
+                closeOnSelect: '@',
+                width: '@',
+                applyColorToBtn: '@'
             },
-            templateUrl: 'src/components/ep.color.selector/color_selector.html',
-            link: function(scope) {
-                scope.$on('colorpicker-selected', function(event, colorObject) {
-                    scope.selectedColor = colorObject.value;
-                });
-
-            }
+            templateUrl: 'src/components/ep.color.selector/color_selector.html'
         };
     }
 })();
@@ -22255,7 +22261,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   'use strict';
 
   $templateCache.put('src/components/ep.accordion.menu/ep-accordion-menu-item_template.html',
-    "<div class=\"clearfix list-group-item\" ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\"><div class=\"clearfix container-fluid\" id=mnu_{{item.id}} ng-keydown=\"($event.which === 13 && item.menuitems.length === 0)? navigate(item, false, $event) : onKeydown(item, $event)\" role=group tabindex=0 ng-click=\"item.isExpanded = !item.isExpanded\"><div id=menuItem class=\"list-group-item row\" ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\" ng-if=\"!(item.menuitems && item.menuitems.length)\" ng-click=\"navigate(item, false, $event)\"><!-- Menu item caption/text --><span class=\"clearfix ep-vertical-align-center\"><span class=\"pull-left col-xs-10 {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></span><!--Open in new window--> <i class=\"fa fa-lg fa-external-link pull-left\" ng-click=\"navigateExternal(item, $event)\"></i><!-- Favorite icon --><!-- Favorite icon --> <i ng-if=\"(item.hideFavorite !== true)\" class=\"fa fa-lg col-xs-2 pull-left\" ng-click=\"toggleFavorite(item, $event)\" ng-class=\"{ 'fa-star-o': !item.favorite, 'fa-star text-warning': item.favorite }\"></i></span></div><div class=\"ep-submenu-header list-group-item row\" ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'ep-accordion-expanded-odd' : item._depth%2 == 1, 'ep-accordion-expanded-even': item._depth%2 == 0}\" ng-if=item.menuitems.length><!-- Menu item caption/text --><span class=\"clearfix ep-vertical-align-center\"><span class=\"pull-left col-xs-10 {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></span><!-- Expand icon --> <i class=\"fa fa-lg col-xs-2\" ng-class=\"{ 'fa-caret-right': !item.isExpanded, 'fa-caret-down': item.isExpanded }\"></i></span></div></div><div class=col-xs-12 ng-click=\"navigate(item, false, $event)\" ng-if=\"item.description && (!item.menuitems.length || !item.isExpanded) && !hideDescription\"><div class=ep-accordion-menu-desc><sup class=text-info ng-bind=item.description></sup></div></div><!-- Sub-menu --><div class=list-group-submenu ng-class=\"{'collapsed': !item.isExpanded }\" id=mnu_children ng-if=\"item.isExpanded && item.menuitems.length\"><ep-accordion-menu-item ng-repeat=\"child in item.menuitems | orderBy:orderByMenu\" item=child hide-description=hideDescription commit-menu-state=commitMenuState navigate=navigate navigate-external=navigateExternal toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div>"
+    "<div class=\"list-group-item clearfix\" ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'list-group-item-info' : item._depth%2 == 1 && (item.isExpanded && item.menuitems.length), 'list-group-item-success': item._depth%2 == 0 && (item.isExpanded && item.menuitems.length)}\"><div class=\"clearfix container-fluid\" id=mnu_{{item.id}} onfocus=\"$(this).addClass('label-default')\" onblur=\"$(this).removeClass('label-default')\" onmouseout=\"$(this).removeClass('label-default')\" onmouseover=\"$(this).addClass('label-default')\" ng-keydown=\"($event.which === 13 && item.menuitems.length === 0)? navigate(item, false, $event) : onKeydown(item, $event)\" role=group tabindex=0 ng-click=\"item.isExpanded = !item.isExpanded\"><div id=menuItem class=\"list-group-item row\" ng-if=\"!(item.menuitems && item.menuitems.length)\" ng-click=\"navigate(item, false, $event)\"><!-- Menu item caption/text --><span class=\"clearfix ep-vertical-align-center\"><span class=\"pull-left col-xs-10 {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></span><!--Open in new window--> <i class=\"fa fa-lg fa-external-link pull-left\" ng-click=\"navigateExternal(item, $event)\"></i><!-- Favorite icon --><!-- Favorite icon --> <i ng-if=\"(item.hideFavorite !== true)\" class=\"fa fa-lg col-xs-2 pull-left\" ng-click=\"toggleFavorite(item, $event)\" ng-class=\"{ 'fa-star-o': !item.favorite, 'fa-star text-warning': item.favorite }\"></i></span></div><div class=\"ep-submenu-header list-group-item row\" ng-class=\"{ 'ep-accordion-expanded': item.isExpanded && item.menuitems.length, 'list-group-item-info' : item._depth%2 == 1 && (item.isExpanded && item.menuitems.length), 'list-group-item-success': item._depth%2 == 0 && (item.isExpanded && item.menuitems.length)}\" ng-if=item.menuitems.length><!-- Menu item caption/text --><span class=\"clearfix ep-vertical-align-center\"><span class=\"pull-left col-xs-10 {{item.captionClass}}\" title={{item.caption}} ng-bind=item.caption></span><!-- Expand icon --> <i class=\"fa fa-lg col-xs-2\" ng-class=\"{ 'fa-caret-right': !item.isExpanded, 'fa-caret-down': item.isExpanded }\"></i></span></div></div><div class=col-xs-12 ng-click=\"navigate(item, false, $event)\" ng-if=\"item.description && (!item.menuitems.length || !item.isExpanded) && !hideDescription\"><div class=ep-accordion-menu-desc><sup class=text-info ng-bind=item.description></sup></div></div><!-- Sub-menu --><div class=list-group-submenu ng-class=\"{'collapsed': !item.isExpanded }\" id=mnu_children ng-if=\"item.isExpanded && item.menuitems.length\"><ep-accordion-menu-item ng-repeat=\"child in item.menuitems | orderBy:orderByMenu\" item=child hide-description=hideDescription commit-menu-state=commitMenuState navigate=navigate navigate-external=navigateExternal toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div>"
   );
 
 
@@ -22290,7 +22296,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.color.selector/color_selector.html',
-    "<div class=\"ep-color-selector-container vertical-align\"><div class=input-group><input class=form-control value=\"{{selectedColor}}\"><div class=input-group-btn><button type=button class=\"btn btn-default dropdown-toggle\" colorpicker colorpicker-position=\"{{position ? position : 'bottom'}}\" colorpicker-size=\"{{size ? size : '100'}}\" ng-model=ngModel ng-style=\"{'background-color': selectedColor}\"><span></span></button></div></div></div>"
+    "<div class=\"ep-color-selector-container vertical-align\" ng-style=\"{ 'width': width }\"><div class=input-group><input class=form-control value=\"{{ngModel}}\"><div class=input-group-btn><button type=button class=\"btn btn-default dropdown-toggle\" colorpicker colorpicker-parent=true ng-attr-colorpicker-close-on-select=\"{{closeOnSelect == 'true' ? '' : undefined}}\" colorpicker-position=\"{{position ? position : 'bottom'}}\" colorpicker-size=\"{{size ? size : 100}}\" ng-model=ngModel ng-style=\"applyColorToBtn && {'background-color': ngModel}\"><span class=\"fa fa-eyedropper\"></span></button></div></div></div>"
   );
 
 

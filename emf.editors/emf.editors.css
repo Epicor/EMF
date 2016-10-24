@@ -1,12 +1,43 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.97 built: 24-10-2016
+ * version:1.0.10-dev.98 built: 24-10-2016
 */
 .ep-color-selector-container .btn {
   background-color: #F5F5F5;
 }
 .ep-color-selector-container .btn span {
+  color: #000;
   display: inline-block;
+}
+.ep-color-selector-container .colorpicker-position-top.dropdown,
+.ep-color-selector-container .colorpicker-position-bottom.dropdown {
+  right: 0 !important;
+  left: auto !important;
+}
+.ep-color-selector-container .colorpicker-position-left.dropdown {
+  right: 50px !important;
+  left: auto !important;
+}
+.ep-color-selector-container .colorpicker-position-right.dropdown {
+  left: 50px !important;
+}
+.ep-color-selector-container .colorpicker-position-top .dropdown-menu:before,
+.ep-color-selector-container .colorpicker-position-bottom .dropdown-menu:before {
+  left: auto;
+  right: 15px;
+}
+.ep-color-selector-container .colorpicker-position-top .dropdown-menu:after,
+.ep-color-selector-container .colorpicker-position-bottom .dropdown-menu:after {
+  left: auto;
+  right: 16px;
+}
+.ep-color-selector-container .colorpicker-position-left .dropdown-menu:before {
+  left: auto;
+  right: -6px;
+}
+.ep-color-selector-container .colorpicker-position-left .dropdown-menu:after {
+  left: auto;
+  right: -5px;
 }
 
 .ep-icon-selector-container .icon-filter-field {

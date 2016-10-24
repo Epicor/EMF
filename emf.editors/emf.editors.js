@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.97 built: 24-10-2016
+ * version:1.0.10-dev.98 built: 24-10-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.97","built":"2016-10-24"};
+__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.98","built":"2016-10-24"};
 
 (function() {
     'use strict';
@@ -74,8 +74,17 @@ angular.module('ep.record.editor', [
  * @property {string} position:string
  * This is the position of the color selector dropdown. Allowed values are top, right, bottom, left. Default is bottom.
  *
- * @property {string} size:string
+ * @property {numeric} size:numeric
  * This is the size of color selector dropdown in pixels. Example values 200, 300 etc...Default is 100.
+ *
+ * @property {boolean} closeOnSelect:boolean
+ * This is a boolean property determines whether to close the color picker on selection. Default is false.
+ *
+ * @property {string} width:string
+ * This is the width of entire color selector component. Example values 500px, 80% etc...Default is 100%.
+ *
+ * @property {boolean} applyColorToBtn:boolean
+ * This is a boolean property which decides whether selected color should be applied to the button which opens up the color picker. Default is false.
  *
  * @example
  *  <pre>
@@ -94,15 +103,12 @@ angular.module('ep.record.editor', [
             scope: {
                 ngModel: '=',
                 position: '@',
-                size: '@'
+                size: '@',
+                closeOnSelect: '@',
+                width: '@',
+                applyColorToBtn: '@'
             },
-            templateUrl: 'src/components/ep.color.selector/color_selector.html',
-            link: function(scope) {
-                scope.$on('colorpicker-selected', function(event, colorObject) {
-                    scope.selectedColor = colorObject.value;
-                });
-
-            }
+            templateUrl: 'src/components/ep.color.selector/color_selector.html'
         };
     }
 })();
@@ -2356,7 +2362,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   'use strict';
 
   $templateCache.put('src/components/ep.color.selector/color_selector.html',
-    "<div class=\"ep-color-selector-container vertical-align\"><div class=input-group><input class=form-control value=\"{{selectedColor}}\"><div class=input-group-btn><button type=button class=\"btn btn-default dropdown-toggle\" colorpicker colorpicker-position=\"{{position ? position : 'bottom'}}\" colorpicker-size=\"{{size ? size : '100'}}\" ng-model=ngModel ng-style=\"{'background-color': selectedColor}\"><span></span></button></div></div></div>"
+    "<div class=\"ep-color-selector-container vertical-align\" ng-style=\"{ 'width': width }\"><div class=input-group><input class=form-control value=\"{{ngModel}}\"><div class=input-group-btn><button type=button class=\"btn btn-default dropdown-toggle\" colorpicker colorpicker-parent=true ng-attr-colorpicker-close-on-select=\"{{closeOnSelect == 'true' ? '' : undefined}}\" colorpicker-position=\"{{position ? position : 'bottom'}}\" colorpicker-size=\"{{size ? size : 100}}\" ng-model=ngModel ng-style=\"applyColorToBtn && {'background-color': ngModel}\"><span class=\"fa fa-eyedropper\"></span></button></div></div></div>"
   );
 
 
