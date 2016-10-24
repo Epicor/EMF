@@ -1,23 +1,21 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.96 built: 23-10-2016
+ * version:1.0.10-dev.97 built: 24-10-2016
 */
-.ep-photo-browser {
-  /* Loading - from http://loading.io */
-}
-.ep-photo-browser .ng-gallery {
+.ng-gallery {
   width: 100%;
   height: 100%;
   display: inline-block;
 }
-.ep-photo-browser img.ng-thumb {
+img.ng-thumb {
   height: 90px;
+  width: 90px;
   float: left;
   display: block;
   cursor: pointer;
   margin: 6px 6px 2px 2px;
 }
-.ep-photo-browser .ng-overlay {
+.ng-overlay {
   position: fixed;
   top: 0;
   left: 0;
@@ -33,7 +31,7 @@
   user-select: none;
   -webkit-user-drag: none;
 }
-.ep-photo-browser .ng-gallery-content {
+.ng-gallery-content {
   position: fixed;
   top: 0;
   left: 0;
@@ -42,7 +40,7 @@
   z-index: 10000;
   text-align: center;
 }
-.ep-photo-browser .ng-gallery-content > a.close-popup {
+.ng-gallery-content > a.close-popup {
   font-size: 42px !important;
   float: right !important;
   color: #fff !important;
@@ -53,7 +51,7 @@
   top: 20px !important;
   right: 0 !important;
 }
-.ep-photo-browser .ng-gallery-content > a.rotate {
+.ng-gallery-content > a.rotate {
   font-size: 34px !important;
   float: right !important;
   color: #fff !important;
@@ -64,18 +62,18 @@
   top: 20px !important;
   right: 310px !important;
 }
-.ep-photo-browser .ng-gallery-content > a.stop-rotate {
+.ng-gallery-content > a.stop-rotate {
   font-size: 34px !important;
-  float: right !important;
+  float: left !important;
   color: #fff !important;
   text-decoration: none !important;
-  margin: 0 10px 0 0 !important;
+  margin: 0 0 0 30px !important;
   cursor: pointer !important;
   position: absolute !important;
   top: 20px !important;
-  right: 280px !important;
+  left: 0 !important;
 }
-.ep-photo-browser .ng-gallery-content > a.download-image {
+.ng-gallery-content > a.download-image {
   font-size: 42px;
   float: right;
   color: #fff;
@@ -86,29 +84,29 @@
   top: 20px;
   right: 63px;
 }
-.ep-photo-browser .ng-gallery-content > a.nav-left,
-.ep-photo-browser .ng-gallery-content > a.nav-right {
+.ng-gallery-content > a.nav-left,
+.ng-gallery-content > a.nav-right {
   color: #fff;
   text-decoration: none;
   font-size: 60px;
   cursor: pointer;
   outline: none;
 }
-.ep-photo-browser .ng-gallery-content > a.nav-left {
+.ng-gallery-content > a.nav-left {
   position: fixed;
-  left: 30px;
+  left: 20px;
   top: 50%;
   transform: translateY(-50%);
 }
-.ep-photo-browser .ng-gallery-content > a.nav-right {
+.ng-gallery-content > a.nav-right {
   position: fixed;
-  right: 30px;
+  right: 20px;
   top: 50%;
   transform: translateY(-50%);
 }
-.ep-photo-browser .ng-gallery-content > img {
-  height: 300px !important;
-  width: 280px !important;
+.ng-gallery-content > img {
+  height: 50% !important;
+  width: 75% !important;
   position: relative;
   display: block;
   margin: 0 auto 0 auto;
@@ -116,12 +114,13 @@
   transform: translateY(-50%);
   -webkit-transform: translateY(-50%);
   cursor: pointer;
+  -webkit-user-select: none;
   -moz-user-select: none;
   -ms-user-select: none;
   user-select: none;
   -webkit-user-drag: none;
 }
-.ep-photo-browser .ng-gallery-content > img.effect {
+.ng-gallery-content > img.effect {
   animation: fadeIn 0.5s;
 }
 @keyframes fadeIn {
@@ -132,7 +131,7 @@
     opacity: 1;
   }
 }
-.ep-photo-browser .ng-gallery-content > span.info-text {
+.ng-gallery-content > span.info-text {
   color: #fff;
   display: inline-block;
   width: 100%;
@@ -144,7 +143,7 @@
   right: 0;
   bottom: 100px;
 }
-.ep-photo-browser .ng-gallery-content > .ng-thumbnails-wrapper {
+.ng-gallery-content > .ng-thumbnails-wrapper {
   width: 400px;
   height: 70px;
   text-align: center;
@@ -156,11 +155,11 @@
   margin-right: auto;
   overflow-x: hidden;
 }
-.ep-photo-browser .ng-gallery-content > .ng-thumbnails-wrapper > .ng-thumbnails {
+.ng-gallery-content > .ng-thumbnails-wrapper > .ng-thumbnails {
   width: 4000px;
   height: 70px;
 }
-.ep-photo-browser .ng-gallery-content > .ng-thumbnails-wrapper > .ng-thumbnails > div > img {
+.ng-gallery-content > .ng-thumbnails-wrapper > .ng-thumbnails > div > img {
   width: auto;
   height: 70px;
   float: left;
@@ -168,16 +167,17 @@
   cursor: pointer;
   opacity: 0.6;
 }
-.ep-photo-browser .ng-gallery-content > .ng-thumbnails-wrapper > .ng-thumbnails > div > img:hover,
-.ep-photo-browser .ng-gallery-content > .ng-thumbnails-wrapper > .ng-thumbnails > div > img.active {
+.ng-gallery-content > .ng-thumbnails-wrapper > .ng-thumbnails > div > img:hover,
+.ng-gallery-content > .ng-thumbnails-wrapper > .ng-thumbnails > div > img.active {
   transition: opacity 0.25s ease;
   opacity: 1;
 }
-.ep-photo-browser uiload {
+/* Loading - from http://loading.io */
+uiload {
   display: inline-block;
   position: relative;
 }
-.ep-photo-browser uiload > div {
+uiload > div {
   position: relative;
 }
 @-webkit-keyframes uil-ring-anim {
@@ -244,7 +244,7 @@
     transform: rotate(360deg);
   }
 }
-.ep-photo-browser .uil-ring-css {
+.uil-ring-css {
   background: none;
   position: relative;
   top: 0;
@@ -252,7 +252,7 @@
   width: 100px;
   height: 100px;
 }
-.ep-photo-browser .uil-ring-css > div {
+.uil-ring-css > div {
   position: absolute;
   display: block;
   width: 80px;
@@ -268,15 +268,15 @@
   animation: uil-ring-anim 1s linear infinite;
 }
 @media screen and (orientation: landscape) {
-  .ep-photo-browser .ng-gallery-content > img {
-    height: 200px;
-    width: 240px;
-    top: 50%;
-    height: 350px;
-    width: 450px;
+  .ng-gallery-content > img {
+    height: 80% !important;
+    width: 75% !important;
   }
-  .ep-photo-browser .ng-gallery-content > a.stop-rotate {
-    right: 500px !important;
+}
+@media only screen and (min-width: 768px) {
+  .ng-gallery-content > img {
+    height: 600px !important;
+    width: 600px !important;
   }
 }
 
