@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.100 built: 24-10-2016
+ * version:1.0.10-dev.101 built: 25-10-2016
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.100","built":"2016-10-24"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.101","built":"2016-10-25"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -11583,7 +11583,7 @@ angular.module('ep.menu.builder').
 
             copyProperties(options, cfg);
 
-            showCustomDialog(cfg);
+            return showCustomDialog(cfg).result;
         }
 
         /**
@@ -11645,7 +11645,7 @@ angular.module('ep.menu.builder').
 
             copyProperties(options, cfg);
 
-            showCustomDialog(cfg);
+            return showCustomDialog(cfg).result;
         }
 
         /**

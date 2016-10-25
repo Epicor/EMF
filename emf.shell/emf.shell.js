@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.100 built: 24-10-2016
+ * version:1.0.10-dev.101 built: 25-10-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.100","built":"2016-10-24"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.101","built":"2016-10-25"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -3412,7 +3412,7 @@ function() {
 
             copyProperties(options, cfg);
 
-            showCustomDialog(cfg);
+            return showCustomDialog(cfg).result;
         }
 
         /**
@@ -3474,7 +3474,7 @@ function() {
 
             copyProperties(options, cfg);
 
-            showCustomDialog(cfg);
+            return showCustomDialog(cfg).result;
         }
 
         /**
