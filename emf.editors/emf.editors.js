@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.104 built: 25-10-2016
+ * version:1.0.10-dev.104 built: 26-10-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.104","built":"2016-10-25"};
+__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.104","built":"2016-10-26"};
 
 (function() {
     'use strict';
@@ -86,6 +86,9 @@ angular.module('ep.record.editor', [
  * @property {boolean} applyColorToBtn:boolean
  * This is a boolean property which decides whether selected color should be applied to the button which opens up the color picker. Default is false.
  *
+ * @property {string} iconClass:string
+ * This is the class name of the icon to be displayed on color picker dropdown.
+ *
  * @example
  *  <pre>
  *      <ep-color-selector ng-model="obj.color"></ep-color-selector>
@@ -106,7 +109,8 @@ angular.module('ep.record.editor', [
                 size: '@',
                 closeOnSelect: '@',
                 width: '@',
-                applyColorToBtn: '@'
+                applyColorToBtn: '@',
+                iconClass: '@'
             },
             templateUrl: 'src/components/ep.color.selector/color_selector.html'
         };
@@ -2362,7 +2366,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   'use strict';
 
   $templateCache.put('src/components/ep.color.selector/color_selector.html',
-    "<div class=\"ep-color-selector-container vertical-align\" ng-style=\"{ 'width': width }\"><div class=input-group><input class=form-control value=\"{{ngModel}}\"><div class=input-group-btn><button type=button class=\"btn btn-default dropdown-toggle\" colorpicker colorpicker-parent=true ng-attr-colorpicker-close-on-select=\"{{closeOnSelect == 'true' ? '' : undefined}}\" colorpicker-position=\"{{position ? position : 'bottom'}}\" colorpicker-size=\"{{size ? size : 100}}\" ng-model=ngModel ng-style=\"applyColorToBtn && {'background-color': ngModel}\"><span class=\"fa fa-eyedropper\"></span></button></div></div></div>"
+    "<div class=\"ep-color-selector-container vertical-align\" ng-style=\"{ 'width': width }\"><div class=input-group><input class=form-control value=\"{{ngModel}}\"><div class=input-group-btn><button type=button class=\"btn btn-default dropdown-toggle\" colorpicker colorpicker-parent=true ng-attr-colorpicker-close-on-select=\"{{closeOnSelect == 'true' ? '' : undefined}}\" colorpicker-position=\"{{position ? position : 'bottom'}}\" colorpicker-size=\"{{size ? size : 100}}\" ng-model=ngModel ng-style=\"applyColorToBtn == 'true' && {'background-color': ngModel}\"><span class={{iconClass}}></span></button></div></div></div>"
   );
 
 
