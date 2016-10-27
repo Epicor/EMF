@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.105 built: 26-10-2016
+ * version:1.0.10-dev.106 built: 26-10-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.105","built":"2016-10-26"};
+__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.106","built":"2016-10-26"};
 
 (function() {
     'use strict';
@@ -1849,7 +1849,9 @@ angular.module('ep.record.editor', [
                 scope.$watch('isReadOnly', function(newValue) {
                     if (newValue !== undefined) {
                         scope.state.isReadOnly = newValue;
-                        scope.setReadOnly();
+                        $timeout(function() {
+                            scope.setReadOnly();
+                        })
                     }
                 });
 
@@ -1895,13 +1897,15 @@ angular.module('ep.record.editor', [
                 });
 
                 scope.$watch('sizeClass', function(newValue, oldValue) {
-                    if (newValue !== oldValue) {
-                        if (scope.state.controls) {
+                    if (scope.state.controls && newValue !== undefined) {
+                        $timeout(function() {
                             angular.forEach(scope.state.controls, function(ctrl) {
                                 var ctx = ctrl.getControlCtx();
-                                ctx.fnSetSizeClass(newValue);
+                                if (ctx) {
+                                    ctx.fnSetSizeClass(newValue || '');
+                                }
                             });
-                        }
+                        })
                     }
                 });
 

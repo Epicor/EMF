@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.105 built: 26-10-2016
+ * version:1.0.10-dev.106 built: 26-10-2016
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.105","built":"2016-10-26"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.106","built":"2016-10-26"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -15242,7 +15242,9 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                 scope.$watch('isReadOnly', function(newValue) {
                     if (newValue !== undefined) {
                         scope.state.isReadOnly = newValue;
-                        scope.setReadOnly();
+                        $timeout(function() {
+                            scope.setReadOnly();
+                        })
                     }
                 });
 
@@ -15288,13 +15290,15 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                 });
 
                 scope.$watch('sizeClass', function(newValue, oldValue) {
-                    if (newValue !== oldValue) {
-                        if (scope.state.controls) {
+                    if (scope.state.controls && newValue !== undefined) {
+                        $timeout(function() {
                             angular.forEach(scope.state.controls, function(ctrl) {
                                 var ctx = ctrl.getControlCtx();
-                                ctx.fnSetSizeClass(newValue);
+                                if (ctx) {
+                                    ctx.fnSetSizeClass(newValue || '');
+                                }
                             });
-                        }
+                        })
                     }
                 });
 
@@ -16575,7 +16579,8 @@ angular.module('ep.record.editor').
                 allowVerticalScroll: true,
                 //Stores the nav button that is clicked on mouse down event. This state is cleared on actual click event.
                 //Useful for blur processing
-                navButtonClicked: null
+                navButtonClicked: null,
+                viewModalOptions: {}
             };
 
             /**
@@ -16705,6 +16710,7 @@ angular.module('ep.record.editor').
                         hideLeftSidebar();
                     }
                 }
+
                 hideRightSidebar(false);
                 shellState.allowVerticalScroll = !!mode.allowVerticalScroll;
                 shellState.animateViewContainer = mode.animateViewContainer !== false;
@@ -18156,6 +18162,45 @@ angular.module('ep.record.editor').
                 }
             }
 
+            /**
+             * @ngdoc method
+             * @name setViewModal
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Set modal view overlay, that will cover the current view
+             * @param {object} modalOptions - modal options (refer to ep.viewmodal)
+             */
+            function setViewModal(modalOptions) {
+                shellState.viewModalOptions = modalOptions || {};
+            }
+            /**
+             * @ngdoc method
+             * @name enableViewModal
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Enable or disable shell operated view modal
+             * @param {bool} onOff - turn on/off with true/false
+             */
+            function enableViewModal(onOff) {
+                shellState.enableViewModal = (onOff !== false);
+            }
+            /**
+             * @ngdoc method
+             * @name showViewModal
+             * @methodOf ep.shell.service:epShellService
+             * @public
+             * @description
+             * Enable or disable shell operated view modal
+             * @param {bool} onOff - display/hide with true/false
+             */
+            function showViewModal(onOff) {
+                if (shellState.viewModalOptions) {
+                    shellState.viewModalOptions.showViewModal = (onOff !== false);
+                }
+            }
+
             initialize();
 
             return {
@@ -18259,7 +18304,11 @@ angular.module('ep.record.editor').
                 isHomeLocation: isHomeLocation,
                 goHome: goHome,
                 toggleLeftSidebarBackdrop: toggleRightSidebarBackdrop,
-                toggleRightSidebarBackdrop: toggleRightSidebarBackdrop
+                toggleRightSidebarBackdrop: toggleRightSidebarBackdrop,
+
+                setViewModal: setViewModal,
+                enableViewModal: enableViewModal,
+                showViewModal: showViewModal
             };
         }]
     );
@@ -22478,7 +22527,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
     "\n" +
     "                                    'ep-scroll-y': !!state.allowVerticalScroll,\r" +
     "\n" +
-    "                                    'ep-momentum-scrolling-enabled': !!state.momentumScrollingEnabled }\"><div id=viewMessage class=ep-container-message ng-if=state.infoMessage ng-style=\"{'width': state.viewDimensions.size.width + 'px', 'height': state.viewDimensions.size.height + 'px'}\"><p class=\"ep-container-message-text ep-center-item\"><i class={{state.infoIcon}}></i><br>{{state.infoMessage}}</p></div><!--<ep-cached-view ng-if=\"showFromCache && hasCacheKey\" key=\"cacheKey\"></ep-cached-view>--><!--\r" +
+    "                                    'ep-momentum-scrolling-enabled': !!state.momentumScrollingEnabled }\"><div id=viewMessage class=ep-container-message ng-if=state.infoMessage ng-style=\"{'width': state.viewDimensions.size.width + 'px', 'height': state.viewDimensions.size.height + 'px'}\"><p class=\"ep-container-message-text ep-center-item\"><i class={{state.infoIcon}}></i><br>{{state.infoMessage}}</p></div><ep-viewmodal ng-if=\"state.enableViewModal !== false && state.viewModalOptions && state.viewModalOptions.templateOptions\" options=state.viewModalOptions title=state.viewModalOptions.title><ep-include options=state.viewModalOptions.templateOptions></ep-include></ep-viewmodal><!--<ep-cached-view ng-if=\"showFromCache && hasCacheKey\" key=\"cacheKey\"></ep-cached-view>--><!--\r" +
     "\n" +
     "    <div class=\"ep-fullscreen\" ng-if=\"!showFromCache || !hasCacheKey\" id=\"viewTemplate\" ng-transclude></div>\r" +
     "\n" +
