@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.111 built: 27-10-2016
+ * version:1.0.10-dev.112 built: 28-10-2016
 */
 .ep-mlm-container {
   position: relative;
@@ -209,37 +209,52 @@
   border-radius: 0 !important;
   border-left: none;
   border-right: none;
-  margin-left: 4px;
   cursor: pointer;
   padding: 5px 0 5px 0;
 }
 .ep-accordion-menu .list-group-item:last-child {
   border-bottom: none;
 }
-.ep-accordion-menu .list-group-item:first-child {
-  border-top: none;
-}
-.ep-accordion-menu .list-group-item.active {
-  color: inherit;
-}
-.ep-accordion-menu .list-group-item.active:hover {
-  color: inherit;
-}
 .ep-accordion-menu .container-fluid {
-  outline: none;
+  padding-left: 0;
 }
-.ep-accordion-menu .container-fluid:focus .ep-submenu-header,
-.ep-accordion-menu .container-fluid:focus #menuItem {
+.ep-accordion-menu .container-fluid:focus {
+  outline: none;
+  background-color: #0071b3;
+}
+.ep-accordion-menu .container-fluid:hover {
+  outline: none;
+  background-color: #0083D0;
+}
+.ep-accordion-menu .container-fluid:focus .ep-submenu-header {
+  outline: none;
   background-color: transparent;
   color: white;
 }
-.ep-accordion-menu .container-fluid:hover .ep-submenu-header,
+.ep-accordion-menu .container-fluid:focus #menuItem {
+  outline: none;
+  background-color: transparent;
+  color: white;
+}
+.ep-accordion-menu .container-fluid:hover .ep-submenu-header {
+  background-color: transparent;
+  color: white;
+}
 .ep-accordion-menu .container-fluid:hover #menuItem {
   background-color: transparent;
   color: white;
 }
+.ep-accordion-menu .list-group-item:first-child {
+  border-top: none;
+}
+.ep-accordion-menu .list-group-item {
+  margin-left: 4px;
+}
 .ep-accordion-menu .list-group > .list-group-item {
   margin-left: 0px;
+}
+.ep-accordion-menu .list-group > .list-group-item:focus {
+  outline: none;
 }
 .ep-accordion-menu .panel {
   margin-bottom: 0;
@@ -249,11 +264,21 @@
 }
 .ep-accordion-menu .ep-accordion-expanded {
   padding-bottom: 6px;
-  color: inherit;
 }
 .ep-accordion-menu .ep-submenu-header.ep-accordion-expanded {
   font-weight: bold;
-  color: white;
+}
+.ep-accordion-menu .list-group-submenu.ep-accordion-expanded.ep-accordion-expanded-odd {
+  background-color: gainsboro;
+}
+.ep-accordion-menu .ep-accordion-expanded.ep-accordion-expanded-odd {
+  background-color: gainsboro;
+}
+.ep-accordion-menu .list-group-submenu.ep-accordion-expanded.ep-accordion-expanded-even {
+  background-color: aliceblue;
+}
+.ep-accordion-menu .ep-accordion-expanded.ep-accordion-expanded-even {
+  background-color: aliceblue;
 }
 .ep-accordion-menu-animate {
   -webkit-transition: .5s linear all;
