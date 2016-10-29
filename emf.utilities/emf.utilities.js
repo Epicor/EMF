@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.113 built: 28-10-2016
+ * version:1.0.10-dev.114 built: 28-10-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.10-dev.113","built":"2016-10-28"};
+__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.10-dev.114","built":"2016-10-28"};
 
 (function() {
   'use strict';
@@ -1120,6 +1120,17 @@ angular.module('ep.signature').directive('epSignature',
  */
 (function() {
     'use strict';
+
+    /**
+     * @ngdoc service
+     * @name ep.indexeddb.service:epIndexedDbService
+     * @description
+     * Service for the ep.indexeddb module
+     * This service provides an interface to cache data on device
+     *
+     * @example
+     *
+     */
     epIndexedDbService.$inject = ['$log', '$q', '$window'];
     angular.module('ep.indexeddb')
         .service('epIndexedDbService', epIndexedDbService);
@@ -1303,13 +1314,13 @@ angular.module('ep.signature').directive('epSignature',
             var cursor = request.result;
             if (cursor) {
                 var getRequest = store.get(cursor.primaryKey);
-                getRequest.onsuccess = function(e){
+                getRequest.onsuccess = function(e) {
                     var row = e && e.result && e.result.target;
                     result.push(row);
                     cursor.continue();
                     deferred.notify(row);
                 };
-                getRequest.onerror = function(){
+                getRequest.onerror = function() {
                     self.$log.warn('An error occurred while executing query ' + indexName + '=' + indexValue);
                     cursor.continue();
                 }
@@ -1394,7 +1405,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name createSchema
-         * @methodOf ep.indexedDbService
+         * @methodOf ep.indexeddb.service:epIndexedDbService
          * @public
          * @description
          * Create a new database schema
@@ -1409,7 +1420,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name closeDatabase
-         * @methodOf ep.indexedDbService
+         * @methodOf ep.indexeddb.service:epIndexedDbService
          * @public
          * @description
          * Closes an open database
@@ -1422,7 +1433,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name openDatabase
-         * @methodOf ep.indexedDbService
+         * @methodOf ep.indexeddb.service:epIndexedDbService
          * @public
          * @description
          * Opens a database that has been previously defined.
@@ -1446,7 +1457,7 @@ angular.module('ep.signature').directive('epSignature',
                 openRequest.onerror = function(event) {
                     deferred.reject(event);
                 };
-                openRequest.onblocked = function(){
+                openRequest.onblocked = function() {
                     deferred.reject('Unable to open database. The request is blocked.');
                 };
                 openRequest.onupgradeneeded = function(event) {
@@ -1467,7 +1478,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name deleteDatabase
-         * @methodOf ep.indexedDbService
+         * @methodOf ep.indexeddb.service:epIndexedDbService
          * @public
          * @description
          * Deletes a database that has been previously defined.
@@ -1497,18 +1508,29 @@ angular.module('ep.signature').directive('epSignature',
 
 (function() {
     'use strict';
+
+    /**
+     * @ngdoc service
+     * @name ep.cache.service:epCacheService
+     * @description
+     * Service for the ep.cache module
+     * This service provides convinient caching using epIndexedDBService
+     *
+     * @example
+     *
+     */
     epCacheService.$inject = ['$log', '$q', '$rootScope', 'epIndexedDbService', 'epShellConstants', 'epShellConfig'];
     angular.module('ep.cache')
         .service('epCacheService', epCacheService);
 
     /*@ngInject*/
-    function epCacheService($log, $q, $rootScope,epIndexedDbService, epShellConstants, epShellConfig){
+    function epCacheService($log, $q, $rootScope, epIndexedDbService, epShellConstants, epShellConfig) {
         var cacheStore = {};
         //define the cache database
         epIndexedDbService.createSchema('ep-cache-db')
             .defineVersion(1, function(db) {
-                var cacheTable = db.createObjectStore('ep-cache', {keyPath: 'key'});
-                cacheTable.createIndex('cacheId', 'cacheId', {unique: false});
+                var cacheTable = db.createObjectStore('ep-cache', { keyPath: 'key' });
+                cacheTable.createIndex('cacheId', 'cacheId', { unique: false });
             });
 
         function reify(val) {
@@ -1522,7 +1544,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name getCache
-         * @methodOf ep.cache:epCacheService
+         * @methodOf ep.cache.service:epCacheService
          * @public
          * @description
          * Get the in-memory cache with the given Id
@@ -1539,7 +1561,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name cacheServiceCall
-         * @methodOf ep.cache:epCacheService
+         * @methodOf ep.cache.service:epCacheService
          * @public
          * @description
          * Memoize the result of a service call using a custom key
@@ -1558,12 +1580,12 @@ angular.module('ep.signature').directive('epSignature',
             key = reify(key);
 
             var deferred = $q.defer();
-            if(reset){
+            if (reset) {
                 resolveServiceCall(deferred, key, null, getDataFromService);
-            } else{
+            } else {
                 var data = cache[key];
-                if(!data){
-                    getPersistedCacheValue(key).then(function(result){
+                if (!data) {
+                    getPersistedCacheValue(key).then(function(result) {
                         if (result) {
                             cache[key] = result;
                             $log.debug('Resolving service call data from persistent cache "' + cacheId + '" for key "' + key + '".');
@@ -1572,11 +1594,11 @@ angular.module('ep.signature').directive('epSignature',
                             $log.debug('Cached record "' + key + '" not found in persistent cache');
                             resolveServiceCall(deferred, key, cacheId, getDataFromService);
                         }
-                    }, function(){
+                    }, function() {
                         $log.debug('An error occurred while retrieving cached record for key: "' + key + '".');
                         resolveServiceCall(deferred, key, cacheId, getDataFromService);
                     });
-                }else{
+                } else {
                     $log.debug('Resolving service call data from cache "' + cacheId + '" for key "' + key + '".');
                     deferred.resolve(data);
                 }
@@ -1584,10 +1606,10 @@ angular.module('ep.signature').directive('epSignature',
             return deferred.promise;
         }
 
-        function resolveServiceCall(deferred, key, cacheId, getDataFromService){
+        function resolveServiceCall(deferred, key, cacheId, getDataFromService) {
 
             function finalize(result) {
-                if (cacheId){
+                if (cacheId) {
                     cacheData(cacheId, key, result);
                 }
                 return result;
@@ -1615,15 +1637,15 @@ angular.module('ep.signature').directive('epSignature',
         function getPersistedCacheValue(key) {
             return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
                 var store = db.getObjectStore('ep-cache');
-                return store.get(key).then(function(cacheEntry){
+                return store.get(key).then(function(cacheEntry) {
                     return cacheEntry && cacheEntry.value;
                 })
             });
         }
 
         function savePersistedCacheValue(key, cacheId, value) {
-            var cacheEntry = {key: key, cacheId: cacheId, value:value};
-            return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db){
+            var cacheEntry = { key: key, cacheId: cacheId, value: value };
+            return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
                 var store = db.getObjectStore('ep-cache');
                 return store.put(cacheEntry);
             })
@@ -1632,7 +1654,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name deleteAllCaches
-         * @methodOf ep.cache:epCacheService
+         * @methodOf ep.cache.service:epCacheService
          * @public
          * @description
          * Clears all cached data
@@ -1647,7 +1669,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name deleteCache
-         * @methodOf ep.cache:epCacheService
+         * @methodOf ep.cache.service:epCacheService
          * @public
          * @description
          * Clears a cache with the given id
@@ -1659,9 +1681,9 @@ angular.module('ep.signature').directive('epSignature',
                 delete cacheStore[cacheId];
                 $log.debug('Cache "' + cacheId + '" deleted from memory cache.');
             }
-            epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db){
+            epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
                 db.getObjectStore('ep-cache').deleteByIndex('cacheId', cacheId);
-                $rootScope.$emit(epShellConstants.SHELL_CACHE_DELETED_EVENT, {cacheId: cacheId});
+                $rootScope.$emit(epShellConstants.SHELL_CACHE_DELETED_EVENT, { cacheId: cacheId });
                 $log.debug('Cache "' + cacheId + '" deleted from database cache.');
             });
         }
@@ -1669,7 +1691,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name deleteCacheKey
-         * @methodOf ep.cache:epCacheService
+         * @methodOf ep.cache.service:epCacheService
          * @public
          * @description
          * Clears data with the given key from the cache with the given id
@@ -1679,20 +1701,20 @@ angular.module('ep.signature').directive('epSignature',
         function deleteCacheKey(cacheId, key) {
             var cache = getCache(cacheId);
             key = reify(key);
-            if(cache && cache[key]) {
+            if (cache && cache[key]) {
                 delete cache[key];
             }
-            epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db){
+            epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
                 db.getObjectStore('ep-cache').delete(key);
                 $log.debug('Value with key "' + key + '" deleted from database.');
             });
-            $rootScope.$emit(epShellConstants.SHELL_CACHE_DATA_DELETED_EVENT, {cacheId: reify(cacheId), key: key});
+            $rootScope.$emit(epShellConstants.SHELL_CACHE_DATA_DELETED_EVENT, { cacheId: reify(cacheId), key: key });
         }
 
         /**
          * @ngdoc method
          * @name getCachedData
-         * @methodOf ep.cache:epCacheService
+         * @methodOf ep.cache.service:epCacheService
          * @public
          * @description
          * Returns the data with the given key from the cache with the given id
@@ -1712,7 +1734,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name cacheData
-         * @methodOf ep.cache:epCacheService
+         * @methodOf ep.cache.service:epCacheService
          * @public
          * @description
          * Stores the data with the given key in the cache with the given id
@@ -1725,11 +1747,11 @@ angular.module('ep.signature').directive('epSignature',
                 var cache = getCache(cacheId);
                 key = reify(key);
                 cache[key] = data;
-                savePersistedCacheValue(key, cacheId, data).then(function(){
+                savePersistedCacheValue(key, cacheId, data).then(function() {
                     $log.debug('Cached value with key:"' + key + '" in cache: "' + cacheId + '".');
                     $rootScope.$emit(epShellConstants.SHELL_DATA_CACHED_EVENT,
-                        {cacheId: reify(cacheId), key: key, data: data});
-                }, function(e){
+                        { cacheId: reify(cacheId), key: key, data: data });
+                }, function(e) {
                     $log.warn('Unable to open cache database: ' + e);
                 });
             }
@@ -1743,7 +1765,6 @@ angular.module('ep.signature').directive('epSignature',
             getCachedData: getCachedData,
             cacheData: cacheData
         }
-
     }
 })();
 
