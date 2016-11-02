@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.129 built: 01-11-2016
+ * version:1.0.10-dev.130 built: 01-11-2016
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -762,8 +762,8 @@
 /* -----<<<< Pagination styling taken from dataTables.jqueryui.css --------------<<<<*/
 /* Grid Search */
 .ep-data-grid .ep-dg-grid-search {
-  padding: 5px;
-  margin: 2px 2px 0 2px;
+  padding: 0;
+  margin: 0;
   position: relative;
   /* needed for search-icon overlay */
 }
