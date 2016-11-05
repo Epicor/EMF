@@ -2,7 +2,7 @@
     "name": "emf",
     "description": "Epicor Mobile Framework",
     "author": "Epicor Software Corporation",
-    "version": "1.0.10-dev.142",
+    "version": "1.0.10-dev.143",
     "ep-build": "366",
     "ep-build-date": "2016-11-03",
     "publishConfig": {
@@ -40,6 +40,7 @@
         "grunt-tfs-unlock": "0.*.*",
         "grunt-tocdoc": "0.*.*",
         "grunt-version": "^1.0.0",
+        "grunt-exec": "^1.0.1",
         "jasmine": "^2.4.1",
         "jasmine-core": "^2.4.1",
         "karma": "0.*.*",
