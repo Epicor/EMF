@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.153 built: 07-11-2016
+ * version:1.0.10-dev.154 built: 07-11-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.153","built":"2016-11-07"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.154","built":"2016-11-07"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -4710,7 +4710,7 @@ function() {
              */
             function viewSettings(settings) {
                 if (settings !== undefined) {
-                    shellState.viewSettings = angular.merge(shellState.viewSettings, settings);
+                    shellState.viewSettings = settings;
                 }
                 return shellState.viewSettings;
             }
