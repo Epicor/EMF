@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.164 built: 09-11-2016
+ * version:1.0.10-dev.165 built: 09-11-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.164","built":"2016-11-09"};
+__ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.165","built":"2016-11-09"};
 
 (function() {
     'use strict';
@@ -41,7 +41,7 @@ __ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.164","built"
     *          xValues: [],
     *          yValues: [[],[],...[]]
     *      },
-    *      dateUnit: {'year'/'month'/'week'/'day'},
+    *      dateUnit: {'year'/'month'/'week'/'day'},      
     *   };
     *
     *   The following chart types are supported:
@@ -60,6 +60,11 @@ __ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.164","built"
     *                      ...
     *                      [yLabel_N, v1.y, v2.y,...vN.y],
     *                  ]
+    *
+    *   other settings:
+    *       height : 'view' | 'window' | integer (px) | function | element | selector 
+    *                this defines how the chart height is calculated. The width is responsive to the container
+    *       heightOffset: 0 ( 25 - default) - an offset to the calculated height
     *
     * @example
     *
@@ -131,20 +136,33 @@ __ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.164","built"
         }
 
         function getHeight(scope) {
-            var chartEl = angular.element(scope.state.chartElement);
-            var newHeight = ($('body').height() - chartEl.offset().top) - 25;
-
-            if (scope.settings.parentSelector) {
-                var mainChartElement = $(scope.settings.parentSelector);
-                var optionsHeight = mainChartElement.find('.ep-chart-options').outerHeight(true);
-                var mainChartHeight = mainChartElement.outerHeight(true);
-                if (angular.isFunction(scope.settings.parentBuffer)) {
-                    newHeight = mainChartHeight - optionsHeight - scope.settings.parentBuffer();
-                } else {
-                    newHeight = mainChartHeight - optionsHeight -
-                        (scope.settings.parentBuffer ? scope.settings.parentBuffer : 0);
+            var chartEl = angular.element(scope.state.theElement);
+            //window option is default
+            var newHeight = $(window).height() - chartEl.offset().top;
+            var hh = scope.settings.height;
+            if (hh === 'view' || hh === undefined) {
+                var vc = angular.element('#viewContainer');
+                if (vc.length) {
+                    newHeight = vc.height() - chartEl.offset().top;
+                }
+            } else if (angular.isNumber(hh)) {
+                newHeight = hh;
+            } else if (angular.isFunction(hh)) {
+                newHeight = hh();
+            } else if (angular.isString(hh) || hh instanceof HTMLElement) {
+                //selector passed
+                var el = $(hh);
+                if (el.length) {
+                    newHeight = el.outerHeight(true);
                 }
             }
+            var heightOffset = -25;
+            if (angular.isFunction(scope.settings.heightOffset)) {
+                heightOffset = scope.settings.heightOffset(newHeight);
+            } else {
+                heightOffset = (scope.settings.heightOffset ? scope.settings.heightOffset : heightOffset);
+            }
+            newHeight += heightOffset;
             return newHeight;
         }
 
@@ -164,8 +182,20 @@ __ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.164","built"
         }
 
         function drawChart(scope) {
+            //wait until the directive element is visible then draw...
+            //this makes sure the height is calculated right...
+            var waitAndDraw = function() {
+                if (!$(scope.state.theElement).is(':visible')) {
+                    $timeout(function() {
+                        waitAndDraw(scope)
+                    }, 200);
+                } else {
+                    doDrawChart(scope)
+                }
+            };
+
             try {
-                doDrawChart(scope);
+                waitAndDraw();
             } catch (ex) {
                 $log.error(ex);
                 epShellService.hideProgressIndicator();
@@ -179,10 +209,6 @@ __ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.164","built"
 
             var settings = scope.settings;
             setHeight(scope, false);
-
-            $timeout(function() {
-                setHeight(scope, true);
-            });
 
             var xAxisHeight = 140;
             var isDateX = (settings.xAxis.type === 'date');
@@ -611,7 +637,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.chart/ep-chart-c3.html',
-    "<div class=ep-chart-c3><div class=\"ep-chart-options form-group\"><div class=checkbox><div ng-if=state.optLegendListDisplay class=\"ep-c3-legend-btn btn-group\" dropdown><button id=split-button type=button class=\"btn btn-default btn-sm\" popover-template=\"'src/components/ep.chart/ep-chart-c3-legends.html'\" popover-placement=bottom-left popover-title=Legend popover-trigger=\"\" ng-click=fnOnLegendList()>Legend</button></div><span ng-if=state.optStackedDisplay><label class=radio-inline><input name=optradio type=radio value=grouped ng-model=state.optStacked ng-change=fnOptStackedChanged()>Grouped</label><label class=radio-inline><input name=optradio type=radio value=stacked ng-model=state.optStacked ng-change=fnOptStackedChanged()>Stacked</label></span> <span ng-if=state.optDataFmtDisplay><label class=radio-inline><input name=optradio type=radio value=percent ng-model=state.optDataFmt ng-change=fnOptDataFmtChanged()>Percent</label><label class=radio-inline><input name=optradio type=radio value=value ng-model=state.optDataFmt ng-change=fnOptDataFmtChanged()>Value</label></span> <span ng-if=state.optZoomDisplay style=\"margin-left: 10px\"><label class=checkbox-inline><input type=checkbox ng-model=state.optZoom ng-change=fnOptZoomChanged()>Zoom</label></span> <span ng-if=\"state.optZoomDisplay && state.optZoom && state.optZoomTip\" ng-click=\"state.optZoomTip = false\" class=\"well ep-fadein-animation\" style=\"margin-left: 10px\">to zoom-in select an area on the lower chart; to zoom-out double click on the lower chart.</span> <span ng-if=state.optLegendDisplay style=\"margin-left: 5px\" class=ep-opt-legend><label class=checkbox-inline><a ng-click=fnOptLegendChanged()>{{state.optLegend ? 'Hide legend' : 'Show legend' }}</a></label></span> <span ng-if=\"!state.optLegendDisplay && state.criteriaHideLegend\" class=ep-opt-legend-hidden><label class=checkbox-inline>[legend hidden]</label></span></div></div><div style=background-color:white;height:100%><div id=chartc3 style=\"min-height:80px; width: 100%\"></div></div></div>"
+    "<div class=ep-chart-c3 ep-chart-id=state.chartId><div class=\"ep-chart-options form-group\"><div class=checkbox><div ng-if=state.optLegendListDisplay class=\"ep-c3-legend-btn btn-group\" dropdown><button id=split-button type=button class=\"btn btn-default btn-sm\" uib-popover-template=\"'src/components/ep.chart/ep-chart-c3-legends.html'\" popover-placement=bottom-left popover-title=Legend popover-trigger=\"\" ng-click=fnOnLegendList()>Legend</button></div><span ng-if=state.optStackedDisplay><label class=radio-inline><input name=optradio type=radio value=grouped ng-model=state.optStacked ng-change=fnOptStackedChanged()>Grouped</label><label class=radio-inline><input name=optradio type=radio value=stacked ng-model=state.optStacked ng-change=fnOptStackedChanged()>Stacked</label></span> <span ng-if=state.optDataFmtDisplay><label class=radio-inline><input name=optradio type=radio value=percent ng-model=state.optDataFmt ng-change=fnOptDataFmtChanged()>Percent</label><label class=radio-inline><input name=optradio type=radio value=value ng-model=state.optDataFmt ng-change=fnOptDataFmtChanged()>Value</label></span> <span ng-if=state.optZoomDisplay style=\"margin-left: 10px\"><label class=checkbox-inline><input type=checkbox ng-model=state.optZoom ng-change=fnOptZoomChanged()>Zoom</label></span> <span ng-if=\"state.optZoomDisplay && state.optZoom && state.optZoomTip\" ng-click=\"state.optZoomTip = false\" class=\"well ep-fadein-animation\" style=\"margin-left: 10px\">to zoom-in select an area on the lower chart; to zoom-out double click on the lower chart.</span> <span ng-if=state.optLegendDisplay style=\"margin-left: 5px\" class=ep-opt-legend><label class=checkbox-inline><a ng-click=fnOptLegendChanged()>{{state.optLegend ? 'Hide legend' : 'Show legend' }}</a></label></span> <span ng-if=\"!state.optLegendDisplay && state.criteriaHideLegend\" class=ep-opt-legend-hidden><label class=checkbox-inline>[legend hidden]</label></span></div></div><div class=ep-chart-div><div id=chartc3></div></div></div>"
   );
 
 }]);

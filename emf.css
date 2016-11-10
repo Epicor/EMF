@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.164 built: 09-11-2016
+ * version:1.0.10-dev.165 built: 09-11-2016
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -346,6 +346,14 @@
   max-height: 100%;
 }
 
+.ep-chart-c3 .ep-chart-div {
+  background-color: white;
+  height: 100%;
+}
+.ep-chart-c3 .ep-chart-div #chartc3 {
+  min-height: 80px;
+  width: 100%;
+}
 .ep-chart-c3 .c3-axis-y-label,
 .ep-chart-c3 .c3-axis-x-label {
   font-weight: bold;
