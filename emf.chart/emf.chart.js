@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.168 built: 10-11-2016
+ * version:1.0.10-dev.169 built: 10-11-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.168","built":"2016-11-10"};
+__ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.169","built":"2016-11-10"};
 
 (function() {
     'use strict';
@@ -14,6 +14,7 @@ __ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.168","built"
         'ep.sysconfig'
     ]);
 })();
+
 
 (function() {
     'use strict';
@@ -65,6 +66,13 @@ __ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.168","built"
     *       height : 'view' | 'window' | integer (px) | function | element | selector 
     *                this defines how the chart height is calculated. The width is responsive to the container
     *       heightOffset: 0 ( 25 - default) - an offset to the calculated height
+    *       legend: (bool) - (default - true) display legend option
+    *       zoom: (bool) - (default - true) display zoom option for appropriate charts
+    *       stacked: (bool) - (default - true) display stacked option for appropriate charts
+    *
+    *       showOptions: (bool) - (default - true) display options on top of the chart
+    *       autoHideLegends: (bool) - (default - true) auto hide legend when height is smaller than certain threshold 
+    *       legendHiddenText: (bool) - (default - [legend hidden]) text to display when legend is auto hidden
     *
     * @example
     *
@@ -125,7 +133,7 @@ __ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.168","built"
             '#dbdb8d', '#17becf', '#9edae5'];
 
         var cSubChartMinHeight = 400;
-        var cLegengHeightMin = 350;
+        var cLegendHeightMin = 350;
 
         function getChart(type) {
             return chartTypes[type] || baseChart;
@@ -156,7 +164,7 @@ __ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.168","built"
                     newHeight = el.outerHeight(true);
                 }
             }
-            var heightOffset = -25;
+            var heightOffset = (scope.settings.showOptions !== false) ? - 25 : 30;
             if (angular.isFunction(scope.settings.heightOffset)) {
                 heightOffset = scope.settings.heightOffset(newHeight);
             } else {
@@ -216,15 +224,16 @@ __ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.168","built"
             var isMultiYdata = (settings.data.yValues && settings.data.yValues.length > 1);
 
             scope.state.chartType = chart;
-            scope.state.optStackedDisplay = isMultiYdata && chart.stackable;
+            scope.state.optStackedDisplay = (settings.stacked !== false) && isMultiYdata && chart.stackable;
             scope.state.optDataFmtDisplay = (chart.category === 'pie');
-            scope.state.optZoomDisplay = (chart.category !== 'pie' && !chart.rotated);
+            scope.state.optZoomDisplay = (settings.zoom !== false) && (chart.category !== 'pie' && !chart.rotated);
 
-            scope.state.legendSupported = (chart.legend === true || isMultiYdata);
+            scope.state.legendSupported = (settings.legend !== false) && (chart.legend === true || isMultiYdata);
             scope.state.optLegendListDisplay = scope.state.optLegendDisplay = scope.state.legendSupported;
             var legendCount = chart.category === 'pie' ?
                 scope.settings.data.xValues.length : scope.settings.data.yValues.length;
-            scope.state.criteriaHideLegend = (legendCount > 50 || scope.state.chartHeight < cLegengHeightMin);
+            scope.state.criteriaHideLegend = (scope.settings.autoHideLegends !== false) &&
+                ((legendCount > 50) || (scope.state.chartHeight < cLegendHeightMin));
             if (scope.state.criteriaHideLegend) {
                 scope.state.optLegend = false;
                 scope.state.optLegendDisplay = false;
@@ -562,13 +571,13 @@ __ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.168","built"
             };
 
             $scope.checkShowLegendOption = function() {
-                if ($scope.state.legendSupported) {
+                if ($scope.state.legendSupported && $scope.settings.autoHideLegends !== false) {
                     //media query has met condition and hidden
                     //var isLegendHidden = (angular.element($scope.state.theElement.find('.ep-opt-legend')).css('display') === 'none');
                     var legendCount = $scope.state.chartType.category === 'pie' ?
                         $scope.settings.data.xValues.length : $scope.settings.data.yValues.length;
                     $scope.state.criteriaHideLegend =
-                        (legendCount > 50 || $scope.state.chartHeight < cLegengHeightMin);
+                        (legendCount > 50 || $scope.state.chartHeight < cLegendHeightMin);
                     if ($scope.state.criteriaHideLegend) {
                         $scope.state.optLegendDisplay = false;
                         if ($scope.state.optLegend) {
@@ -637,7 +646,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.chart/ep-chart-c3.html',
-    "<div class=ep-chart-c3 ep-chart-id=state.chartId><div class=\"ep-chart-options form-group\"><div class=checkbox><div ng-if=state.optLegendListDisplay class=\"ep-c3-legend-btn btn-group\" dropdown><button id=split-button type=button class=\"btn btn-default btn-sm\" uib-popover-template=\"'src/components/ep.chart/ep-chart-c3-legends.html'\" popover-placement=bottom-left popover-title=Legend popover-trigger=\"\" ng-click=fnOnLegendList()>Legend</button></div><span ng-if=state.optStackedDisplay><label class=radio-inline><input name=optradio type=radio value=grouped ng-model=state.optStacked ng-change=fnOptStackedChanged()>Grouped</label><label class=radio-inline><input name=optradio type=radio value=stacked ng-model=state.optStacked ng-change=fnOptStackedChanged()>Stacked</label></span> <span ng-if=state.optDataFmtDisplay><label class=radio-inline><input name=optradio type=radio value=percent ng-model=state.optDataFmt ng-change=fnOptDataFmtChanged()>Percent</label><label class=radio-inline><input name=optradio type=radio value=value ng-model=state.optDataFmt ng-change=fnOptDataFmtChanged()>Value</label></span> <span ng-if=state.optZoomDisplay style=\"margin-left: 10px\"><label class=checkbox-inline><input type=checkbox ng-model=state.optZoom ng-change=fnOptZoomChanged()>Zoom</label></span> <span ng-if=\"state.optZoomDisplay && state.optZoom && state.optZoomTip\" ng-click=\"state.optZoomTip = false\" class=\"well ep-fadein-animation\" style=\"margin-left: 10px\">to zoom-in select an area on the lower chart; to zoom-out double click on the lower chart.</span> <span ng-if=state.optLegendDisplay style=\"margin-left: 5px\" class=ep-opt-legend><label class=checkbox-inline><a ng-click=fnOptLegendChanged()>{{state.optLegend ? 'Hide legend' : 'Show legend' }}</a></label></span> <span ng-if=\"!state.optLegendDisplay && state.criteriaHideLegend\" class=ep-opt-legend-hidden><label class=checkbox-inline>[legend hidden]</label></span></div></div><div class=ep-chart-div><div id=chartc3></div></div></div>"
+    "<div class=ep-chart-c3 ep-chart-id=state.chartId><div class=\"ep-chart-options form-group\" ng-if=\"settings.showOptions !== false\"><div class=checkbox><div ng-if=state.optLegendListDisplay class=\"ep-c3-legend-btn btn-group\" dropdown><button id=split-button type=button class=\"btn btn-default btn-sm\" uib-popover-template=\"'src/components/ep.chart/ep-chart-c3-legends.html'\" popover-placement=bottom-left popover-title=Legend popover-trigger=\"\" ng-click=fnOnLegendList()>Legend</button></div><span ng-if=state.optStackedDisplay><label class=radio-inline><input name=optradio type=radio value=grouped ng-model=state.optStacked ng-change=fnOptStackedChanged()>Grouped</label><label class=radio-inline><input name=optradio type=radio value=stacked ng-model=state.optStacked ng-change=fnOptStackedChanged()>Stacked</label></span> <span ng-if=state.optDataFmtDisplay><label class=radio-inline><input name=optradio type=radio value=percent ng-model=state.optDataFmt ng-change=fnOptDataFmtChanged()>Percent</label><label class=radio-inline><input name=optradio type=radio value=value ng-model=state.optDataFmt ng-change=fnOptDataFmtChanged()>Value</label></span> <span ng-if=state.optZoomDisplay style=\"margin-left: 10px\"><label class=checkbox-inline><input type=checkbox ng-model=state.optZoom ng-change=fnOptZoomChanged()>Zoom</label></span> <span ng-if=\"state.optZoomDisplay && state.optZoom && state.optZoomTip\" ng-click=\"state.optZoomTip = false\" class=\"well ep-fadein-animation\" style=\"margin-left: 10px\">to zoom-in select an area on the lower chart; to zoom-out double click on the lower chart.</span> <span ng-if=state.optLegendDisplay style=\"margin-left: 5px\" class=ep-opt-legend><label class=checkbox-inline><a ng-click=fnOptLegendChanged()>{{state.optLegend ? 'Hide legend' : 'Show legend' }}</a></label></span> <span ng-if=\"!state.optLegendDisplay && state.criteriaHideLegend && state.legendSupported && settings.legendHiddenText !== ''\" class=ep-opt-legend-hidden><label class=checkbox-inline>{{settings.legendHiddenText || '[legend hidden]'}}</label></span></div></div><div class=ep-chart-div><div id=chartc3></div></div></div>"
   );
 
 }]);
