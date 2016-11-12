@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.173 built: 11-11-2016
+ * version:1.0.10-dev.174 built: 11-11-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.173","built":"2016-11-11"};
+__ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.174","built":"2016-11-11"};
 
 (function() {
     'use strict';
@@ -74,27 +74,21 @@ __ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.173","built"
     *       autoHideLegends: (bool) - (default - true) auto hide legend when height is smaller than certain threshold 
     *       legendHiddenText: (bool) - (default - [legend hidden]) text to display when legend is auto hidden
     *
+    *
+    *   Events:
+    *       CHART_HAS_RESIZED_EVENT - fired after chart resize
+    *       CHART_RESIZE_EVENT - this event will cause chart to resize
+    *
     * @example
     *
     *      <ep-chart-c3 settings="chartData"></ep-chart-c3>
     */
-    epChartC3Directive.$inject = ['$log', '$timeout', 'epShellService', 'epShellConstants'];
+    epChartC3Directive.$inject = ['$log', '$timeout', '$rootScope', 'epShellService', 'epShellConstants', 'epChartConstants'];
     angular.module('ep.chart').
         directive('epChartC3', epChartC3Directive);
 
-    function getChartIdGenerator() {
-        var id = 0;
-        return {
-            next: function() {
-                return id++;
-            }
-        };
-    }
-
     /*@ngInject*/
-    function epChartC3Directive($log, $timeout, epShellService, epShellConstants) {
-        var chartIdGenerator = getChartIdGenerator();
-
+    function epChartC3Directive($log, $timeout, $rootScope, epShellService, epShellConstants, epChartConstants) {
         var baseChart = {
             ctype: 'bar'
         };
@@ -183,6 +177,11 @@ __ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.173","built"
             if (isResize && scope.state.chart) {
                 scope.state.chart.resize({
                     height: ctrlHeight
+                });
+                //Let the world know that chart has resized
+                $rootScope.$emit(epChartConstants.CHART_HAS_RESIZED_EVENT, {
+                    settings: scope.settings,
+                    id: scope.state.chartId
                 });
             }
             scope.state.chartHeight = ctrlHeight;
@@ -448,13 +447,36 @@ __ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.173","built"
             });
         }
 
+        function onResizeEvent(scope) {
+            if (scope.state.$chartElement.is(':visible')) {
+                $timeout.cancel(scope.state.timeoutResize);
+                scope.state.timeoutResize = $timeout(function() {
+                    var changed = false;
+                    var width = getChartWidth(scope);
+                    if (Math.abs(width - scope.state.chartWidth) > 20) {
+                        scope.state.chartWidth = width;
+                        changed = true;
+                    }
+
+                    var ctrlHeight = getHeight(scope);
+                    if (Math.abs(ctrlHeight - scope.state.chartHeight) > 20) {
+                        changed = true;
+                    }
+                    if (changed) {
+                        scope.checkShowLegendOption();
+                    }
+                    setHeight(scope, true);
+                }, 250);
+            }
+        }
+
         function postCompile($scope, iElement) {
             $scope.state = {
                 theElement: iElement,
                 chartElement: angular.element(iElement).find('#chartc3'),
                 $chartElement: angular.element(angular.element(iElement).find('#chartc3')),
                 chart: null,
-                chartId: chartIdGenerator.next(),
+                chartId: $scope.settings.id || $scope.$id,
                 chartHeight: -1,
                 selectAllLegend: true,
 
@@ -594,29 +616,18 @@ __ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.173","built"
                 }
             };
 
-            epShellService.registerViewEvent('ep-resize-chart' + $scope.state.chartId,
+            epShellService.registerViewEvent('ep-resize-chart' + $scope.$id,
                 epShellConstants.SHELL_SIZE_CHANGE_EVENT, function() {
-                    if ($scope.state.$chartElement.is(':visible')) {
-                        $timeout.cancel($scope.state.timeoutResize);
-                        $scope.state.timeoutResize = $timeout(function() {
-                            var changed = false;
-                            var width = getChartWidth($scope);
-                            if (Math.abs(width - $scope.state.chartWidth) > 20) {
-                                $scope.state.chartWidth = width;
-                                changed = true;
-                            }
-
-                            var ctrlHeight = getHeight($scope);
-                            if (Math.abs(ctrlHeight - $scope.state.chartHeight) > 20) {
-                                changed = true;
-                            }
-                            if (changed) {
-                                $scope.checkShowLegendOption();
-                            }
-                            setHeight($scope, true);
-                        }, 250);
-                    }
+                    onResizeEvent($scope);
                 });
+
+            //Watch for an outside event to resize. If chartId is passed than chart will
+            //resize only if chartId is matched
+            $rootScope.$on(epChartConstants.CHART_RESIZE_EVENT, function(chartId) {
+                if (!chartId || chartId === $scope.state.chartId) {
+                    onResizeEvent($scope);
+                }
+            });
         }
 
         return {
@@ -635,6 +646,22 @@ __ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.173","built"
         };
     }
 }());
+
+/**
+ * @ngdoc object
+ * @name ep.chart.object:epChartConstants
+ * @description
+ * Constants for epChartConstants.
+ * ep.chart constants
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.chart').constant('epChartConstants', {
+        CHART_RESIZE_EVENT: 'CHART_RESIZE_EVENT',
+        CHART_HAS_RESIZED_EVENT: 'CHART_HAS_RESIZED_EVENT'
+    });
+})();
 
 //# sourceMappingURL=emf.chart.min.js.map
 angular.module('ep.templates').run(['$templateCache', function($templateCache) {
