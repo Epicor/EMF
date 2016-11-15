@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.181 built: 14-11-2016
+ * version:1.0.10-dev.182 built: 15-11-2016
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.181","built":"2016-11-14"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.182","built":"2016-11-15"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -2727,8 +2727,8 @@ app.directive('epCardTitle',
     'use strict';
 
     angular.module('ep.chart').constant('epChartConstants', {
-        CHART_RESIZE_EVENT: 'CHART_RESIZE_EVENT',
-        CHART_HAS_RESIZED_EVENT: 'CHART_HAS_RESIZED_EVENT'
+        CHART_RESIZE_EVENT: 'EP_CHART_RESIZE_EVENT',
+        CHART_HAS_RESIZED_EVENT: 'EP_CHART_HAS_RESIZED_EVENT'
     });
 })();
 
@@ -20365,6 +20365,19 @@ angular.module('ep.signature').directive('epSignature',
                 }
             }
             if (attr.href !== href) {
+                //add ep_theme_[theme.name] class to the body element
+                var bodyEl = $('body');
+                if (bodyEl.length && bodyEl.attr("class")) {
+                    //remove all previous ep_theme_* classes
+                    var classList = bodyEl.attr("class").split(/\s+/);
+                    for (var i = 0; i < classList.length; i++) {
+                        if (classList[i].indexOf('ep_theme_') === 0) {
+                            bodyEl.removeClass(classList[i]);
+                        }
+                    }
+                }
+                bodyEl.addClass('ep_theme_' + th.name);
+
                 attr.$set('href', href);
                 angular.element('#epThemeCustomHref').remove();
                 if (th) {

@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.181 built: 14-11-2016
+ * version:1.0.10-dev.182 built: 15-11-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.181","built":"2016-11-14"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.182","built":"2016-11-15"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -1915,6 +1915,19 @@ if (!epEmfGlobal) {
                 }
             }
             if (attr.href !== href) {
+                //add ep_theme_[theme.name] class to the body element
+                var bodyEl = $('body');
+                if (bodyEl.length && bodyEl.attr("class")) {
+                    //remove all previous ep_theme_* classes
+                    var classList = bodyEl.attr("class").split(/\s+/);
+                    for (var i = 0; i < classList.length; i++) {
+                        if (classList[i].indexOf('ep_theme_') === 0) {
+                            bodyEl.removeClass(classList[i]);
+                        }
+                    }
+                }
+                bodyEl.addClass('ep_theme_' + th.name);
+
                 attr.$set('href', href);
                 angular.element('#epThemeCustomHref').remove();
                 if (th) {
