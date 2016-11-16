@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.185 built: 15-11-2016
+ * version:1.0.10-dev.186 built: 15-11-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.185","built":"2016-11-15"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.186","built":"2016-11-15"};
 
 (function() {
     'use strict';
@@ -68,6 +68,191 @@ __ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.185","built":"
         'ep.templates'
     ]);
 })();
+
+'use strict';
+(function() {
+    angular.module('ep.token')
+        .service('epErpRestService', ['$resource', 'epTokenService', function ($resource, epTokenService) {
+            var serverUrl = '';
+
+            function call(method, path, query) {
+                var tkn = epTokenService.getToken();
+                if (!tkn) {
+                    return;
+                }
+                var url = serverUrl + (path ? path : '');
+                return $resource(url, query, {
+                    get: {
+                        method: 'GET', headers: {
+                            'Authorization': 'Bearer ' + tkn.token.AccessToken,
+                            'Content-Type': 'application/json'
+                        }
+                    }
+                });
+            }
+            return {
+                setUrl: function (url) {
+                    serverUrl = url;
+                },
+                get: function (path, query) {
+                    return call('GET', path, query).get();
+                },
+                post: function () {
+                    //POST and other methods TO BE Implemented when needed
+                }
+            };
+        }])
+})();
+(function() {
+'use strict';
+
+/**
+ * @ngdoc controller
+ * @name ep.token.controller:epLoginViewCtrl
+ * @description
+ * Represents the epLoginViewCtrl controller for the epLoginViewDirective
+ *
+ * @example
+ *
+ */
+    epLoginViewCtrl.$inject = ['$scope', 'epUtilsService', 'epModalDialogService', 'epTokenService'];
+    angular.module('ep.token')
+        .controller('epLoginViewCtrl', epLoginViewCtrl);
+
+    /*@ngInject*/
+    function epLoginViewCtrl($scope, epUtilsService, epModalDialogService, epTokenService) {
+
+        $scope.settings = {
+            username: '',
+            password: '',
+            serverName: '',
+            serverUrl: '',
+            tokenUrl: '',
+            token: {}
+        };
+
+        epUtilsService.copyProperties($scope.options, $scope.settings);
+
+        $scope.showHelp = function() {
+            epModalDialogService.showCustomDialog(
+                {
+                    title: 'Help',
+                    templateUrl: 'app/templates/help-template.html',
+                    size: 'fullscreen',
+                    closeButton: true,
+                    helpfile: 'app/helpfiles/Records-help.html'
+                }
+            );
+        };
+
+        $scope.loginUser = function() {
+            epModalDialogService.showProgress({ title: 'Logging in', message: '' });
+            if ($scope.settings.username === '' || $scope.settings.password === '') {
+                $scope.hasError = true;
+                $scope.status = $scope.settings.username === '' ? 'Oops.. There\'s no user name there!' : 'Oops.. You forgot to type your password!';
+                epModalDialogService.hide();
+                return;
+            } else if ($scope.settings.serverName === '') {
+                $scope.hasError = true;
+                $scope.status = 'Oops... Don\'t forget to type the Server.';
+                epModalDialogService.hide();
+                return;
+            }
+
+            //remove last '/'
+            var serverName = epUtilsService.ensureEndsWith($scope.settings.serverName, '/');
+            serverName = serverName.substring(0, serverName.length - 1);
+
+            $scope.settings.serverUrl = "https://" + serverName;
+            $scope.settings.tokenUrl = $scope.settings.serverUrl + "/TokenResource.svc/";
+
+            var tokenUser = { username: $scope.settings.username, password: $scope.settings.password };
+            var tokenOptions = { restUri: $scope.settings.tokenUrl };
+            epTokenService.login(tokenUser, tokenOptions).success(function(data) {
+                $scope.accessToken = data.AccessToken;
+                try {
+                    $scope.settings.token = epTokenService.getToken();
+                    if (!$scope.settings.token) {
+                        return;
+                    }
+                    $scope.options.username = $scope.settings.username;
+                    $scope.options.serverName = $scope.settings.serverName;
+                    if ($scope.options.fnOnGetToken) {
+                        var result = $scope.options.fnOnGetToken($scope.settings);
+                        if (result && result.hasError) {
+                            $scope.hasError = true;
+                            $scope.status = result.status;
+                            return;
+                        }
+                    }
+                    if ($scope.options.fnOnSuccess) {
+                        $scope.options.fnOnSuccess($scope.settings);
+                    }
+                } catch (err) {
+                    alert(err.message);
+                }
+            }).error(function(data, status, headers, config) {
+                var restServer = (config !== undefined && config !== null) ? config.url : '';
+                $scope.hasError = true;
+                $scope.status = (status == 401 ? "Please review the user or password." : "We couldn\'t connect to the server. Please review it.");
+            });
+            epModalDialogService.hide();
+        };
+
+        $scope.passwordKeyPress = function(keyEvent) {
+            $scope.hasError = false;
+            $scope.status = '';
+            var key = typeof event.which === "undefined" ? event.keyCode : event.which;
+            (key === 13) ? $scope.loginUser() : false;
+        }
+
+        $scope.clearWarning = function() {
+            $scope.hasError = false;
+            $scope.status = '';
+        }
+
+        $scope.showServer = function() {
+            $scope.showServerName = !$scope.showServerName;
+        }
+    }
+}());
+
+(function() {
+'use strict';
+/**
+* @ngdoc directive
+* @name ep.token.directive:epLoginView
+* @restrict E
+*
+* @description
+* Represents the epLoginView directive
+*
+*   The following are attributes (parameters) for the directive:
+*   # options {object} (required) - the object containing login options
+*       username {string} - can provide the user name
+*       password {string} - can provide the user password
+*       serverName {string} - the server name to connect (e.g. myMachine.myDomain/myErpServer)
+*       fnOnGetToken {function} - callback when we successfully received a token
+*       fnOnSuccess {function} - callback when we successfully logged in - if fnOnGetToken() did not error
+*
+* @example
+*/
+angular.module('ep.token').
+    directive('epLoginView', epLoginViewDirective);
+
+    /*@ngInject*/
+    function epLoginViewDirective() {
+        return {
+            restrict: 'E',
+            controller: 'epTokenCtrl',
+            templateUrl: 'src/components/ep.token/ep-login-view/ep-login-view.html',
+            controller: 'epLoginViewCtrl',
+            scope: {
+                options: '='
+            }
+        };
+    }
+}());
 
 /**
  * @ngdoc controller
@@ -1465,6 +1650,11 @@ __ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.185","built":"
 //# sourceMappingURL=emf.data.min.js.map
 angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   'use strict';
+
+  $templateCache.put('src/components/ep.token/ep-login-view/ep-login-view.html',
+    "<!--This is a partial for the ep-login-view directive --><div class=\"ep-login-view container-fluid\"><div class=ep-login-background><img src=app/ep-login-view/epicor_service.jpg alt=\"\"></div><div class=ep-login-up-box><div class=\"ep-login-box center-block\"><form class=form-group><div class=form-group><p class=ep-login-text><b>Please enter your credentials to sign in.</b></p><div class=input-group><span class=input-group-addon><i class=\"fa fa-user fa-fw\"></i></span> <input clearable name=username ng-keypress=clearWarning() id=username class=form-control ng-model=settings.username placeholder=\"User Name\"></div><br><div class=input-group><span class=input-group-addon><i class=\"fa fa-lock fa-fw\"></i></span> <input type=password clearable ng-keypress=passwordKeyPress($event) name=password id=password class=form-control ng-model=settings.password placeholder=\"Password\"></div><br><div ng-show=showServerName class=input-group><span class=input-group-addon><i class=\"fa fa-server fa-fw\"></i></span> <input spellcheck autocorrect=false clearable name=servername id=serverValue class=form-control ng-model=settings.serverName placeholder=\"Server\"></div><br><div ng-if=status class=\"text-center alert alert-warning\"><label>{{status}}</label><br></div><div><button class=\"btn btn-default pull-left\" ng-click=showServer()><i class=\"fa fa-cog fa-fw\"></i></button> <button type=submit class=\"btn btn-primary pull-right\" ng-click=loginUser()>Log in</button></div></div></form></div></div></div>"
+  );
+
 
   $templateCache.put('src/components/ep.token/ep-login/login.html',
     "<div class=thumbnail><div ng-if=\"showTitle !== false\" class=caption><h3 ng-hide=hasToken><span class=\"icon icon-enter\"></span> Login</h3><h3 ng-show=hasToken><span class=\"icon icon-exit\"></span> Logout</h3><hr></div><form role=form><div ng-if=\"showLabels === false\" class=input-group><span class=input-group-addon><i class=\"fa fa-user fa-fw\"></i></span> <input tabindex=1 id=user-name name=username required class=form-control ng-model=user.username placeholder=\"user name\"></div><div ng-if=\"showLabels !== false\" class=form-group><label for=user-name class=\"col-sm-2 control-label\">User:</label><div><input tabindex=1 id=user-name name=username required class=form-control ng-model=user.username placeholder=\"user name\"></div></div><div ng-if=\"showLabels === false\" class=form-group><div class=input-group><span class=input-group-addon><i class=\"fa fa-key fa-fw\"></i></span> <input tabindex=2 id=user-password name=password required class=form-control type=password placeholder=password ng-model=\"user.password\"></div></div><div ng-if=\"showLabels !== false\" class=form-group><label for=user-password class=\"col-sm-2 control-label\">Password:</label><div><input tabindex=2 id=user-password name=password required class=form-control type=password placeholder=password ng-model=\"user.password\"></div></div></form><div class=\"alert alert-danger\" id=validationSummary role=alert ng-show=hasError>{{status}}</div><div><button ng-if=\"showCancel !== false\" type=button class=\"btn btn-default\" ng-click=cancel()>Cancel</button> <button type=button class=\"btn btn-primary\" ng-hide=hasToken ng-click=login()>Login</button> <button type=button class=\"btn btn-primary\" ng-show=hasToken ng-click=logout()>Logout</button></div></div>"
