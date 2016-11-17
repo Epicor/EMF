@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.189 built: 16-11-2016
+ * version:1.0.10-dev.190 built: 16-11-2016
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.189","built":"2016-11-16"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.190","built":"2016-11-16"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -2693,7 +2693,7 @@ app.directive('epCardTitle',
             //Watch for an outside event to resize. If chartId is passed than chart will
             //resize only if chartId is matched
             $rootScope.$on(epChartConstants.CHART_RESIZE_EVENT, function(chartId) {
-                if (!chartId || chartId === $scope.state.chartId) {
+                if (angular.isString(chartId) && (!chartId || chartId === $scope.state.chartId)) {
                     onResizeEvent($scope);
                 }
             });
@@ -20376,7 +20376,9 @@ angular.module('ep.signature').directive('epSignature',
                         }
                     }
                 }
-                bodyEl.addClass('ep_theme_' + th.name);
+                if (bodyEl.length) {
+                    bodyEl.addClass('ep_theme_' + th.name);
+                }
 
                 attr.$set('href', href);
                 angular.element('#epThemeCustomHref').remove();
@@ -23473,7 +23475,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.token/ep-login-view/ep-login-view.html',
-    "<!--This is a partial for the ep-login-view directive --><div class=\"ep-login-view container-fluid\"><div class=ep-login-background><img src=app/ep-login-view/epicor_service.jpg alt=\"\"></div><div class=ep-login-up-box><div class=\"ep-login-box center-block\"><form class=form-group><div class=form-group><p class=ep-login-text><b>Please enter your credentials to sign in.</b></p><div class=input-group><span class=input-group-addon><i class=\"fa fa-user fa-fw\"></i></span> <input clearable name=username ng-keypress=clearWarning() id=username class=form-control ng-model=settings.username placeholder=\"User Name\"></div><br><div class=input-group><span class=input-group-addon><i class=\"fa fa-lock fa-fw\"></i></span> <input type=password clearable ng-keypress=passwordKeyPress($event) name=password id=password class=form-control ng-model=settings.password placeholder=\"Password\"></div><br><div ng-show=showServerName class=input-group><span class=input-group-addon><i class=\"fa fa-server fa-fw\"></i></span> <input spellcheck autocorrect=false clearable name=servername id=serverValue class=form-control ng-model=settings.serverName placeholder=\"Server\"></div><br><div ng-if=status class=\"text-center alert alert-warning\"><label>{{status}}</label><br></div><div><button class=\"btn btn-default pull-left\" ng-click=showServer()><i class=\"fa fa-cog fa-fw\"></i></button> <button type=submit class=\"btn btn-primary pull-right\" ng-click=loginUser()>Log in</button></div></div></form></div></div></div>"
+    "<!--This is a partial for the ep-login-view directive --><div class=\"ep-login-view container-fluid\"><div class=ep-login-background><div class=ep-background-image ng-if=!customImage></div><img class=ep-background-image ng-if=customImage src=customImage alt=\"\"></div><div class=ep-login-up-box><div class=\"ep-login-box center-block\"><form class=form-group><div class=form-group><p class=ep-login-text><b>Please enter your credentials to sign in.</b></p><div class=input-group><span class=input-group-addon><i class=\"fa fa-user fa-fw\"></i></span> <input clearable name=username ng-keypress=clearWarning() id=username class=form-control ng-model=settings.username placeholder=\"User Name\"></div><br><div class=input-group><span class=input-group-addon><i class=\"fa fa-lock fa-fw\"></i></span> <input type=password clearable ng-keypress=passwordKeyPress($event) name=password id=password class=form-control ng-model=settings.password placeholder=\"Password\"></div><br><div ng-show=showServerName class=input-group><span class=input-group-addon><i class=\"fa fa-server fa-fw\"></i></span> <input spellcheck autocorrect=false clearable name=servername id=serverValue class=form-control ng-model=settings.serverName placeholder=\"Server\"></div><br><div ng-if=status class=\"text-center alert alert-warning\"><label>{{status}}</label><br></div><div><button class=\"btn btn-default pull-left\" ng-click=showServer()><i class=\"fa fa-cog fa-fw\"></i></button> <button type=submit class=\"btn btn-primary pull-right\" ng-click=loginUser()>Log in</button></div></div></form></div></div></div>"
   );
 
 

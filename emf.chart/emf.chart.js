@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.189 built: 16-11-2016
+ * version:1.0.10-dev.190 built: 16-11-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.189","built":"2016-11-16"};
+__ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.190","built":"2016-11-16"};
 
 (function() {
     'use strict';
@@ -624,7 +624,7 @@ __ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.189","built"
             //Watch for an outside event to resize. If chartId is passed than chart will
             //resize only if chartId is matched
             $rootScope.$on(epChartConstants.CHART_RESIZE_EVENT, function(chartId) {
-                if (!chartId || chartId === $scope.state.chartId) {
+                if (angular.isString(chartId) && (!chartId || chartId === $scope.state.chartId)) {
                     onResizeEvent($scope);
                 }
             });
