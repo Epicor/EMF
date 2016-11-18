@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.196 built: 18-11-2016
+ * version:1.0.10-dev.197 built: 18-11-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.196","built":"2016-11-18"};
+__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.197","built":"2016-11-18"};
 
 (function() {
     'use strict';
@@ -969,11 +969,18 @@ angular.module('ep.record.editor', [
 
             //TO DO - validate buttons pre/post seq etc
             if (ctx.editor === 'template') {
+                var newScope = scope.$new(false, scope);
                 ctx.templateOptions = col.templateOptions || {
                     template: col.template,
-                    templateScope: scope
+                    templateScope: newScope
                 };
                 scope.editorDirective = '<ep-include options="ctx.templateOptions" user-data="ctx"></ep-include>';
+
+                newScope.$watch('value', function(newValue, oldValue) {
+                    if (newValue !== undefined && ctx.updatable && ctx.readonly !== true) {
+                        scope.value = newValue;
+                    }
+                });
             } else {
                 var directive = ctx.editor === 'custom' ? col.editorDirective : ('ep-' + ctx.editor + '-editor');
                 scope.editorDirective = '<' + directive + ' ctx=ctx value=value />';

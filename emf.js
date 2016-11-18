@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.196 built: 18-11-2016
+ * version:1.0.10-dev.197 built: 18-11-2016
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.196","built":"2016-11-18"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.197","built":"2016-11-18"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -15046,11 +15046,18 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
 
             //TO DO - validate buttons pre/post seq etc
             if (ctx.editor === 'template') {
+                var newScope = scope.$new(false, scope);
                 ctx.templateOptions = col.templateOptions || {
                     template: col.template,
-                    templateScope: scope
+                    templateScope: newScope
                 };
                 scope.editorDirective = '<ep-include options="ctx.templateOptions" user-data="ctx"></ep-include>';
+
+                newScope.$watch('value', function(newValue, oldValue) {
+                    if (newValue !== undefined && ctx.updatable && ctx.readonly !== true) {
+                        scope.value = newValue;
+                    }
+                });
             } else {
                 var directive = ctx.editor === 'custom' ? col.editorDirective : ('ep-' + ctx.editor + '-editor');
                 scope.editorDirective = '<' + directive + ' ctx=ctx value=value />';
