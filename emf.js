@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.214 built: 22-11-2016
+ * version:1.0.10-dev.215 built: 22-11-2016
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.214","built":"2016-11-22"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.215","built":"2016-11-22"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -21659,10 +21659,16 @@ angular.module('ep.signature').directive('epSignature',
             var serverName = epUtilsService.ensureEndsWith($scope.settings.serverName, '/');
             serverName = serverName.substring(0, serverName.length - 1);
 
-            $scope.settings.serverUrl = "https://" + serverName;
-            $scope.settings.tokenUrl = $scope.settings.serverUrl + "/TokenResource.svc/";
+            var svr = serverName.toLowerCase().trim();
+            var prefix = (svr.indexOf('https://') === 0 || svr.indexOf('http://') === 0) ? '' : 'https://';
+            $scope.settings.serverUrl = prefix + serverName;
+            $scope.settings.tokenUrl = $scope.settings.serverUrl + '/TokenResource.svc/';
 
-            var tokenUser = { username: $scope.settings.username, password: $scope.settings.password };
+            var tokenUser = {
+                username: $scope.settings.username,
+                password: $scope.settings.password,
+                serverUrl: $scope.settings.serverUrl
+            };
             var tokenOptions = { restUri: $scope.settings.tokenUrl };
             epTokenService.login(tokenUser, tokenOptions).success(function(data) {
                 $scope.accessToken = data.AccessToken;
@@ -22167,6 +22173,48 @@ angular.module('ep.token').
             }
         }
 
+        /**
+         * @ngdoc method
+         * @name resolveServerUrl
+         * @methodOf ep.token.factory:epTokenService
+         * @public
+         * @param {string} server - server name. can be with or without http prefix
+         * @param {string} svc - optional token service. defaults to 'TokenResource.svc'
+         *        if svc = '' then no service is appended; otherwise the value passed in
+         * @description
+         * Utility function to resolve server url.
+         *
+         * @returns {object} returns an object with following properties:
+         *      prefix - the 'http", 'https' prefix
+         *      serverName - server name without ending '/' and without prefix
+         *      serverUrl - server url like 'https://ServerName'
+         *      tokenUrl - token url like 'https://ServerName/svc'
+         */
+        function resolveServerUrl(server, svc){
+            var serverName = epUtilsService.ensureEndsWith(server, '/');
+            serverName = serverName.substring(0, serverName.length - 1);
+
+            var svr = serverName.toLowerCase().trim();
+            var prefix = 'https://';
+            if (svr.indexOf('https://') === 0) {
+                prefix = 'https://';
+                serverName = serverName.substring(prefix.length);
+            } else if (svr.indexOf('http://') === 0) {
+                prefix = 'http://';
+                serverName = serverName.substring(prefix.length);
+            }
+            var svcAppend = '';
+            if (svc !== '') {
+                svcAppend = (!svc) ? '/TokenResource.svc' : '/' + svc;
+            }
+            return {
+                prefix: prefix,
+                serverName: serverName,
+                serverUrl: prefix + serverName,
+                tokenUrl: prefix + serverName + svcAppend
+            };
+        }
+
         // private function to return the $http promise
         // sets the header and fires the post request.
         function fetchToken(user, uri) {
@@ -22249,6 +22297,7 @@ angular.module('ep.token').
             }
         }
 
+        // private function to login
         function doLogin(user, restUri) {
             logout();
             var uri = restUri || state.options.restUri;
@@ -22265,6 +22314,7 @@ angular.module('ep.token').
             });
         }
 
+        // private function to renew token
         function doRenewToken(tkn) {
             if (state.options.fnRenewToken) {
                 state.options.fnRenewToken(tkn);
@@ -22339,7 +22389,8 @@ angular.module('ep.token').
             hasToken: hasToken,
             getExpiresIn: getExpiresIn,
             renewToken: renewToken,
-            showLoginDialog: showLoginDialog
+            showLoginDialog: showLoginDialog,
+            resolveServerUrl: resolveServerUrl
         };
     }
 }());
