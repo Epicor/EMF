@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.224 built: 24-11-2016
+ * version:1.0.10-dev.225 built: 25-11-2016
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.224","built":"2016-11-24"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.225","built":"2016-11-25"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -3158,7 +3158,10 @@ app.directive('epCardTitle',
             replace: true,
             scope: {
                 data: '=',
-                handler: '='
+                handler: '&',
+                mainTitle: '@',
+                subTitle: '@',
+                id: '@'
             },
             templateUrl: 'src/components/ep.contacts.list/contacts_list.html',
             link: function(scope) {
@@ -3171,6 +3174,11 @@ app.directive('epCardTitle',
                     epContactsListService.toggleIndexes();
                 });
                 epContactsListService.toggleIndexes();
+
+
+                scope.getDetails = function(obj) {
+                    return obj;
+                };
 
                 scope.goToLink = function(id) {
                     if (id === '.') {
@@ -3220,13 +3228,14 @@ app.directive('epCardTitle',
          * To group the contacts list based on alphabets
          */
         function getGroupedList(listData) {
-            var sortedlist = $filter('orderBy')(listData);
+            var listName = [];
+            var sortedlist = _.sortBy(listData, 'Name');
             var groupedObj = {};
             var itemGroup = [];
             var currAlphabet = '';
             var prevAlphabet = '';
             for (var i = 0; i < sortedlist.length; i++) {
-                currAlphabet = sortedlist[i].substring(0, 1).toUpperCase();
+                currAlphabet = sortedlist[i].Name.substring(0, 1).toUpperCase();
 
                 //if a number, make group name as #
                 if (!isNaN(currAlphabet)) {
@@ -3237,6 +3246,7 @@ app.directive('epCardTitle',
                     itemGroup = [];
                 }
                 itemGroup.push(sortedlist[i]);
+
                 if (i === (sortedlist.length - 1)) {
                     groupedObj[currAlphabet] = itemGroup;
                     itemGroup = [];
@@ -3245,7 +3255,6 @@ app.directive('epCardTitle',
 
             }
             return groupedObj;
-
         }
 
         /**
@@ -23328,7 +23337,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.contacts.list/contacts_list.html',
-    "<div class=ep-contacts-list-container><div class=\"ep-list-search-container vertical-align\"><input ng-model=contactListSearch placeholder=Search class=form-control id=ep-contacts-list-search><label for=ep-contacts-list-search class=\"glyphicon glyphicon-search\" rel=tooltip title=search></label></div><div class=ep-contacts-list><div class=ep-contacts-list-inner><div ng-repeat=\"(key, value) in nameList\"><div class=ep-group-heading ng-if=\"filterVal.length > 0\" id=\"list-group-{{key == '#' ? 1 : (key | uppercase)}}\">{{key | uppercase}}</div><ul><li ng-repeat=\"name in filterVal = (value | filter: contactListSearch)\" ng-click=handler(name)>{{ name }}</li></ul></div></div></div><ul class=\"ep-index-list large-index-list\" ng-hide=contactListSearch><li ng-repeat=\"key in indexKeys\" ng-click=goToLink(key)>{{key}}</li></ul><ul class=\"ep-index-list small-index-list\" ng-hide=contactListSearch><li ng-repeat=\"key in smallIndexKeys track by $index\" ng-click=goToLink(key)><span ng-if=\"key == '.'\" class=\"fa fa-circle\"></span> <span ng-if=\"key !='.'\">{{key}}</span></li></ul></div>"
+    "<div class=ep-contacts-list-container><div class=\"ep-list-search-container vertical-align\"><input ng-model=contactListSearch placeholder=Search class=form-control id=ep-contacts-list-search><label for=ep-contacts-list-search class=\"glyphicon glyphicon-search\" rel=tooltip title=search></label></div><div class=ep-contacts-list><div class=ep-contacts-list-inner><div ng-repeat=\"(key, value) in nameList\"><div class=ep-group-heading ng-if=\"filterVal.length > 0\" id=\"list-group-{{key == '#' ? 1 : (key | uppercase)}}\">{{key | uppercase}}</div><ul><li ng-repeat=\"obj in filterVal = (value | filter: contactListSearch)\" ng-click=handler(obj)><div>{{ obj[mainTitle] }} <span class=ep-list-id>{{obj[id]}}</span></div><div class=ep-list-arrow><i class=\"fa fa-angle-right fa-2x\"></i></div><div>{{obj[subTitle]}}</div></li></ul></div></div></div><ul class=\"ep-index-list large-index-list\" ng-hide=contactListSearch><li ng-repeat=\"key in indexKeys\" ng-click=goToLink(key)>{{key}}</li></ul><ul class=\"ep-index-list small-index-list\" ng-hide=contactListSearch><li ng-repeat=\"key in smallIndexKeys track by $index\" ng-click=goToLink(key)><span ng-if=\"key == '.'\" class=\"fa fa-circle\"></span> <span ng-if=\"key !='.'\">{{key}}</span></li></ul></div>"
   );
 
 
