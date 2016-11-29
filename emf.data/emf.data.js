@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.238 built: 28-11-2016
+ * version:1.0.10-dev.239 built: 28-11-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.238","built":"2016-11-28"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.239","built":"2016-11-28"};
 
 (function() {
     'use strict';
@@ -115,12 +115,12 @@ __ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.238","built":"
  * @example
  *
  */
-    epLoginViewCtrl.$inject = ['$scope', 'epUtilsService', 'epModalDialogService', 'epTokenService'];
+    epLoginViewCtrl.$inject = ['$q', '$scope', 'epUtilsService', 'epModalDialogService', 'epTokenService'];
     angular.module('ep.token')
         .controller('epLoginViewCtrl', epLoginViewCtrl);
 
     /*@ngInject*/
-    function epLoginViewCtrl($scope, epUtilsService, epModalDialogService, epTokenService) {
+    function epLoginViewCtrl($q, $scope, epUtilsService, epModalDialogService, epTokenService) {
 
         $scope.settings = {
             username: '',
@@ -132,18 +132,6 @@ __ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.238","built":"
         };
 
         epUtilsService.copyProperties($scope.options, $scope.settings);
-
-        $scope.showHelp = function() {
-            epModalDialogService.showCustomDialog(
-                {
-                    title: 'Help',
-                    templateUrl: 'app/templates/help-template.html',
-                    size: 'fullscreen',
-                    closeButton: true,
-                    helpfile: 'app/helpfiles/Records-help.html'
-                }
-            );
-        };
 
         $scope.loginUser = function() {
             if ($scope.options.fnOnLogin) {
@@ -168,19 +156,14 @@ __ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.238","built":"
                 return;
             }
 
-            //remove last '/'
-            var serverName = epUtilsService.ensureEndsWith($scope.settings.serverName, '/');
-            serverName = serverName.substring(0, serverName.length - 1);
-
-            var svr = serverName.toLowerCase().trim();
-            var prefix = (svr.indexOf('https://') === 0 || svr.indexOf('http://') === 0) ? '' : 'https://';
-            $scope.settings.serverUrl = prefix + serverName;
-            $scope.settings.tokenUrl = $scope.settings.serverUrl + '/TokenResource.svc/';
-
+            var svc = epTokenService.resolveServerUrl($scope.settings.serverName);
+            $scope.settings.serverUrl = svc.serverUrl;
+            $scope.settings.tokenUrl = svc.tokenUrl;
             var tokenUser = {
                 username: $scope.settings.username,
                 password: $scope.settings.password,
-                serverUrl: $scope.settings.serverUrl
+                serverUrl: $scope.settings.serverUrl,
+                serverName: svc.serverName
             };
             var tokenOptions = { restUri: $scope.settings.tokenUrl };
             epTokenService.login(tokenUser, tokenOptions).success(function(data) {
@@ -193,14 +176,21 @@ __ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.238","built":"
                     $scope.options.username = $scope.settings.username;
                     $scope.options.serverName = $scope.settings.serverName;
                     if ($scope.options.fnOnGetToken) {
-                        var result = $scope.options.fnOnGetToken($scope.settings);
-                        if (result && result.hasError) {
+                        $q.when($scope.options.fnOnGetToken($scope.settings)).then(function(message) {
+                            if (message && angular.isString(message)) {
+                                $scope.hasError = true;
+                                $scope.status = message;
+                                return;
+                            }
+                            if ($scope.options.fnOnSuccess) {
+                                $scope.options.fnOnSuccess($scope.settings);
+                            }
+                        }, function(message) {
                             $scope.hasError = true;
-                            $scope.status = result.status;
+                            $scope.status = message;
                             return;
-                        }
-                    }
-                    if ($scope.options.fnOnSuccess) {
+                        });
+                    } else if ($scope.options.fnOnSuccess) {
                         $scope.options.fnOnSuccess($scope.settings);
                     }
                 } catch (err) {
@@ -247,7 +237,8 @@ __ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.238","built":"
 *       username {string} - can provide the user name
 *       password {string} - can provide the user password
 *       serverName {string} - the server name to connect (e.g. myMachine.myDomain/myErpServer)
-*       fnOnGetToken {function} - callback when we successfully received a token
+*       fnOnGetToken {function} - callback when we successfully received a token. This function can return
+*               either promise/reject or plain string error message
 *       fnOnSuccess {function} - callback when we successfully logged in - if fnOnGetToken() did not error
 *       fnOnLogin {function} - callback to completely override login action
 *       customImage {string} - optional url to custom image for the background image
@@ -262,7 +253,6 @@ angular.module('ep.token').
     function epLoginViewDirective() {
         return {
             restrict: 'E',
-            controller: 'epTokenCtrl',
             templateUrl: 'src/components/ep.token/ep-login-view/ep-login-view.html',
             controller: 'epLoginViewCtrl',
             scope: {

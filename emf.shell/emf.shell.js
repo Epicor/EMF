@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.238 built: 28-11-2016
+ * version:1.0.10-dev.239 built: 28-11-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.238","built":"2016-11-28"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.239","built":"2016-11-28"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -1691,6 +1691,29 @@ if (!epEmfGlobal) {
             setValueAtPath(settings, key.split('.'), value);
             commit();
         }
+
+        /**
+        * @ngdoc method
+        * @name merge
+        * @methodOf ep.local.storage.service:epLocalStorageService
+        * @public
+        * @description
+        * This applies only to objects. When we want to merge onto existing object new
+        * or existing properties
+        * @param {string} key represents the key that will be stored on the localCache
+        * @param {object} value represents the object that will be merged onto data stored on the localCache
+        */
+        function merge(key, value) {
+            /*jshint validthis: true */
+            var val = get(key);
+            if (val) {
+                angular.extend(val, value);
+            } else {
+                val = value;
+            }
+            update(key, val)
+        }
+
         /**
         * @ngdoc method
         * @name getOrAdd
@@ -1721,6 +1744,7 @@ if (!epEmfGlobal) {
         return {
             get: get,
             update: update,
+            merge: merge,
             getOrAdd: getOrAdd,
             clear: clear
         };
