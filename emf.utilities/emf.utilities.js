@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.241 built: 29-11-2016
+ * version:1.0.10-dev.242 built: 29-11-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.10-dev.241","built":"2016-11-29"};
+__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.10-dev.242","built":"2016-11-29"};
 
 (function() {
   'use strict';
@@ -1400,7 +1400,10 @@ angular.module('ep.signature').directive('epSignature',
     /*@ngInject*/
     function epIndexedDbService($log, $q, $window) {
 
-        var indexedDB = $window.indexedDB || $window.mozIndexedDB || $window.webkitIndexedDB || $window.msIndexedDB;
+        var indexedDB = $window.indexedDB ||
+                        $window.mozIndexedDB ||
+                        $window.webkitIndexedDB ||
+                        $window.msIndexedDB;
 
         /**
          * @ngdoc method
@@ -1588,7 +1591,8 @@ angular.module('ep.signature').directive('epSignature',
                     getPersistedCacheValue(key).then(function(result) {
                         if (result) {
                             cache[key] = result;
-                            $log.debug('Resolving service call data from persistent cache "' + cacheId + '" for key "' + key + '".');
+                            $log.debug('Resolving service call data from persistent cache "' + cacheId +
+                                '" for key "' + key + '".');
                             deferred.resolve(result);
                         } else {
                             $log.debug('Cached record "' + key + '" not found in persistent cache');

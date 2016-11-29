@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.241 built: 29-11-2016
+ * version:1.0.10-dev.242 built: 29-11-2016
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.241","built":"2016-11-29"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.242","built":"2016-11-29"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -214,6 +214,17 @@ angular.module('ep.card', [
  * Provides epicor modal dialo services
  */
 angular.module('ep.datagrid', ['ep.templates', 'ep.dropdown']);
+
+(function() {
+    'use strict';
+    /**
+     * @ngdoc overview
+     * @name ep.dock,panel
+     * @description
+     * This is the module that provides a flexible layout system.
+     */
+    angular.module('ep.dock.panel', []);
+})();
 
 /**
  * @ngdoc overview
@@ -1624,20 +1635,20 @@ angular.module('ep.signature', [
                     config.emfBuildInfo = __ep_build_info;
                 }
 
-                config.getEmfLibPath = function (libName) {
+                config.getEmfLibPath = function(libName) {
                     var ret = './lib/bower/emf';
                     if (config.emfBuildInfo[libName] && libName !== 'emf') {
                         ret = './lib/bower/emf/emf.' + config.emfBuildInfo[libName].libName
                     }
                     return ret;
-                }
+                };
                 config.getAssetsPath = function(libName, fileName) {
                     var ret = config.getEmfLibPath(libName) + '/assets';
                     if (fileName) {
                         ret += '/' + fileName;
                     }
                     return ret;
-                }
+                };
 
                 return config;
             }];
@@ -1835,7 +1846,8 @@ angular.module('ep.signature', [
                     getPersistedCacheValue(key).then(function(result) {
                         if (result) {
                             cache[key] = result;
-                            $log.debug('Resolving service call data from persistent cache "' + cacheId + '" for key "' + key + '".');
+                            $log.debug('Resolving service call data from persistent cache "' + cacheId +
+                                '" for key "' + key + '".');
                             deferred.resolve(result);
                         } else {
                             $log.debug('Cached record "' + key + '" not found in persistent cache');
@@ -6064,6 +6076,291 @@ angular.module('ep.datagrid').
         };
     }
 }());
+
+(function() {
+    'use strict';
+    angular.module('ep.dock.panel')
+    /**
+     * @ngdoc directive
+     * @name ep.dock.panel:epDockPanel
+     * @restrict EA
+     *
+     * @description
+     * Represents a component that presets a flexible layout system
+     *
+     * @example
+     *  <pre>
+     *      <ep-dock-panel>
+     *        <div dock="left" mode="stretch"><div anchors="top, left"></div></div>
+     *        <div dock="top" mode="stretch"><div anchors="top, bottom"></div></div>
+     *        <div dock="right" mode="stretch"><div anchors="bottom, left"></div></div>
+     *        <div dock="bottom" mode="stretch"><div anchors="top, right"></div></div>
+     *        <div dock="center" mode="stretch"><div anchors="bottom, left"></div></div>
+     *      </ep-dock-panel>
+     *  </pre>
+     */
+        .directive('epDockPanel', /* @ngInject */['$log', '$timeout', function($log, $timeout) {
+
+            epDockPanelCtrl.$inject = ['$scope'];
+            var zoneNames = ['top', 'bottom', 'left', 'right', 'center'];
+
+            /*@ngInject */
+            function epDockPanelCtrl($scope) {
+                $scope.id = _.uniqueId('dockPanel_');
+            }
+
+            function preLink($scope, el, attr) {
+            }
+
+            function processAnchors(zones) {
+
+                // This is a very naive anchor implementation that only works when there is
+                // only up to 4 children in the dock/zone
+                zoneNames.forEach(function(zone) {
+                    zones[zone].forEach(function($zone) {
+                        var children = $zone.children();
+                        children.each(function() {
+                            var $child = $(this);
+                            var anchorAttr = $child.attr('anchors');
+                            if (anchorAttr) {
+                                var anchors = {
+                                    top: false,
+                                    left: false,
+                                    right: false,
+                                    bottom: false
+                                };
+                                try {
+                                    var values = anchorAttr.split(',')
+                                        .map(function(v) {
+                                            return v.trim().toLowerCase();
+                                        });
+                                    values.forEach(function(v) {
+                                        anchors[v] = true;
+                                    })
+                                } catch (e) {
+                                    $log.warn('An error occurred while parsing the anchor ' +
+                                        'attribute for the zone "' + zone + '".');
+                                    $log(e);
+                                }
+                                var h = 0;
+                                if (anchors.top) {
+                                    h += 50;
+                                }
+                                if (anchors.bottom) {
+                                    h += 50;
+                                }
+                                if (h) {
+                                    $child.css('height', h + '%');
+                                }
+                                var w = 0;
+                                if (anchors.left) {
+                                    w += 50;
+                                }
+                                if (anchors.right) {
+                                    w += 50;
+                                }
+                                if (w) {
+                                    $child.css('width', w + '%');
+                                }
+                                if (anchors.right && !anchors.left) {
+                                    $child.css('margin-left', '50%');
+                                }
+                                if (anchors.bottom && !anchors.top) {
+                                    $child.css('margin-top', '50%');
+                                }
+                            }
+                        });
+
+                    })
+                });
+            }
+
+            // TODO: When we support multiple zones in a single doc, we need to get smarter
+            // about the height/width
+            function processZones(zones) {
+                zoneNames.forEach(function(zn) {
+                    zones[zn].forEach(function(zone) {
+                        zone.css('height', '100%');
+                        zone.css('width', '100%');
+                    })
+                })
+            }
+
+            function postLink($scope, el) {
+                var docks = {
+                    left: null,
+                    right: null,
+                    top: null,
+                    bottom: null,
+                    center: null
+                };
+                var zones = {
+                    left: [],
+                    right: [],
+                    top: [],
+                    bottom: [],
+                    center: []
+                };
+                var $el = $(el);
+                var content = $el.find('#transclusion');
+
+                function processContent(pos) {
+                    var dockElement = $el.find('.ep-dock-panel-' + pos);
+                    var dockContent = content.find('[dock=' + pos + ']');
+                    dockElement.epPanelMode = dockContent.attr('mode');
+                    dockElement.hasContent = !!dockContent.length;
+                    if (dockElement.epPanelMode === 'static') {
+                        dockElement.css('flex', '0 0');
+                    }
+                    docks[pos] = dockElement;
+                    zones[pos].push(dockContent);
+                    $scope[pos + 'Visible'] = dockContent.length;
+
+                    dockElement.append(dockContent);
+                }
+
+                var $cc = $el.find('.ep-dock-panel-cross-axis');
+                var children = content.children();
+                var firstPos = children.attr('dock');
+                var topFirst = false;
+                // if the first dock element has a "top" or "bottom" dock attribute, then the top & bottom will
+                // span the whole width of the container, otherwise, the left and right will span the
+                // whole height of the container
+                if (firstPos === 'top' || firstPos === 'bottom') {
+                    topFirst = true;
+                    // The top & bottom win
+                    $el.css('flex-flow', 'column');
+                    $el.find('.ep-dock-panel-top').appendTo($el);
+                    $el.find('.ep-dock-panel-bottom').appendTo($el);
+
+                    $cc.css('flex-flow', 'row');
+                    $el.find('.ep-dock-panel-left').appendTo($cc);
+                    $el.find('.ep-dock-panel-right').appendTo($cc);
+
+                } else {
+                    // The left & right win
+                    $el.css('flex-flow', 'row');
+                    $el.find('.ep-dock-panel-left').appendTo($el);
+                    $el.find('.ep-dock-panel-right').appendTo($el);
+
+                    $cc.css('flex-flow', 'column');
+                    $el.find('.ep-dock-panel-top').appendTo($cc);
+                    $el.find('.ep-dock-panel-bottom').appendTo($cc);
+                }
+
+                zoneNames.forEach(processContent);
+
+                // count how many zones there are that are set to "stretch"
+                var flex;
+                // set each docked element to stretch the correct amount
+                if (topFirst) {
+                    // if topFirst is true, then the main axis is the y-axis, and the cross axis is the x-axis
+                    // the flex count will be 0, 1, 2, or 3 depending on how  many sections
+                    // (out of top, center, and bottom) have their mode set to stretch
+                    c =
+                        (docks.top.hasContent && docks.top.epPanelMode === 'stretch' ? 1 : 0) +
+                        ((docks.left.hasContent || docks.center.hasContent || docks.right.hasContent) ? 1 : 0) +
+                        (docks.bottom.hasContent && docks.bottom.epPanelMode === 'stretch' ? 1 : 0);
+
+                    if (c) {
+                        flex = 100 / c;
+                        // set the flex value for the top row
+                        if (docks.top.hasContent && docks.top.epPanelMode === 'stretch') {
+                            docks.top.css('flex', '1 1 ' + flex + '%');
+                            docks.top.css('height', flex + '%');
+                        }
+                        // set the flex value for the center (cross-axis) row
+                        if (docks.left.hasContent || docks.center.hasContent || docks.right.hasContent) {
+
+                            $cc.css('flex', '1 1 ' + flex + '%');
+                            $cc.css('height', flex + '%');
+                            // we need to run the same calculation for the cross-axis
+                            ic = (docks.left.hasContent && docks.left.epPanelMode === 'stretch' ? 1 : 0) +
+                                (docks.center.hasContent && docks.center.epPanelMode === 'stretch' ? 1 : 0) +
+                                (docks.right.hasContent && docks.right.epPanelMode === 'stretch' ? 1 : 0);
+                            innerFlex = 100 / ic;
+                            if (docks.left.hasContent && docks.left.epPanelMode === 'stretch') {
+                                docks.left.css('flex', '1 1 ' + innerFlex + '%');
+                                docks.left.css('width', innerFlex + '%');
+                            }
+                            if (docks.center.hasContent && docks.center.epPanelMode === 'stretch') {
+                                docks.center.css('flex', '1 1 ' + innerFlex + '%');
+                                docks.center.css('width', innerFlex + '%');
+                            }
+                            if (docks.right.hasContent && docks.right.epPanelMode === 'stretch') {
+                                docks.right.css('flex', '1 1 ' + innerFlex + '%');
+                                docks.right.css('width', innerFlex + '%');
+                            }
+                        }
+
+                        // set the flex value for the bottom row
+                        if (docks.bottom.hasContent && docks.bottom.epPanelMode === 'stretch') {
+                            docks.bottom.css('flex', '1 1 ' + flex + '%');
+                            docks.bottom.css('height', flex + '%');
+                        }
+                    }
+
+                } else {
+                    // if topFirst is false, then the main axis is the x-axis, and the cross axis is
+                    // the y- axis. The flex count will be 0, 1, 2, or 3 depending on how  many sections
+                    // (out of left, center, and right) have their mode set to stretch.
+                    var c =
+                        (docks.left.hasContent && docks.left.epPanelMode === 'stretch' ? 1 : 0) +
+                        ((docks.top.hasContent || docks.center.hasContent || docks.bottom.hasContent) ? 1 : 0) +
+                        (docks.right.hasContent && docks.right.epPanelMode === 'stretch' ? 1 : 0);
+
+                    if (c) {
+                        flex = 100 / c;
+                        // set the flex value for the left side
+                        if (docks.left.hasContent && docks.left.epPanelMode === 'stretch') {
+                            docks.left.css('flex', '1 1 ' + flex + '%');
+                        }
+                        // set the flex value for the center (cross axis)
+                        if (docks.top.hasContent || docks.center.hasContent || docks.bottom.hasContent) {
+                            $cc.css('flex', '1 1 ' + flex + '%');
+                            // set the flex values for the top, center, and bottom
+                            var ic = (docks.top.hasContent && docks.top.epPanelMode === 'stretch' ? 1 : 0) +
+                                (docks.center.hasContent && docks.center.epPanelMode === 'stretch' ? 1 : 0) +
+                                (docks.bottom.hasContent && docks.bottom.epPanelMode === 'stretch' ? 1 : 0);
+                            var innerFlex = 100 / ic;
+                            if (docks.top.hasContent && docks.top.epPanelMode === 'stretch') {
+                                docks.top.css('flex', '1 1 ' + innerFlex + '%');
+                            }
+                            if (docks.center.hasContent && docks.center.epPanelMode === 'stretch') {
+                                docks.center.css('flex', '1 1 ' + innerFlex + '%');
+                            }
+                            if (docks.bottom.hasContent && docks.bottom.epPanelMode === 'stretch') {
+                                docks.bottom.css('flex', '1 1 ' + innerFlex + '%');
+                            }
+
+                        }
+                        // set the flex value for the right side
+                        if (docks.right.hasContent && docks.right.epPanelMode === 'stretch') {
+                            docks.right.css('flex', '1 1 ' + flex + '%');
+                        }
+                    }
+                }
+                $timeout(function(){
+                    processZones(zones);
+                    processAnchors(zones);
+                });
+                
+            }
+
+            return {
+                restrict: 'E',
+                replace: true,
+                templateUrl: 'src/components/ep.dock.panel/epDockPanel.html',
+                controller: epDockPanelCtrl,
+                transclude: true,
+                link: {
+                    pre: preLink,
+                    post: postLink
+                }
+            }
+        }])
+
+})();
 
 /**
  * @ngdoc service
@@ -11236,7 +11533,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
     /*@ngInject*/
     function epIndexedDbService($log, $q, $window) {
 
-        var indexedDB = $window.indexedDB || $window.mozIndexedDB || $window.webkitIndexedDB || $window.msIndexedDB;
+        var indexedDB = $window.indexedDB ||
+                        $window.mozIndexedDB ||
+                        $window.webkitIndexedDB ||
+                        $window.msIndexedDB;
 
         /**
          * @ngdoc method
@@ -17351,8 +17651,7 @@ angular.module('ep.record.editor').
                 function sendResizeEvent() {
                     if (isMediaModeLarge()) {
                         showLeftSidebar();
-                    }
-                    else {
+                    } else {
                         hideLeftSidebar();
                     }
                     notifySizeChanged('size');
@@ -17374,7 +17673,8 @@ angular.module('ep.record.editor').
                             if (complete) {
                                 //place here whatever needs to be initialized after initComplete
                                 if (angular.module('ep.embedded.apps')) {
-                                    epUtilsService.getService('epEmbeddedAppsService', true).then(function(epEmbeddedAppsService) {
+                                    epUtilsService.getService('epEmbeddedAppsService', true)
+                                        .then(function(epEmbeddedAppsService) {
                                         if (epEmbeddedAppsService) {
                                             epEmbeddedAppsService.initialize();
                                         }
@@ -22820,12 +23120,9 @@ angular.module('ep.token').
  */
 (function() {
     'use strict';
-
     epUtilsService.$inject = ['$document', '$log', '$q', '$timeout'];
     angular.module('ep.utils')
         .service('epUtilsService', epUtilsService);
-
-
     /*@ngInject*/
     function epUtilsService($document, $log, $q,  $timeout) {
         /**
@@ -22912,7 +23209,7 @@ angular.module('ep.token').
          * but only when new property is provided.
          * @param {object} source - object source from which properties are copied
          * @param {object} destination - object target to which properties are copied
-         * @param {bool} override - if false, then existing properties in source are not overriden
+         * @param {boolean} override - if false, then existing properties in source are not overriden
          * @returns {object} copied object
          */
         function copyProperties(source, destination, override) {
@@ -22927,7 +23224,7 @@ angular.module('ep.token').
                         if (!angular.isObject(destination[propName])) {
                             destination[propName] = {};
                         }
-                        copyProperties(source[propName], destination[propName]);
+                        copyProperties(source[propName], destination[propName], override);
                     } else {
                         if (override !== false || (destination[propName] === undefined)) {
                             destination[propName] = source[propName];
@@ -23183,7 +23480,7 @@ angular.module('ep.token').
                     $log.error('Failed to retrieve requested service:' + name + '\nDetails:' + e.message);
                 }
                 return ret;
-            }
+            };
             if (defer) {
                 var deferred = $q.defer();
                 $timeout(function() {
@@ -23377,6 +23674,11 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
   $templateCache.put('src/components/ep.datagrid/ep.datagrid.json/ep-datagrid-json.html',
     "<div class=\"form-group ep-datagrid-simple\" ng-class=gridClass><ep-data-grid ep-data-grid-on-init=onDataGrid(factory)></ep-data-grid></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.dock.panel/epDockPanel.html',
+    "<div class=\"ep-dock-panel ep-fullscreen\" id={{panelId}}><div id={{id}}_left class=\"ep-dock-panel-left ep-fullscreen\" ng-show=leftVisible></div><div id={{id}}_right class=\"ep-dock-panel-right ep-fullscreen\" ng-show=rightVisible></div><div id={{id}}_top class=\"ep-dock-panel-top ep-fullscreen\" ng-show=topVisible></div><div id={{id}}_bottom class=\"ep-dock-panel-bottom ep-fullscreen\" ng-show=bottomVisible></div><div id={{id}}_cross class=\"ep-dock-panel-cross-axis ep-fullscreen\" ng-show=centerVisible><div id={{id}}_center class=\"ep-dock-panel-center ep-fullscreen\"></div></div><div ng-show=false id=transclusion ng-transclude></div></div>"
   );
 
 

@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.241 built: 29-11-2016
+ * version:1.0.10-dev.242 built: 29-11-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.241","built":"2016-11-29"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.242","built":"2016-11-29"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -470,12 +470,9 @@ if (!epEmfGlobal) {
  */
 (function() {
     'use strict';
-
     epUtilsService.$inject = ['$document', '$log', '$q', '$timeout'];
     angular.module('ep.utils')
         .service('epUtilsService', epUtilsService);
-
-
     /*@ngInject*/
     function epUtilsService($document, $log, $q,  $timeout) {
         /**
@@ -562,7 +559,7 @@ if (!epEmfGlobal) {
          * but only when new property is provided.
          * @param {object} source - object source from which properties are copied
          * @param {object} destination - object target to which properties are copied
-         * @param {bool} override - if false, then existing properties in source are not overriden
+         * @param {boolean} override - if false, then existing properties in source are not overriden
          * @returns {object} copied object
          */
         function copyProperties(source, destination, override) {
@@ -577,7 +574,7 @@ if (!epEmfGlobal) {
                         if (!angular.isObject(destination[propName])) {
                             destination[propName] = {};
                         }
-                        copyProperties(source[propName], destination[propName]);
+                        copyProperties(source[propName], destination[propName], override);
                     } else {
                         if (override !== false || (destination[propName] === undefined)) {
                             destination[propName] = source[propName];
@@ -833,7 +830,7 @@ if (!epEmfGlobal) {
                     $log.error('Failed to retrieve requested service:' + name + '\nDetails:' + e.message);
                 }
                 return ret;
-            }
+            };
             if (defer) {
                 var deferred = $q.defer();
                 $timeout(function() {
@@ -942,20 +939,20 @@ if (!epEmfGlobal) {
                     config.emfBuildInfo = __ep_build_info;
                 }
 
-                config.getEmfLibPath = function (libName) {
+                config.getEmfLibPath = function(libName) {
                     var ret = './lib/bower/emf';
                     if (config.emfBuildInfo[libName] && libName !== 'emf') {
                         ret = './lib/bower/emf/emf.' + config.emfBuildInfo[libName].libName
                     }
                     return ret;
-                }
+                };
                 config.getAssetsPath = function(libName, fileName) {
                     var ret = config.getEmfLibPath(libName) + '/assets';
                     if (fileName) {
                         ret += '/' + fileName;
                     }
                     return ret;
-                }
+                };
 
                 return config;
             }];
@@ -4651,8 +4648,7 @@ function() {
                 function sendResizeEvent() {
                     if (isMediaModeLarge()) {
                         showLeftSidebar();
-                    }
-                    else {
+                    } else {
                         hideLeftSidebar();
                     }
                     notifySizeChanged('size');
@@ -4674,7 +4670,8 @@ function() {
                             if (complete) {
                                 //place here whatever needs to be initialized after initComplete
                                 if (angular.module('ep.embedded.apps')) {
-                                    epUtilsService.getService('epEmbeddedAppsService', true).then(function(epEmbeddedAppsService) {
+                                    epUtilsService.getService('epEmbeddedAppsService', true)
+                                        .then(function(epEmbeddedAppsService) {
                                         if (epEmbeddedAppsService) {
                                             epEmbeddedAppsService.initialize();
                                         }
