@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.240 built: 28-11-2016
+ * version:1.0.10-dev.241 built: 29-11-2016
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -1411,6 +1411,23 @@
   cursor: pointer;
   padding: 10px 10px 5px 5px;
 }
+.ep-modaldialog.ep-modaldialog-custom .my-header {
+  position: fixed;
+  top: 0;
+  width: 100%;
+  z-index: 1;
+}
+.ep-modaldialog.ep-modaldialog-custom .my-dialog {
+  height: 400px;
+  overflow-y: scroll;
+  margin: 30px 0px 110px 0px;
+}
+.ep-modaldialog.ep-modaldialog-custom .my-footer {
+  position: fixed;
+  bottom: 0;
+  width: 100%;
+  background-color: white;
+}
 .ep-modaldialog.ep-modaldialog-custom .modal-footer .btn {
   min-width: 70px;
   /*so that btn is not too small*/
@@ -1455,6 +1472,9 @@
 .ep-modaldialog .ep-modaldialog-error .ep-dlg-icon {
   display: block;
 }
+.ep-modaldialog .ep-modaldialog-error.my-error-dialog {
+  margin: 50px 0px 0px 0px;
+}
 /* modal dialog size. fullscreen class or responsive to fullscreen */
 @media screen and (max-width: 500px), screen and (max-height: 500px) {
   .ep-modal-window .modal-dialog {
@@ -1475,11 +1495,19 @@
     box-shadow: none;
     overflow: auto;
   }
+  .ep-modaldialog.ep-modaldialog-custom .my-dialog {
+    margin: 30px 0px 110px 0px;
+    height: 100%;
+    overflow-y: hidden;
+  }
+  .ep-modaldialog .ep-modaldialog-error .my-error-dialog {
+    margin: 50px 0px 0px 0px;
+  }
 }
 .ep-modal-window.ep-fullscreen .modal-dialog {
   position: fixed;
   width: 100%;
-  height: 100%;
+  height: 100% !important;
   padding: 0;
   margin: 0;
 }
@@ -1493,6 +1521,9 @@
   border-radius: 0;
   box-shadow: none;
   overflow: auto;
+}
+.ep-modal-window.ep-fullscreen .my-dialog {
+  height: 100%;
 }
 
 .ep-mlm-container {
