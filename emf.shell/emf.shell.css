@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.244 built: 29-11-2016
+ * version:1.0.10-dev.245 built: 30-11-2016
 */
 .ep-ease-animation {
   -moz-backface-visibility: hidden;
@@ -380,7 +380,7 @@ a:focus {
 .ep-modaldialog.ep-modaldialog-custom .my-dialog {
   height: 400px;
   overflow-y: scroll;
-  margin: 30px 0px 110px 0px;
+  margin: 70px 10px 10px 10px;
 }
 .ep-modaldialog.ep-modaldialog-custom .my-footer {
   position: fixed;
@@ -433,7 +433,7 @@ a:focus {
   display: block;
 }
 .ep-modaldialog .ep-modaldialog-error.my-error-dialog {
-  margin: 50px 0px 0px 0px;
+  margin: 65px 0px 0px 0px;
 }
 /* modal dialog size. fullscreen class or responsive to fullscreen */
 @media screen and (max-width: 500px), screen and (max-height: 500px) {
@@ -456,12 +456,12 @@ a:focus {
     overflow: auto;
   }
   .ep-modaldialog.ep-modaldialog-custom .my-dialog {
-    margin: 30px 0px 110px 0px;
+    margin: 70px 10px 10px 0px;
     height: 100%;
     overflow-y: hidden;
   }
   .ep-modaldialog .ep-modaldialog-error .my-error-dialog {
-    margin: 50px 0px 0px 0px;
+    margin: 65px 0px 0px 0px;
   }
 }
 .ep-modal-window.ep-fullscreen .modal-dialog {
