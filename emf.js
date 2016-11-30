@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.246 built: 30-11-2016
+ * version:1.0.10-dev.247 built: 30-11-2016
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.246","built":"2016-11-30"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.247","built":"2016-11-30"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -1740,8 +1740,10 @@ angular.module('ep.signature', [
         },
 
         attachFastClick: function() {
-            FastClick.attach(document.body);
-            this.state.messages.push('FastClick attached.');
+            if (typeof module === 'undefined') {
+                FastClick(document.body);
+                this.state.messages.push('FastClick attached.');
+            }
         },
 
         debugOutput: function(continuation) {
@@ -8645,9 +8647,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             initialized = true;
                             deferred.resolve(features);
                         }, false);
-                    } else if (window.require !== undefined && (require('nw.gui') && process)) {
+                    } else if (typeof module !== 'undefined') {
                         features.platform = {
-                            app: 'NWJS',
+                            app: 'Electron',
                             os: process.platform
                         };
                         deferred.resolve(features);
