@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.254 built: 02-12-2016
+ * version:1.0.10-dev.255 built: 02-12-2016
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -1385,6 +1385,9 @@
 }
 */
 /* modaldialog-custom.html */
+.ep-modaldialog.ep-modaldialog-custom {
+  height: 100%;
+}
 .ep-modaldialog.ep-modaldialog-custom .modal-header .modal-title {
   min-height: 40px;
   padding: 8px 0 0 8px;
@@ -1411,18 +1414,18 @@
   cursor: pointer;
   padding: 10px 10px 5px 5px;
 }
-.ep-modaldialog.ep-modaldialog-custom .my-header {
+.ep-modaldialog.ep-modaldialog-custom .ep-modal-header {
   position: fixed;
   top: 0;
   width: 100%;
   z-index: 1;
 }
-.ep-modaldialog.ep-modaldialog-custom .my-dialog {
-  height: 400px;
+.ep-modaldialog.ep-modaldialog-custom .ep-modal-area {
   overflow-y: scroll;
+  height: 85%;
   margin: 70px 10px 10px 10px;
 }
-.ep-modaldialog.ep-modaldialog-custom .my-footer {
+.ep-modaldialog.ep-modaldialog-custom .ep-modal-footer {
   position: fixed;
   bottom: 0;
   width: 100%;
@@ -1475,6 +1478,15 @@
 .ep-modaldialog .ep-modaldialog-error.my-error-dialog {
   margin: 65px 0px 0px 0px;
 }
+.ep-modal-window .modal-dialog {
+  position: relative;
+  height: 85%;
+}
+.ep-modal-window .modal-content {
+  position: relative;
+  height: 100%;
+  width: 601.5px;
+}
 /* modal dialog size. fullscreen class or responsive to fullscreen */
 @media screen and (max-width: 500px), screen and (max-height: 500px) {
   .ep-modal-window .modal-dialog {
@@ -1494,11 +1506,11 @@
     border-radius: 0;
     box-shadow: none;
     overflow: auto;
+    width: 100%;
   }
-  .ep-modaldialog.ep-modaldialog-custom .my-dialog {
+  .ep-modaldialog.ep-modaldialog-custom .ep-modal-area {
     margin: 70px 10px 10px 0px;
-    height: 100%;
-    overflow-y: hidden;
+    overflow-y: scroll;
   }
   .ep-modaldialog .ep-modaldialog-error .my-error-dialog {
     margin: 65px 0px 0px 0px;
@@ -1521,8 +1533,9 @@
   border-radius: 0;
   box-shadow: none;
   overflow: auto;
+  width: 100%;
 }
-.ep-modal-window.ep-fullscreen .my-dialog {
+.ep-modal-window.ep-fullscreen .ep-modal-area {
   height: 100%;
 }
 
