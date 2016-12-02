@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.251 built: 01-12-2016
+ * version:1.0.10-dev.252 built: 01-12-2016
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.251","built":"2016-12-01"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.252","built":"2016-12-01"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -1741,7 +1741,7 @@ angular.module('ep.signature', [
 
         attachFastClick: function() {
             if (typeof module === 'undefined') {
-                FastClick(document.body);
+                FastClick.attach(document.body);
                 this.state.messages.push('FastClick attached.');
             }
         },
@@ -23680,7 +23680,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.dock.panel/epDockPanel.html',
-    "<div class=\"ep-dock-panel ep-fullscreen\" id={{panelId}}><div id={{id}}_left class=\"ep-dock-panel-left ep-fullscreen\" ng-show=leftVisible></div><div id={{id}}_right class=\"ep-dock-panel-right ep-fullscreen\" ng-show=rightVisible></div><div id={{id}}_top class=\"ep-dock-panel-top ep-fullscreen\" ng-show=topVisible></div><div id={{id}}_bottom class=\"ep-dock-panel-bottom ep-fullscreen\" ng-show=bottomVisible></div><div id={{id}}_cross class=\"ep-dock-panel-cross-axis ep-fullscreen\" ng-show=centerVisible><div id={{id}}_center class=\"ep-dock-panel-center ep-fullscreen\"></div></div><div ng-show=false id=transclusion ng-transclude></div></div>"
+    "<div class=\"ep-dock-panel ep-fullscreen\" id={{panelId}}><div id={{id}}_left class=\"ep-dock-panel-left ep-fullscreen\" ng-show=leftVisible></div><div id={{id}}_right class=\"ep-dock-panel-right ep-fullscreen\" ng-show=rightVisible></div><div id={{id}}_top class=\"ep-dock-panel-top ep-fullscreen\" ng-show=topVisible></div><div id={{id}}_bottom class=\"ep-dock-panel-bottom ep-fullscreen\" ng-show=bottomVisible></div><div id={{id}}_cross class=\"ep-dock-panel-cross-axis ep-fullscreen\"><div id={{id}}_center class=\"ep-dock-panel-center ep-fullscreen\" ng-show=centerVisible></div></div><div ng-show=false id=transclusion ng-transclude></div></div>"
   );
 
 
