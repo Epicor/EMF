@@ -2,7 +2,7 @@
     "name": "emf",
     "description": "Epicor Mobile Framework",
     "author": "Epicor Software Corporation",
-    "version": "1.0.10-dev.255",
+    "version": "1.0.10-dev.256",
     "ep-build": "366",
     "ep-build-date": "2016-11-03",
     "publishConfig": {
@@ -25,6 +25,7 @@
         "grunt-contrib-watch": "0.*.*",
         "grunt-dom-munger": "~3.4",
         "grunt-force-task": "~1.0.0",
+        "grunt-ftpush": "^0.3.3",
         "grunt-git": "0.*.*",
         "grunt-jscs": "^2.1.0",
         "grunt-karma": "0.*.*",

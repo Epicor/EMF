@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.255 built: 02-12-2016
+ * version:1.0.10-dev.256 built: 02-12-2016
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -1422,8 +1422,9 @@
 }
 .ep-modaldialog.ep-modaldialog-custom .ep-modal-area {
   overflow-y: scroll;
-  height: 85%;
-  margin: 70px 10px 10px 10px;
+  height: 100%;
+  padding: 70px 20px 0 20px;
+  padding-bottom: 110px !important;
 }
 .ep-modaldialog.ep-modaldialog-custom .ep-modal-footer {
   position: fixed;
@@ -1476,7 +1477,7 @@
   display: block;
 }
 .ep-modaldialog .ep-modaldialog-error.my-error-dialog {
-  margin: 65px 0px 0px 0px;
+  padding: 65px 20px 20px 20px;
 }
 .ep-modal-window .modal-dialog {
   position: relative;
@@ -1509,11 +1510,13 @@
     width: 100%;
   }
   .ep-modaldialog.ep-modaldialog-custom .ep-modal-area {
-    margin: 70px 10px 10px 0px;
+    padding: 70px 20px 0 20px;
     overflow-y: scroll;
+    height: 100%;
+    padding-bottom: 110px !important;
   }
   .ep-modaldialog .ep-modaldialog-error .my-error-dialog {
-    margin: 65px 0px 0px 0px;
+    padding: 65px 20px 20px 20px;
   }
 }
 .ep-modal-window.ep-fullscreen .modal-dialog {
