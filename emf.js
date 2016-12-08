@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.283 built: 08-12-2016
+ * version:1.0.10-dev.284 built: 08-12-2016
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.283","built":"2016-12-08"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.284","built":"2016-12-08"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -12669,6 +12669,21 @@ angular.module('ep.menu.builder').
             copyProperties(options, cfg);
 
             return showCustomDialog(cfg).result;
+
+            if (options.btnBlock == true) {
+                var footerHeight = $('#custom-dialog-footer').innerHeight();
+                $('#custom-dialog-area').css({ paddingBottom: footerHeight + "px" });
+            }
+            if (options.statusBar == true) {
+                $('#custom-dialog-footer').css({ 'bottom': '40px' });
+                $('#custom-dialog-area').css({ paddingBottom: '120px' });
+            }
+            if (options.statusBar == true && options.btnBlock) {
+                $('#custom-dialog-footer').css({ 'bottom': '40px' });
+                var footerHeight = $('#custom-dialog-footer').innerHeight();
+                var totalPadding = footerHeight + 40;
+                $('#custom-dialog-area').css({ paddingBottom: totalPadding + "px" });
+            }
         }
 
         /**
@@ -12713,7 +12728,6 @@ angular.module('ep.menu.builder').
             if (checkRememberMe(cfg) === 1) {
                 return;
             }
-
             cfg._isModalDialog = true;
             setCommonOptions(cfg);
 
@@ -12731,6 +12745,7 @@ angular.module('ep.menu.builder').
                 winClass += ' ' + cfg.windowClass;
             }
 
+         
             return $uibModal.open({
                 windowClass: winClass,
                 keyboard: false,
@@ -12828,6 +12843,23 @@ angular.module('ep.menu.builder').
 
                         $scope.$on('$destroy', function() {
                             $document.off('keydown', onKeydown);
+                        });
+
+                        $timeout(function() {
+                            if ($scope.config.btnBlock == true) {
+                                var footerHeight = $('#custom-dialog-footer').innerHeight();
+                                $('#custom-dialog-area').css({ paddingBottom: footerHeight+"px" });
+                            }
+                            if ($scope.config.statusBar == true) {
+                                $('#custom-dialog-footer').css({ 'bottom': '40px' });
+                                $('#custom-dialog-area').css({ paddingBottom: '120px' });
+                            }
+                            if ($scope.config.statusBar == true && $scope.config.btnBlock) {
+                                $('#custom-dialog-footer').css({ 'bottom': '40px' });
+                                var footerHeight = $('#custom-dialog-footer').innerHeight();
+                                var totalPadding = footerHeight + 40;
+                                $('#custom-dialog-area').css({ paddingBottom: totalPadding + "px" });
+                            }
                         });
                     }]
             });
@@ -23720,12 +23752,12 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.modaldialog/modals/modaldialog-custom.html',
-    "<div class=\"ep-modaldialog ep-modaldialog-custom\"><div class=\"modal-header ep-modal-header ep-padding-none\"><span class=close ng-show=config.closeButton><a class=\"fa fa-times fa-lg ep-navbar-button\" data-dismiss=modal aria-label=Close ng-click=\"btnclick({isCancel: true})\"></a></span> <span class=help ng-show=config.helpTemplateOptions><a class=\"fa fa-question-circle fa-lg ep-navbar-button\" ng-click=helpButtonClick()></a></span><h4 id=dialogTitle class=\"bg-primary modal-title ep-margin-none clearfix\"><span class=\"ep-dlg-title-icon {{config.icon}}\"></span> <span class=ep-dlg-title ng-bind=config.fnGetTitle()></span></h4></div><div class=\"modal-body ep-modal-area\"><form id=dialogForm name=dialogForm><uib-alert ng-show=showHelp type=info close=closeHelp()><ep-include options=config.helpTemplateOptions></ep-include></uib-alert><!--<div ng-include=\"config.templateUrl\"></div>--><ep-include options=config.templateOptions></ep-include><div class=\"ep-dlg-rememberMe col-md-10\" ng-show=config.rememberMe><div class=form-group><div class=\"row col-md-1\"><input tabindex=1 id=cbxRemember class=form-control type=checkbox ng-model=config.rememberMeValue></div><label class=\"col-md-10 control-label\">Do not show this message again</label></div></div></form></div><div class=\"modal-footer ep-modal-footer\" ng-show=\"config.buttons && config.buttons.length\"><div class=ep-dlg-buttons><button ng-repeat=\"btn in config.buttons\" id={{btn.id}} tabindex=\"$index + 100\" data-dismiss=modal ng-hide=btn.hidden ng-disabled=\"btn.isPrimary && !dialogForm.$valid\" class=\"btn btn-{{btn.type}} {{config.btnBlock == true ? 'btn-block':''}}\" ng-click=btnclick(btn)><i ng-if=btn.icon ng-class=btn.icon></i> &nbsp;{{btn.text}}</button></div></div><div class=ep-dlg-status ng-show=config.statusBar><h4 class=\"bg-primary modal-title\"><span ng-if=!config.statusBarTextHTML ng-bind=config.statusBarText></span> <span ng-if=config.statusBarTextHTML ng-bind-html=config.statusBarTextHTML></span></h4></div></div>"
+    "<div id=modaldialog class=\"ep-modaldialog ep-modaldialog-custom\"><div class=\"modal-header ep-modal-header ep-padding-none\"><span class=close ng-show=config.closeButton><a class=\"fa fa-times fa-lg ep-navbar-button\" data-dismiss=modal aria-label=Close ng-click=\"btnclick({isCancel: true})\"></a></span> <span class=help ng-show=config.helpTemplateOptions><a class=\"fa fa-question-circle fa-lg ep-navbar-button\" ng-click=helpButtonClick()></a></span><h4 id=dialogTitle class=\"bg-primary modal-title ep-margin-none clearfix\"><span class=\"ep-dlg-title-icon {{config.icon}}\"></span> <span class=ep-dlg-title ng-bind=config.fnGetTitle()></span></h4></div><div id=custom-dialog-area class=\"modal-body ep-modal-area\"><form id=dialogForm name=dialogForm><uib-alert ng-show=showHelp type=info close=closeHelp()><ep-include options=config.helpTemplateOptions></ep-include></uib-alert><!--<div ng-include=\"config.templateUrl\"></div>--><ep-include options=config.templateOptions></ep-include><div class=\"ep-dlg-rememberMe col-md-10\" ng-show=config.rememberMe><div class=form-group><div class=\"row col-md-1\"><input tabindex=1 id=cbxRemember class=form-control type=checkbox ng-model=config.rememberMeValue></div><label class=\"col-md-10 control-label\">Do not show this message again</label></div></div></form></div><div id=custom-dialog-footer class=\"modal-footer ep-modal-footer\" ng-show=\"config.buttons && config.buttons.length\"><div class=ep-dlg-buttons><button ng-repeat=\"btn in config.buttons\" id={{btn.id}} tabindex=\"$index + 100\" data-dismiss=modal ng-hide=btn.hidden ng-disabled=\"btn.isPrimary && !dialogForm.$valid\" class=\"btn btn-{{btn.type}} {{config.btnBlock == true ? 'btn-block':''}}\" ng-click=btnclick(btn)><i ng-if=btn.icon ng-class=btn.icon></i> &nbsp;{{btn.text}}</button></div></div><div class=ep-dlg-status ng-show=config.statusBar><h4 class=\"bg-primary modal-title\"><span ng-if=!config.statusBarTextHTML ng-bind=config.statusBarText></span> <span ng-if=config.statusBarTextHTML ng-bind-html=config.statusBarTextHTML></span></h4></div></div>"
   );
 
 
   $templateCache.put('src/components/ep.modaldialog/modals/modaldialog-error.html',
-    "<!--Custom Dialog Error Template--><div class=\"ep-modaldialog-error my-error-dialog\" ng-controller=epModalDialogErrorCtrl><section ng-if=config.callFnHideModalError ng-hide=config.fnHideModalError()></section><div class=\"alert clearfix ep-dialog-alert\" ng-class=config.statusClass><table class=ep-dlg-bodytable><tr><td><span ng-if=config.showSpinner class=\"ep-dlg-icon fa-stack fa-2x\"><i class=\"ep-dlg-spinner-icon fa fa-spin fa-stack-2x\" ng-class=config.spinnerIconClass></i> <i ng-if=config.showTimer class=\"ep-dlg-spinner-text fa fa-stack-1x {{config.spinnerTextClass}}\" ng-class=config.spinnerTextClass>{{config.countDown}}</i></span> <span ng-if=!config.showSpinner class=ep-dlg-icon><i class=\"fa fa-3x\" ng-class=config.statusIcon></i></span></td><td><span class=ep-dlg-message ng-class=config.messageClass ng-bind=config.fnGetMessage()></span></td></tr></table></div><div class=ep-message-details ng-show=config.messageDetails><a href=\"\" ng-click=\"config.showDetails = !config.showDetails;\">{{config.showDetails ? 'Hide details': 'Show details'}}</a><div ng-show=config.showDetails><textarea ng-model=config.messageDetails ng-readonly=true disabled></textarea></div></div></div>"
+    "<!--Custom Dialog Error Template--><div id=modal-error class=\"ep-modaldialog-error ep-error-dialog\" ng-controller=epModalDialogErrorCtrl><section ng-if=config.callFnHideModalError ng-hide=config.fnHideModalError()></section><div class=\"alert clearfix ep-dialog-alert\" ng-class=config.statusClass><table class=ep-dlg-bodytable><tr><td><span ng-if=config.showSpinner class=\"ep-dlg-icon fa-stack fa-2x\"><i class=\"ep-dlg-spinner-icon fa fa-spin fa-stack-2x\" ng-class=config.spinnerIconClass></i> <i ng-if=config.showTimer class=\"ep-dlg-spinner-text fa fa-stack-1x {{config.spinnerTextClass}}\" ng-class=config.spinnerTextClass>{{config.countDown}}</i></span> <span ng-if=!config.showSpinner class=ep-dlg-icon><i class=\"fa fa-3x\" ng-class=config.statusIcon></i></span></td><td><span class=ep-dlg-message ng-class=config.messageClass ng-bind=config.fnGetMessage()></span></td></tr></table></div><div class=ep-message-details ng-show=config.messageDetails><a href=\"\" ng-click=\"config.showDetails = !config.showDetails;\">{{config.showDetails ? 'Hide details': 'Show details'}}</a><div ng-show=config.showDetails><textarea ng-model=config.messageDetails ng-readonly=true disabled></textarea></div></div></div>"
   );
 
 

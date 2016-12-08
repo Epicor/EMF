@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.283 built: 08-12-2016
+ * version:1.0.10-dev.284 built: 08-12-2016
 */
 .ep-ease-animation {
   -moz-backface-visibility: hidden;
@@ -381,10 +381,10 @@ a:focus {
   z-index: 1;
 }
 .ep-modaldialog.ep-modaldialog-custom .ep-modal-area {
-  overflow-y: scroll;
+  overflow-y: auto;
   max-height: 85vh;
   padding: 70px 20px 0 20px;
-  padding-bottom: 110px !important;
+  padding-bottom: 80px;
 }
 .ep-modaldialog.ep-modaldialog-custom .ep-modal-footer {
   position: fixed;
@@ -399,6 +399,9 @@ a:focus {
 }
 .ep-modaldialog.ep-modaldialog-custom .ep-dlg-status .modal-title {
   min-height: 40px;
+  position: absolute;
+  bottom: 0;
+  width: 100%;
 }
 .ep-modaldialog.ep-modaldialog-custom .ep-dlg-status h4 {
   padding: 10px;
@@ -413,7 +416,7 @@ a:focus {
   font-weight: normal;
 }
 .ep-modaldialog.ep-modaldialog-custom .modal-body {
-  padding-bottom: 0;
+  /*padding-bottom: 0;*/
 }
 /* modaldialog-error.html */
 .ep-dialog-alert {
@@ -436,8 +439,8 @@ a:focus {
 .ep-modaldialog .ep-modaldialog-error .ep-dlg-icon {
   display: block;
 }
-.ep-modaldialog .ep-modaldialog-error.my-error-dialog {
-  padding: 65px 20px 20px 20px;
+.ep-modaldialog .ep-modaldialog-error.ep-error-dialog {
+  padding: 30px 20px 0px 20px;
 }
 .ep-modal-window .modal-dialog {
   position: relative;
@@ -472,9 +475,10 @@ a:focus {
   }
   .ep-modaldialog.ep-modaldialog-custom .ep-modal-area {
     padding: 70px 20px 0 20px;
-    overflow-y: scroll;
+    overflow-y: auto;
     max-height: 100%;
-    padding-bottom: 110px !important;
+    padding-bottom: 80px;
+    height: 100%;
   }
   .ep-modaldialog .ep-modaldialog-error .my-error-dialog {
     padding: 65px 20px 20px 20px;
