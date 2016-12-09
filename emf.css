@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.287 built: 08-12-2016
+ * version:1.0.10-dev.288 built: 09-12-2016
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -1415,19 +1415,20 @@
   padding: 10px 10px 5px 5px;
 }
 .ep-modaldialog.ep-modaldialog-custom .ep-modal-header {
-  position: fixed;
+  position: absolute;
   top: 0;
   width: 100%;
   z-index: 1;
+  background-color: #ffffff;
 }
 .ep-modaldialog.ep-modaldialog-custom .ep-modal-area {
   overflow-y: auto;
   max-height: 85vh;
-  padding: 70px 20px 0 20px;
-  padding-bottom: 80px;
+  padding-left: 20px;
+  padding-right: 20px;
 }
 .ep-modaldialog.ep-modaldialog-custom .ep-modal-footer {
-  position: fixed;
+  position: absolute;
   bottom: 0;
   width: 100%;
   background-color: white;
@@ -1489,7 +1490,6 @@
 .ep-modal-window .modal-content {
   position: relative;
   height: 100%;
-  width: 601.5px;
 }
 /* modal dialog size. fullscreen class or responsive to fullscreen */
 @media screen and (max-width: 500px), screen and (max-height: 500px) {
@@ -1514,11 +1514,12 @@
     width: 100%;
   }
   .ep-modaldialog.ep-modaldialog-custom .ep-modal-area {
-    padding: 70px 20px 0 20px;
     overflow-y: auto;
     max-height: 100%;
     padding-bottom: 80px;
     height: 100%;
+    padding-left: 20px;
+    padding-right: 20px;
   }
   .ep-modaldialog .ep-modaldialog-error .my-error-dialog {
     padding: 65px 20px 20px 20px;

@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.287 built: 08-12-2016
+ * version:1.0.10-dev.288 built: 09-12-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["tiles"] = {"libName":"tiles","version":"1.0.10-dev.287","built":"2016-12-08"};
+__ep_build_info["tiles"] = {"libName":"tiles","version":"1.0.10-dev.288","built":"2016-12-09"};
 
 'use strict';
 /**
@@ -328,13 +328,13 @@ app.directive('epCardTitle',
          */
         function getGroupedList(listData) {
             var listName = [];
-            var sortedlist = _.sortBy(listData, 'Name');
+            var sortedlist = _.sortBy(listData, 'Customer_Name');
             var groupedObj = {};
             var itemGroup = [];
             var currAlphabet = '';
             var prevAlphabet = '';
             for (var i = 0; i < sortedlist.length; i++) {
-                currAlphabet = sortedlist[i].Name.substring(0, 1).toUpperCase();
+                currAlphabet = sortedlist[i].Customer_Name.substring(0, 1).toUpperCase();
 
                 //if a number, make group name as #
                 if (!isNaN(currAlphabet)) {
