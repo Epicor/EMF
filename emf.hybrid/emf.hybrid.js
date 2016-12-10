@@ -1,19 +1,20 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.290 built: 09-12-2016
+ * version:1.0.10-dev.291 built: 09-12-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","built":"2016-12-09"};
+__ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.291","built":"2016-12-09"};
 
 (function() {
     'use strict';
-    angular.module('ep.hybrid.barcode', []);
+
+    angular.module('ep.hybrid', ['ep.templates']);
 })();
 
 /**
  * @ngdoc service
- * @name ep.hybrid.barcode:epHybridBarcodeService
+ * @name ep.hybrid:epHybridBarcodeService
  * @description
  * Service for accessing Cordova Barcode plugin. This will scan a barcode and recognize the UPC code and format.
  *
@@ -32,7 +33,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
 	      </div>
      </file>
      <file name="script.js">
-     	angular.module('TestApp', ['ep.hybrid.barcode'])
+     	angular.module('TestApp', ['ep.hybrid'])
      		.controller('SampleCtrl',['$scope', '$log', 'epHybridBarcodeService',
 	     		function($scope, epHybridBarcodeService) {
                     $scope.scanBarcode = function() {
@@ -61,7 +62,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
     'use strict';
 
     epHybridBarcodeService.$inject = ['$rootScope'];
-    angular.module('ep.hybrid.barcode')
+    angular.module('ep.hybrid')
         .service('epHybridBarcodeService', /*@ngInject*/ epHybridBarcodeService);
 
     function epHybridBarcodeService($rootScope) {
@@ -69,7 +70,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name scan
-         * @methodOf ep.hybrid.barcode:epHybridBarcodeService
+         * @methodOf ep.hybrid:epHybridBarcodeService
          * @public
          * @param {function} successCallback - function called on success of API call
          * @param {function} errorCallback - function called on error of API call
@@ -95,16 +96,8 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
 })();
 
 /**
- *
- */
-(function() {
-  'use strict';
-    angular.module('ep.hybrid.calendar', []);
-})();
-
-/**
  * @ngdoc service
- * @name ep.hybrid.calendar:epHybridCalendarService
+ * @name ep.hybrid:epHybridCalendarService
  * @description
  * Service for accessing Cordova Calendar plugin. This allows you to manipulate the native calendar.
  *
@@ -120,7 +113,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
 	      </div>
      </file>
      <file name="script.js">
-     	angular.module("TestApp", ["ep.hybrid.calendar"])
+     	angular.module("TestApp", ["ep.hybrid"])
      		.controller("SampleCtrl",["$scope", "$log", "epHybridCalendarService",
 	     		function($scope, epHybridCalendarService) {
                     // create a calendar (iOS only for now)
@@ -192,7 +185,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
     'use strict';
 
     epHybridCalendarService.$inject = ['$rootScope'];
-    angular.module('ep.hybrid.calendar')
+    angular.module('ep.hybrid')
         .service('epHybridCalendarService', /*@ngInject*/ epHybridCalendarService);
 
     function epHybridCalendarService($rootScope) {
@@ -200,7 +193,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name openCalendar
-         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @methodOf ep.hybrid:epHybridCalendarService
          * @public
          * @description
          * To open calendar
@@ -212,7 +205,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name createCalendar
-         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @methodOf ep.hybrid:epHybridCalendarService
          * @public
          * @param {function} successCallback - function called on success of API call
          * @param {function} errorCallback - function called on error of API call
@@ -235,7 +228,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name deleteCalendar
-         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @methodOf ep.hybrid:epHybridCalendarService
          * @public
          * @param {function} successCallback - function called on success of API call
          * @param {function} errorCallback - function called on error of API call
@@ -258,7 +251,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name createEvent
-         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @methodOf ep.hybrid:epHybridCalendarService
          * @public
          * @param {function} successCallback - function called on success of API call
          * @param {function} errorCallback - function called on error of API call
@@ -286,7 +279,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name createEventWithOptions
-         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @methodOf ep.hybrid:epHybridCalendarService
          * @public
          * @param {function} successCallback - function called on success of API call
          * @param {function} errorCallback - function called on error of API call
@@ -337,7 +330,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name modifyEvent
-         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @methodOf ep.hybrid:epHybridCalendarService
          * @public
          * @param {function} successCallback - function called on success of API call
          * @param {function} errorCallback - function called on error of API call
@@ -361,7 +354,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name findEvent
-         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @methodOf ep.hybrid:epHybridCalendarService
          * @public
          * @param {function} successCallback - function called on success of API call
          * @param {function} errorCallback - function called on error of API call
@@ -384,7 +377,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name deleteEvent
-         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @methodOf ep.hybrid:epHybridCalendarService
          * @public
          * @param {function} successCallback - function called on success of API call
          * @param {function} errorCallback - function called on error of API call
@@ -407,7 +400,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name listEvents
-         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @methodOf ep.hybrid:epHybridCalendarService
          * @public
          * @param {function} successCallback - function called on success of API call
          * @param {function} errorCallback - function called on error of API call
@@ -432,7 +425,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name listCalendars
-         * @methodOf ep.hybrid.calendar:epHybridCalendarService
+         * @methodOf ep.hybrid:epHybridCalendarService
          * @public
          * @param {function} successCallback - function called on success of API call
          * @param {function} errorCallback - function called on error of API call
@@ -468,16 +461,8 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
 
 
 /**
- *
- */
-(function() {
-  'use strict';
-    angular.module('ep.hybrid.contacts', []);
-})();
-
-/**
  * @ngdoc service
- * @name ep.hybrid.contacts:epHybridContactsService
+ * @name ep.hybrid:epHybridContactsService
  * @description
  * Service for accessing Cordova contacts plugin. This will select a contact from device and display the information.
  *
@@ -505,7 +490,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
 	      </div>
      </file>
      <file name="script.js">
-     	angular.module("TestApp", ["ep.hybrid.contacts"])
+     	angular.module("TestApp", ["ep.hybrid"])
      		.controller("SampleCtrl",["$scope", "$log", "epHybridContactsService",
                 function($scope, epHybridContactsService) {
                     $scope.pickContact = function() {
@@ -532,7 +517,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
     'use strict';
 
     epHybridContactsService.$inject = ['$rootScope', '$log'];
-    angular.module('ep.hybrid.contacts')
+    angular.module('ep.hybrid')
         .service('epHybridContactsService', /*@ngInject*/ epHybridContactsService);
 
     function epHybridContactsService($rootScope, $log) {
@@ -540,7 +525,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name pickContact
-         * @methodOf ep.hybrid.contacts:epHybridContactsService
+         * @methodOf ep.hybrid:epHybridContactsService
          * @public
          * @param {function} successCallback - function called on success of API call
          * @param {function} errorCallback - function called on error of API call
@@ -571,16 +556,8 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
 })();
 
 /**
- *
- */
-(function() {
-  'use strict';
-    angular.module('ep.hybrid.device', []);
-})();
-
-/**
  * @ngdoc service
- * @name ep.hybrid.device:epHybridDeviceService
+ * @name ep.hybrid:epHybridDeviceService
  * @description
  * Service for accessing Cordova device plugin. This will fetch the details about the device.
  *
@@ -600,7 +577,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
 	      </div>
      </file>
      <file name="script.js">
-     	angular.module("TestApp", ["ep.hybrid.device"])
+     	angular.module("TestApp", ["ep.hybrid"])
      		.controller("SampleCtrl",["$scope", "epHybridDeviceService",
 	     		function($scope, epHybridDeviceService) {
                     $scope.deviceModel = epHybridDeviceService.getModel();
@@ -615,7 +592,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
     'use strict';
 
     epHybridDeviceService.$inject = ['$log', '$window'];
-    angular.module('ep.hybrid.device')
+    angular.module('ep.hybrid')
         .service('epHybridDeviceService', /*@ngInject*/ epHybridDeviceService);
 
     function epHybridDeviceService($log, $window) {
@@ -623,7 +600,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name getPlatform
-         * @methodOf ep.hybrid.device:epHybridDeviceService
+         * @methodOf ep.hybrid:epHybridDeviceService
          * @public
          * @description
          * To get the OS of the device
@@ -639,7 +616,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name getModel
-         * @methodOf ep.hybrid.device:epHybridDeviceService
+         * @methodOf ep.hybrid:epHybridDeviceService
          * @public
          * @description
          * To get the model of the device
@@ -653,7 +630,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name getUUID
-         * @methodOf ep.hybrid.device:epHybridDeviceService
+         * @methodOf ep.hybrid:epHybridDeviceService
          * @public
          * @description
          * To get the UUID of the device
@@ -667,7 +644,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name getVersion
-         * @methodOf ep.hybrid.device:epHybridDeviceService
+         * @methodOf ep.hybrid:epHybridDeviceService
          * @public
          * @description
          * To get OS version of the device
@@ -681,7 +658,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name isDevicePluginAvailable
-         * @methodOf ep.hybrid.device:epHybridDeviceService
+         * @methodOf ep.hybrid:epHybridDeviceService
          * @private
          * @description
          * To check the cordova device plugin availability
@@ -707,16 +684,8 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
 })();
 
 /**
- *
- */
-(function() {
-    'use strict';
-    angular.module('ep.hybrid.emailcomposer', []);
-})();
-
-/**
  * @ngdoc service
- * @name ep.hybrid.emailcomposer:epHybridEmailComposerService
+ * @name ep.hybrid:epHybridEmailComposerService
  * @description
  * Service for accessing Cordova Email Composer plugin. This provides access to the standard interface that manages the editing and sending an email.
  *
@@ -733,7 +702,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
  </div>
  </file>
  <file name="script.js">
- angular.module('TestApp', ['ep.hybrid.emailcomposer'])
+ angular.module('TestApp', ['ep.hybrid'])
  .controller('SampleCtrl',['$scope', '$log', 'epHybridEmailComposerService',
  function($scope, epHybridEmailComposerService) {
 
@@ -779,7 +748,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
     'use strict';
 
     epHybridEmailComposerService.$inject = ['$log'];
-    angular.module('ep.hybrid.emailcomposer')
+    angular.module('ep.hybrid')
         .service('epHybridEmailComposerService', /*@ngInject*/ epHybridEmailComposerService);
 
     function epHybridEmailComposerService($log) {
@@ -787,7 +756,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name isEmailAvailable
-         * @methodOf ep.hybrid.emailcomposer:epHybridEmailComposerService
+         * @methodOf ep.hybrid:epHybridEmailComposerService
          * @private
          * @description
          * To check the availability of cordova email composer plugin.
@@ -811,7 +780,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name draftAnEmail
-         * @methodOf ep.hybrid.emailcomposer:epHybridEmailComposerService
+         * @methodOf ep.hybrid:epHybridEmailComposerService
          * @public
          * @param {object} settings - Options to configure the Action Sheet
          * @param {object} settings.to - Array of strings i.e. Email addresses for TO field
@@ -870,16 +839,8 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
 
 
 /**
- *
- */
-(function() {
-  'use strict';
-    angular.module('ep.hybrid.flashlight', []);
-})();
-
-/**
  * @ngdoc service
- * @name ep.hybrid.flashlight:epHybridFlashlightService
+ * @name ep.hybrid:epHybridFlashlightService
  * @description
  * Service for accessing Cordova flashlight plugin ({@link https://www.npmjs.com/package/cordova-plugin-flashlight cordova-plugin-flashlight})
  * @example
@@ -893,7 +854,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
 	      </div>
      </file>
      <file name="script.js">
-     	angular.module("TestApp", ["ep.hybrid.flashlight"])
+     	angular.module("TestApp", ["ep.hybrid"])
      		.controller("SampleCtrl",["$scope", "epHybridFlashlightService",
                 function($scope, epHybridFlashlightService) {
                     // Allows to switch on the flashlight
@@ -913,7 +874,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
     'use strict';
 
     epHybridFlashlightService.$inject = ['$log'];
-    angular.module('ep.hybrid.flashlight')
+    angular.module('ep.hybrid')
         .service('epHybridFlashlightService', /*@ngInject*/ epHybridFlashlightService);
 
     function epHybridFlashlightService($log) {
@@ -921,7 +882,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name flashOn
-         * @methodOf ep.hybrid.flashlight:epHybridFlashlightService
+         * @methodOf ep.hybrid:epHybridFlashlightService
          * @public
          * @description
          * Allows you to switch the flashlight / torch of the device on.
@@ -945,7 +906,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name flashOff
-         * @methodOf ep.hybrid.flashlight:epHybridFlashlightService
+         * @methodOf ep.hybrid:epHybridFlashlightService
          * @public
          * @description
          * Allows you to switch the flashlight / torch of the device off.
@@ -968,16 +929,8 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
 })();
 
 /**
- *
- */
-(function() {
-  'use strict';
-    angular.module('ep.hybrid.geolocation', []);
-})();
-
-/**
  * @ngdoc service
- * @name ep.hybrid.geolocation:epHybridGeolocationService
+ * @name ep.hybrid:epHybridGeolocationService
  * @description
  * Service for accessing Cordova Geolocation plugin ({@link https://www.npmjs.com/package/cordova-plugin-geolocation cordova-plugin-geolocation})
  * @requires {@link https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places https://maps.googleapis.com/maps/api/js?key=YOUR_API_KEY&libraries=places}
@@ -998,7 +951,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
 	      </div>
      </file>
      <file name="script.js">
-     	angular.module("TestApp", ["ep.hybrid.geolocation"])
+     	angular.module("TestApp", ["ep.hybrid"])
      		.controller("SampleCtrl",["$scope", "epHybridGeolocationService",
                 function($scope, epHybridGeolocationService) {
 
@@ -1061,7 +1014,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
     'use strict';
 
     epHybridGeolocationService.$inject = ['$rootScope', '$log'];
-    angular.module('ep.hybrid.geolocation')
+    angular.module('ep.hybrid')
         .service('epHybridGeolocationService', /*@ngInject*/ epHybridGeolocationService);
 
     function epHybridGeolocationService($rootScope, $log) {
@@ -1072,7 +1025,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name getGeolocation
-         * @methodOf ep.hybrid.geolocation:epHybridGeolocationService
+         * @methodOf ep.hybrid:epHybridGeolocationService
          * @public
          * @param {function} successCallback - function called on success of API call
          * @param {function} errorCallback - function called on error of API call
@@ -1098,7 +1051,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name showMap
-         * @methodOf ep.hybrid.geolocation:epHybridGeolocationService
+         * @methodOf ep.hybrid:epHybridGeolocationService
          * @public
          * @param {object} latLng - Includes latitude and longitude
          * @param {object} element - Element to display map on
@@ -1124,7 +1077,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name addMarker
-         * @methodOf ep.hybrid.geolocation:epHybridGeolocationService
+         * @methodOf ep.hybrid:epHybridGeolocationService
          * @public
          * @param {object} latLng - Includes latitude and longitude
          * @param {object} map - Map on which the marker need to be placed
@@ -1153,7 +1106,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name addMultipleMarkers
-         * @methodOf ep.hybrid.geolocation:epHybridGeolocationService
+         * @methodOf ep.hybrid:epHybridGeolocationService
          * @public
          * @param {object} locations - Includes list of locations (Example: locations = ['Bondi Beach', ...] or locations = ['Bondi Beach', -33.890542, 151.274856], ...) where the pins need to be placed
          * @param {object} map - Map on which the markers need to be placed
@@ -1242,7 +1195,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name calculateAndDisplayRoute
-         * @methodOf ep.hybrid.geolocation:epHybridGeolocationService
+         * @methodOf ep.hybrid:epHybridGeolocationService
          * @public
          * @param {string} start - Place Id of origin
          * @param {string} end - Place Id of destination
@@ -1275,7 +1228,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name autocompleteAndAssociatedActions
-         * @methodOf ep.hybrid.geolocation:epHybridGeolocationService
+         * @methodOf ep.hybrid:epHybridGeolocationService
          * @public
          * @param {object} map - Map on which the marker need to be placed
          * @param {object} originInput - Origin element to enable autocomplete
@@ -1347,16 +1300,8 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
 })();
 
 /**
- *
- */
-(function() {
-    'use strict';
-    angular.module('ep.hybrid.gpstracker', []);
-})();
-
-/**
  * @ngdoc service
- * @name ep.hybrid.gpstracker:epHybridGPSTrackerService
+ * @name ep.hybrid:epHybridGPSTrackerService
  * @description
  * Service for accessing Cordova foreground and background geolocation service
  *
@@ -1370,7 +1315,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
 	      </div>
      </file>
      <file name="script.js">
-     	angular.module('TestApp', ['ep.hybrid.gpstracker'])
+     	angular.module('TestApp', ['ep.hybrid'])
      		.controller('SampleCtrl',['$scope', '$log', 'epHybridGPSTrackerService',
 	     		function($scope, epHybridGPSTrackerService) {  }]);
      </file>
@@ -1380,7 +1325,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
     'use strict';
 
     epHybridGPSTrackerService.$inject = ['$rootScope', '$log'];
-    angular.module('ep.hybrid.gpstracker')
+    angular.module('ep.hybrid')
         .service('epHybridGPSTrackerService', /*@ngInject*/ epHybridGPSTrackerService);
 
     function epHybridGPSTrackerService($rootScope, $log) {
@@ -1390,7 +1335,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name background
-         * @methodOf ep.hybrid.gpstracker:epHybridGPSTrackerService
+         * @methodOf ep.hybrid:epHybridGPSTrackerService
          * @public
          * @param {function} successCallback - function called on success of API call
          * @param {function} errorCallback - function called on error of API call
@@ -1476,16 +1421,8 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
 })(window.backgroundGeolocation);
 
 /**
- *
- */
-(function() {
-  'use strict';
-    angular.module('ep.hybrid.media', []);
-})();
-
-/**
  * @ngdoc service
- * @name ep.hybrid.media:epHybridMediaService
+ * @name ep.hybrid:epHybridMediaService
  * @description
  * Service for accessing Cordova Media plugin
  *
@@ -1500,7 +1437,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
 	      </div>
      </file>
      <file name="script.js">
-     	angular.module("TestApp", ["ep.hybrid.media"])
+     	angular.module("TestApp", ["ep.hybrid"])
      		.controller("SampleCtrl",["$scope", "$log", "epHybridMediaService",
                 function($scope, epHybridMediaService) {
                     var audioUrl = "http://www.sounddogs.com/sound-effects/2217/mp3/410647_SOUNDDOGS__wo.mp3";
@@ -1519,7 +1456,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
 (function() {
     'use strict';
 
-    angular.module('ep.hybrid.media')
+    angular.module('ep.hybrid')
         .service('epHybridMediaService', /*@ngInject*/ epHybridMediaService);
 
     function epHybridMediaService() {
@@ -1528,7 +1465,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name playAudio
-         * @methodOf ep.hybrid.media:epHybridMediaService
+         * @methodOf ep.hybrid:epHybridMediaService
          * @public
          * @param {url} url - url to media file
          * @description
@@ -1552,7 +1489,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name stopAudio
-         * @methodOf ep.hybrid.media:epHybridMediaService
+         * @methodOf ep.hybrid:epHybridMediaService
          * @public
          * @description
          * To stop the media music
@@ -1571,16 +1508,8 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
 })();
 
 /**
- *
- */
-(function() {
-  'use strict';
-    angular.module('ep.hybrid.network', []);
-})();
-
-/**
  * @ngdoc service
- * @name ep.hybrid.network:epHybridNetworkService
+ * @name ep.hybrid:epHybridNetworkService
  * @description
  * Service for accessing Cordova Network-Information plugin
  *
@@ -1610,7 +1539,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         </div>
      </file>
      <file name="script.js">
-     	angular.module('TestApp', ['ep.hybrid.network'])
+     	angular.module('TestApp', ['ep.hybrid'])
      		.controller('networkCtrl',['$scope', '$log', 'epHybridMediaService',
                 function($scope, epHybridNetworkService){
                     function checkStatus() {
@@ -1631,7 +1560,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
 (function() {
     'use strict';
 
-    angular.module('ep.hybrid.network')
+    angular.module('ep.hybrid')
         .constant('epNetworkStatus', {
             Unknown: 'unknown',
             Ethernet: 'ethernet',
@@ -1649,7 +1578,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name checkConnection
-         * @methodOf ep.hybrid.network:epHybridNetworkService
+         * @methodOf ep.hybrid:epHybridNetworkService
          * @public
          * @description
          * To check the internet connection and status
@@ -1664,16 +1593,8 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
 })();
 
 /**
- *
- */
-(function() {
-  'use strict';
-    angular.module('ep.hybrid.photo', []);
-})();
-
-/**
  * @ngdoc service
- * @name ep.hybrid.photo:epHybridPhotoService
+ * @name ep.hybrid:epHybridPhotoService
  * @description
  * Service for accessing Cordova camera plugin. This will allow to take picture from camera
  * or to select a picture from photo library.
@@ -1693,7 +1614,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
 	      </div>
      </file>
      <file name="script.js">
-     	angular.module("TestApp", ["ep.hybrid.photo"])
+     	angular.module("TestApp", ["ep.hybrid"])
      		.controller("SampleCtrl",["$scope", "$log", "epHybridPhotoService",
 	     		function($scope, epHybridPhotoService) {
                     $scope.takePicture = function() {
@@ -1733,7 +1654,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
     'use strict';
 
     epHybridPhotoService.$inject = ['$rootScope'];
-    angular.module('ep.hybrid.photo')
+    angular.module('ep.hybrid')
         .service('epHybridPhotoService', /*@ngInject*/ epHybridPhotoService);
 
     function epHybridPhotoService($rootScope) {
@@ -1741,7 +1662,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
         /**
          * @ngdoc method
          * @name getPicture
-         * @methodOf ep.hybrid.photo:epHybridPhotoService
+         * @methodOf ep.hybrid:epHybridPhotoService
          * @public
          * @param {function} successCallback - function called on success of API call
          * @param {function} errorCallback - function called on error of API call
@@ -1803,16 +1724,8 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
 })();
 
 /**
- *
- */
-(function() {
-  'use strict';
-    angular.module('ep.hybrid.vibration', []);
-})();
-
-/**
  * @ngdoc service
- * @name ep.hybrid.vibration:epHybridVibrationService
+ * @name ep.hybrid:epHybridVibrationService
  * @description
  * Service for accessing Cordova vibration plugin. This will make the device vibrate for 3 seconds.
  *
@@ -1829,7 +1742,7 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
 	      </div>
      </file>
      <file name="script.js">
-     	angular.module("TestApp", ["ep.hybrid.vibration"])
+     	angular.module("TestApp", ["ep.hybrid"])
      		.controller("SampleCtrl",["$scope", "$log", "epHybridVibrationService",
                 function($scope, epHybridVibrationService) {
                     var sec = 3000;
@@ -1843,14 +1756,14 @@ __ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.10-dev.290","buil
 (function() {
     'use strict';
 
-    angular.module('ep.hybrid.vibration')
+    angular.module('ep.hybrid')
         .service('epHybridVibrationService', /*@ngInject*/ epHybridVibrationService);
     function epHybridVibrationService() {
 
         /**
         * @ngdoc method
         * @name vibrateDevice
-        * @methodOf ep.hybrid.vibration:epHybridVibrationService
+        * @methodOf ep.hybrid:epHybridVibrationService
         * @public
         * @param {sec} sec - number of seconds device to vibrate
         * @description
