@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.304 built: 12-12-2016
+ * version:1.0.10-dev.305 built: 13-12-2016
 */
 .card {
   position: relative;
@@ -83,7 +83,7 @@
   position: absolute;
   width: 100%;
   padding-left: 5%;
-  padding-top: 50px;
+  padding-top: 90px;
   top: 0;
 }
 .ep-contacts-list-inner {
@@ -100,13 +100,12 @@
   font-size: 12px;
   text-align: center;
   display: inline-block;
-  z-index: 998;
   padding: 0;
   margin: 0;
   background-color: #fafafa;
   width: 20px;
   top: 0;
-  padding-top: 50px;
+  padding-top: 93px;
   height: 100%;
 }
 .ep-index-list a {
@@ -165,6 +164,24 @@
   float: right;
   margin-right: 25px;
   margin-top: -20px;
+}
+.ep-contact-search {
+  margin-left: -25px;
+  margin-top: 7px;
+}
+.ep-contact-sub-header {
+  background-color: #f0f0f0;
+  height: 40px;
+  padding-top: 10px;
+  padding-left: 5%;
+  position: fixed;
+  z-index: 1;
+  width: 100%;
+}
+.ep-contact-sub-header-label {
+  width: 60px;
+  font-size: 1.2em;
+  color: #129ff4;
 }
 
 /* ===== Styles for the ep-tile component ====== */

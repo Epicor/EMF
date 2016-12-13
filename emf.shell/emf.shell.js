@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.304 built: 12-12-2016
+ * version:1.0.10-dev.305 built: 13-12-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.304","built":"2016-12-12"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.305","built":"2016-12-13"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -3683,7 +3683,20 @@ function() {
                             var footerHeight = $('#dialog-footer').innerHeight();
                             var headerHeight = $('#dialog-header').innerHeight()+5;
                             var statusBarHeight = $('#dialog-status h4').innerHeight();
-                            
+
+                            var screenWidth = $(window).innerWidth();
+                            var screenHeight = $(window).innerHeight();
+                            if (screenWidth >= 768 && $scope.config.size != "fullscreen") {
+                                $('#dialog-area').css({ 'max-height': screenHeight * 0.85 });
+                            }
+
+                            $(window).resize(function() {
+                                var screenResizeWidth = $(window).innerWidth();
+                                var screenResizeHeight = $(window).innerHeight();
+                                if (screenResizeWidth >= 768 && $scope.config.size != "fullscreen") {
+                                    $('#dialog-area').css({ 'max-height': screenResizeHeight * 0.85 });
+                                }
+                            });
                             if ($scope.config.statusBar == true) {
                                 var totalFooterHeight = footerHeight + statusBarHeight;
                                 $('#dialog-area').css({ paddingBottom: totalFooterHeight + "px", paddingTop: headerHeight + "px" });

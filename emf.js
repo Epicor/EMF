@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.304 built: 12-12-2016
+ * version:1.0.10-dev.305 built: 13-12-2016
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.304","built":"2016-12-12"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.305","built":"2016-12-13"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -3177,7 +3177,6 @@ app.directive('epCardTitle',
 
     epContactsListDirective.$inject = ['$filter', '$timeout', 'epContactsListService', 'epContactsListConstants'];
     angular.module('ep.contacts.list').directive('epContactsList', epContactsListDirective);
-
     function epContactsListDirective($filter, $timeout, epContactsListService, epContactsListConstants) {
         return {
             restrict: 'EA',
@@ -3191,8 +3190,8 @@ app.directive('epCardTitle',
             },
             templateUrl: 'src/components/ep.contacts.list/contacts_list.html',
             link: function(scope) {
-                scope.nameList = epContactsListService.getGroupedList(scope.data);
-
+                scope.nameList = epContactsListService.getGroupedList(scope.data, scope.mainTitle);
+              
                 scope.indexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES;
                 scope.smallIndexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES_SMALL;
 
@@ -3200,7 +3199,6 @@ app.directive('epCardTitle',
                     epContactsListService.toggleIndexes();
                 });
                 epContactsListService.toggleIndexes();
-
 
                 scope.getDetails = function(obj) {
                     return obj;
@@ -3253,15 +3251,15 @@ app.directive('epCardTitle',
          * @description
          * To group the contacts list based on alphabets
          */
-        function getGroupedList(listData) {
+        function getGroupedList(listData, mainTitle) {
             var listName = [];
-            var sortedlist = _.sortBy(listData, 'Customer_Name');
+            var sortedlist = _.sortBy(listData, mainTitle);
             var groupedObj = {};
             var itemGroup = [];
             var currAlphabet = '';
             var prevAlphabet = '';
             for (var i = 0; i < sortedlist.length; i++) {
-                currAlphabet = sortedlist[i].Customer_Name.substring(0, 1).toUpperCase();
+                currAlphabet = sortedlist[i][mainTitle].substring(0, 1).toUpperCase();
 
                 //if a number, make group name as #
                 if (!isNaN(currAlphabet)) {
@@ -12750,7 +12748,20 @@ angular.module('ep.menu.builder').
                             var footerHeight = $('#dialog-footer').innerHeight();
                             var headerHeight = $('#dialog-header').innerHeight()+5;
                             var statusBarHeight = $('#dialog-status h4').innerHeight();
-                            
+
+                            var screenWidth = $(window).innerWidth();
+                            var screenHeight = $(window).innerHeight();
+                            if (screenWidth >= 768 && $scope.config.size != "fullscreen") {
+                                $('#dialog-area').css({ 'max-height': screenHeight * 0.85 });
+                            }
+
+                            $(window).resize(function() {
+                                var screenResizeWidth = $(window).innerWidth();
+                                var screenResizeHeight = $(window).innerHeight();
+                                if (screenResizeWidth >= 768 && $scope.config.size != "fullscreen") {
+                                    $('#dialog-area').css({ 'max-height': screenResizeHeight * 0.85 });
+                                }
+                            });
                             if ($scope.config.statusBar == true) {
                                 var totalFooterHeight = footerHeight + statusBarHeight;
                                 $('#dialog-area').css({ paddingBottom: totalFooterHeight + "px", paddingTop: headerHeight + "px" });
@@ -23581,7 +23592,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.contacts.list/contacts_list.html',
-    "<div class=ep-contacts-list-container><div class=\"ep-list-search-container vertical-align\"><input ng-model=contactListSearch placeholder=Search class=form-control id=ep-contacts-list-search><label for=ep-contacts-list-search class=\"glyphicon glyphicon-search\" rel=tooltip title=search></label></div><div class=ep-contacts-list><div class=ep-contacts-list-inner><div ng-repeat=\"(key, value) in nameList\"><div class=ep-group-heading ng-if=\"filterVal.length > 0\" id=\"list-group-{{key == '#' ? 1 : (key | uppercase)}}\">{{key | uppercase}}</div><ul><li ng-repeat=\"obj in filterVal = (value | filter: contactListSearch)\" ng-click=handler(obj)><div>{{ obj[mainTitle] }} <span class=ep-contact-list-id>{{obj[id]}}</span></div><div class=ep-contact-list-arrow><i class=\"fa fa-angle-right fa-2x\"></i></div><div>{{obj[subTitle]}}</div></li></ul></div></div></div><ul class=\"ep-index-list large-index-list\" ng-hide=contactListSearch><li ng-repeat=\"key in indexKeys\" ng-click=goToLink(key)>{{key}}</li></ul><ul class=\"ep-index-list small-index-list\" ng-hide=contactListSearch><li ng-repeat=\"key in smallIndexKeys track by $index\" ng-click=goToLink(key)><span ng-if=\"key == '.'\" class=\"fa fa-circle\"></span> <span ng-if=\"key !='.'\">{{key}}</span></li></ul></div>"
+    "<div class=ep-contacts-list-container><!--Calling filter list component for search option--><ep-filter-list search-by=contactListSearch></ep-filter-list><!--Header as optional--><div class=ep-contact-sub-header><label class=ep-contact-sub-header-label>Filter</label><label class=ep-contact-sub-header-label>Sort</label><span class=pull-right style=padding-right:5%><i class=\"fa fa-plus-square-o fa-2x\" aria-hidden=true style=color:#129ff4></i></span></div><!--List area--><div class=ep-contacts-list><div class=ep-contacts-list-inner><div ng-repeat=\"(key, value) in nameList\"><div class=ep-group-heading ng-if=\"filterVal.length > 0\" id=\"list-group-{{key == '#' ? 1 : (key | uppercase)}}\">{{key | uppercase}}</div><ul><li ng-repeat=\"obj in filterVal = (value | filter: contactListSearch)\" ng-click=handler(obj)><div>{{ obj[mainTitle] }} <span class=ep-contact-list-id>{{obj[id]}}</span></div><div class=ep-contact-list-arrow><i class=\"fa fa-angle-right fa-2x\"></i></div><div>{{obj[subTitle]}}</div></li></ul></div></div></div><!--Index--><ul class=\"ep-index-list large-index-list\" ng-hide=contactListSearch><li ng-repeat=\"(key, value) in nameList\" ng-click=goToLink(key)>{{key}}</li></ul><!--Index for smaller device screen--><ul class=\"ep-index-list small-index-list\" ng-hide=contactListSearch><li ng-repeat=\"key in smallIndexKeys track by $index\" ng-click=goToLink(key)><span ng-if=\"key == '.'\" class=\"fa fa-circle\"></span> <span ng-if=\"key !='.'\">{{key}}</span></li></ul></div>"
   );
 
 
@@ -23626,7 +23637,15 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.filter.list/filter_list.html',
-    "<div class=\"ep-search-list-container vertical-align\"><input ng-model=searchBy placeholder=Search class=form-control id=ep-search-list><label for=ep-search-list class=\"glyphicon glyphicon-search\" rel=tooltip title=search></label></div>"
+    "<div class=\"ep-search-list-container vertical-align\"><div class=\"container ep-search-container\"><div class=\"row ep-search-row\"><div id=custom-search-input class=col-xs-10><div class=\"input-group col-md-12\"><!--We need to enable below for search icon--><!--<span class=\"input-group-btn\">\r" +
+    "\n" +
+    "                        <button id=\"searchbutton\" class=\"btn btn-danger ep-search-button\" type=\"button\">\r" +
+    "\n" +
+    "                            <span class=\"glyphicon glyphicon-search\"></span>\r" +
+    "\n" +
+    "                        </button>\r" +
+    "\n" +
+    "                    </span>--><input class=\"search-query form-control\" ng-model=searchBy placeholder=\"Search\"> <span class=input-group-btn><button id=closebutton class=\"btn btn-danger ep-close-button\" type=button><span class=\"glyphicon glyphicon-remove-circle\"></span></button></span></div></div><div class=\"input-group col-xs-2 ep-search-result-container\"><div>31</div><div>Results</div></div></div></div></div>"
   );
 
 

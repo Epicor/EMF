@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.304 built: 12-12-2016
+ * version:1.0.10-dev.305 built: 13-12-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.10-dev.304","built":"2016-12-12"};
+__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.10-dev.305","built":"2016-12-13"};
 
 (function() {
   'use strict';
@@ -1787,7 +1787,15 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.filter.list/filter_list.html',
-    "<div class=\"ep-search-list-container vertical-align\"><input ng-model=searchBy placeholder=Search class=form-control id=ep-search-list><label for=ep-search-list class=\"glyphicon glyphicon-search\" rel=tooltip title=search></label></div>"
+    "<div class=\"ep-search-list-container vertical-align\"><div class=\"container ep-search-container\"><div class=\"row ep-search-row\"><div id=custom-search-input class=col-xs-10><div class=\"input-group col-md-12\"><!--We need to enable below for search icon--><!--<span class=\"input-group-btn\">\r" +
+    "\n" +
+    "                        <button id=\"searchbutton\" class=\"btn btn-danger ep-search-button\" type=\"button\">\r" +
+    "\n" +
+    "                            <span class=\"glyphicon glyphicon-search\"></span>\r" +
+    "\n" +
+    "                        </button>\r" +
+    "\n" +
+    "                    </span>--><input class=\"search-query form-control\" ng-model=searchBy placeholder=\"Search\"> <span class=input-group-btn><button id=closebutton class=\"btn btn-danger ep-close-button\" type=button><span class=\"glyphicon glyphicon-remove-circle\"></span></button></span></div></div><div class=\"input-group col-xs-2 ep-search-result-container\"><div>31</div><div>Results</div></div></div></div></div>"
   );
 
 }]);

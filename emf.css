@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.304 built: 12-12-2016
+ * version:1.0.10-dev.305 built: 13-12-2016
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -659,7 +659,7 @@
   position: absolute;
   width: 100%;
   padding-left: 5%;
-  padding-top: 50px;
+  padding-top: 90px;
   top: 0;
 }
 .ep-contacts-list-inner {
@@ -676,13 +676,12 @@
   font-size: 12px;
   text-align: center;
   display: inline-block;
-  z-index: 998;
   padding: 0;
   margin: 0;
   background-color: #fafafa;
   width: 20px;
   top: 0;
-  padding-top: 50px;
+  padding-top: 93px;
   height: 100%;
 }
 .ep-index-list a {
@@ -741,6 +740,24 @@
   float: right;
   margin-right: 25px;
   margin-top: -20px;
+}
+.ep-contact-search {
+  margin-left: -25px;
+  margin-top: 7px;
+}
+.ep-contact-sub-header {
+  background-color: #f0f0f0;
+  height: 40px;
+  padding-top: 10px;
+  padding-left: 5%;
+  position: fixed;
+  z-index: 1;
+  width: 100%;
+}
+.ep-contact-sub-header-label {
+  width: 60px;
+  font-size: 1.2em;
+  color: #129ff4;
 }
 
 /* ----->>>> Pagination styling taken from dataTables.jqueryui.css -------------->>>>*/
@@ -1172,11 +1189,62 @@
   border-radius: 5px;
   width: 90%;
 }
-.ep-search-list-container .glyphicon {
-  position: absolute;
-  left: 10px;
-  top: 17px;
-  padding-left: 5%;
+.ep-search-container {
+  max-width: none !important;
+  padding-left: 0 !important;
+  margin-top: -2px !important;
+}
+.ep-search-row {
+  margin-left: 0px !important;
+}
+.ep-search-button {
+  left: 28px !important;
+  z-index: 5;
+}
+.ep-close-button {
+  z-index: 3;
+}
+.ep-search-result-container {
+  margin-top: 6px;
+  text-align: center;
+}
+.ep-search-result-num {
+  padding-left: 15px;
+}
+#custom-search-input {
+  margin: 0;
+  margin-top: 10px;
+  padding: 0;
+}
+#custom-search-input .search-query {
+  padding-right: 3px;
+  padding-right: 4px \9;
+  padding-left: 30px;
+  padding-left: 4px \9;
+  /* IE7-8 doesn't have border-radius, so don't indent the padding */
+  z-index: 4;
+  margin-bottom: 0;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+}
+#custom-search-input button {
+  border: 0;
+  background: none;
+  /** belows styles are working good */
+  padding: 2px 5px;
+  margin-top: 2px;
+  position: relative;
+  left: -28px;
+  /* IE7-8 doesn't have border-radius, so don't indent the padding */
+  margin-bottom: 0;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+  color: #808080;
+}
+.search-query:focus {
+  z-index: 2 !important;
 }
 
 .ep-icon-selector-container .icon-filter-field {
@@ -1423,7 +1491,6 @@
 }
 .ep-modaldialog.ep-modaldialog-custom .ep-modal-area {
   overflow-y: auto;
-  max-height: 85vh;
   padding-left: 20px;
   padding-right: 20px;
 }
