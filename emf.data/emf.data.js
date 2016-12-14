@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.308 built: 13-12-2016
+ * version:1.0.10-dev.309 built: 14-12-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.308","built":"2016-12-13"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.309","built":"2016-12-14"};
 
 (function() {
     'use strict';
@@ -166,6 +166,13 @@ __ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.308","built":"
                 serverName: svc.serverName
             };
             var tokenOptions = { restUri: $scope.settings.tokenUrl };
+            //if demo user skip token access
+            if ($scope.settings.username.toLowerCase() === 'demo' &&
+                $scope.settings.password.toLowerCase() === 'demo' &&
+                $scope.settings.serverUrl.toLowerCase() === 'demo') { //demo user
+                    tokenOptions.debug = true;
+                    tokenOptions.timeout = '10000';
+            }
             epTokenService.login(tokenUser, tokenOptions).success(function(data) {
                 $scope.accessToken = data.AccessToken;
                 try {
