@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.310 built: 14-12-2016
+ * version:1.0.10-dev.311 built: 14-12-2016
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.310","built":"2016-12-14"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.311","built":"2016-12-14"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -11454,7 +11454,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         var indexedDB = $window.indexedDB ||
                         $window.mozIndexedDB ||
                         $window.webkitIndexedDB ||
-                        $window.msIndexedDB;
+                        $window.msIndexedDB ||
+                        $window.shimIndexedDB;
 
         /**
          * @ngdoc method

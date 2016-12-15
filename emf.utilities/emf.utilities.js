@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.310 built: 14-12-2016
+ * version:1.0.10-dev.311 built: 14-12-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.10-dev.310","built":"2016-12-14"};
+__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.10-dev.311","built":"2016-12-14"};
 
 (function() {
   'use strict';
@@ -1403,7 +1403,8 @@ angular.module('ep.signature').directive('epSignature',
         var indexedDB = $window.indexedDB ||
                         $window.mozIndexedDB ||
                         $window.webkitIndexedDB ||
-                        $window.msIndexedDB;
+                        $window.msIndexedDB ||
+                        $window.shimIndexedDB;
 
         /**
          * @ngdoc method
