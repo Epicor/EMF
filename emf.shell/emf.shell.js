@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.315 built: 15-12-2016
+ * version:1.0.10-dev.316 built: 15-12-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.315","built":"2016-12-15"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.316","built":"2016-12-15"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -3878,7 +3878,7 @@ function() {
 
             cfg.showSpinner = (cfg.showTimer || cfg.showProgress);
             if (cfg.showSpinner) {
-                cfg.spinnerIconClass = cfg.showTimer ? 'fa-circle-o-notch' : 'fa-spinner';
+                cfg.spinnerIconClass = cfg.showTimer ? 'fa-circle-o-notch' : 'fa-spinner fa-pulse';
             }
 
             cfg.fnGetMessage = function() {

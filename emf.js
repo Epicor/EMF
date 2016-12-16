@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.315 built: 15-12-2016
+ * version:1.0.10-dev.316 built: 15-12-2016
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.315","built":"2016-12-15"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.316","built":"2016-12-15"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -6091,36 +6091,36 @@ angular.module('ep.datagrid').
     }
 }());
 
-(function() {
+(function () {
     'use strict';
     angular.module('ep.dock.panel')
-    /**
-     * @ngdoc directive
-     * @name ep.dock.panel:epDockPanel
-     * @restrict EA
-     *
-     * @description
-     * Represents a component that presets a flexible layout system
-     *
-     * @example
-     *  <pre>
-     *      <ep-dock-panel>
-     *        <div dock="left" mode="stretch"><div anchors="top, left"></div></div>
-     *        <div dock="top" mode="stretch"><div anchors="top, bottom"></div></div>
-     *        <div dock="right" mode="stretch"><div anchors="bottom, left"></div></div>
-     *        <div dock="bottom" mode="stretch"><div anchors="top, right"></div></div>
-     *        <div dock="center" mode="stretch"><div anchors="bottom, left"></div></div>
-     *      </ep-dock-panel>
-     *  </pre>
-     */
-        .directive('epDockPanel', /* @ngInject */['$log', '$timeout', function($log, $timeout) {
+        /**
+         * @ngdoc directive
+         * @name ep.dock.panel:epDockPanel
+         * @restrict EA
+         *
+         * @description
+         * Represents a component that presets a flexible layout system
+         *
+         * @example
+         *  <pre>
+         *      <ep-dock-panel>
+         *        <div dock="left" mode="stretch"><div anchors="top, left"></div></div>
+         *        <div dock="top" mode="stretch"><div anchors="top, bottom"></div></div>
+         *        <div dock="right" mode="stretch"><div anchors="bottom, left"></div></div>
+         *        <div dock="bottom" mode="stretch"><div anchors="top, right"></div></div>
+         *        <div dock="center" mode="stretch"><div anchors="bottom, left"></div></div>
+         *      </ep-dock-panel>
+         *  </pre>
+         */
+        .directive('epDockPanel', /* @ngInject */['$log', '$timeout', function ($log, $timeout) {
 
             epDockPanelCtrl.$inject = ['$scope'];
             var zoneNames = ['top', 'bottom', 'left', 'right', 'center'];
 
             /*@ngInject */
             function epDockPanelCtrl($scope) {
-                $scope.id = _.uniqueId('dockPanel_');
+                $scope.panelId = _.uniqueId('dockPanel_');
             }
 
             function preLink($scope, el, attr) {
@@ -6130,10 +6130,10 @@ angular.module('ep.datagrid').
 
                 // This is a very naive anchor implementation that only works when there is
                 // only up to 4 children in the dock/zone
-                zoneNames.forEach(function(zone) {
-                    zones[zone].forEach(function($zone) {
+                zoneNames.forEach(function (zone) {
+                    zones[zone].forEach(function ($zone) {
                         var children = $zone.children();
-                        children.each(function() {
+                        children.each(function () {
                             var $child = $(this);
                             var anchorAttr = $child.attr('anchors');
                             if (anchorAttr) {
@@ -6145,10 +6145,10 @@ angular.module('ep.datagrid').
                                 };
                                 try {
                                     var values = anchorAttr.split(',')
-                                        .map(function(v) {
+                                        .map(function (v) {
                                             return v.trim().toLowerCase();
                                         });
-                                    values.forEach(function(v) {
+                                    values.forEach(function (v) {
                                         anchors[v] = true;
                                     })
                                 } catch (e) {
@@ -6192,8 +6192,8 @@ angular.module('ep.datagrid').
             // TODO: When we support multiple zones in a single doc, we need to get smarter
             // about the height/width
             function processZones(zones) {
-                zoneNames.forEach(function(zn) {
-                    zones[zn].forEach(function(zone) {
+                zoneNames.forEach(function (zn) {
+                    zones[zn].forEach(function (zone) {
                         zone.css('height', '100%');
                         zone.css('width', '100%');
                     })
@@ -6233,9 +6233,10 @@ angular.module('ep.datagrid').
                     dockElement.append(dockContent);
                 }
 
-                var $cc = $el.find('.ep-dock-panel-cross-axis');
+                var $cross = $el.find('.ep-dock-panel-cross-axis');
                 var children = content.children();
                 var firstPos = children.attr('dock');
+
                 var topFirst = false;
                 // if the first dock element has a "top" or "bottom" dock attribute, then the top & bottom will
                 // span the whole width of the container, otherwise, the left and right will span the
@@ -6243,23 +6244,26 @@ angular.module('ep.datagrid').
                 if (firstPos === 'top' || firstPos === 'bottom') {
                     topFirst = true;
                     // The top & bottom win
-                    $el.css('flex-flow', 'column');
+                    $scope.mainFlow = 'column'
+                    //$el.css('flex-flow', 'column');
                     $el.find('.ep-dock-panel-top').appendTo($el);
                     $el.find('.ep-dock-panel-bottom').appendTo($el);
 
-                    $cc.css('flex-flow', 'row');
-                    $el.find('.ep-dock-panel-left').appendTo($cc);
-                    $el.find('.ep-dock-panel-right').appendTo($cc);
-
+                    $scope.crossFlow = 'row'
+                    //$cross.css('flex-flow', 'row');
+                    $el.find('.ep-dock-panel-left').appendTo($cross);
+                    $el.find('.ep-dock-panel-right').appendTo($cross);
                 } else {
                     // The left & right win
-                    $el.css('flex-flow', 'row');
+                    $scope.mainFlow = 'row'
+                    //$el.css('flex-flow', 'row');
                     $el.find('.ep-dock-panel-left').appendTo($el);
                     $el.find('.ep-dock-panel-right').appendTo($el);
 
-                    $cc.css('flex-flow', 'column');
-                    $el.find('.ep-dock-panel-top').appendTo($cc);
-                    $el.find('.ep-dock-panel-bottom').appendTo($cc);
+                    $scope.crossFlow = 'column';
+                    //$cross.css('flex-flow', 'column');
+                    $el.find('.ep-dock-panel-top').appendTo($cross);
+                    $el.find('.ep-dock-panel-bottom').appendTo($cross);
                 }
 
                 zoneNames.forEach(processContent);
@@ -6280,37 +6284,34 @@ angular.module('ep.datagrid').
                         flex = 100 / c;
                         // set the flex value for the top row
                         if (docks.top.hasContent && docks.top.epPanelMode === 'stretch') {
-                            docks.top.css('flex', '1 1 ' + flex + '%');
-                            docks.top.css('height', flex + '%');
+                            $scope.topFlex = '1 1 ' + flex + '%';
+                            //$scope.topHeight = flex + '%';
+                            //docks.top.css('flex', '1 1 ' + flex + '%');
+                            //docks.top.css('height', flex + '%');
                         }
                         // set the flex value for the center (cross-axis) row
                         if (docks.left.hasContent || docks.center.hasContent || docks.right.hasContent) {
 
-                            $cc.css('flex', '1 1 ' + flex + '%');
-                            $cc.css('height', flex + '%');
+                            $scope.crossFlex = '1 1 ' + flex + '%';
                             // we need to run the same calculation for the cross-axis
                             ic = (docks.left.hasContent && docks.left.epPanelMode === 'stretch' ? 1 : 0) +
                                 (docks.center.hasContent && docks.center.epPanelMode === 'stretch' ? 1 : 0) +
                                 (docks.right.hasContent && docks.right.epPanelMode === 'stretch' ? 1 : 0);
                             innerFlex = 100 / ic;
                             if (docks.left.hasContent && docks.left.epPanelMode === 'stretch') {
-                                docks.left.css('flex', '1 1 ' + innerFlex + '%');
-                                docks.left.css('width', innerFlex + '%');
+                                $scope.leftFlex = '1 1 ' + innerFlex + '%';
                             }
                             if (docks.center.hasContent && docks.center.epPanelMode === 'stretch') {
-                                docks.center.css('flex', '1 1 ' + innerFlex + '%');
-                                docks.center.css('width', innerFlex + '%');
+                                $scope.centerFlex = '1 1 ' + innerFlex + '%';
                             }
                             if (docks.right.hasContent && docks.right.epPanelMode === 'stretch') {
-                                docks.right.css('flex', '1 1 ' + innerFlex + '%');
-                                docks.right.css('width', innerFlex + '%');
+                                $scope.rightFlex = '1 1 ' + innerFlex + '%';
                             }
                         }
 
                         // set the flex value for the bottom row
                         if (docks.bottom.hasContent && docks.bottom.epPanelMode === 'stretch') {
-                            docks.bottom.css('flex', '1 1 ' + flex + '%');
-                            docks.bottom.css('height', flex + '%');
+                            $scope.bottomFlex = '1 1 ' + flex + '%';
                         }
                     }
 
@@ -6327,38 +6328,38 @@ angular.module('ep.datagrid').
                         flex = 100 / c;
                         // set the flex value for the left side
                         if (docks.left.hasContent && docks.left.epPanelMode === 'stretch') {
-                            docks.left.css('flex', '1 1 ' + flex + '%');
+                            $scope.leftFlex = '1 1' + flex + '%';
                         }
                         // set the flex value for the center (cross axis)
                         if (docks.top.hasContent || docks.center.hasContent || docks.bottom.hasContent) {
-                            $cc.css('flex', '1 1 ' + flex + '%');
+                            $scope.crossFlex = '1 1 ' + flex + '%'; 
                             // set the flex values for the top, center, and bottom
                             var ic = (docks.top.hasContent && docks.top.epPanelMode === 'stretch' ? 1 : 0) +
                                 (docks.center.hasContent && docks.center.epPanelMode === 'stretch' ? 1 : 0) +
                                 (docks.bottom.hasContent && docks.bottom.epPanelMode === 'stretch' ? 1 : 0);
                             var innerFlex = 100 / ic;
                             if (docks.top.hasContent && docks.top.epPanelMode === 'stretch') {
-                                docks.top.css('flex', '1 1 ' + innerFlex + '%');
+                                $scope.topFlex = '1 1 ' + innerFlex + '%';
                             }
                             if (docks.center.hasContent && docks.center.epPanelMode === 'stretch') {
-                                docks.center.css('flex', '1 1 ' + innerFlex + '%');
+                                $scope.centerFlex = '1 1 ' + innerFlex + '%';
                             }
                             if (docks.bottom.hasContent && docks.bottom.epPanelMode === 'stretch') {
-                                docks.bottom.css('flex', '1 1 ' + innerFlex + '%');
+                                $scope.bottomFlex = '1 1 ' + innerFlex + '%';
                             }
 
                         }
                         // set the flex value for the right side
                         if (docks.right.hasContent && docks.right.epPanelMode === 'stretch') {
-                            docks.right.css('flex', '1 1 ' + flex + '%');
+                            $scope.rightFlex = '1 1 ' + flex + '%';
                         }
                     }
                 }
-                $timeout(function(){
+                $timeout(function () {
                     processZones(zones);
                     processAnchors(zones);
                 });
-                
+
             }
 
             return {
@@ -12946,7 +12947,7 @@ angular.module('ep.menu.builder').
 
             cfg.showSpinner = (cfg.showTimer || cfg.showProgress);
             if (cfg.showSpinner) {
-                cfg.spinnerIconClass = cfg.showTimer ? 'fa-circle-o-notch' : 'fa-spinner';
+                cfg.spinnerIconClass = cfg.showTimer ? 'fa-circle-o-notch' : 'fa-spinner fa-pulse';
             }
 
             cfg.fnGetMessage = function() {
@@ -23632,7 +23633,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.dock.panel/epDockPanel.html',
-    "<div class=\"ep-dock-panel ep-fullscreen\" id={{panelId}}><div id={{id}}_left class=\"ep-dock-panel-left ep-fullscreen\" ng-show=leftVisible></div><div id={{id}}_right class=\"ep-dock-panel-right ep-fullscreen\" ng-show=rightVisible></div><div id={{id}}_top class=\"ep-dock-panel-top ep-fullscreen\" ng-show=topVisible></div><div id={{id}}_bottom class=\"ep-dock-panel-bottom ep-fullscreen\" ng-show=bottomVisible></div><div id={{id}}_cross class=\"ep-dock-panel-cross-axis ep-fullscreen\"><div id={{id}}_center class=\"ep-dock-panel-center ep-fullscreen\" ng-show=centerVisible></div></div><div ng-show=false id=transclusion ng-transclude></div></div>"
+    "<div class=\"ep-dock-panel ep-fullscreen\" id={{panelId}} ng-style=\"{ 'flex-flow': mainFlow}\"><div id={{id}}_left class=ep-dock-panel-left ng-show=leftVisible ng-style=\"{ 'flex': leftFlex}\"></div><div id={{id}}_right class=ep-dock-panel-right ng-show=rightVisible ng-style=\"{ 'flex': rightFlex,}\"></div><div id={{id}}_top class=ep-dock-panel-top ng-show=topVisible ng-style=\"{ 'flex': topFlex}\"></div><div id={{id}}_bottom class=ep-dock-panel-bottom ng-show=bottomVisible ng-style=\"{ 'flex': bottomFlex}\"></div><div id={{id}}_cross class=ep-dock-panel-cross-axis ng-style=\"{ 'flex-flow': crossFlow, 'flex': crossFlex}\"><div id={{id}}_center class=ep-dock-panel-center ng-show=centerVisible ng-style=\"{ 'flex':centerFlex}\"></div></div><div ng-show=false id=transclusion ng-transclude></div></div>"
   );
 
 

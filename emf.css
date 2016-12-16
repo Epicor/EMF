@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.315 built: 15-12-2016
+ * version:1.0.10-dev.316 built: 15-12-2016
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -1149,6 +1149,38 @@
 }
 .ep-dg-config.input-group-addon {
   padding: 0px 1px 0px 0px;
+}
+
+.ep-dock-panel {
+  position: relative;
+  height: 100%;
+  display: flex;
+}
+.ep-dock-panel-top {
+  flex: 0 0 0;
+  order: 1;
+}
+.ep-dock-panel-left {
+  flex: 0 0 0;
+  order: 1;
+}
+.ep-dock-panel-cross-axis {
+  flex: 0 0 0;
+  order: 2;
+  display: flex;
+}
+.ep-dock-panel-center {
+  flex: 0 0 0;
+  order: 2;
+  margin: auto;
+}
+.ep-dock-panel-right {
+  flex: 0 0 0;
+  order: 3;
+}
+.ep-dock-panel-bottom {
+  flex: 0 0 0;
+  order: 3;
 }
 
 .ep-drop-active.ep-drop-highlight {
