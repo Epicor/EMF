@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.329 built: 18-12-2016
+ * version:1.0.10-dev.330 built: 19-12-2016
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -2755,6 +2755,11 @@ VIEW CONTAINER [ep-view-container]
 }
 .ep-tabbar .ep-tabbar-label {
   margin-left: 12px !important;
+}
+@media (max-width: 768px) {
+  #tabbar {
+    font-size: 11px;
+  }
 }
 
 
