@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.332 built: 19-12-2016
+ * version:1.0.10-dev.333 built: 19-12-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.332","built":"2016-12-19"};
+__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.333","built":"2016-12-19"};
 
 (function() {
     'use strict';
@@ -1215,10 +1215,19 @@ angular.module('ep.record.editor', [
 
                 scope.$watch('value', function(newValue) {
                     if (newValue !== undefined) {
-                        if (!scope.editorValueType &&
-                            (!scope.column || !scope.column.editor || scope.column.editor === 'auto'))
-                        {
-                            createContext(scope);
+                        if (!scope.column || !scope.column.editor || scope.column.editor === 'auto') {
+                            //determine editor by value (auto mode)
+                            if (!scope.editorValueType) {
+                                //editor hasn't been determined yet
+                                createContext(scope);
+                            } else {
+                                //editor has been determined but type might have changed
+                                if (scope.editorValueType !== typeof scope.value) {
+                                    createContext(scope);
+                                } else if (scope.ctx.editor !== getEditorByValue(scope.value)) {
+                                    createContext(scope);
+                                }
+                            }
                         }
                     }
                 });
