@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.333 built: 19-12-2016
+ * version:1.0.10-dev.334 built: 20-12-2016
 */
 .ep-ease-animation {
   -moz-backface-visibility: hidden;
@@ -383,6 +383,7 @@ a:focus {
 }
 .ep-modaldialog.ep-modaldialog-custom .ep-modal-area {
   overflow-y: auto;
+  max-height: 85vh;
   padding-left: 20px;
   padding-right: 20px;
 }
