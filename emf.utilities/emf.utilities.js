@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.338 built: 21-12-2016
+ * version:1.0.10-dev.339 built: 21-12-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.10-dev.338","built":"2016-12-21"};
+__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.10-dev.339","built":"2016-12-21"};
 
 (function() {
   'use strict';
@@ -102,22 +102,22 @@ angular.module('ep.signature', [
  *
  * @example
  */
-(function() {
+(function () {
     'use strict';
-
-    epFileService.$inject = ['$q', '$log', '$window', 'epLocalStorageService', 'epFeatureDetectionService', 'epFileConstants'];
+    epFileService.$inject = ['$q', '$log', '$window', 'epIndexedDbService', 'epFeatureDetectionService', 'epFileConstants'];
     angular.module('ep.file')
-    //TODO: consider converting this constant into a sysconfig value
+        //TODO: consider converting this constant into a sysconfig value
         .constant('epFileConstants', {
             'namespace': 'persistentData'
         })
         .service('epFileService', /*@ngInject*/ epFileService);
 
-    function epFileService($q, $log, $window, epLocalStorageService, epFeatureDetectionService, epFileConstants) {
+    function epFileService($q, $log, $window, epIndexedDbService, epFeatureDetectionService, epFileConstants) {
 
         var storageSystems = {
             'localStorage': 0,
-            'fileStorage': 1
+            'fileStorage': 1,
+            'indexedDB': 2
         };
 
         var domErrors = {
@@ -164,7 +164,7 @@ angular.module('ep.signature', [
         var fileSystem = storageSystems.localStorage;
 
         function failWith(deferred, url) {
-            return function(error) {
+            return function (error) {
                 var errDesc;
                 if (error.name) {
                     errDesc = domErrors[error.name];
@@ -196,7 +196,7 @@ angular.module('ep.signature', [
          * the data is stored in localStorage. The path parameter is optional, defaulting to the
          */
         function load(path, filename) {
-            return loadText(path, filename).then(function(text) {
+            return loadText(path, filename).then(function (text) {
                 return angular.fromJson(text);
             });
         }
@@ -218,39 +218,57 @@ angular.module('ep.signature', [
             var deferred = $q.defer();
             var filePath;
 
-            if (fileSystem === storageSystems.localStorage) {
-                if (!filename) {
-                    filename = path;
-                    path = epFileConstants.namespace;
-                }
-                filePath = path + '.' + filename;
-                graph = epLocalStorageService.get(filePath);
-                if (!graph) {
-                    failWith(deferred, filename)({code: 1});
-                } else {
-                    $log.debug('Successfully loaded ' + filePath + ' from LocalStorage.');
-                    deferred.resolve(graph);
-                }
-            } else {
-                if (!filename) {
-                    filename = path;
-                    path = $window.cordova.file.dataDirectory;
-                }
-                $window.resolveLocalFileSystemURL(path + filename,
-                    function(fileEntry) {
-                        fileEntry.file(function(file) {
-                            var reader = new FileReader();
-                            // when the object graph is saved, it is enclosed in an array
-                            // to satisfy the Blob interface. When it is read, the function
-                            // returns it as an array with one member.
-                            reader.onloadend = function() {
-                                deferred.resolve(this.result);
-                            };
-                            reader.readAsText(file);
+            switch (fileSystem) {
+                case storageSystems.fileStorage:
+                    if (!filename) {
+                        filename = path;
+                        path = $window.cordova.file.dataDirectory;
+                    }
+                    $window.resolveLocalFileSystemURL(path + filename,
+                        function (fileEntry) {
+                            fileEntry.file(function (file) {
+                                var reader = new FileReader();
+                                // when the object graph is saved, it is enclosed in an array
+                                // to satisfy the Blob interface. When it is read, the function
+                                // returns it as an array with one member.
+                                reader.onloadend = function () {
+                                    deferred.resolve(this.result);
+                                };
+                                reader.readAsText(file);
+                            }, failWith(deferred, filename));
                         }, failWith(deferred, filename));
-                    }, failWith(deferred, filename));
+                    break;
+                case storageSystems.indexedDB:
+                    if (!filename) {
+                        filename = path;
+                        path = '';
+                    }
+                    epIndexedDbService.openDatabase('ep-file-db', 1).then(function (db) {
+                        var store = db.getObjectStore('ep-file');
+                        store.get(filename).then(function (fileEntry) {
+                            if (fileEntry) {
+                                deferred.resolve(fileEntry.value);
+                            } else {
+                                failWith(deferred, filename);
+                            }
+                        })
+                    });
+                    break;
+                case storageSystems.localStorage:
+                    if (!filename) {
+                        filename = path;
+                        path = epFileConstants.namespace;
+                    }
+                    filePath = path + '.' + filename;
+                    graph = epLocalStorageService.get(filePath);
+                    if (!graph) {
+                        failWith(deferred, filename)({ code: 1 });
+                    } else {
+                        $log.debug('Successfully loaded ' + filePath + ' from LocalStorage.');
+                        deferred.resolve(graph);
+                    }
+                    break;
             }
-
             return deferred.promise;
         }
 
@@ -292,41 +310,56 @@ angular.module('ep.signature', [
                 if (!type) {
                     type = 'text/plain';
                 }
-                if (fileSystem === storageSystems.localStorage) {
-                    if (!filename) {
-                        filename = path;
-                        path = epFileConstants.namespace;
-                    }
-                    filePath = path + '.' + filename;
-                    epLocalStorageService.update(filePath, text);
-                    $log.debug('Successfully saved ' + filePath + ' to LocalStorage.');
-                    deferred.resolve();
-                } else {
-                    if (!filename) {
-                        filename = path;
-                        path = $window.cordova.file.dataDirectory;
-                    }
-                    $window.resolveLocalFileSystemURL(path, function(directoryEntry) {
-                        directoryEntry.getFile(filename, {create: true}, function(fileEntry) {
-                            fileEntry.createWriter(function(writer) {
+                switch (fileSystem) {
+                    case storageSystems.fileStorage:
+                        if (!filename) {
+                            filename = path;
+                            path = $window.cordova.file.dataDirectory;
+                        }
+                        $window.resolveLocalFileSystemURL(path, function (directoryEntry) {
+                            directoryEntry.getFile(filename, { create: true }, function (fileEntry) {
+                                fileEntry.createWriter(function (writer) {
 
-                                // onwriteend is only called if the file was sucessfully written
-                                // so the promised is resolved without any return value.
-                                writer.onwriteend = function() {
-                                    $log.debug('Successfully wrote file: ' + filename);
-                                    deferred.resolve();
-                                };
-                                writer.onerror = function(err) {
-                                    fail(deferred, {code: err.toString()});
-                                };
-                                // the blob interface expects the object graph to be inside an array
-                                // so the graph gets stringified, then set as the only element in the array
-                                var blob = new Blob([text], {type: type});
-                                writer.write(blob);
-
+                                    // onwriteend is only called if the file was sucessfully written
+                                    // so the promised is resolved without any return value.
+                                    writer.onwriteend = function () {
+                                        $log.debug('Successfully wrote file: ' + filename);
+                                        deferred.resolve();
+                                    };
+                                    writer.onerror = function (err) {
+                                        fail(deferred, { code: err.toString() });
+                                    };
+                                    // the blob interface expects the object graph to be inside an array
+                                    // so the graph gets stringified, then set as the only element in the array
+                                    var blob = new Blob([text], { type: type });
+                                    writer.write(blob);
+                                }, failWith(deferred, filename));
                             }, failWith(deferred, filename));
                         }, failWith(deferred, filename));
-                    }, failWith(deferred, filename));
+                        break;
+                    case storageSystems.indexedDB:
+                        if (!filename) {
+                            filename = path;
+                            path = '';
+                        }
+                        var fileEntry = { filename: filename, value: text };
+                        epIndexedDbService.openDatabase('ep-file-db', 1).then(function (db) {
+                            db.getObjectStore('ep-file').put(fileEntry).then(function () {
+                                $log.debug('Saved ' + filename + ' to indexedDB');
+                                deferred.resolve();
+                            }, failWith(deferred, filename))
+                        })
+                        break;
+                    case storageSystems.localStorage:
+                        if (!filename) {
+                            filename = path;
+                            path = epFileConstants.namespace;
+                        }
+                        filePath = path + '.' + filename;
+                        epLocalStorageService.update(filePath, text);
+                        $log.debug('Successfully saved ' + filePath + ' to LocalStorage.');
+                        deferred.resolve();
+                        break;
                 }
             } catch (e) {
                 failWith(deferred, filename)(e);
@@ -348,28 +381,47 @@ angular.module('ep.signature', [
         function fileExists(path, filename) {
             var deferred = $q.defer();
             try {
-                if (fileSystem === storageSystems.fileStorage) {
-                    if (!filename) {
-                        filename = path;
-                        path = $window.cordova.file.dataDirectory;
-                    }
-                    $window.resolveLocalFileSystemURL(path + filename,
-                        function() {
-                            deferred.resolve(true);
-                        }, function(err) {
-                            if (err.code === 1) {
-                                deferred.resolve(false);
-                            } else {
-                                failWith(deferred, filename)(err);
-                            }
+                switch (fileSystem) {
+                    case storageSystems.fileStorage:
+                        if (!filename) {
+                            filename = path;
+                            path = $window.cordova.file.dataDirectory;
+                        }
+                        $window.resolveLocalFileSystemURL(path + filename,
+                            function () {
+                                deferred.resolve(true);
+                            }, function (err) {
+                                if (err.code === 1) {
+                                    deferred.resolve(false);
+                                } else {
+                                    failWith(deferred, filename)(err);
+                                }
+                            });
+                        break;
+                    case storageSystems.indexedDB:
+                        if (!filename) {
+                            filename = path;
+                            path = '';
+                        }
+                        epIndexedDbService.openDatabase('ep-file-db', 1).then(function (db) {
+                            var store = db.getObjectStore('ep-file');
+                            store.get(filename).then(function (fileEntry) {
+                                if (fileEntry) {
+                                    deferred.resolve(true);
+                                } else {
+                                    deferred.resolve(false);
+                                }
+                            })
                         });
-                } else {
-                    if (!filename) {
-                        filename = path;
-                        path = epFileConstants.namespace;
-                    }
-                    var filePath = path + '.' + filename;
-                    deferred.resolve(!!epLocalStorageService.get(filePath));
+                        break;
+                    case storageSystems.localStorage:
+                        if (!filename) {
+                            filename = path;
+                            path = epFileConstants.namespace;
+                        }
+                        var filePath = path + '.' + filename;
+                        deferred.resolve(!!epLocalStorageService.get(filePath));
+                        break;
                 }
             } catch (e) {
                 failWith(deferred, filename)(e);
@@ -386,10 +438,16 @@ angular.module('ep.signature', [
          * to the given file.
          */
         function getFilePath(filename) {
-            if (fileSystem === storageSystems.fileStorage) {
-                return $window.cordova.file.dataDirectory + filename;
-            } else {
-                return epFileConstants.namespace + '.' + filename;
+            switch (fileSystem) {
+                case storageSystems.fileStorage:
+                    return $window.cordova.file.dataDirectory + filename;
+                    break;
+                case storageSystems.indexedDB:
+                    return filename;
+                    break;
+                case storageSystems.localStorage:
+                    return epFileConstants.namespace + '.' + filename;
+                    break;
             }
         }
         /**
@@ -403,17 +461,28 @@ angular.module('ep.signature', [
         function remove(filename) {
             var deferred = $q.defer();
             try {
-                if (fileSystem === storageSystems.localStorage) {
-                    epLocalStorageService.clear(epFileConstants.namespace + '.' + filename);
-                    deferred.resolve();
-                } else {
-                    $window.resolveLocalFileSystemURL($window.cordova.file.dataDirectory + filename,
-                        function(fileEntry) {
-                            fileEntry.remove();
-                            deferred.resolve();
-                        }, function(err) {
-                            failWith(deferred, filename)(err);
+                switch (fileSystem) {
+                    case storageSystems.fileStorage:
+                        $window.resolveLocalFileSystemURL($window.cordova.file.dataDirectory + filename,
+                            function (fileEntry) {
+                                fileEntry.remove();
+                                deferred.resolve();
+                            }, function (err) {
+                                failWith(deferred, filename)(err);
+                            });
+                        break;
+                    case storageSystems.indexedDB:
+                        epIndexedDbService.openDatabase('ep-file-db', 1).then(function (db) {
+                            var store = db.getObjectStore('ep-file');
+                            store.delete(filename).then(function () {
+                                deferred.resolve();
+                            }, failWith(deferred, filename));
                         });
+                        break;
+                    case storageSystems.localStorage:
+                        epLocalStorageService.clear(epFileConstants.namespace + '.' + filename);
+                        deferred.resolve();
+                        break;
                 }
             } catch (e) {
                 failWith(deferred, filename)(e);
@@ -421,12 +490,22 @@ angular.module('ep.signature', [
             return deferred.promise;
         }
 
-        if (epFeatureDetectionService.getFeatures().platform.app !== 'Cordova') {
-            fileSystem = storageSystems.localStorage;
-            $log.debug('LocalStorage system selected.');
+        if (epFeatureDetectionService.getFeatures().platform.app === 'Cordova') {
+                $log.debug('FileStorage system selected.');
+                fileSystem = storageSystems.fileStorage;
         } else {
-            $log.debug('FileStorage system selected.');
-            fileSystem = storageSystems.fileStorage;
+            try {
+                epIndexedDbService.createSchema('ep-file-db')
+                    .defineVersion(1, function (db) {
+                        db.createObjectStore('ep-file', { keyPath: 'filename' });
+                    });
+                $log.debug('IndexedDB system selected.');
+                fileSystem = storageSystems.indexedDB;
+            } catch (err) {
+                $log.warn(err);
+                fileSystem = storageSystems.localStorage;
+                $log.debug('LocalStorage system selected.');
+            }
         }
 
         return {
