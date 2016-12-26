@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.357 built: 26-12-2016
+ * version:1.0.10-dev.358 built: 26-12-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.357","built":"2016-12-26"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.358","built":"2016-12-26"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -935,9 +935,11 @@ if (!epEmfGlobal) {
                 if (!config.libPath) {
                     config.libPath = './lib';
                 }
+                // jscs:disable
                 if (__ep_build_info) {
                     config.emfBuildInfo = __ep_build_info;
                 }
+                // jscs:enable
 
                 config.getEmfLibPath = function(libName) {
                     var ret = './lib/bower/emf';
@@ -1940,9 +1942,9 @@ if (!epEmfGlobal) {
             if (attr.href !== href) {
                 //add ep_theme_[theme.name] class to the body element
                 var bodyEl = $('body');
-                if (bodyEl.length && bodyEl.attr("class")) {
+                if (bodyEl.length && bodyEl.attr('class')) {
                     //remove all previous ep_theme_* classes
-                    var classList = bodyEl.attr("class").split(/\s+/);
+                    var classList = bodyEl.attr('class').split(/\s+/);
                     for (var i = 0; i < classList.length; i++) {
                         if (classList[i].indexOf('ep_theme_') === 0) {
                             bodyEl.removeClass(classList[i]);
@@ -3212,21 +3214,21 @@ function() {
  *      epModalDialogService.showProgress({ message: 'hello world!', title: 'title', icon: 'fa fa-clock-o fa-4x', autoClose: 2000, fnDefaultAction: function() {alert('progess completed');} });
  *
  *  # Show exception
- *      try { throw new Error("Test Exception"); } catch (ex) { epModalDialogService.showException({}, ex); }
+ *      try { throw new Error('Test Exception'); } catch (ex) { epModalDialogService.showException({}, ex); }
  *
  *  # Show custom exception with different options
  *      var options = { statusBar: true, statusBarText: 'This is status', closeButton: true, title: 'Exception title', status: 'error', message: 'Server exception message',
  *                      messageDetails: 'some trace info. this can be long at times',
- *                      buttons: [{ id: 'okButton', type: "default", text: "Ok", action: function() { alert('ok'); }}]};
+ *                      buttons: [{ id: 'okButton', type: 'default', text: 'Ok', action: function() { alert('ok'); }}]};
  *      epModalDialogService.showException(options)
  *
  *  # Show message box
- *      epModalDialogService.showMessageBox({ title: 'Message Box Sample', message: "Hello world", });
+ *      epModalDialogService.showMessageBox({ title: 'Message Box Sample', message: 'Hello world', });
  *
  *  # Show custom dialog
  *       epModalDialogService.showCustomDialog({
- *          templateUrl: "src/components/ep.modaldialog/modals/modaldialog-error.html",
- *          title: 'This is a custom dialog (error template)', status: 'warning', message: "Hello world" });
+ *          templateUrl: 'src/components/ep.modaldialog/modals/modaldialog-error.html',
+ *          title: 'This is a custom dialog (error template)', status: 'warning', message: 'Hello world' });
  *
  */
 (function() {
@@ -3599,7 +3601,7 @@ function() {
                             };
                         }
 
-                        // for compatibility with the "helpTemplateUrl" form without helpTemplateOptions
+                        // for compatibility with the 'helpTemplateUrl' form without helpTemplateOptions
                         if (cfg.helpTemplateUrl || cfg.helpTemplate) {
                             cfg.helpTemplateOptions = cfg.helpTemplateOptions || {};
                             cfg.helpTemplateOptions.templateUrl =
@@ -3686,11 +3688,11 @@ function() {
 
                             if ($scope.config.statusBar == true) {
                                 var totalFooterHeight = footerHeight + statusBarHeight;
-                                $('.ep-modal-area').css({ paddingBottom: totalFooterHeight + "px", paddingTop: headerHeight + "px" });
-                                $('.ep-modal-footer').css({ 'bottom': statusBarHeight + "px" });
+                                $('.ep-modal-area').css({ paddingBottom: totalFooterHeight + 'px', paddingTop: headerHeight + 'px' });
+                                $('.ep-modal-footer').css({ 'bottom': statusBarHeight + 'px' });
                             }
                             else {
-                                $('.ep-modal-area').css({ paddingBottom: footerHeight + "px", paddingTop: headerHeight + "px" });
+                                $('.ep-modal-area').css({ paddingBottom: footerHeight + 'px', paddingTop: headerHeight + 'px' });
                             }
                         });
                     }]

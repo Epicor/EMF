@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.357 built: 26-12-2016
+ * version:1.0.10-dev.358 built: 26-12-2016
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.357","built":"2016-12-26"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.358","built":"2016-12-26"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -101,6 +101,18 @@ if (!epEmfGlobal) {
     ]);
 })();
 
+'use strict';
+/**
+ * @ngdoc overview
+ * @name ep.binding
+ * @description
+ * ep binding
+ */
+angular.module('ep.binding', [
+    'ep.templates',
+    'ep.sysconfig'
+]);
+
 (function() {
 	'use strict';
     /**
@@ -194,6 +206,20 @@ angular.module('ep.card', [
 
     angular.module('ep.contacts.list', []);
 })();
+
+'use strict';
+/**
+ * @ngdoc overview
+ * @name ep.customization
+ * @description
+ * ep customization
+ */
+angular.module('ep.customization', [
+    'ep.templates',
+    'ep.sysconfig',
+    'ep.local.storage',
+    'ep.binding'
+]);
 
 /**
  * @ngdoc overview
@@ -1645,9 +1671,11 @@ angular.module('ep.signature', [
                 if (!config.libPath) {
                     config.libPath = './lib';
                 }
+                // jscs:disable
                 if (__ep_build_info) {
                     config.emfBuildInfo = __ep_build_info;
                 }
+                // jscs:enable
 
                 config.getEmfLibPath = function(libName) {
                     var ret = './lib/bower/emf';
@@ -1779,6 +1807,1429 @@ angular.module('ep.signature', [
 
     epApplicationLoader.initialize();
 })();
+
+(function() {
+    'use strict';
+    /**
+    * @ngdoc directive
+    * @name ep.customization.directive:epCustomization
+    * @restrict E
+    *
+    * @description
+    * Represents the ep.customization directive
+    *
+    * @example
+    */
+    epBindingEditorDirective.$inject = ['$location', 'epBindingFactory', 'epUtilsService'];
+    angular.module('ep.binding').directive('epBindingEditor', epBindingEditorDirective);
+
+    /*@ngInject*/
+    function epBindingEditorDirective($location, epBindingFactory, epUtilsService) {
+        return {
+            restrict: 'E',
+            templateUrl: 'src/components/ep.binding/controls/ep-binding-editor.html',
+            scope: {
+                epBinding: '=',
+                column: '='
+            },
+            link: function(scope, element, attrs) {
+                var bindingFactory;
+
+                //This will be set by eBindingFactory
+                scope.epBindingInfo = {
+                    value: undefined, kind: 'ep-editor-control'
+                };
+
+                scope.state = {
+                    column: {
+                        editor: 'auto',
+                        updatable: true
+                    },
+                    epBinding: {}
+                };
+
+                scope.$watch('epBinding', function(newValue, oldValue) {
+                    if (newValue !== undefined) {
+                        if (bindingFactory) {
+                            bindingFactory.changeBinding(newValue);
+                        } else {
+                            bindingFactory = new epBindingFactory(scope, newValue, scope.epBindingInfo);
+                        }
+                        if (scope.state.column.caption === undefined ||
+                            scope.state.epBinding.column !== scope.epBindingInfo.epBinding.column ||
+                            scope.state.epBinding.view !== scope.epBindingInfo.epBinding.view) {
+                            scope.state.column.caption = scope.epBindingInfo.epBinding.column;
+                        }
+                        scope.state.epBinding.view = scope.epBindingInfo.epBinding.view;
+                        scope.state.epBinding.column = scope.epBindingInfo.epBinding.column;
+                    }
+                });
+
+                scope.$watch('column', function(newValue, oldValue) {
+                    if (newValue !== undefined) {
+                        //TO DO!!!!
+                        var col = {};
+                        epUtilsService.copyProperties(scope.state.column, col);
+                        epUtilsService.copyProperties(scope.column, col);
+                        scope.state.column = col;
+                    }
+                });
+            }
+        }
+    }
+}());
+
+(function() {
+'use strict';
+/**
+* @ngdoc directive
+* @name ep.binding.directive:epBinding
+* @restrict E
+*
+* @description
+* Represents the ep.binding directive
+*
+* @example
+*/
+    epBindingPaginationDirective.$inject = ['$rootScope', 'epBindingService', 'epTransactionFactory'];
+angular.module('ep.binding').
+    directive('epBindingPagination', epBindingPaginationDirective);
+
+    /*@ngInject*/
+    function epBindingPaginationDirective($rootScope, epBindingService, epTransactionFactory) {
+        return {
+            restrict: 'E',
+            templateUrl: 'src/components/ep.binding/controls/ep-binding-pagination.html',
+            scope: {
+                epBinding: '='
+            },
+            link: function(scope, element, attrs) {
+                scope.state = {};
+                scope.view = null;
+                scope.totalItems = 0;
+                scope.currentPage = 0;
+
+                function onViewInit(view) {
+                    if (view && view.hasData()) {
+                        scope.view = view;
+                        scope.record = view.dataRow();
+                        scope.totalItems = view.data().length;
+                        scope.currentPage = view.row() + 1;
+                        scope.maxSize = 10;
+                    } else {
+                        scope.view = null;
+                        scope.totalItems = 0;
+                        scope.currentPage = 0;
+                    }
+                }
+
+                $rootScope.$on('EP_BINDING_VIEW_ADDED', function(event, data) {
+                    if (scope.state.epBinding && data.viewId === scope.state.epBinding.view) {
+                        onViewInit(epTransactionFactory.current().view(scope.state.epBinding.view));
+                    }
+                });
+
+                $rootScope.$on('EP_BINDING_VIEW_ROW_CHANGED', function(event, data) {
+                    if (scope.state.epBinding && data.viewId === scope.state.epBinding.view) {
+                        scope.currentPage = data.view.row() + 1;
+                    }
+                });
+
+                scope.$watch('epBinding', function(newValue, oldValue) {
+                    if (newValue !== undefined) {
+                        scope.state.epBinding = epBindingService.parseBinding(newValue);
+                        var view = epTransactionFactory.current().view(scope.state.epBinding.view);
+                        if (view) {
+                            onViewInit(view);
+                        }
+                    }
+                });
+
+                scope.onPageChange = function() {
+                    if (scope.view) {
+                        scope.view.row(scope.currentPage - 1);
+                    }
+                }
+            }
+        };
+    }
+}());
+
+
+(function() {
+    'use strict';
+    /**
+    * @ngdoc directive
+    * @name ep.customization.directive:epCustomization
+    * @restrict E
+    *
+    * @description
+    * Represents the ep.customization directive
+    *
+    * @example
+    */
+    epBindingRecordEditorDirective.$inject = ['$log', '$location', 'epBindingFactory', 'epCustomizationService', 'epUtilsService'];
+    angular.module('ep.binding').directive('epBindingRecordEditor', epBindingRecordEditorDirective);
+
+    /*@ngInject*/
+    function epBindingRecordEditorDirective($log, $location,
+        epBindingFactory, epCustomizationService, epUtilsService) {
+        return {
+            restrict: 'E',
+            templateUrl: 'src/components/ep.binding/controls/ep-binding-record-editor.html',
+            scope: {
+                epBinding: '=',
+                options: '=',
+                isreadonly: '=',
+                onInit: '='
+            },
+            link: function(scope, element, attrs) {
+                if (!attrs.id) {
+                    $log.warn('ep-binding-record-editor must have an id for customization');
+                    return;
+                }
+
+                scope.state = {
+                    id: attrs.id
+                };
+
+                //epCustomizationInfo must be declared on scope for customization engine
+                scope.epCustomizationInfo = {
+                    kind: 'ep-record-editor',
+                    id: scope.state.id,
+                    scope: scope,
+                    url: $location.url(),
+                    data: undefined,
+                    index: undefined,
+                    ctrl: {
+                        epBinding: scope.epBinding,
+                        factory: undefined
+                    },
+                    api: {
+                        onCustomizeActivate: function(on) {
+                            scope.isCustomizeActive = (on === true);
+                            scope.activeClass = scope.isCustomizeActive ? 'ep-customize-active' : '';
+                            scope.epCustomizationInfo.ctrl.factory.enableEditorsDrag(on, on);
+                        }
+                    }
+                };
+
+                scope.onInitThis = function(factory) {
+                    scope.state.factory = factory;
+                    scope.epCustomizationInfo.ctrl.factory = factory;
+                    if (scope.onInit) {
+                        scope.onInit(factory);
+                    }
+                }
+
+                scope.$watch('options', function(newValue, oldValue) {
+                    if (newValue !== undefined && !angular.equals(newValue, oldValue)) {
+                        if (scope.options.columns && scope.options.columns.length) {
+                            var customProps = epCustomizationService.getCustomization(scope.state.id);
+
+                            if (customProps) {
+                                angular.forEach(customProps, function(v, n) {
+                                    var col = _.find(scope.options.columns, function(c) {
+                                        return c.columnIndex === n;
+                                    });
+                                    if (!col) {
+                                        scope.options.columns.push(v);
+                                    } else {
+                                        var valid = v.validation;
+                                        //v.validation = undefined;
+                                        epUtilsService.copyProperties(v, col);
+                                        if (valid) {
+                                            var xxx;
+                                            try {
+                                                var fff;
+                                                eval('fff = function(ctx, ev, value) { ' + valid + '}');
+                                                col.fnOnFldValidate = fff;
+                                            } catch (err) {
+
+                                            }
+                                        }
+                                    }
+                                });
+                                if (scope.state.factory) {
+                                    scope.state.factory.draw();
+                                }
+                            }
+                        }
+                    }
+                }, true);
+            }
+        }
+    }
+}());
+
+
+(function() {
+'use strict';
+
+/**
+ * @ngdoc controller
+ * @name ep.customize.controller:salesrepCtrl
+ * @description
+ * Represents the salesrep controller for the
+ * ep.customize module, or for specific  directive
+ *
+ * @example
+ *
+ */
+    epBindingSelectorCtrl.$inject = ['$scope', '$timeout', 'epTransactionFactory'];
+    angular.module('ep.binding')
+        .controller('epBindingSelectorCtrl', epBindingSelectorCtrl);
+
+    /*@ngInject*/
+    function epBindingSelectorCtrl($scope, $timeout, epTransactionFactory) {
+        var scope = $scope;
+
+        if (!scope.config) {
+            scope.config = { binding: '' };
+        }
+
+        scope.views = [];
+        scope.columns = [];
+
+        $scope.meta = {
+            view: '',
+            column: '',
+            preview: ''
+        };
+
+        var viewsList = epTransactionFactory.current().views();
+        angular.forEach(viewsList, function(v) {
+            scope.views.push({
+                label: v,
+                value: v
+            });
+        });
+
+        if (scope.views.length) {
+            $scope.meta.view = scope.views[0].value;
+        }
+
+        scope.viewList = {
+            caption: 'View',
+            name: 'View',
+            editor: 'select',
+            updatable: true,
+            list: scope.views,
+            sizeClass: 'col-lg-12',
+            fnOnChange: function(ev, ctx) {
+                scope.columns = [];
+                var viewId = ctx.fnGetCurrentValue();
+                onViewChange(viewId);
+            }
+        };
+
+        scope.columnList = {
+            caption: 'Columns',
+            name: 'Columns',
+            editor: 'select',
+            updatable: true,
+            list: undefined,
+            sizeClass: 'col-lg-12',
+            fnOnChange: function(ev, ctx) {
+                var column = ctx.fnGetCurrentValue();
+                scope.config.binding = '[' + scope.meta.view + '].[' + scope.meta.column + ']';
+            }
+        };
+
+        function onViewChange(viewId) {
+            var cols = [];
+            scope.meta.column = '';
+            scope.meta.preview = '';
+            scope.config.binding = '[' + viewId + ']';
+
+            scope.loadingColumns = true;
+            $timeout(function() {
+                var view = epTransactionFactory.current().view(viewId);
+                if (view.hasData()) {
+                    var record = view.dataRow();
+                    angular.forEach(record, function(v, n) {
+                        cols.push({
+                            label: n,
+                            value: n
+                        });
+                    });
+                    scope.meta.preview = JSON.stringify(record, null, '    ');
+                }
+                scope.columns = cols;
+                scope.columnList.list = scope.columns;
+                scope.loadingColumns = false;
+            });
+        }
+
+        scope.columnBinding = {
+            caption: 'ep-binding',
+            sizeClass: 'col-lg-12',
+            editor: 'text',
+            updatable: true,
+            readonly: true,
+            placeholder: ''
+        };
+
+        if (viewsList.length) {
+            onViewChange(viewsList[0]);
+        }
+    }
+}());
+
+(function() {
+    'use strict';
+    /**
+    * @ngdoc directive
+    * @name ep.customization.directive:epCustomization
+    * @restrict E
+    *
+    * @description
+    * Represents the ep.customization directive
+    *
+    * @example
+    */
+    epBindingTableDirective.$inject = ['$location', '$timeout', 'epBindingFactory', 'epCustomizationService'];
+    angular.module('ep.binding').directive('epBindingTable', epBindingTableDirective);
+
+    /*@ngInject*/
+    function epBindingTableDirective($location, $timeout, epBindingFactory, epCustomizationService) {
+        return {
+            restrict: 'E',
+            templateUrl: 'src/components/ep.binding/controls/ep-binding-table.html',
+            scope: {
+                epBinding: '=',
+                columns: '=',
+                trackSelectedRow: '=',
+                onSelectRow: '&',
+                onDoubleClickRow: '&'
+
+            },
+            link: function(scope, element, attrs) {
+                //This will be set by eBindingFactory
+                scope.epBindingInfo = {
+                    value: undefined
+                };
+
+                scope.state = {
+                    id: attrs.id,
+                    data: undefined,
+                    columns: []
+                };
+
+                var cols = scope.columns.split(',');
+                angular.forEach(cols, function(c) {
+                    scope.state.columns.push({
+                        name: c,
+                        caption: c
+                    });
+                });
+
+                scope.dblClickRow = function(row) {
+                    if (scope.onDoubleClickRow) {
+                        scope.onDoubleClickRow({ 'row': row });
+                    }
+                }
+
+                function applyCustomization() {
+                    //apply custom props
+                    var customProps = epCustomizationService.getCustomization(scope.state.id);
+                    angular.forEach(customProps, function(c, n) {
+                        if (c.isCustom) {
+                            scope.state.columns.push(c);
+                        } else {
+                            if (c.hidden) {
+                                var theColumn = _.find(scope.state.columns, function(cc) {
+                                    return cc.name === n;
+                                });
+                                if (theColumn) {
+                                    theColumn.hidden = c.hidden;
+                                }
+                            } else if (c.caption) {
+                                var theColumn = _.find(scope.state.columns, function(cc) {
+                                    return cc.name === n;
+                                });
+                                if (theColumn) {
+                                    theColumn.caption = c.caption;
+                                }
+                            }
+                        }
+                    });
+                }
+
+                function getMetaList(headers) {
+                    var arr = [];
+                    angular.forEach(scope.state.columns, function(c) {
+                        if (c.hidden !== true) {
+                            arr.push(headers ? c.caption : c.name);
+                        }
+                    });
+                    return arr.join(',');
+                }
+
+                function setHeadersAndMeta() {
+                    scope.headers = getMetaList(true);
+                    scope.dataColumns = getMetaList(false);
+                }
+
+                scope.$watch('epBinding', function(newValue, oldValue) {
+                    if (newValue !== undefined) {
+                        var callbacks = {
+                            onViewReady: function(view) {
+                                scope.state.data = scope.epBindingInfo.view.data();
+                                scope.ready = true;
+                            }
+                        };
+                        scope.state.bindingFactory = new epBindingFactory(scope, newValue, scope.epBindingInfo, true,
+                            callbacks);
+                        applyCustomization();
+                        setHeadersAndMeta();
+                    }
+                });
+
+                //epCustomizationInfo must be declared on scope for customization engine
+                scope.epCustomizationInfo = {
+                    kind: 'ep-table',
+                    id: scope.state.id,
+                    scope: scope,
+                    url: $location.url(),
+                    data: undefined,
+                    index: undefined,
+                    ctrl:{
+                        epBinding: scope.epBinding,
+                        factory: undefined,
+                        columns: scope.state.columns,
+                    },
+                    api: {
+                        onCustomizeActivate: function(on) {
+                            scope.isCustomizeActive = (on === true);
+                            scope.activeClass = scope.isCustomizeActive ? 'ep-customize-active' : '';
+                        },
+                        onColumnAdd: function(newColumn) {
+                            scope.state.columns.push(newColumn);
+                            setHeadersAndMeta();
+                            scope.ready = false;
+                            $timeout(function() {
+                                scope.ready = true;
+                            });
+                        },
+                        onColumnRemove: function(col) {
+                            scope.state.columns = _.without(scope.state.columns, col);
+                            setHeadersAndMeta();
+                            scope.ready = false;
+                            $timeout(function() {
+                                scope.ready = true;
+                            });
+                        },
+                        onChange: function(mode) {
+                            setHeadersAndMeta();
+                            scope.ready = false;
+                            $timeout(function() {
+                                scope.ready = true;
+                            });
+                        }
+                    }
+                };
+            }
+        }
+    }
+}());
+
+/**
+* @ngdoc directive
+* @name ep.binding.directive:epBindingModelDirective
+* @restrict A
+*
+* @description
+* A directive that allows setting a ep-binding-model attribute on a control to replace ng-model.
+* ng-model must be set to "ep"
+*
+* @example
+* <input type="text" ng-model="ep" ep-binding-model="'[customer].[CustID]'" />
+*/
+(function() {
+    'use strict';
+
+    epBindingModelDirective.$inject = ['epBindingFactory'];
+    angular.module('ep.binding').
+    directive('epBindingModel', epBindingModelDirective);
+
+    /*@ngInject*/
+    function epBindingModelDirective(epBindingFactory) {
+        return {
+            restrict: 'A',
+            require: '?ngModel',
+            scope: true,
+            link: function(scope, element, attrs, ngModel) {
+                var bindingFactory;
+
+                if (!ngModel) { return; }
+
+                //This will be set by eBindingFactory
+                scope.epBindingInfo = { value: undefined, kind: 'ep-binding-model' };
+
+                scope.$watch(attrs.epBindingModel, function(newValue) {
+                    if (newValue !== undefined) {
+                        if (bindingFactory) {
+                            bindingFactory.changeBinding(newValue);
+                        } else {
+                            bindingFactory = new epBindingFactory(scope, newValue, scope.epBindingInfo, false,
+                                {
+                                    onValueChanged: function(value) { scope[attrs.ngModel] = value; }
+                                });
+                        }
+                    }
+                });
+
+                //Outward (from control to bound object)
+                ngModel.$parsers.unshift(function(value) {
+                    scope.epBindingInfo.value = value;
+                    return value;
+                });
+            }
+        };
+    }
+})();
+
+
+/**
+* @ngdoc directive
+* @name ep.binding.directive:epBindingScopeDirective
+* @restrict E
+*
+* @description
+* A directive that sets a scope on the markup withing which epDataView will be accessible
+*/
+(function() {
+    'use strict';
+
+    epBindingScopeDirective.$inject = ['$compile', 'epBindingFactory'];
+    angular.module('ep.binding').
+    directive('epBindingScope', epBindingScopeDirective);
+
+    /*@ngInject*/
+    function epBindingScopeDirective($compile, epBindingFactory) {
+        return {
+            restrict: 'E',
+            replace: false,
+            scope: true,
+            compile: function(element, attrs) {
+
+                return {
+                    pre: function(scope, iElement) {
+                        var bindingFactory;
+
+                        //This will be set by eBindingFactory
+                        scope.epBindingInfo = {};
+                        var viewAlias = attrs['aliasView'];
+
+                        scope.$watch(attrs['epBinding'], function(newValue) {
+                            if (newValue !== undefined) {
+                                if (bindingFactory) {
+                                    bindingFactory.changeBinding(newValue);
+                                } else {
+                                    bindingFactory = new epBindingFactory(scope, newValue, scope.epBindingInfo, false,
+                                        {
+                                            onRowChanged: function(record) {
+                                                scope[viewAlias] = record;
+                                            }
+                                        }, true);
+                                    viewAlias = viewAlias || scope.epBindingInfo.epBinding.view;
+                                    scope.epb = scope.epBindingInfo;
+                                    if (viewAlias) {
+                                        scope[viewAlias] = scope.epBindingInfo.record;
+                                    }
+                                }
+                            }
+                        });
+                    }
+                };
+            }
+        };
+    }
+
+})();
+
+
+(function() {
+    'use strict';
+    /**
+     * @ngdoc service
+     * @name ep.binding.factory:epBindingFactory
+     * @description
+     * Factory service for the ep.binding module
+     * Creates an instance for epBinding that provides events and properties on epBindingInfo object that
+     * can be used to tie the control to data
+     *
+     * @example
+     *
+     */
+    epBindingFactory.$inject = ['$rootScope', '$timeout', 'epBindingService', 'epTransactionFactory'];
+    angular.module('ep.binding').
+        factory('epBindingFactory', epBindingFactory);
+
+    /*@ngInject*/
+    function epBindingFactory($rootScope, $timeout, epBindingService, epTransactionFactory) {
+        var factoryInstance = function(scope, theBinding, epBindingInfo, readOnly, callbacksFuncs, trackBufferRecord) {
+
+            var state;
+            var watches = {};
+
+            function init(binding) {
+                var callbacks = callbacksFuncs || {};
+
+                state = {
+                    trackBufferRecord: trackBufferRecord,
+                    scope: scope,
+                    epBinding: epBindingService.parseBinding(binding),
+                    bi: {}
+                };
+
+                var bi = state.bi = epBindingInfo || scope.epBindingInfo || {};
+                bi.epBinding = state.epBinding;
+                bi.columnName = state.epBinding.column;
+                bi.viewId = state.epBinding.view;
+                bi.view = undefined;
+                bi.record = undefined;
+                bi.rec = undefined;
+                bi.value = undefined;
+                bi.trx = epTransactionFactory.current();
+
+                function setValueFromBoundRecord() {
+                    if (state.epBinding.column) {
+                        bi.value = bi.record[state.epBinding.column];
+                        if (callbacks.onValueChanged) {
+                            callbacks.onValueChanged(bi.value);
+                        }
+                    }
+                }
+
+                function trackBufferRec(record) {
+                    if (!state.trackBufferRecord) {
+                        return;
+                    }
+
+                    //In case a buffer record in between UI and Data View
+                    bi.rec = undefined;
+                    $timeout(function() {
+                        bi.rec = angular.extend({}, record);
+                        if (callbacks.onRowChanged) {
+                            callbacks.onRowChanged(bi.rec);
+                        }
+                    });
+
+                    if (!watches.bufferRecord) {
+                        watches.bufferRecord = scope.$watch('epBindingInfo.rec', function(newValue, oldValue) {
+                            if (newValue && oldValue && newValue !== oldValue) {
+                                for (var id in newValue) {
+                                    if (newValue.hasOwnProperty(id) && newValue[id] !== undefined) {
+                                        if (!angular.equals(newValue[id], oldValue[id])) {
+                                            bi.view.columnValue(id, newValue[id]);
+                                        }
+                                    }
+                                }
+                            }
+                        }, true);
+                    }
+                }
+
+                function onViewInit(view) {
+                    if (view && view.hasData()) {
+                        bi.view = view;
+                        if (callbacks.onViewReady) {
+                            callbacks.onViewReady(view);
+                        }
+                        if (view.hasData()) {
+                            onRowChange(view);
+                        }
+                    }
+                }
+
+                function onRowChange(view) {
+                    bi.record = view.dataRow();
+                    trackBufferRec(bi.record);
+
+                    if (!state.trackBufferRecord && callbacks.onRowChanged) {
+                        callbacks.onRowChanged(bi.record);
+                    }
+                    setValueFromBoundRecord();
+                }
+
+                var view = epTransactionFactory.current().view(state.epBinding.view);
+                if (!view) {
+                    watches.main = $rootScope.$on('EP_BINDING_VIEW_ADDED', function(event, data) {
+                        if (data.viewId === state.epBinding.view) {
+                            onViewInit(epTransactionFactory.current().view(state.epBinding.view));
+                        }
+                    });
+                } else {
+                    onViewInit(view);
+                }
+
+                watches.onViewRowChanged = $rootScope.$on('EP_BINDING_VIEW_ROW_CHANGED', function(event, data) {
+                    if (data.viewId === state.epBinding.view) {
+                        onRowChange(data.view);
+                    }
+                });
+
+                if (state.epBinding.column) {
+                    if (readOnly !== true) {
+                        //outward direction (save local change to view)
+                        watches.bindingValue = scope.$watch('epBindingInfo.value', function(newValue, oldValue) {
+                            if (newValue !== oldValue && bi.record && state.epBinding.column) {
+                                bi.view.columnValue(state.epBinding.column, newValue);
+                            }
+                        });
+                    }
+
+                    //inward direction (reflect view change to local)
+                    watches.bindingRecord = scope.$watch('epBindingInfo.record.' + state.epBinding.column,
+                        function(newValue, oldValue) {
+                            if (newValue !== oldValue && bi.record && state.epBinding.column &&
+                                bi.record[state.epBinding.column] !== bi.value) {
+                                setValueFromBoundRecord();
+                            }
+                        });
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name changeBinding
+             * @methodOf ep.binding.factory:epBindingFactory
+             * @public
+             * @description
+             * change existing binding
+             */
+            function changeBinding(binding) {
+                //TO DO::validate that new binding is valid
+                freeze();
+                init(binding);
+            }
+
+            /**
+             * @ngdoc method
+             * @name epBinding
+             * @methodOf ep.binding.factory:epBindingFactory
+             * @public
+             * @description
+             * get current binding
+             */
+            function epBinding() {
+                return state.epBinding;
+            }
+
+            /**
+             * @ngdoc method
+             * @name freeze
+             * @methodOf ep.binding.factory:epBindingFactory
+             * @public
+             * @description
+             * freeze current binding's events (when changing binding)
+             */
+            function freeze() {
+                angular.forEach(watches, function(w) {
+                    w();
+                })
+            }
+
+            init(theBinding);
+
+            return {
+                epBinding: epBinding,
+                changeBinding: changeBinding,
+                freeze: freeze
+            };
+        }
+        return factoryInstance;
+    }
+}());
+
+/**
+* @ngdoc directive
+* @name ep.record.editor.directive:epDateConvert
+* @restrict E
+*
+* @description
+* an epBinding filter that can be used to retrieve a value from data view. scope must be
+* provided as a parameter through "this" keyword
+*
+* @example
+* <p>Address:{{'customer.Address1' | epBinding:this}}</p>
+*
+*/
+(function() {
+    'use strict';
+
+    angular.module('ep.binding').
+      filter('epBinding',
+      /*@ngInject*/
+      ['epBindingFactory', '$log', '$rootScope', function(epBindingFactory, $log, $rootScope) {
+          var bindingProperty = '___epBindings';
+
+          var filter = function(epColumnBinding, scope) {
+              //The trick here is to create on scope a store to keep epBindingFactory
+              //objects for each unique binding
+              if (!scope[bindingProperty])
+              {
+                  scope[bindingProperty] = {};
+              }
+              var obj = scope[bindingProperty][epColumnBinding];
+              if (!obj) {
+                  obj = { column: epColumnBinding, epBindingInfo: { kind: 'ep-binding-filter', value: undefined } };
+                  scope[bindingProperty][epColumnBinding] = obj;
+                  obj.tempScope = scope.$new(false, scope);
+                  //$log.warn('creating filter:' + epColumnBinding);
+                  obj.bindingFactory = new epBindingFactory(scope, epColumnBinding, obj.epBindingInfo, true, {
+                      onValueChanged: function(val) {
+                          obj.value = val;
+                      }
+                  });
+                  obj.eventColumn = $rootScope.$on('EP_BINDING_COLUMN_VALUE_CHANGED', function(event, data) {
+                      if (data.viewId === obj.epBindingInfo.epBinding.view) {
+                          obj.epBindingInfo.value = data.newValue;
+                      }
+                  });
+                  obj.tempScope.$on('$destroy', function() {
+                      obj.eventColumn();
+                  });
+              }
+              return obj.epBindingInfo.value;
+          };
+          return filter;
+      }]
+    );
+})();
+
+
+(function() {
+    'use strict';
+    /**
+     * @ngdoc service
+     * @name ep.binding.service:epBindingService
+     * @description
+     * Service for the ep.binding module
+     * Helper methods for epBinding
+     *
+     * @example
+     * var binding = epBindingService.parseBinding('[customer].[CustID]')
+     *
+     */
+    epBindingService.$inject = ['$rootScope', '$log', 'epModalDialogService', 'epUtilsService', 'epTransactionFactory'];
+    angular.module('ep.binding').
+        service('epBindingService', epBindingService);
+
+    /*@ngInject*/
+    function epBindingService($rootScope, $log, epModalDialogService, epUtilsService, epTransactionFactory) {
+        var logWatches = {};
+
+        /**
+         * @ngdoc method
+         * @name parseBinding
+         * @methodOf ep.binding.factory:epBindingService
+         * @public
+         * @description
+         * open dialog with select binding
+         */
+        function selectBinding(fnOnSelect) {
+            epModalDialogService.showCustomDialog({
+                title: 'Data Binding',
+                templateUrl: 'src/components/ep.binding/controls/ep-binding-selector.html',
+                icon: 'fa fa-cogs fa-2x',
+                binding: '',
+                buttons: [
+                    {
+                        text: 'Ok',
+                        action: function(cfg) {
+                            fnOnSelect(cfg.binding);
+                        }
+                    },
+                    {
+                        text: 'Cancel',
+                        isCancel: true,
+                    }
+
+                ]
+            });
+        }
+
+        /**
+         * @ngdoc method
+         * @name parseBinding
+         * @methodOf ep.binding.factory:epBindingService
+         * @public
+         * @description
+         * parse binding passed as string into view and column
+         */
+        function parseBinding(binding) {
+            var ret;
+            if (!binding) {
+                return ret;
+            }
+            if (angular.isString(binding)) {
+                var b = binding.trim();
+                ret = {
+                    view: b,
+                    column: ''
+                }
+                if (b.indexOf('[') === 0 && (b.lastIndexOf(']') === b.length - 1)) {
+                    var matches = b.match(/\[(.*?)\]/g);
+                    if (matches.length > 1) {
+                        ret = {
+                            view: matches[0].replace('[', '').replace(']', ''),
+                            column: matches[1].replace('[', '').replace(']', '')
+                        }
+                    } else if (matches.length === 1) {
+                        ret.view = matches[0].replace('[', '').replace(']', '');
+                    }
+                } else {
+                    var parts = b.split('.');
+                    if (parts.length) {
+                        ret = {
+                            view: parts[0],
+                            column: parts[1]
+                        }
+                    }
+                }
+            } else {
+                ret = binding
+            }
+            return ret;
+        }
+
+        /**
+         * @ngdoc method
+         * @name logBindingEvents
+         * @methodOf ep.binding.factory:epBindingService
+         * @public
+         * @description
+         * turn on/off binding events log
+         */
+        function logBindingEvents(onOff) {
+            if (onOff && !logWatches.onViewRowChanged) {
+                logWatches.onViewRowChanged = $rootScope.$on('EP_BINDING_VIEW_ADDED', function(event, data) {
+                    $log.warn('[EP_BINDING_VIEW_ADDED] ViewId:' + data.viewId);
+                });
+                logWatches.onViewRowChanged = $rootScope.$on('EP_BINDING_VIEW_ROW_CHANGED', function(event, data) {
+                    $log.warn('[EP_BINDING_VIEW_ROW_CHANGED] ViewId:' + data.viewId + ';Row:' + data.view.row() +
+                        ';PrevRow:' + data.prevRow);
+                });
+                logWatches.onViewRowChanged = $rootScope.$on('EP_BINDING_COLUMN_VALUE_CHANGED', function(event, data) {
+                    var v = epTransactionFactory.current().view(data.viewId);
+                    var vstate = v.__state;
+                    var info = 'ViewId:' + data.viewId + ';Row:' + data.row + ';Old Value:' + data.oldValue +
+                        ';New value:' + data.newValue +
+                        ';isDirty:' + v.isDirty() + ';isModified:' + v.isModified() +
+                        ';Modified rows:' + Object.keys(vstate.modifiedRows).length;
+                    $log.warn('[EP_BINDING_COLUMN_VALUE_CHANGED] ' + info);
+                    angular.forEach(vstate.modifiedRows, function(idx) {
+                        $log.info('  row:' + idx + ';state:' + vstate.modified[idx].state +
+                            ';columns:' + JSON.stringify(vstate.modified[idx].columns));
+                    })
+                });
+            }
+            if (!onOff) {
+                angular.forEach(logWatches, function(w) {
+                    w();
+                });
+            }
+        }
+
+        return {
+            selectBinding: selectBinding,
+            parseBinding: parseBinding,
+            logBindingEvents: logBindingEvents
+        };
+    }
+}());
+
+(function() {
+    'use strict';
+    /**
+     * @ngdoc service
+     * @name ep.binding.factory:epDataViewFactory
+     * @description
+     * Factory for epDataViewFactory. Creates an instance of a data view.
+     *
+     * @example
+     *
+     */
+
+    epDataViewFactory.$inject = ['$rootScope', 'epUtilsService'];
+    angular.module('ep.binding').
+        factory('epDataViewFactory', epDataViewFactory);
+
+    /*@ngInject*/
+    function epDataViewFactory($rootScope, epUtilsService) {
+        var factoryInstance = function(viewId, viewData) {
+            var state = {};
+            var _view = this;
+
+            function init(_id, _data) {
+                state.id = _id;
+                state.data = _data;
+                state.row = state.data && state.data.length ? 0 : -1;
+                state.isDirty = false;
+                state.isModified = false;
+                state.modified = Array(state.data.length);
+                state.modifiedRows = {};
+                state.original = epUtilsService.merge({}, state.data);
+            }
+
+            /**
+             * @ngdoc method
+             * @name id
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * returns id of the view
+             */
+            function id() {
+                return state.id;
+            }
+
+            /**
+             * @ngdoc method
+             * @name data
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * returns data array of the view
+             */
+            function data() {
+                return state.data;
+            }
+
+            /**
+             * @ngdoc method
+             * @name dataRow
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * returns current data row of the view
+             */
+            function dataRow() {
+                if (state.row < 0) {
+                    return null;
+                }
+                return state.data[state.row];
+            }
+
+            /**
+             * @ngdoc method
+             * @name hasData
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * returns true if view has at least one data row
+             */
+            function hasData() {
+                return (state.data && state.data.length);
+            }
+
+            /**
+             * @ngdoc method
+             * @name row
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * returns current row index or sets a new current row by index
+             */
+            function row(index) {
+                if (index !== undefined) {
+                    var oldRow = state.row;
+                    state.row = index;
+                    $rootScope.$emit('EP_BINDING_VIEW_ROW_CHANGED', {
+                        viewId: state.id,
+                        view: this,
+                        prevRow: oldRow
+                    });
+                }
+                return state.row;
+            }
+
+            /**
+             * @ngdoc method
+             * @name columnValue
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * returns or sets specified column's value
+             */
+            function columnValue(column, value) {
+                var record = state.data[state.row];
+                if (arguments.length > 1) {
+                    var oldValue = record[column];
+                    if (record[column] !== value) {
+                        record[column] = value;
+                        state.isDirty = true;
+
+                        var rowIdx = state.row; //nned to handle deleted or new
+
+                        var mod = state.modified[rowIdx] || { state: 'M', columns: {} };
+                        if (Object.keys(mod.columns).length > 0 && record[column] === state.original[rowIdx][column]) {
+                            delete mod.columns[column];
+                        } else {
+                            mod.columns[column] = value;
+                        }
+                        mod.state = Object.keys(mod.columns).length > 0 ? 'M' : '';
+                        state.modified[rowIdx] = mod.state === '' ? undefined : mod;
+
+                        state.modifiedRows[rowIdx] = rowIdx;
+                        if (mod.state === '') {
+                            delete state.modifiedRows[rowIdx];
+                        }
+                        state.isModified = Object.keys(state.modifiedRows).length > 0;
+
+                        $rootScope.$emit('EP_BINDING_COLUMN_VALUE_CHANGED', {
+                            viewId: state.id,
+                            row: state.row,
+                            newValue: value,
+                            oldValue: oldValue
+                        });
+                    }
+                }
+                return record[column];
+            }
+
+            /**
+             * @ngdoc method
+             * @name rollback
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * rollback current view changes
+             */
+            function rollback() {
+                state.data = epUtilsService.merge({}, state.original);
+                state.isDirty = false;
+                state.isModified = false;
+                state.modifiedRows = {};
+            }
+
+            /**
+             * @ngdoc method
+             * @name isModified
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * returns true if view has been modified
+             */
+            function isModified() {
+                return state.isModified;
+            }
+
+            /**
+             * @ngdoc method
+             * @name isDirty
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * returns true if view been edited
+             */
+            function isDirty() {
+                return state.isDirty;
+            }
+
+            /**
+             * @ngdoc method
+             * @name modifiedRows
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * returns modified rows
+             */
+            function modifiedRows() {
+                var ret = [];
+                angular.forEach(Object.keys(state.modifiedRows), function(idx) {
+                    ret.push(state.data[idx]);
+                })
+                return ret;
+            }
+
+            /**
+             * @ngdoc method
+             * @name rowModified
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * returns modified row by its index
+             */
+            function rowModified(idx) {
+                var index = idx == undefined ? state.row : idx;
+                return (state.modified[index] !== undefined && state.modified[index].state === 'M');
+            }
+
+            init(viewId, viewData);
+
+            return {
+                __state: state, //internal usage only
+                id: id,
+                data: data,
+                dataRow: dataRow,
+                row: row,
+                hasData: hasData,
+                columnValue: columnValue,
+                isModified: isModified,
+                isDirty: isDirty,
+                modifiedRows: modifiedRows,
+                rowModified: rowModified,
+                rollback: rollback
+            };
+
+        }
+        return factoryInstance;
+    }
+
+}());
+
+(function() {
+    'use strict';
+    /**
+     * @ngdoc service
+     * @name ep.binding.factory:epTransactionFactory
+     * @description
+     * Factory for epTransactionFactory
+     *
+     * @example
+     *
+     */
+    epTransactionFactory.$inject = ['$rootScope', 'epDataViewFactory'];
+    angular.module('ep.binding').
+        factory('epTransactionFactory', epTransactionFactory);
+
+    /*@ngInject*/
+    function epTransactionFactory($rootScope, epDataViewFactory) {
+        var factoryInstance = function(trxId) {
+            var _id = trxId;
+            var _views = {};
+
+            /**
+             * @ngdoc method
+             * @name id
+             * @methodOf ep.binding.factory:epTransactionFactory
+             * @public
+             * @description
+             * returns id of the transaction
+             */
+            function id() {
+                return _id;
+            }
+
+            /**
+             * @ngdoc method
+             * @name addView
+             * @methodOf ep.binding.factory:epTransactionFactory
+             * @public
+             * @description
+             * add a view to the transaction
+             */
+            function add(id, data) {
+                //To do check if exists already
+                var v = _views[id] = new epDataViewFactory(id, data);
+                $rootScope.$emit('EP_BINDING_VIEW_ADDED', {
+                    viewId: id
+                });
+                if (v.data() && v.data().length) {
+                    //TO DO: call api
+                    $rootScope.$emit('EP_BINDING_VIEW_ROW_CHANGED', {
+                        viewId: v.id(),
+                        view: v
+                    });
+                }
+                return _views[id];
+            }
+
+            /**
+             * @ngdoc method
+             * @name view
+             * @methodOf ep.binding.factory:epTransactionFactory
+             * @public
+             * @description
+             * returns a data view by view id
+             */
+            function view(id) {
+                return _views[id];
+            }
+
+            /**
+             * @ngdoc method
+             * @name views
+             * @methodOf ep.binding.factory:epTransactionFactory
+             * @public
+             * @description
+             * get views (list of names)
+             */
+            function views() {
+                var ret = [];
+                angular.forEach(_views, function(v, n) {
+                    ret.push(n);
+                });
+                return ret;
+            }
+
+            /**
+             * @ngdoc method
+             * @name rollback
+             * @methodOf ep.binding.factory:epTransactionFactory
+             * @public
+             * @description
+             * rollback all views
+             */
+            function rollback() {
+                var ret = [];
+                angular.forEach(_views, function(v) {
+                    v.rollback();
+                });
+                return ret;
+            }
+
+            return {
+                id: id,
+                add: add,
+                //remove: remove,
+                view: view,
+                views: views,
+                rollback: rollback
+            };
+        }
+
+        //------------------------------------------------>>>>>
+        var currentTrx;
+
+        /**
+         * @ngdoc method
+         * @name newTransaction
+         * @methodOf ep.binding.factory:epTransactionFactory
+         * @public
+         * @description
+         * Create a new transaction
+         */
+        function newTransaction(id) {
+            return new factoryInstance(id);
+        }
+
+        /**
+         * @ngdoc method
+         * @name current
+         * @methodOf ep.binding.factory:epTransactionFactory
+         * @public
+         * @description
+         * Returns current transaction
+         */
+        function current() {
+            if (!currentTrx) {
+                currentTrx = newTransaction('default');
+            }
+            return currentTrx;
+        }
+        //------------------------------------------------>>>>>
+
+        return {
+            current: current,
+            newTransaction: newTransaction
+        };
+    }
+}());
 
 (function() {
     'use strict';
@@ -2139,7 +3590,7 @@ app.directive('epCardTitle',
     *          xValues: [],
     *          yValues: [[],[],...[]]
     *      },
-    *      dateUnit: {'year'/'month'/'week'/'day'},      
+    *      dateUnit: {'year'/'month'/'week'/'day'},
     *   };
     *
     *   The following chart types are supported:
@@ -2160,7 +3611,7 @@ app.directive('epCardTitle',
     *                  ]
     *
     *   other settings:
-    *       height : 'view' | 'window' | integer (px) | function | element | selector 
+    *       height : 'view' | 'window' | integer (px) | function | element | selector
     *                this defines how the chart height is calculated. The width is responsive to the container
     *       heightOffset: 0 ( 25 - default) - an offset to the calculated height
     *       legend: (bool) - (default - true) display legend option
@@ -2168,7 +3619,7 @@ app.directive('epCardTitle',
     *       stacked: (bool) - (default - true) display stacked option for appropriate charts
     *
     *       showOptions: (bool) - (default - true) display options on top of the chart
-    *       autoHideLegends: (bool) - (default - true) auto hide legend when height is smaller than certain threshold 
+    *       autoHideLegends: (bool) - (default - true) auto hide legend when height is smaller than certain threshold
     *       legendHiddenText: (bool) - (default - [legend hidden]) text to display when legend is auto hidden
     *
     *
@@ -2255,7 +3706,7 @@ app.directive('epCardTitle',
                     newHeight = el.outerHeight(true);
                 }
             }
-            var heightOffset = (scope.settings.showOptions !== false) ? - 25 : 30;
+            var heightOffset = (scope.settings.showOptions !== false) ? -25 : 30;
             if (angular.isFunction(scope.settings.heightOffset)) {
                 heightOffset = scope.settings.heightOffset(newHeight);
             } else {
@@ -3186,7 +4637,7 @@ app.directive('epCardTitle',
             scope: {
                 data: '=',
                 handler: '&',
-                mainTitle: '@',                
+                mainTitle: '@',
                 id: '@',
                 filter: '&',
                 sort: '&',
@@ -3200,8 +4651,8 @@ app.directive('epCardTitle',
                 scope.filterVal = [];
                 scope.indexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES;
                 scope.smallIndexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES_SMALL;
-         
-                scope.setTitles = scope.subTitle.split(" ");
+
+                scope.setTitles = scope.subTitle.split(' ');
                
                 $(window).resize(function() {
                     epContactsListService.toggleIndexes();
@@ -3325,6 +4776,1458 @@ app.directive('epCardTitle',
         };
     }
 })();
+
+
+(function() {
+    'use strict';
+    /**
+    * @ngdoc directive
+    * @name ep.customization.directive:epCustomization
+    * @restrict E
+    *
+    * @description
+    * Represents the ep.customization directive
+    *
+    * @example
+    */
+    epCustomizableDirective.$inject = ['$log', '$timeout', '$compile', '$location', 'epCustomizationService', 'epBindingService'];
+    angular.module('ep.customization').directive('epCustomizable', epCustomizableDirective);
+
+    /*@ngInject*/
+    function epCustomizableDirective($log, $timeout, $compile, $location, epCustomizationService, epBindingService) {
+        return {
+            restrict: 'A',
+            scope: {
+                epCustomData: '='
+            },
+            link: function(scope, element, attrs) {
+
+                scope.state = {
+                    scope: scope,
+                    id: attrs.id,
+                    element: element
+                };
+
+                //epCustomizationInfo must be declared on scope for customization engine
+                scope.epCustomizationInfo = {
+                    kind: 'ep-customizable-freeform',
+                    element: scope.state.element,
+                    id: scope.state.id,
+                    scope: scope,
+                    parentScope: scope.$parent,
+                    url: $location.url(),
+                    data: scope.epCustomData,
+                    index: scope.$parent.$index,
+                    isCustomizeActive: false,
+                    api: {
+                        onCustomizeActivate: function(on) {
+                            scope.epCustomizationInfo.isCustomizeActive = (on === true);
+                            scope.activeClass = scope.epCustomizationInfo.isCustomizeActive ?
+                                'ep-customize-active' : '';
+                            $(scope.state.element).removeClass('ep-customize-active').addClass(scope.activeClass);
+                        }
+                    }
+                };
+
+                var cProps = epCustomizationService.getCustomization(scope.state.id);
+                if (cProps) {
+                    var el = angular.element(scope.state.element);
+                    var eContainer = angular.element('<ep-customization-container ep-customization-info=' +
+                        '"epCustomizationInfo"></ep-customization-container>');
+                    angular.element(el).append($compile(eContainer)(scope));
+                }
+            }
+        }
+    }
+}());
+
+
+(function() {
+    'use strict';
+    /**
+    * @ngdoc directive
+    * @name ep.customization.directive:epCustomization
+    * @restrict E
+    *
+    * @description
+    * Represents the ep.customization directive
+    *
+    * @example
+    */
+    epCustomizationContainerDirective.$inject = ['$log', '$timeout', 'epCustomizationService', 'epBindingService'];
+    angular.module('ep.customization').directive('epCustomizationContainer', epCustomizationContainerDirective);
+
+    /*@ngInject*/
+    function epCustomizationContainerDirective($log, $timeout, epCustomizationService, epBindingService) {
+        return {
+            replace: true,
+            restrict: 'E',
+            templateUrl: 'components/ep.customization/ep-customization-container.html',
+            scope: {
+                epCustomizationInfo: '='
+            },
+            link: function(scope, element, attrs) {
+                scope.state = {
+                    element: element,
+                    style: '',
+                    controls: []
+                };
+
+                var cProps = epCustomizationService.getCustomization(scope.epCustomizationInfo.id);
+                if (cProps) {
+
+                    if (cProps['$container']) {
+                        scope.state.style = cProps['$container'].style;
+                        if (scope.state.style) {
+                            try {
+                                eval('scope.state.style = ' + scope.state.style);
+                            } catch (err) {
+                                $log.error('error during execution of customization style for ' +
+                                    scope.epCustomizationInfo.id);
+                            }
+                        }
+
+                        scope.state.script = cProps['$container'].script;
+                        if (scope.state.script) {
+                            try {
+                                var f = new Function(scope.state.script);
+                                f();
+                            } catch (err) {
+                                $log.error('error during execution of customization script for ' +
+                                    scope.epCustomizationInfo.id + '\nerror:' + err.message);
+                            }
+                        }
+                    }
+                    var iSeqMax = 0;
+                    angular.forEach(cProps, function(v, n) {
+                        if (n && n !== '$container') {
+                            var controlType = '';
+                            var control = {
+                                id: 'ep-custom_' + v.id,
+                                props: v
+                            };
+                            var theScope = scope.state.scope;
+                            if (v.controlKind === 'html') {
+                                control.type = 'html';
+                                control.class = 'col-xs-12 col-sm-8 col-md-6 col-lg-3';
+                            } else if (v.controlKind === 'editor') {
+                                if (v.binding) {
+                                    if (v.binding.indexOf('$custom-data.') !== 0) {
+                                        control.type = 'binding-editor';
+                                        control.binding = v.binding;
+                                    } else if (scope.epCustomizationInfo.data) {
+                                        control.type = 'editor-control';
+                                        control.binding = v.binding.replace('$custom-data.',
+                                            'epCustomizationInfo.data.');
+                                        control.columnName = v.binding.replace('$custom-data.', '')
+
+                                        var col = v.binding.replace('$custom-data.', '')
+                                        control.data = scope.epCustomizationInfo.data[col];
+                                    }
+                                }
+                            }
+                            if (control.type) {
+                                if (v.seq !== undefined) {
+                                    control.seq = v.seq;
+                                } else {
+                                    control.seq = iSeqMax + 1;
+                                }
+                                if (control.seq > iSeqMax) {
+                                    iSeqMax = control.seq;
+                                }
+                                control.props.sizeClassTarget = '.ep-custom-element';
+                                scope.state.controls.push(control);
+                            }
+                        }
+                    });
+
+                    scope.orderByControls = function(ctrl) {
+                        return ctrl.seq;
+                    }
+
+                    scope.handleDrop1 = function(drop, element) {
+                        if (drop && drop.dragItem && element) {
+                            var ctrlDragged = drop.dragItem;
+                            var dropAreaId = $(element).attr('id');
+                            var ctrlDrop = _.find(scope.state.controls, function(c) {
+                                return c.id === dropAreaId;
+                            });
+                            if (ctrlDrop) {
+                                if (ctrlDragged.seq >= ctrlDrop.seq) {
+                                    ctrlDragged.seq = ctrlDrop.seq;
+                                    angular.forEach(scope.state.controls, function(c) {
+                                        if (c.seq > ctrlDrop.seq) {
+                                            c.seq++;
+                                        }
+                                    });
+                                    ctrlDrop.seq++;
+                                } else {
+                                    angular.forEach(scope.state.controls, function(c) {
+                                        if (c.seq < ctrlDrop.seq) {
+                                            c.seq--;
+                                        }
+                                    });
+                                    ctrlDragged.seq = ctrlDrop.seq - 1;
+                                }
+                                angular.forEach(scope.state.controls, function(c) {
+                                    c.props.seq = c.seq;
+                                });
+                            }
+                        }
+                        scope.$apply();
+                    }
+                }
+            }
+        }
+    }
+}());
+
+(function() {
+    'use strict';
+    /**
+    * @ngdoc directive
+    * @name ep.customization.directive:epCustomization
+    * @restrict E
+    *
+    * @description
+    * Represents the ep.customization directive
+    *
+    * @example
+    */
+    epCustomizationEptable.$inject = ['$compile', '$location', '$timeout', 'epBindingService', 'epCustomizationService'];
+    angular.module('ep.customization').directive('epCustomizationEptable', epCustomizationEptable);
+
+    /*@ngInject*/
+    function epCustomizationEptable($compile, $location, $timeout, epBindingService, epCustomizationService) {
+        return {
+            replace: false,
+            restrict: 'E',
+            scope: {
+                customizationData: '='
+            },
+            templateUrl: 'components/ep.customization/ep-customization-eptable.html',
+            link: function(scope, element) {
+                scope.changes = {};
+                var columns = [];
+                var record;
+
+                scope.customization = null;
+                scope.column = {};
+
+                function getFactory() {
+                    return scope.customization.ctrl.factory;
+                }
+                function getOptions() {
+                    return scope.customization.ctrl.factory.getOptions();
+                }
+
+                function onCustomizationChange() {
+                    if (scope.customization) {
+                        scope.customization.api.onCustomizeActivate(false);
+                    }
+
+                    record = undefined;
+                    scope.customization = null;
+                    scope.column = {};
+                    scope.loadingColumns = true;
+                    $timeout(function() {
+                        columns = [];
+                        scope.customization = scope.customizationData.customization;
+                        if (scope.customization.ctrl.epBinding) {
+                            var view = epBindingService.getView(scope.customization.ctrl.epBinding);
+                            if (view.api().hasData()) {
+                                record = view.api().dataRow();
+                                angular.forEach(record, function(v, n) {
+                                    columns.push({
+                                        label: n,
+                                        value: n
+                                    });
+                                });
+                            }
+                        }
+
+                        scope.changes = epCustomizationService.getCustomization(scope.customization.id) || {};
+
+                        scope.columnList = {
+                            caption: 'Columns',
+                            name: 'Columns',
+                            editor: 'select',
+                            updatable: true,
+                            list: columns,
+                            sizeClass: 'col-lg-12',
+                            fnOnChange: function(ev, ctx) {
+                                scope.column.name = ctx.fnGetCurrentValue();
+
+                                scope.curColCtx = _.find(scope.customization.ctrl.columns, function(c) {
+                                    return c.name === scope.column.name;
+                                });
+                                if (scope.curColCtx) {
+                                    scope.curColProps = {
+                                        hidden: scope.curColCtx.hidden === true,
+                                        caption: scope.curColCtx.caption,
+                                        readonly: false
+                                    };
+                                } else {
+                                    scope.curColProps = {
+                                        hidden: false,
+                                        caption: scope.column.name,
+                                        readonly: false
+                                    };
+                                }
+                            }
+                        };
+
+                        resetColumnProps();
+
+                        scope.customization.api.onCustomizeActivate(true);
+
+                        scope.loadingColumns = false;
+                    }, 200);
+                }
+
+                function resetColumnProps() {
+                    scope.curColProps = {
+                        hidden: false,
+                        caption: '',
+                        readonly: false,
+                        binding: ''
+                    };
+                }
+
+                function setChangedProp(propName, propValue) {
+                    if (!scope.changes[scope.column.name]) {
+                        scope.changes[scope.column.name] = {};
+                    }
+                    scope.changes[scope.column.name][propName] = propValue;
+                }
+
+                resetColumnProps();
+                scope.curColCtx = {};
+
+                scope.colCaption = {
+                    caption: 'Caption',
+                    editor: 'text',
+                    updatable: true,
+                    sizeClass: 'col-lg-12',
+
+                    fnOnChange: function(ev, ctx) {
+                        if (scope.curColCtx) {
+                            scope.curColCtx.caption = ctx.fnGetCurrentValue();
+                            setChangedProp('caption', scope.curColCtx.caption);
+                            scope.customization.api.onChange('captions');
+                        }
+                    }
+                };
+
+                scope.colHidden = {
+                    caption: 'Hidden',
+                    editor: 'checkbox',
+                    updatable: true,
+                    sizeClass: 'col-lg-12',
+
+                    fnOnChange: function(ev, ctx) {
+                        if (scope.curColCtx) {
+                            scope.curColCtx.hidden = ctx.fnGetCurrentValue();
+                            setChangedProp('hidden', scope.curColCtx.hidden === true);
+                            scope.customization.api.onChange('hidden');
+                        }
+                    }
+
+                };
+
+                scope.colReadOnly = {
+                    caption: 'Read-only',
+                    editor: 'checkbox',
+                    updatable: true,
+                    sizeClass: 'col-lg-12',
+
+                    fnOnChange: function(ev, ctx) {
+                        if (scope.curColCtx) {
+                            scope.curColCtx.readonly = ctx.fnGetCurrentValue();
+                            setChangedProp('updatable', scope.curColCtx.readonly !== true);
+                        }
+                    }
+                };
+
+                scope.addColumn = function() {
+                    var sName = scope.column.name;
+                    var newColumn = {
+                        name: sName,
+                        caption: sName,
+                        columnIndex: sName,
+                        isCustom: true
+                    };
+                    scope.changes[sName] = newColumn;
+                    scope.customization.api.onColumnAdd(newColumn);
+                };
+
+                scope.removeColumn = function() {
+                    scope.customization.api.onColumnRemove(scope.curColCtx);
+                    delete scope.changes[scope.column.name];
+                    scope.curColCtx = null;
+                };
+
+                scope.$watch('customizationData', function(newValue, oldValue) {
+                    if (newValue !== undefined) {
+                        onCustomizationChange();
+                        scope.customizationData.fnGetChanges = function() {
+                            return scope.changes;
+                        };
+                    }
+                });
+            }
+        };
+    }
+}());
+
+(function() {
+    'use strict';
+    /**
+    * @ngdoc directive
+    * @name ep.customization.directive:epCustomization
+    * @restrict E
+    *
+    * @description
+    * Represents the ep.customization directive
+    *
+    * @example
+    */
+    epCustomizationFreeformDirective.$inject = ['$templateCache', '$timeout', 'epModalDialogService', 'epCustomizationService', 'epBindingService', 'epUtilsService'];
+    angular.module('ep.customization')
+        .directive('epCustomizationFreeform', epCustomizationFreeformDirective);
+
+    /*@ngInject*/
+    function epCustomizationFreeformDirective($templateCache, $timeout,
+        epModalDialogService, epCustomizationService, epBindingService, epUtilsService) {
+        return {
+            replace: false,
+            restrict: 'E',
+            scope: {
+                customizationData: '='
+            },
+            templateUrl: 'components/ep.customization/ep-customization-freeform.html',
+            link: function(scope, element) {
+                scope.changes = {};
+                scope.customization = null;
+
+                scope.state = {
+                    ctrlNumber: 1,
+                    controls: [],
+                    control: undefined,
+                    controlKind: 'editor'
+                };
+
+                function onCustomizationChange(id) {
+                    if (scope.customization) {
+                        scope.customization.api.onCustomizeActivate(false);
+                    }
+                    scope.customization = null;
+                    $timeout(function() {
+                        scope.customization = scope.customizationData.customization;
+                        resetColumnProps();
+                        scope.customization.api.onCustomizeActivate(true);
+
+                        if (scope.customization.data) {
+                            epBindingService.addView('$custom-data', [scope.customization.data]);
+                        }
+
+                        scope.changes = epCustomizationService.getCustomization(scope.customization.id) || {};
+
+                        var ctrls = [
+                            {
+                                label: '<New Control>',
+                                value: '$new'
+                            },
+                            {
+                                label: '<Container>',
+                                value: '$container'
+                            },
+                        ];
+                        if (scope.changes) {
+                            angular.forEach(scope.changes, function(v, n) {
+                                if (n && n !== '$container') {
+                                    var desc = v.caption || v.binding || '';
+                                    if (desc) {
+                                        desc = ' (' + desc + ')';
+                                    } else if (v.controlKind === 'html') {
+                                        desc = ' (html)';
+                                    }
+                                    ctrls.push({
+                                        label: n + desc,
+                                        value: n
+                                    });
+                                }
+                            });
+                        }
+                        scope.state.controls = ctrls;
+                        scope.controlsList.list = ctrls;
+                        scope.state.control = '$new';
+                        scope.curColProps.id = getNextCtrlId();
+
+                    }, 200);
+                }
+
+                function resetColumnProps() {
+                    scope.curColProps = {
+                        id: '',
+                        hidden: false,
+                        caption: '',
+                        updatable: false,
+                        binding: '',
+                        style: '',
+                        validate: '',
+                        html: '',
+                        script: ''
+                    };
+                }
+
+                function setProp(propName, propValue, id) {
+                    scope.curColProps[propName] = propValue;
+                    setChangedProp(propName, propValue, id);
+                }
+
+                function setChangedProp(propName, propValue, id) {
+                    var id = id || scope.curColProps.id;
+                    if (!scope.changes[id]) {
+                        scope.changes[id] = {};
+                    }
+                    scope.changes[id][propName] = propValue;
+                }
+
+                function getNextCtrlId() {
+                    var ret = 'Ctrl-0';
+                    if (scope.controlsList) {
+                        for (var i = 1; i < 100; i++) {
+                            ret = 'Ctrl-' + i;
+                            if (!_.find(scope.controlsList.list, function(c) {
+                                return c.value === ret;
+                            })) {
+                                return ret;
+                            }
+                        }
+                    }
+                    return ret;
+                }
+
+                function showEditor(propName, fnSave) {
+
+                    var sampleColumn = {};
+                    if (propName === 'html') {
+                        sampleColumn = {
+                            caption: 'Template Samples',
+                            name: 'Sample',
+                            editor: 'select',
+                            updatable: true,
+                            list: [
+                                { label: 'None', value: 'none' },
+                                { label: 'Panel', value: 'sample-panel.html' },
+                                { label: 'Color Tile', value: 'sample-color-tile.html' },
+                                { label: 'Button', value: 'sample-button.html' },
+                            ],
+                            sizeClass: 'col-lg-12',
+                            fnOnChange: function(ev, ctx) {
+                                var sampleId = ctx.fnGetCurrentValue();
+                                var txt = '';
+                                if (sampleId === 'none') {
+                                    txt = '';
+                                } else {
+                                    txt = $templateCache.get(sampleId);
+                                }
+                                config.editText = txt;
+                            }
+                        };
+                    }
+
+                    var config = {
+                        title: 'Editor',
+                        size: 'fullscreen',
+                        closeButton: true,
+                        editorOptions: {
+                            type: propName,
+                            sampleCol: sampleColumn,
+                            sampleVal: 'none'
+                        },
+                        editText: scope.curColProps[propName],
+                        templateOptions: {
+                            templateUrl: 'src/components/ep.customization/ep-customization-editor-box.html'
+                        },
+                        buttons: [{
+                            id: 'okButton', type: 'default', text: 'Ok', action: function(cfg) {
+                                if (fnSave) {
+                                    fnSave(cfg.editText)
+                                } else {
+                                    setProp(propName, cfg.editText);
+                                }
+                            }
+                        }]
+                    };
+
+                    epModalDialogService.showCustomDialog(config);
+                }
+
+                scope.controlsList = {
+                    caption: 'Select Control',
+                    name: 'Controls',
+                    editor: 'select',
+                    updatable: true,
+                    list: scope.state.controls,
+                    sizeClass: 'col-lg-12',
+                    fnOnChange: function(ev, ctx) {
+                        scope.state.control = ctx.fnGetCurrentValue();
+                        resetColumnProps();
+                        if (scope.state.control === '$new') {
+                            scope.curColProps.id = getNextCtrlId();
+                        } else {
+                            epUtilsService.copyProperties(scope.changes[scope.state.control], scope.curColProps);
+                            scope.state.controlKind = scope.curColProps.controlKind;
+                            var id = '#ep-custom_' + scope.state.control;
+                            $('.ep-custom-element').removeClass('ep-customize-control-active');
+                            if ($(id).length) {
+                                var el = $(id);
+                                el.addClass('ep-customize-control-active');
+                            }
+                        }
+                    }
+                };
+
+                var controlKinds = [
+                    { label: 'Editor', value: 'editor' },
+                    { label: 'HTML Template', value: 'html' },
+                ];
+
+                scope.controlKinds = {
+                    caption: 'Kind of Control',
+                    name: 'ControlKind',
+                    editor: 'select',
+                    updatable: true,
+                    list: controlKinds,
+                    sizeClass: 'col-lg-12',
+                    fnOnChange: function(ev, ctx) {
+                        scope.state.controlKind = ctx.fnGetCurrentValue();
+                    }
+                };
+
+                resetColumnProps();
+                scope.curColProps.id = getNextCtrlId();
+
+                scope.colBinding = {
+                    caption: 'ep-binding',
+                    editor: 'text',
+                    updatable: true,
+                    sizeClass: 'col-lg-12',
+                    buttons: [{
+                        position: 'post',
+                        type: 'btn',
+                        style: 'fa fa-cog',
+                        action: function() {
+                            epBindingService.selectBinding(function(binding) {
+                                setProp('binding', binding);
+                            });
+                        }
+                    }],
+
+                    fnOnChange: function(ev, ctx) {
+                        setProp('binding', ctx.fnGetCurrentValue());
+                    }
+                };
+
+                scope.colCaption = {
+                    caption: 'Caption',
+                    editor: 'text',
+                    updatable: true,
+                    sizeClass: 'col-lg-12',
+
+                    fnOnChange: function(ev, ctx) {
+                        setProp('caption', ctx.fnGetCurrentValue());
+                    }
+
+                };
+
+                scope.colHidden = {
+                    caption: 'Hidden',
+                    editor: 'checkbox',
+                    updatable: true,
+                    sizeClass: 'col-lg-12',
+
+                    fnOnChange: function(ev, ctx) {
+                        setProp('hidden', ctx.fnGetCurrentValue() === true);
+                    }
+                };
+
+                scope.colReadOnly = {
+                    caption: 'Updatable',
+                    editor: 'checkbox',
+                    updatable: true,
+                    sizeClass: 'col-lg-12',
+
+                    fnOnChange: function(ev, ctx) {
+                        setProp('updatable', ctx.fnGetCurrentValue() === true);
+                    }
+                };
+
+                scope.colStyle = {
+                    caption: 'Style',
+                    editor: 'text',
+                    updatable: true,
+                    sizeClass: 'col-lg-12',
+                    oFormat: { MaxLength: 20000 },
+
+                    buttons: [{
+                        position: 'post',
+                        type: 'btn',
+                        style: 'fa fa-edit',
+                        action: function() {
+                            showEditor('style', function(val) {
+                                var id = (scope.state.control === '$container') ? '$container' : undefined;
+                                setProp('style', val, id);
+                            });
+                        }
+                    }],
+
+                    fnOnChange: function(ev, ctx) {
+                        var id = (scope.state.control === '$container') ? '$container' : undefined;
+                        setProp('style', ctx.fnGetCurrentValue(), id);
+                    }
+
+                };
+
+                scope.colValidate = {
+                    caption: 'Validation',
+                    editor: 'text',
+                    updatable: true,
+                    sizeClass: 'col-lg-12',
+                    oFormat: { MaxLength: 10000 },
+                    buttons: [{
+                        position: 'post',
+                        type: 'btn',
+                        style: 'fa fa-edit',
+                        action: function() {
+                            showEditor('validation');
+                        }
+                    }],
+                    fnOnChange: function(ev, ctx) {
+                        setProp('validation', ctx.fnGetCurrentValue());
+                    }
+
+                };
+
+                scope.colId = {
+                    caption: 'ID',
+                    editor: 'text',
+                    updatable: false,
+                    sizeClass: 'col-lg-12',
+                    fnOnChange: function(ev, ctx) {
+                        scope.curColProps.id = ctx.fnGetCurrentValue();
+                    }
+                };
+
+                scope.colHTML = {
+                    caption: 'HTML Template',
+                    editor: 'text',
+                    updatable: true,
+                    sizeClass: 'col-lg-12',
+                    oFormat: { MaxLength: 10000 },
+                    buttons: [{
+                        position: 'post',
+                        type: 'btn',
+                        style: 'fa fa-edit',
+                        action: function() {
+                            showEditor('html');
+                        }
+                    }],
+                    fnOnChange: function(ev, ctx) {
+                        setProp('html', ctx.fnGetCurrentValue());
+                    }
+                };
+
+                scope.colContainerScript = {
+                    caption: 'Container Script',
+                    editor: 'text',
+                    updatable: true,
+                    sizeClass: 'col-lg-12',
+                    oFormat: { MaxLength: 20000 },
+
+                    buttons: [{
+                        position: 'post',
+                        type: 'btn',
+                        style: 'fa fa-edit',
+                        action: function() {
+                            showEditor('script', function(val) {
+                                setProp('script', val, '$container');
+                            });
+                        }
+                    }],
+
+                    fnOnChange: function(ev, ctx) {
+                        setProp('script', ctx.fnGetCurrentValue(), '$container');
+                    }
+
+                };
+
+                scope.addColumn = function() {
+                    if (!scope.curColProps.id) {
+                        epModalDialogService.showMessage({
+                            title: 'Missing Id', message: 'Id is required for control'
+                        });
+                        return;
+                    }
+
+                    if (scope.changes[scope.curColProps.id]) {
+                        epModalDialogService.showMessage({
+                            title: 'Duplicate Id',
+                            message: 'There is already a control with id: ' + scope.curColProps.id
+                        });
+                        return;
+                    }
+
+                    var cols = angular.extend([], scope.controlsList.list);
+                    cols.push({
+                        label: scope.curColProps.id,
+                        value: scope.curColProps.id
+                    });
+                    scope.controlsList.list = cols;
+                    scope.state.control = scope.curColProps.id;
+
+                    setChangedProp('controlKind', scope.state.controlKind);
+                    setChangedProp('id', scope.curColProps.id);
+
+                    //if (scope.state.controlKind === 'html') {
+                    //    if (scope.changes[scope.curColCtx.binding]) {
+                    //        epModalDialogService.showMessage({ title: 'Duplicate Id',
+                    //message: 'There is already a html with id: ' + scope.curColCtx.binding });
+                    //        return;
+                    //    }
+
+                    //    var cols = angular.extend([], scope.controlsList.list);
+                    //    cols.push({
+                    //        label: scope.curColCtx.binding,
+                    //        value: scope.curColCtx.binding
+                    //    });
+                    //    scope.controlsList.list = cols;
+                    //    scope.state.control = scope.curColCtx.binding;
+
+                    //    setChangedProp('controlKind', scope.state.controlKind);
+                    //    setChangedProp('binding', scope.curColCtx.binding);
+
+                    //} else if (scope.curColCtx.binding && scope.curColCtx.binding.split('.').length === 2) {
+
+                    //    if (scope.changes[scope.curColCtx.binding]) {
+                    //        epModalDialogService.showMessage({ title: 'Duplicate column',
+                    //message: 'There is already a column with binding: ' + scope.curColCtx.binding });
+                    //        return;
+                    //    }
+
+                    //    var el = angular.element(scope.customization.ctrl.state.element);
+                    //    var binding = '\'' + scope.curColCtx.binding + '\'';
+                    //    var html = '<ep-binding-editor ep-binding="' + binding + '"></ep-binding-editor>';
+                    //    el.append($compile(html)(scope.customization.ctrl.state.scope));
+
+                    //    var cols = angular.extend([], scope.controlsList.list);
+                    //    cols.push({
+                    //        label: scope.curColCtx.binding,
+                    //        value: scope.curColCtx.binding
+                    //    });
+                    //    scope.controlsList.list = cols;
+                    //    scope.state.control = scope.curColCtx.binding;
+
+                    //    setChangedProp('controlKind', scope.state.controlKind);
+                    //    setChangedProp('binding', scope.curColCtx.binding);
+                    //} else {
+                    //    epModalDialogService.showMessage({ title:'Invalid binding!',
+                    //message: 'ep-binding must be in the format [view.column]'});
+                    //}
+                };
+
+                scope.removeColumn = function() {
+                    if (scope.changes[scope.curColProps.id]) {
+                        delete scope.changes[scope.curColProps.id];
+                    }
+
+                    var cols = angular.extend([], scope.controlsList.list);
+                    var col = _.find(cols, function(c) {
+                        return c.value === scope.curColProps.id;
+                    });
+                    if (col) {
+                        var controlsList = _.without(cols, col);
+                        scope.controlsList.list = controlsList;
+                        scope.state.control = '$new';
+                        scope.curColProps.id = getNextCtrlId();
+                    }
+                };
+
+                scope.$watch('customizationData', function(newValue, oldValue) {
+                    if (newValue !== undefined) {
+                        onCustomizationChange();
+                        scope.customizationData.fnGetChanges = function() {
+                            return scope.changes;
+                        };
+                    }
+                });
+            }
+        };
+    }
+}());
+
+(function() {
+    'use strict';
+    /**
+    * @ngdoc directive
+    * @name ep.customization.directive:epCustomization
+    * @restrict E
+    *
+    * @description
+    * Represents the ep.customization directive
+    *
+    * @example
+    */
+    epCustomizationRecordEditorDirective.$inject = ['$timeout', 'epBindingService', 'epCustomizationService'];
+    angular.module('ep.customization')
+        .directive('epCustomizationRecordEditor', epCustomizationRecordEditorDirective);
+
+    /*@ngInject*/
+    function epCustomizationRecordEditorDirective($timeout, epBindingService, epCustomizationService) {
+        return {
+            replace: false,
+            restrict: 'E',
+            scope: {
+                customizationData: '='
+            },
+            templateUrl: 'components/ep.customization/ep-customization-record-editor.html',
+            link: function(scope, element) {
+                scope.changes = {};
+                var columns = [];
+                var record;
+
+                scope.customization = null;
+                scope.column = {};
+
+                function getFactory() {
+                    return scope.customization.ctrl.factory;
+                }
+                function getOptions() {
+                    return scope.customization.ctrl.factory.getOptions();
+                }
+
+                function onCustomizationChange() {
+                    if (scope.customization) {
+                        scope.customization.api.onCustomizeActivate(false);
+                    }
+
+                    record = undefined;
+                    scope.customization = null;
+                    scope.column = {};
+                    $timeout(function() {
+                        columns = [];
+                        scope.customization = scope.customizationData.customization;
+                        if (scope.customization.ctrl.epBinding) {
+                            var view = epBindingService.getView(scope.customization.ctrl.epBinding);
+                            if (view.api().hasData()) {
+                                record = view.api().dataRow();
+                                angular.forEach(record, function(v, n) {
+                                    columns.push({
+                                        label: n,
+                                        value: n
+                                    });
+                                });
+                            }
+                        }
+
+                        scope.changes = epCustomizationService.getCustomization(scope.customization.id) || {};
+
+                        scope.columnList = {
+                            caption: 'Columns',
+                            name: 'Columns',
+                            editor: 'select',
+                            updatable: true,
+                            list: columns,
+                            sizeClass: 'col-lg-12',
+                            fnOnChange: function(ev, ctx) {
+                                scope.column.name = ctx.fnGetCurrentValue();
+                                var factory = getFactory();
+                                scope.curColCtx = factory.getColumnContext(scope.column.name);
+                                if (scope.curColCtx) {
+                                    scope.curColProps = {
+                                        hidden: (scope.curColCtx.hidden === true),
+                                        caption: scope.curColCtx.label,
+                                        readonly: (scope.curColCtx.updatable === false),
+                                        style: scope.curColCtx.style ?
+                                            JSON.stringify(scope.curColCtx.style, null, ' ') : '',
+                                        validate: scope.changes[scope.column.name] ?
+                                            scope.changes[scope.column.name].validation : ''
+                                    };
+                                } else {
+                                    scope.curColProps = {
+                                        hidden: false,
+                                        caption: '',
+                                        readonly: false
+                                    };
+                                }
+                            }
+                        };
+
+                        resetColumnProps();
+
+                        scope.customization.api.onCustomizeActivate(true);
+
+                    }, 200);
+                }
+
+                function resetColumnProps() {
+                    scope.curColProps = {
+                        hidden: false,
+                        caption: '',
+                        readonly: false,
+                        binding: '',
+                        style: '',
+                        validate: ''
+                    };
+
+                }
+
+                function getEditorByValue(v) {
+                    var tp = typeof v;
+                    if (tp === 'number') {
+                        return 'number';
+                    } else if (tp === 'boolean') {
+                        return 'checkbox';
+                    } else if (tp === 'date') {
+                        return 'date';
+                    } else if (tp === 'string') {
+                        var reg = /\d{4}-\d{2}-\d{2}['T']/;
+                        if (v && v.match(reg)) {
+                            return 'date';
+                        }
+                    }
+                    return 'text';
+                }
+
+                function setChangedProp(propName, propValue, colName) {
+                    var cname = colName || scope.column.name;
+                    if (!scope.changes[cname]) {
+                        scope.changes[cname] = {};
+                    }
+                    scope.changes[cname][propName] = propValue;
+                }
+
+                resetColumnProps();
+                scope.curColCtx = {};
+
+                scope.colCaption = {
+                    caption: 'Caption',
+                    editor: 'text',
+                    updatable: true,
+                    sizeClass: 'col-lg-12',
+
+                    fnOnChange: function(ev, ctx) {
+                        if (scope.curColCtx) {
+                            scope.curColCtx.label = ctx.fnGetCurrentValue();
+                            setChangedProp('caption', scope.curColCtx.label);
+                        }
+                    }
+
+                };
+
+                scope.colHidden = {
+                    caption: 'Hidden',
+                    editor: 'checkbox',
+                    updatable: true,
+                    sizeClass: 'col-lg-12',
+
+                    fnOnChange: function(ev, ctx) {
+                        if (scope.curColCtx) {
+                            scope.curColCtx.hidden = ctx.fnGetCurrentValue();
+                            setChangedProp('hidden', scope.curColCtx.hidden === true);
+                        }
+                    }
+
+                };
+
+                scope.colReadOnly = {
+                    caption: 'Read-only',
+                    editor: 'checkbox',
+                    updatable: true,
+                    sizeClass: 'col-lg-12',
+
+                    fnOnChange: function(ev, ctx) {
+                        if (scope.curColCtx) {
+                            scope.curColCtx.readonly = ctx.fnGetCurrentValue();
+                            setChangedProp('updatable', scope.curColCtx.readonly !== true);
+                        }
+                    }
+                };
+
+                scope.colStyle = {
+                    caption: 'Style',
+                    editor: 'multiline',
+                    updatable: true,
+                    sizeClass: 'col-lg-12',
+                    oFormat: { MaxLength: 200 },
+                    fnOnChange: function(ev, ctx) {
+                        if (scope.curColCtx) {
+                            scope.curColCtx.style = ctx.fnGetCurrentValue();
+                            setChangedProp('style', scope.curColCtx.style);
+                        }
+                    }
+
+                };
+
+                scope.colValidate = {
+                    caption: 'Validation',
+                    editor: 'multiline',
+                    updatable: true,
+                    sizeClass: 'col-lg-12',
+                    oFormat: { MaxLength: 200 },
+                    fnOnChange: function(ev, ctx) {
+                        if (scope.curColCtx) {
+                            scope.curColCtx.validate = ctx.fnGetCurrentValue();
+                            setChangedProp('validation', scope.curColCtx.validate);
+                        }
+                    }
+
+                };
+
+                scope.addColumn = function() {
+                    var sName = scope.column.name;
+                    var factory = getFactory();
+                    var options = getOptions();
+                    var cols = options.columns;
+                    //cols = factory.getColumns();
+
+                    var editor = getEditorByValue(record[sName]);
+
+                    var newColumn = {
+                        caption: sName,
+                        editor: editor,
+                        columnIndex: sName,
+                        updatable: true,
+                        isCustom: true
+                    };
+
+                    cols.push(newColumn);
+
+                    factory.draw();
+                    scope.column.name = '';
+                    $timeout(function() {
+                        scope.column.name = sName;
+                        scope.curColCtx = factory.getColumnContext(scope.column.name);
+                    }, 200);
+
+                    scope.changes[sName] = newColumn;
+                };
+
+                scope.removeColumn = function() {
+                    var factory = getFactory();
+                    var options = getOptions();
+                    var cols = options.columns;
+                    var col = _.find(cols, function(c) {
+                        return c.columnIndex === scope.column.name;
+                    });
+                    if (col) {
+                        options.columns = _.without(cols, col);
+                        factory.draw();
+                        scope.column.name = '';
+                        scope.curColCtx = null;
+                        resetColumnProps();
+                    }
+                };
+
+                scope.$watch('customizationData', function(newValue, oldValue) {
+                    if (newValue !== undefined) {
+                        onCustomizationChange();
+                        scope.customizationData.fnGetChanges = function() {
+                            var factory = getFactory();
+                            var controls = factory.getState().controls;
+                            angular.forEach(controls, function(ctrl) {
+                                if (ctrl.origSeq !== undefined) {
+                                    setChangedProp('seq', ctrl.seq, ctrl.columnIndex);
+                                }
+                            });
+
+                            return scope.changes;
+                        };
+                    }
+                });
+            }
+        };
+    }
+}());
+
+(function() {
+    'use strict';
+    /**
+    * @ngdoc directive
+    * @name ep.customization.directive:epCustomization
+    * @restrict E
+    *
+    * @description
+    * Represents the ep.customization directive
+    *
+    * @example
+    */
+    epCustomizationDirective.$inject = ['$rootScope', '$route', '$timeout', 'epCustomizationService', 'epModalDialogService'];
+    epCustomManageCtrl.$inject = ['$route', '$scope', '$timeout', 'epCustomizationService'];
+    angular.module('ep.customization').directive('epCustom', epCustomizationDirective);
+
+    /*@ngInject*/
+    function epCustomizationDirective($rootScope, $route, $timeout, epCustomizationService, epModalDialogService) {
+        return {
+            replace: false,
+            restrict: 'E',
+            scope: {
+            },
+            templateUrl: 'components/ep.customization/ep-customization.html',
+            link: function(scope, element) {
+                var customizationScopes = {};
+
+                function getScopes(root) {
+                    var scopes = {};
+
+                    function visit(scope) {
+                        if (scope.epCustomizationInfo && scope.epCustomizationInfo.kind &&
+                            scope.epCustomizationInfo.id) {
+                            scopes[scope.epCustomizationInfo.id] = scope.epCustomizationInfo;
+                        }
+                    }
+
+                    function traverse(scope) {
+                        visit(scope);
+                        if (scope.$$nextSibling) {
+                            traverse(scope.$$nextSibling);
+                        }
+                        if (scope.$$childHead) {
+                            traverse(scope.$$childHead);
+                        }
+                    }
+
+                    traverse(root);
+                    return scopes;
+                }
+
+                scope.btnClickManage = function() {
+                    var config = {
+                        title: 'Editor',
+                        size: 'fullscreen',
+                        closeButton: true,
+                        manage: {
+                        },
+                        editText: '',
+                        templateOptions: { templateUrl: 'components/ep.customization/ep-customization-manage.html' },
+                        buttons: [
+                            {
+                                id: 'cancelButton', type: 'cancel', isCance: true, text: 'Close',
+                                action: function(cfg) {
+                                }
+                            },
+                            {
+                                id: 'okButton', type: 'default', isDefault: true, text: 'Ok',
+                                action: function(cfg) {
+                                    $route.reload();
+                                }
+                            }
+                       ]
+                    };
+
+                    epModalDialogService.showCustomDialog(config);
+                };
+
+                scope.btnClickSave = function() {
+                    if (scope.customizationData.fnGetChanges) {
+                        var changes = scope.customizationData.fnGetChanges();
+                        epCustomizationService.saveCustomForView(scope.customization.id, changes);
+                        $route.reload();
+                    }
+                };
+
+                scope.btnClickClearCustomization = function() {
+                    epCustomizationService.clearCustomForView(scope.customization.id);
+                    $route.reload();
+                };
+
+                function onCustomizationChange(id) {
+                    if (scope.customization) {
+                        scope.customization.api.onCustomizeActivate(false);
+                    }
+                    
+                    scope.customization = null;
+                    $timeout(function() {
+                        scope.customization = customizationScopes[id];
+
+                        scope.customizationData = {
+                            customization: scope.customization,
+                            customizationId: id,
+                            customizationKind: (scope.customization) ? scope.customization.kind : ''
+                        };
+
+                        if (scope.customization) {
+                            scope.customization.api.onCustomizeActivate(true);
+                        }
+                    }, 200);
+                }
+
+                function init() {
+                    scope.customizationData = {
+                        customizationId: '',
+                        customizationKind: ''
+                    };
+                    scope.customization = null;
+
+                    var list = [];
+                    customizationScopes = getScopes($rootScope);
+                    angular.forEach(customizationScopes, function(v, k) {
+                        list.push({
+                            label: k,
+                            value: k
+                        });
+                    });
+
+                    scope.customizationsList = {
+                        caption: 'Customizable Objects',
+                        name: 'Customs',
+                        editor: 'select',
+                        updatable: true,
+                        list: list,
+                        sizeClass: 'col-lg-12',
+                        buttons: [{
+                            position: 'post',
+                            type: 'btn',
+                            style: 'fa fa-refresh',
+                            action: function() {
+                                init();
+                            }
+                        }],
+                        fnOnChange: function(ev, ctx) {
+                            onCustomizationChange(ctx.fnGetCurrentValue());
+                        }
+                    };
+
+                }
+
+                $timeout(function() {
+                    scope.$digest();
+                    init();
+                }, 1000);
+            }
+        };
+    }
+
+    angular.module('ep.customization')
+    .controller('epCustomManageCtrl', epCustomManageCtrl);
+
+    /*@ngInject*/
+    function epCustomManageCtrl($route, $scope, $timeout, epCustomizationService) {
+
+        document.getElementById('file').addEventListener('change', onChange);
+
+        function onChange(event) {
+            var reader = new FileReader();
+            reader.onload = onReaderLoad;
+            reader.readAsText(event.target.files[0]);
+        }
+
+        function onReaderLoad(event) {
+            var obj = JSON.parse(event.target.result);
+            if (obj) {
+                epCustomizationService.importCustomization(obj)
+                alert('customization was imported!');
+            }
+        }
+
+        $scope.btnClickClearAllCustomizations = function() {
+            epCustomizationService.clearAllCustomizations();
+        };
+
+        $scope.btnClickExport = function() {
+            var customizations = epCustomizationService.getAllCustomizations();
+            if (!customizations) {
+                alert('There are no customizations to save');
+                return;
+            }
+            var toJson = angular.toJson(customizations);
+            var blob = new Blob([toJson], { type: 'application/json;charset=utf-8;' });
+            var href = window.URL.createObjectURL(blob);
+
+            var downloadLink = angular.element('<a></a>');
+            downloadLink.attr('href', href);
+            downloadLink.attr('download', 'customization.json');
+            downloadLink[0].click();
+        };
+
+    }
+
+}());
+
+(function() {
+'use strict';
+/**
+ * @ngdoc service
+ * @name ep.customization.service:epCustomizationService
+ * @description
+ * Service for the ep.customization module
+ * ep customization
+ *
+ * @example
+ *
+ */
+    epCustomizationService.$inject = ['$location', 'epLocalStorageService'];
+    angular.module('ep.customization').
+    service('epCustomizationService', epCustomizationService);
+
+    /*@ngInject*/
+    function epCustomizationService($location, epLocalStorageService) {
+
+        function importCustomization(customization) {
+            var key = 'ep-customization';
+            epLocalStorageService.update(key, customization);
+        }
+
+        function saveCustomForView(id, props, view) {
+            var v = resolveView(view);
+            var key = 'ep-customization.' + v + '.' + id;
+            epLocalStorageService.update(key, props);
+        }
+
+        function clearCustomForView(id, view) {
+            var v = resolveView(view);
+            var key = 'ep-customization.' + v + '.' + id;
+            epLocalStorageService.update(key, undefined);
+        }
+
+        function clearAllCustomizations() {
+            var key = 'ep-customization';
+            epLocalStorageService.update(key, undefined);
+        }
+
+        function getCustomization(id, view) {
+            var v = resolveView(view);
+            var key = 'ep-customization.' + v + '.' + id;
+            return epLocalStorageService.get(key);
+        }
+
+        function getAllCustomizations() {
+            var key = 'ep-customization';
+            return epLocalStorageService.get(key);
+        }
+
+        function resolveView(view) {
+            var v = view;
+            if (!v) {
+                v = $location.url() || 'view';
+            }
+            var qIdx = v.indexOf('?');
+            var ret = qIdx > 0 ? v.substring(0, qIdx) : v;
+            return ret;
+        }
+
+        return {
+            importCustomization: importCustomization,
+            saveCustomForView: saveCustomForView,
+            clearCustomForView: clearCustomForView,
+            clearAllCustomizations: clearAllCustomizations,
+            getCustomization: getCustomization,
+            getAllCustomizations: getAllCustomizations
+        };
+    }
+}());
 
 /**
  * @ngdoc overview
@@ -6097,7 +9000,7 @@ angular.module('ep.datagrid').
     }
 }());
 
-(function () {
+(function() {
     'use strict';
     angular.module('ep.dock.panel')
         /**
@@ -6119,7 +9022,7 @@ angular.module('ep.datagrid').
          *      </ep-dock-panel>
          *  </pre>
          */
-        .directive('epDockPanel', /* @ngInject */['$log', '$timeout', function ($log, $timeout) {
+        .directive('epDockPanel', /* @ngInject */['$log', '$timeout', function($log, $timeout) {
 
             epDockPanelCtrl.$inject = ['$scope'];
             var zoneNames = ['top', 'bottom', 'left', 'right', 'center'];
@@ -6133,20 +9036,20 @@ angular.module('ep.datagrid').
             }
 
             function parseAnchors(attrVal) {
-                return attrVal.split(',').map(function(v){ return v.trim().toLowerCase(); })
+                return attrVal.split(',').map(function(v) { return v.trim().toLowerCase(); })
             }
 
             function processAnchors(zones) {
 
                 // This is a very naive anchor implementation that only works when there is
                 // only up to 4 children in the dock/zone
-                zoneNames.forEach(function (zone) {
-                    zones[zone].forEach(function ($zone) {
+                zoneNames.forEach(function(zone) {
+                    zones[zone].forEach(function($zone) {
                         var children = $zone.children();
                         // flatten all of the anchors so we can get a count
-                        var allAnchors = Array.from(children).reduce(function(p, c){ return p.concat(c); },[]);
+                        var allAnchors = Array.from(children).reduce(function(p, c) { return p.concat(c); }, []);
 
-                        children.each(function () {
+                        children.each(function() {
                             var $child = $(this);
                             var anchorAttr = $child.attr('anchors');
                             if (anchorAttr) {
@@ -6158,7 +9061,7 @@ angular.module('ep.datagrid').
                                 };
                                 try {
                                     var values = parseAnchors(anchorAttr);
-                                    values.forEach(function (v) {
+                                    values.forEach(function(v) {
                                         anchors[v] = true;
                                     })
                                 } catch (e) {
@@ -6331,7 +9234,7 @@ angular.module('ep.datagrid').
                         }
                         // set the flex value for the center (cross axis)
                         if (docks.top.hasContent || docks.center.hasContent || docks.bottom.hasContent) {
-                            $scope.crossFlex = '1 1 ' + flex + '%'; 
+                            $scope.crossFlex = '1 1 ' + flex + '%';
                             // set the flex values for the top, center, and bottom
                             var ic = (docks.top.hasContent && docks.top.epPanelMode === 'stretch' ? 1 : 0) +
                                 (docks.center.hasContent && docks.center.epPanelMode === 'stretch' ? 1 : 0) +
@@ -6354,7 +9257,7 @@ angular.module('ep.datagrid').
                         }
                     }
                 }
-                $timeout(function () {
+                $timeout(function() {
                     processAnchors(zones);
                 });
 
@@ -9228,7 +12131,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             scope: {
                 searchBy: '='
             },
-            templateUrl: 'src/components/ep.filter.list/filter_list.html'
+            templateUrl: 'src/components/ep.filter.list/filter_list.html',
+            link: function(scope) {
+                scope.clearSearch = function(){
+                    scope.searchBy = '';
+                }  
+            }
         };
     });
 })();
@@ -11663,50 +14571,145 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 })();
 
 /**
-* @ngdoc directive
-* @name ep.list.directive:epList
-* @restrict E
-*
-* @description
-* Represents the ep.list directive
-*
-* @example
-*/
+ * @ngdoc directive
+ * @name ep.contacts.list:epContactsList
+ * @restrict EA
+ *
+ * @description
+ * Represents contacts list with alphabet indexes on right side
+ * - data: contacts list array
+ * - handler: handler function when clicks on a contact.
+ *
+ * @example
+ *  <pre>
+ *      <ep-contacts-list data="['Bname', 'Cname', 'Aname'"></ep-contacts-list>
+ *  </pre>
+ */
 (function() {
     'use strict';
 
-    angular.module('ep.list').
-    directive('epList', epListDirective);
+    epListDirective.$inject = ['$filter', '$timeout', 'epListService'];
+    angular.module('ep.list').directive('epList', epListDirective);
 
-    /*@ngInject*/
-    function epListDirective() {
+    function epListDirective($filter, $timeout, epListService) {
         return {
-            restrict: 'E',
-            controller: 'epListCtrl',
-            templateUrl: 'src/components/ep.list/ep-list.html'
+            restrict: 'EA',
+            replace: true,
+            scope: {
+                data: '=',
+                handler: '&',
+                mainTitle: '@',
+                id: '@',
+                filter: '&',
+                sort: '&',
+                add: '&',
+                subTitle: '@',
+                additionalTitle: '@',
+                groupBy: '@',
+                subHeader: '@',
+                arrow: '@'
+            },
+            templateUrl: 'src/components/ep.list/ep-list.html',
+            link: function(scope) {
+                if (scope.groupBy) {
+                    scope.data = epListService.getGroupedList(scope.data, scope.groupBy);
+                }
+                scope.setTitles = scope.subTitle.split(" ");
+            }
         };
     }
 })();
 
 /**
-* @ngdoc directive
-* @name ep.list.directive:epList
-* @restrict E
-*
-* @description
-* Represents the ep.list directive
-*
-* @example
-*/
+ * @ngdoc service
+ * @name ep.contacts.list:epContactsListService
+ * @description
+ * Provides methods for dislaying contacts list with indexes.
+ *
+ * @example
+ *
+ */
 (function() {
     'use strict';
 
-    angular.module('ep.list').
-    factory('epList', epListService);
+    epListService.$inject = ['$filter', '$timeout', 'epContactsListConstants'];
+    angular.module('ep.list').factory('epListService', epListService);
 
-    /*@ngInject*/
-    function epListService() {
-        return {};
+    function epListService($filter, $timeout, epContactsListConstants) {
+
+        /**
+         * @ngdoc method
+         * @name getGroupedList
+         * @methodOf ep.contacts.list:epContactsListService
+         * @public
+         * @param {Array} listData - list of contacts to display
+         * @description
+         * To group the contacts list based on alphabets
+         */
+        function getGroupedList(listData, groupBy) {
+            var listName = [];
+            var sortedlist = _.sortBy(listData, groupBy);
+            var groupedObj = {};
+            var itemGroup = [];
+            var currAlphabet = '';
+            var prevAlphabet = '';
+            for (var i = 0; i < sortedlist.length; i++) {
+
+                var fetchDate = sortedlist[i][groupBy].split("-", 2);
+                var concatDate = fetchDate[1] + "-" + fetchDate[0];
+
+                currAlphabet = concatDate;
+
+                if (currAlphabet !== prevAlphabet && prevAlphabet !== '') {
+                    groupedObj[prevAlphabet] = itemGroup;
+                    itemGroup = [];
+                }
+                itemGroup.push(sortedlist[i]);
+
+                if (i === (sortedlist.length - 1)) {
+                    groupedObj[currAlphabet] = itemGroup;
+                    itemGroup = [];
+                }
+                prevAlphabet = currAlphabet;
+
+            }
+            return groupedObj;
+        }
+
+        /**
+         * @ngdoc method
+         * @name toggleIndexes
+         * @methodOf ep.contacts.list:epContactsListService
+         * @public
+         * @description
+         * To toggle index list based on the contacts container height
+         */
+        function toggleIndexes() {
+            $timeout(function() {
+                var mainContainerHeight = $('.ep-contacts-list').height();
+                var indexesLength = 0;
+                var indexItemHeight = 0;
+                if (mainContainerHeight < epContactsListConstants.CONTACTS_LIST_INDEXES_HIDDEN_BREAKPOINT) {
+                    $('.ep-index-list').hide();
+                } else if (mainContainerHeight < epContactsListConstants.CONTACTS_LIST_INDEXES_BREAKPOINT) {
+                    $('.ep-index-list.large-index-list').hide();
+                    $('.ep-index-list.small-index-list').show();
+                    indexesLength = $('.ep-index-list.small-index-list li').length;
+                } else {
+                    $('.ep-index-list.small-index-list').hide();
+                    $('.ep-index-list.large-index-list').show();
+                    indexesLength = $('.ep-index-list.large-index-list li').length;
+                }
+                //adjust index list height based on the list container height
+                indexItemHeight = parseInt(mainContainerHeight / indexesLength);
+                $('.ep-index-list li').css('line-height', indexItemHeight + 'px');
+            });
+        }
+
+        return {
+            getGroupedList: getGroupedList,
+            toggleIndexes: toggleIndexes
+        };
     }
 })();
 
@@ -12358,21 +15361,21 @@ angular.module('ep.menu.builder').
  *      epModalDialogService.showProgress({ message: 'hello world!', title: 'title', icon: 'fa fa-clock-o fa-4x', autoClose: 2000, fnDefaultAction: function() {alert('progess completed');} });
  *
  *  # Show exception
- *      try { throw new Error("Test Exception"); } catch (ex) { epModalDialogService.showException({}, ex); }
+ *      try { throw new Error('Test Exception'); } catch (ex) { epModalDialogService.showException({}, ex); }
  *
  *  # Show custom exception with different options
  *      var options = { statusBar: true, statusBarText: 'This is status', closeButton: true, title: 'Exception title', status: 'error', message: 'Server exception message',
  *                      messageDetails: 'some trace info. this can be long at times',
- *                      buttons: [{ id: 'okButton', type: "default", text: "Ok", action: function() { alert('ok'); }}]};
+ *                      buttons: [{ id: 'okButton', type: 'default', text: 'Ok', action: function() { alert('ok'); }}]};
  *      epModalDialogService.showException(options)
  *
  *  # Show message box
- *      epModalDialogService.showMessageBox({ title: 'Message Box Sample', message: "Hello world", });
+ *      epModalDialogService.showMessageBox({ title: 'Message Box Sample', message: 'Hello world', });
  *
  *  # Show custom dialog
  *       epModalDialogService.showCustomDialog({
- *          templateUrl: "src/components/ep.modaldialog/modals/modaldialog-error.html",
- *          title: 'This is a custom dialog (error template)', status: 'warning', message: "Hello world" });
+ *          templateUrl: 'src/components/ep.modaldialog/modals/modaldialog-error.html',
+ *          title: 'This is a custom dialog (error template)', status: 'warning', message: 'Hello world' });
  *
  */
 (function() {
@@ -12745,7 +15748,7 @@ angular.module('ep.menu.builder').
                             };
                         }
 
-                        // for compatibility with the "helpTemplateUrl" form without helpTemplateOptions
+                        // for compatibility with the 'helpTemplateUrl' form without helpTemplateOptions
                         if (cfg.helpTemplateUrl || cfg.helpTemplate) {
                             cfg.helpTemplateOptions = cfg.helpTemplateOptions || {};
                             cfg.helpTemplateOptions.templateUrl =
@@ -12832,11 +15835,11 @@ angular.module('ep.menu.builder').
 
                             if ($scope.config.statusBar == true) {
                                 var totalFooterHeight = footerHeight + statusBarHeight;
-                                $('.ep-modal-area').css({ paddingBottom: totalFooterHeight + "px", paddingTop: headerHeight + "px" });
-                                $('.ep-modal-footer').css({ 'bottom': statusBarHeight + "px" });
+                                $('.ep-modal-area').css({ paddingBottom: totalFooterHeight + 'px', paddingTop: headerHeight + 'px' });
+                                $('.ep-modal-footer').css({ 'bottom': statusBarHeight + 'px' });
                             }
                             else {
-                                $('.ep-modal-area').css({ paddingBottom: footerHeight + "px", paddingTop: headerHeight + "px" });
+                                $('.ep-modal-area').css({ paddingBottom: footerHeight + 'px', paddingTop: headerHeight + 'px' });
                             }
                         });
                     }]
@@ -20728,9 +23731,9 @@ angular.module('ep.signature').directive('epSignature',
             if (attr.href !== href) {
                 //add ep_theme_[theme.name] class to the body element
                 var bodyEl = $('body');
-                if (bodyEl.length && bodyEl.attr("class")) {
+                if (bodyEl.length && bodyEl.attr('class')) {
                     //remove all previous ep_theme_* classes
-                    var classList = bodyEl.attr("class").split(/\s+/);
+                    var classList = bodyEl.attr('class').split(/\s+/);
                     for (var i = 0; i < classList.length; i++) {
                         if (classList[i].indexOf('ep_theme_') === 0) {
                             bodyEl.removeClass(classList[i]);
@@ -21913,7 +24916,7 @@ angular.module('ep.signature').directive('epSignature',
 'use strict';
 (function() {
     angular.module('ep.token')
-        .service('epErpRestService', ['$resource', 'epTokenService', function ($resource, epTokenService) {
+        .service('epErpRestService', ['$http', '$resource', 'epTokenService', function ($http, $resource, epTokenService) {
             var serverUrl = '';
 
             function call(method, path, query) {
@@ -21931,17 +24934,48 @@ angular.module('ep.signature').directive('epSignature',
                     }
                 });
             }
+
+            function patch(svc, data) {
+                var tkn = epTokenService.getToken();
+                if (!tkn || !serverUrl) {
+                    return;
+                }
+
+                var d = data;
+                if (data && !angular.isString(data)) {
+                    d = JSON.stringify(data);
+                    //data = data.replace(/,(?=[^,]*$)/, '');
+                }
+                return $http({
+                    method: 'PATCH',
+                    dataType: 'json',
+                    data: d,
+                    headers: {
+                        'Authorization': 'Bearer ' + tkn.token.AccessToken,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    url: serverUrl + svc,
+                }).success(function(response) {
+                    console.log('updated ' + svc + ' ' + response);
+                }).error(function(response) {
+                    console.log(response);
+                    return false;
+                });
+            }
+
             return {
-                setUrl: function (url) {
+                setUrl: function(url) {
                     serverUrl = url;
                 },
-                get: function (path, query) {
+                get: function(path, query) {
                     return call('GET', path, query).get();
                 },
-                post: function () {
+                post: function() {
                     //POST and other methods TO BE Implemented when needed
-                }
-            };
+                },
+                patch: patch
+            }
         }])
 })();
 (function() {
@@ -21987,7 +25021,8 @@ angular.module('ep.signature').directive('epSignature',
             epModalDialogService.showProgress({ title: 'Logging in', message: '' });
             if ($scope.settings.username === '' || $scope.settings.password === '') {
                 $scope.hasError = true;
-                $scope.status = $scope.settings.username === '' ? 'Oops.. There\'s no user name there!' : 'Oops.. You forgot to type your password!';
+                $scope.status = $scope.settings.username === '' ?
+                    'Oops.. There\'s no user name there!' : 'Oops.. You forgot to type your password!';
                 epModalDialogService.hide();
                 return;
             } else if ($scope.settings.serverName === '') {
@@ -22047,7 +25082,8 @@ angular.module('ep.signature').directive('epSignature',
             }).error(function(data, status, headers, config) {
                 var restServer = (config !== undefined && config !== null) ? config.url : '';
                 $scope.hasError = true;
-                $scope.status = (status == 401 ? "Please review the user or password." : "We couldn\'t connect to the server. Please review it.");
+                $scope.status = (status == 401 ?
+                    'Please review the user or password.' : 'We couldn\'t connect to the server. Please review it.');
             });
             epModalDialogService.hide();
         };
@@ -22055,7 +25091,7 @@ angular.module('ep.signature').directive('epSignature',
         $scope.passwordKeyPress = function(keyEvent) {
             $scope.hasError = false;
             $scope.status = '';
-            var key = typeof event.which === "undefined" ? event.keyCode : event.which;
+            var key = typeof event.which === 'undefined' ? event.keyCode : event.which;
             (key === 13) ? $scope.loginUser() : false;
         }
 
@@ -22541,7 +25577,7 @@ angular.module('ep.token').
          *      serverUrl - server url like 'https://ServerName'
          *      tokenUrl - token url like 'https://ServerName/svc'
          */
-        function resolveServerUrl(server, svc){
+        function resolveServerUrl(server, svc) {
             var serverName = epUtilsService.ensureEndsWith(server, '/');
             serverName = serverName.substring(0, serverName.length - 1);
 
@@ -23635,6 +26671,58 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   );
 
 
+  $templateCache.put('src/components/ep.binding/controls/ep-binding-editor.html',
+    "<ep-editor-control drag-enabled=false column=state.column value=epBindingInfo.value></ep-editor-control>"
+  );
+
+
+  $templateCache.put('src/components/ep.binding/controls/ep-binding-pagination.html',
+    "<!--This is a partial for the ep-binding directive --><div class=ep-binding><uib-pagination previous-text=&lsaquo; next-text=&rsaquo; items-per-page=1 total-items=totalItems ng-model=currentPage ng-change=onPageChange() max-size=maxSize class=pagination-sm boundary-link-numbers=true rotate=false></uib-pagination></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.binding/controls/ep-binding-record-editor.html',
+    "<ep-binding-scope ep-binding=epBinding><ep-record-editor options=options record=epb.rec isreadonly=readonly size-class=sizeClass on-init=onInitThis(factory) class={{activeClass}}></ep-record-editor></ep-binding-scope>"
+  );
+
+
+  $templateCache.put('src/components/ep.binding/controls/ep-binding-selector.html',
+    "<!--This is a partial for the ep-binding directive --><div class=ep-binding-selector ng-controller=epBindingSelectorCtrl><div class=\"panel panel-default\"><div class=\"panel-heading panel-heading-small\"><ul class=\"nav nav-tabs\"><li class=active><a data-toggle=pill href=.binding>Binding</a></li><li><a data-toggle=pill href=.preview>Data Preview</a></li></ul></div><div class=panel-body><div class=\"tab-content ep-padding-bottom\"><div class=\"binding tab-pane fade in active\"><ep-editor-control column=viewList value=meta.view></ep-editor-control><div ng-if=meta.view><div class=text-center ng-show=loadingColumns><i class=\"fa fa-spinner fa-spin fa-2x\"></i><label>loading columns...</label></div><div ng-hide=loadingColumns><ep-editor-control column=columnList value=meta.column></ep-editor-control></div></div><ep-editor-control column=columnBinding value=config.binding></ep-editor-control></div><div class=\"preview tab-pane fade\"><textarea class=\"form-control alert-info\" ng-model=meta.preview style=\"min-height: 400px; min-width: 300px\"></textarea></div></div></div></div><!--<ep-editor-control column=\"viewList\" value=\"meta.view\"></ep-editor-control>\r" +
+    "\n" +
+    "\r" +
+    "\n" +
+    "                    <div ng-if=\"meta.view\">\r" +
+    "\n" +
+    "                        <div class=\"text-center\" ng-show=\"loadingColumns\">\r" +
+    "\n" +
+    "                            <i class=\"fa fa-spinner fa-spin fa-2x\"></i><label>loading columns...</label>\r" +
+    "\n" +
+    "                        </div>\r" +
+    "\n" +
+    "                        <div ng-hide=\"loadingColumns\">\r" +
+    "\n" +
+    "                            <ep-editor-control column=\"columnList\" value=\"meta.column\"></ep-editor-control>\r" +
+    "\n" +
+    "                        </div>\r" +
+    "\n" +
+    "                    </div>\r" +
+    "\n" +
+    "\r" +
+    "\n" +
+    "                    <ep-editor-control column=\"columnBinding\" value=\"config.binding\"></ep-editor-control>--></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.binding/controls/ep-binding-table.html',
+    "<ep-table ng-if=ready data=state.data track-selected-row=trackSelectedRow column-headers={{headers}} column-properties={{dataColumns}} striped=true class={{activeClass}} on-select-row=onSelectRow($row) on-double-click-row=dblClickRow($row)></ep-table>"
+  );
+
+
+  $templateCache.put('src/components/ep.binding/ep-binding.html',
+    "<!--This is a partial for the ep-binding directive --><div class=ep-binding></div>"
+  );
+
+
   $templateCache.put('src/components/ep.card/ep-card-block-template.html',
     "<div class=card-block ng-transclude></div>"
   );
@@ -23676,7 +26764,80 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.contacts.list/contacts_list.html',
-    "<div class=ep-contacts-list-container><!--Calling filter list component for search option--><ep-filter-list search-by=contactListSearch></ep-filter-list><!--Header as optional--><div class=ep-contact-sub-header><label class=ep-contact-sub-header-label ng-click=filter()>Filter</label><label class=ep-contact-sub-header-label ng-click=sort()>Sort</label><span class=pull-right style=padding-right:5% ng-click=add()><i class=\"fa fa-plus-square-o fa-2x\" aria-hidden=true style=color:#129ff4></i></span></div><!--List area--><div class=ep-contacts-list><div class=ep-contacts-list-inner><div ng-repeat=\"(key, value) in nameList\"><div class=ep-group-heading ng-if=\"filterVal.length > 0\" id=\"list-group-{{key == '#' ? 1 : (key | uppercase)}}\">{{key | uppercase}}</div><ul><li ng-repeat=\"obj in filterVal = (value | filter: contactListSearch)\" ng-click=handler(obj)><div class=row><div class=col-xs-6><label>{{ obj[mainTitle] }}</label></div><div class=\"col-xs-4 text-right\">{{obj[id]}}</div></div><div class=\"pull-right ep-contact-list-arrow\" ng-class=\"{'ep-contact-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-contact-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-contact-list-additionalTitle-arrow': additionalTitle}\"><i class=\"fa fa-angle-right fa-2x\"></i></div><div><span ng-show=\"{{obj[setTitles[0]].length>=1}}\">{{obj[setTitles[0]]}}</span><span ng-show=\"{{obj[setTitles[1]].length>=1}}\"><span ng-show=\"{{obj[setTitles[0]].length>=1}}\">,&nbsp</span>{{obj[setTitles[1]]}}</span><span ng-show=\"{{obj[setTitles[2]].length>=1}}\"><span ng-show=\"{{obj[setTitles[0]].length>=1}} || {{obj[setTitles[1]].length>=1}}\">,&nbsp</span>{{obj[setTitles[2]]}}</span></div><div ng-if=additionalTitle>{{obj[additionalTitle]}}</div></li></ul></div></div></div><!--Index--><ul class=\"ep-index-list large-index-list\" ng-hide=contactListSearch><li ng-repeat=\"(key, value) in nameList\" ng-click=goToLink(key)>{{key}}</li></ul><!--Index for smaller device screen--><ul class=\"ep-index-list small-index-list\" ng-hide=contactListSearch><li ng-repeat=\"key in smallIndexKeys track by $index\" ng-click=goToLink(key)><span ng-if=\"key == '.'\" class=\"fa fa-circle\"></span> <span ng-if=\"key !='.'\">{{key}}</span></li></ul></div>"
+    "<div class=ep-contacts-list-container><!--Calling filter list component for search option--><ep-filter-list search-by=contactListSearch></ep-filter-list><!--Header as optional--><div class=ep-contact-sub-header><label class=ep-contact-sub-header-label ng-click=filter()>Filter</label><label class=ep-contact-sub-header-label ng-click=sort()>Sort</label><span class=pull-right style=padding-right:5% ng-click=add()><i class=\"fa fa-plus-square-o fa-2x\" aria-hidden=true style=color:#129ff4></i></span></div><!--List area--><div class=ep-contacts-list><div class=ep-contacts-list-inner><div ng-repeat=\"(key, value) in nameList\"><div class=ep-group-heading ng-if=\"filterVal.length > 0\" id=\"list-group-{{key == '#' ? 1 : (key | uppercase)}}\">{{key | uppercase}}</div><ul><li ng-repeat=\"obj in filterVal = (value | filter: contactListSearch)\" ng-click=handler(obj)><div class=\"row mainTitle\"><div class=col-xs-7><label>{{ obj[mainTitle] }}</label></div><div class=\"col-xs-3 text-right\">{{obj[id]}}</div></div><div class=\"pull-right ep-contact-list-arrow\" ng-class=\"{'ep-contact-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-contact-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-contact-list-additionalTitle-arrow': additionalTitle}\"><i class=\"fa fa-angle-right fa-2x\"></i></div><div class=subTitle><span ng-show=\"{{obj[setTitles[0]].length>=1}}\">{{obj[setTitles[0]]}}</span><span ng-show=\"{{obj[setTitles[1]].length>=1}}\"><span ng-show=\"{{obj[setTitles[0]].length>=1}}\">,&nbsp</span>{{obj[setTitles[1]]}}</span><span ng-show=\"{{obj[setTitles[2]].length>=1}}\"><span ng-show=\"{{obj[setTitles[0]].length>=1}} || {{obj[setTitles[1]].length>=1}}\">,&nbsp</span>{{obj[setTitles[2]]}}</span></div><div class=additionalTitle ng-if=additionalTitle>{{obj[additionalTitle]}}</div></li></ul></div></div></div><!--Index--><ul class=\"ep-index-list large-index-list\" ng-hide=contactListSearch><li ng-repeat=\"(key, value) in nameList\" ng-click=goToLink(key)>{{key}}</li></ul><!--Index for smaller device screen--><ul class=\"ep-index-list small-index-list\" ng-hide=contactListSearch><li ng-repeat=\"key in smallIndexKeys track by $index\" ng-click=goToLink(key)><span ng-if=\"key == '.'\" class=\"fa fa-circle\"></span> <span ng-if=\"key !='.'\">{{key}}</span></li></ul></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.customization/ep-customization-container.html',
+    "<div class=\"row ep-customization-container\" ng-style=state.style><div ng-repeat=\"control in state.controls | orderBy:orderByControls\" class=\"ep-custom-element {{control.class}}\" id={{control.id}} ep-drop-area drop-handler=handleDrop1 drop-item-types=ep-custom-element drop-enabled=epCustomizationInfo.isCustomizeActive ep-draggable drag-enabled=epCustomizationInfo.isCustomizeActive drag-item=control drag-item-type=\"'ep-custom-element'\"><ep-binding-editor ng-if=\"control.type === 'binding-editor'\" ep-binding=control.binding column=control.props></ep-binding-editor><ep-editor-control ng-if=\"control.type === 'editor-control'\" value=epCustomizationInfo.data[control.columnName] column=control.props></ep-editor-control><ep-include ng-if=\"control.type === 'html'\" user-data=epCustomizationInfo.data template-scope=epCustomizationInfo.parentScope template=control.props.html template-style=control.props.style></ep-include></div></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.customization/ep-customization-editor-box.html',
+    "<div ng-if=\"config.editorOptions.type === 'html'\"><script type=text/ng-template id=sample-panel.html><div class=\"well panel panel-default\">\r" +
+    "\n" +
+    "            <div class=\"panel-heading panel-heading-small\">\r" +
+    "\n" +
+    "                Your panel header goes here\r" +
+    "\n" +
+    "            </div>\r" +
+    "\n" +
+    "            <div class=\"panel-body ep-padding-none\">\r" +
+    "\n" +
+    "                Your panel body goes here\r" +
+    "\n" +
+    "            </div>\r" +
+    "\n" +
+    "            <div class=\"panel-footer\">\r" +
+    "\n" +
+    "                Your panel footer goes here                \r" +
+    "\n" +
+    "            </div>\r" +
+    "\n" +
+    "        </div></script><script type=text/ng-template id=sample-color-tile.html><div>\r" +
+    "\n" +
+    "            <ep-color-tile title=\"Customer Address\" description=\"{{CustomerAddress}}\" fineprint=\"\" icon=\"fa-refresh\" color=\"deepskyblue\"></ep-color-tile>\r" +
+    "\n" +
+    "        </div></script><script type=text/ng-template id=sample-button.html><div>\r" +
+    "\n" +
+    "            <button class=\"btn btn-default\" ng-click=\"someFunction()\">Your Button Text</button>\r" +
+    "\n" +
+    "        </div></script><ep-editor-control column=config.editorOptions.sampleCol value=config.editorOptions.sampleVal></ep-editor-control></div><textarea style=\"width:100%; height: 300px; border: solid; border-width: thin\" ng-model=config.editText autofocus></textarea>"
+  );
+
+
+  $templateCache.put('src/components/ep.customization/ep-customization-eptable.html',
+    "<!--This is a partial for the ep-customization directive --><div class=\"ep-customization-record-editor ep-padding-top ep-padding-bottom\"><div class=text-center ng-show=loadingColumns><i class=\"fa fa-spinner fa-spin fa-2x\"></i></div><div class=text-center ng-hide=loadingColumns><ep-editor-control column=columnList value=column.name></ep-editor-control></div><ep-editor-control column=colCaption value=curColProps.caption></ep-editor-control><ep-editor-control column=colHidden value=curColProps.hidden></ep-editor-control><ep-editor-control column=colReadOnly value=curColProps.readonly></ep-editor-control><hr><button ng-hide=curColCtx type=button class=\"btn btn-primary btn-block ep-padding-top\" ng-click=addColumn()>Add Column</button> <button ng-show=\"curColCtx && curColCtx.isCustom\" type=button class=\"btn btn-primary btn-block ep-padding-top\" ng-click=removeColumn()>Remove Column</button></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.customization/ep-customization-freeform.html',
+    "<!--This is a partial for the ep-customization directive --><div class=ep-customization-freeform style=\"padding-bottom: 5px\"><ep-editor-control column=controlsList value=state.control></ep-editor-control><div ng-show=\"state.control === '$new'\"><ep-editor-control column=controlKinds value=state.controlKind></ep-editor-control><ep-editor-control column=colId value=curColProps.id></ep-editor-control></div><div ng-show=\"state.control === '$container'\"><ep-editor-control column=colStyle value=curColProps.style></ep-editor-control><ep-editor-control column=colContainerScript value=curColProps.script></ep-editor-control></div><div ng-show=\"state.controlKind == 'editor'\"><div ng-hide=\"state.control === '$new'\"><ep-editor-control column=colBinding value=curColProps.binding></ep-editor-control><ep-editor-control column=colCaption value=curColProps.caption></ep-editor-control><ep-editor-control column=colHidden value=curColProps.hidden></ep-editor-control><ep-editor-control column=colReadOnly value=curColProps.updatable></ep-editor-control><ep-editor-control column=colStyle value=curColProps.style></ep-editor-control><ep-editor-control column=colValidate value=curColProps.validate></ep-editor-control></div></div><div ng-show=\"state.controlKind == 'html'\"><div ng-hide=\"state.control === '$new'\"><ep-editor-control column=colHTML value=curColProps.html></ep-editor-control><ep-editor-control column=colStyle value=curColProps.style></ep-editor-control></div></div><button ng-show=\"state.control === '$new'\" class=\"btn btn-primary btn-block\" ng-click=addColumn() style=\"margin-right: 15px\"><i class=\"fa fa-plus\"></i> Add Control</button> <button ng-hide=\"state.control === '$new' || state.control === '$container' || !state.control\" class=\"btn btn-primary btn-block\" ng-click=removeColumn() style=\"margin-right: 15px\"><i class=\"fa fa-minus\"></i> Remove Control</button></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.customization/ep-customization-manage.html',
+    "<div class=\"well panel panel-default\" style=\"max-width: 300px\" ng-controller=epCustomManageCtrl><div class=\"panel-heading panel-heading-small\"><div class=ep-align-hcenter>Actions</div></div><div class=\"panel-body ep-padding-none\"><button type=button class=\"btn btn-primary btn-block ep-padding-top\" ng-click=btnClickClearAllCustomizations()>Clear All Customizations</button> <button type=button class=\"btn btn-primary btn-block ep-padding-top\" ng-click=btnClickExport()>Export</button> <button type=button class=\"btn btn-primary btn-block ep-padding-top\" ng-click=\"config.manage.showImport = !config.manage.showImport\">Import</button> <input ng-show=\"config.manage.showImport === true\" input id=file type=\"file\"></div></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.customization/ep-customization-record-editor.html',
+    "<!--This is a partial for the ep-customization directive --><div class=\"ep-customization-record-editor ep-padding-top ep-padding-bottom\"><ep-editor-control column=columnList value=column.name></ep-editor-control><div><a ng-hide=\"curColCtx || !column.name\" class=\"btn btn-primary pull-right\" ng-click=addColumn() style=\"margin-right: 15px\"><i class=\"fa fa-plus\"></i> Add Column</a> <a ng-show=\"curColCtx && curColCtx.col.isCustom\" class=\"btn btn-primary pull-right\" ng-click=removeColumn() style=\"margin-right: 15px\"><i class=\"fa fa-remove\"></i> Remove Column</a></div><div ng-show=\"curColCtx && column.name\"><ep-editor-control column=colCaption value=curColProps.caption></ep-editor-control><ep-editor-control column=colHidden value=curColProps.hidden></ep-editor-control><ep-editor-control column=colReadOnly value=curColProps.readonly></ep-editor-control><ep-editor-control column=colStyle value=curColProps.style></ep-editor-control><ep-editor-control column=colValidate value=curColProps.validate></ep-editor-control></div></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.customization/ep-customization.html',
+    "<!--This is a partial for the ep-customization directive --><div class=\"ep-customization container\" style=\"width:250px; padding: 2px\"><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed\"><ul class=\"nav navbar-nav align-right\" ng-controller1=NavCtrl><li><a class=\"ep-navbar-button fa fa-cog fa-2x\" ng-click=btnClickManage()></a></li><li><a class=\"ep-navbar-button fa fa-save fa-2x\" ng-click=btnClickSave()></a></li><li><a class=\"ep-navbar-button fa fa-times fa-2x\" ng-click=btnClickClearCustomization()></a></li></ul></nav><div class=\"well row\"><ep-editor-control column=customizationsList value=customListValue></ep-editor-control><div ng-if=\"customization && customization.kind === 'ep-record-editor'\"><ep-customization-record-editor customization-data=customizationData></ep-customization-record-editor></div><div ng-if=\"customization && customization.kind === 'ep-customizable-freeform'\"><ep-customization-freeform customization-data=customizationData></ep-customization-freeform></div><div ng-if=\"customization && customization.kind === 'ep-table'\"><ep-customization-eptable customization-data=customizationData></ep-customization-eptable></div><hr><!--<button ng-if=\"customization\" type=\"button\" class=\"btn btn-primary btn-block ep-padding-top\" ng-click=\"btnClickSave()\">Save</button>\r" +
+    "\n" +
+    "        <button ng-if=\"customization\" type=\"button\" class=\"btn btn-primary btn-block ep-padding-top\" ng-click=\"btnClickClearCustomization()\">Clear Customization</button>\r" +
+    "\n" +
+    "        <button type=\"button\" class=\"btn btn-primary btn-block ep-padding-top\" ng-click=\"btnClickClearAllCustomizations()\">Clear All Customizations</button>\r" +
+    "\n" +
+    "        <button type=\"button\" class=\"btn btn-primary btn-block ep-padding-top\" ng-click=\"btnClickExport()\">Export</button>\r" +
+    "\n" +
+    "        <button type=\"button\" class=\"btn btn-primary btn-block ep-padding-top\" ng-click=\"showImport = !showImport\">Import</button>\r" +
+    "\n" +
+    "        <input ng-show=\"showImport === true\" input id=\"file\" type=\"file\"  />--></div></div>"
   );
 
 
@@ -23721,15 +26882,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.filter.list/filter_list.html',
-    "<div class=\"ep-search-list-container vertical-align\"><div class=\"container ep-search-container\"><div class=\"row ep-search-row\"><div id=custom-search-input class=col-xs-10><div class=\"input-group col-md-12\"><!--We need to enable below for search icon--><!--<span class=\"input-group-btn\">\r" +
-    "\n" +
-    "                        <button id=\"searchbutton\" class=\"btn btn-danger ep-search-button\" type=\"button\">\r" +
-    "\n" +
-    "                            <span class=\"glyphicon glyphicon-search\"></span>\r" +
-    "\n" +
-    "                        </button>\r" +
-    "\n" +
-    "                    </span>--><input class=\"search-query form-control\" ng-model=searchBy placeholder=\"Search\"> <span class=input-group-btn><button id=closebutton class=\"btn btn-danger ep-close-button\" type=button><span class=\"glyphicon glyphicon-remove-circle\"></span></button></span></div></div><div class=\"input-group col-xs-2 ep-search-result-container\"><div>31</div><div>Results</div></div></div></div></div>"
+    "<div class=\"ep-search-list-container vertical-align\"><div class=\"container ep-search-container\"><div class=\"row ep-search-row\"><div id=custom-search-input class=col-xs-10><div class=\"input-group col-md-12\"><span class=input-group-btn><button id=searchbutton class=\"btn btn-danger ep-search-button\" type=button><span class=\"fa fa-search\"></span></button></span> <input id=searchinput class=\"search-query form-control\" ng-model=searchBy placeholder=\"Search\"> <span class=input-group-btn><button id=searchclear class=\"btn btn-danger ep-close-button\" type=button ng-click=clearSearch()><span class=\"fa fa-remove\"></span></button></span></div></div><div class=\"input-group col-xs-2 ep-search-result-container\"><div>31</div><div>Results</div></div></div></div></div>"
   );
 
 
@@ -23739,7 +26892,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.list/ep-list.html',
-    "<!--This is a partial for the ep-list directive --><div class=ep-list><ul id={{config.id}}><li ng-repeat=\"item in config.items\"></li></ul></div>"
+    "<div class=ep-list-container><div class=ep-contacts-list-container><!--Calling filter list component for search option--><ep-filter-list search-by=contactListSearch></ep-filter-list><!--Header as optional--><div class=ep-contact-sub-header ng-if=\"subHeader == 'true'\"><label class=ep-contact-sub-header-label ng-click=filter()>Filter</label><label class=ep-contact-sub-header-label ng-click=sort()>Sort</label><span class=pull-right style=padding-right:5% ng-click=add()><i class=\"fa fa-plus-square-o fa-2x\" aria-hidden=true style=color:#129ff4></i></span></div><div class=ep-list ng-class=\"{'ep-list-header-padding':subHeader == 'true'}\"><div class=ep-list-inner ng-if=groupBy><div ng-repeat=\"(key, value) in data\"><div class=ep-group-heading ng-if=\"filterVal.length > 0\">{{key}}</div><ul><li ng-repeat=\"obj in filterVal = (value | filter: contactListSearch)\" ng-click=handler(obj)><div class=\"row main-title\"><div class=col-xs-7><label>{{ obj[mainTitle] }}</label></div><div class=\"col-xs-4 text-right\">{{obj[id]}}</div></div><div class=\"pull-right ep-list-arrow\" ng-if=\"arrow == 'true'\" ng-class=\"{'ep-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-list-additionalTitle-arrow': additionalTitle}\"><i class=\"fa fa-angle-right fa-2x\"></i></div><div class=sub-title><span ng-show=\"{{obj[setTitles[0]].length>=1}}\">{{obj[setTitles[0]]}}</span><span ng-show=\"{{obj[setTitles[1]].length>=1}}\"><span ng-show=\"{{obj[setTitles[0]].length>=1}}\">,&nbsp</span>{{obj[setTitles[1]]}}</span><span ng-show=\"{{obj[setTitles[2]].length>=1}}\"><span ng-show=\"{{obj[setTitles[0]].length>=1}} || {{obj[setTitles[1]].length>=1}}\">,&nbsp</span>{{obj[setTitles[2]]}}</span></div><div class=additional-title ng-if=additionalTitle>{{obj[additionalTitle]}}</div></li></ul></div></div><div class=ep-list-inner ng-if=!groupBy><ul><li ng-repeat=\"obj in data | filter: contactListSearch\" ng-click=handler(obj)><div class=\"row main-title\"><div class=col-xs-7><label>{{ obj[mainTitle] }}</label></div><div class=\"col-xs-4 text-right\">{{obj[id]}}</div></div><div class=\"pull-right ep-list-arrow\" ng-if=\"arrow == 'true'\" ng-class=\"{'ep-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-list-additionalTitle-arrow': additionalTitle}\"><i class=\"fa fa-angle-right fa-2x\"></i></div><div class=sub-title><span ng-show=\"{{obj[setTitles[0]].length>=1}}\">{{obj[setTitles[0]]}}</span><span ng-show=\"{{obj[setTitles[1]].length>=1}}\"><span ng-show=\"{{obj[setTitles[0]].length>=1}}\">,&nbsp</span>{{obj[setTitles[1]]}}</span><span ng-show=\"{{obj[setTitles[2]].length>=1}}\"><span ng-show=\"{{obj[setTitles[0]].length>=1}} || {{obj[setTitles[1]].length>=1}}\">,&nbsp</span>{{obj[setTitles[2]]}}</span></div><div class=additional-title ng-if=additionalTitle>{{obj[additionalTitle]}}</div></li></ul></div></div></div></div>"
   );
 
 

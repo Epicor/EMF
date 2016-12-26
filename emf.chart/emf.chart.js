@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.357 built: 26-12-2016
+ * version:1.0.10-dev.358 built: 26-12-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.357","built":"2016-12-26"};
+__ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.358","built":"2016-12-26"};
 
 (function() {
     'use strict';
@@ -42,7 +42,7 @@ __ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.357","built"
     *          xValues: [],
     *          yValues: [[],[],...[]]
     *      },
-    *      dateUnit: {'year'/'month'/'week'/'day'},      
+    *      dateUnit: {'year'/'month'/'week'/'day'},
     *   };
     *
     *   The following chart types are supported:
@@ -63,7 +63,7 @@ __ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.357","built"
     *                  ]
     *
     *   other settings:
-    *       height : 'view' | 'window' | integer (px) | function | element | selector 
+    *       height : 'view' | 'window' | integer (px) | function | element | selector
     *                this defines how the chart height is calculated. The width is responsive to the container
     *       heightOffset: 0 ( 25 - default) - an offset to the calculated height
     *       legend: (bool) - (default - true) display legend option
@@ -71,7 +71,7 @@ __ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.357","built"
     *       stacked: (bool) - (default - true) display stacked option for appropriate charts
     *
     *       showOptions: (bool) - (default - true) display options on top of the chart
-    *       autoHideLegends: (bool) - (default - true) auto hide legend when height is smaller than certain threshold 
+    *       autoHideLegends: (bool) - (default - true) auto hide legend when height is smaller than certain threshold
     *       legendHiddenText: (bool) - (default - [legend hidden]) text to display when legend is auto hidden
     *
     *
@@ -158,7 +158,7 @@ __ep_build_info["chart"] = {"libName":"chart","version":"1.0.10-dev.357","built"
                     newHeight = el.outerHeight(true);
                 }
             }
-            var heightOffset = (scope.settings.showOptions !== false) ? - 25 : 30;
+            var heightOffset = (scope.settings.showOptions !== false) ? -25 : 30;
             if (angular.isFunction(scope.settings.heightOffset)) {
                 heightOffset = scope.settings.heightOffset(newHeight);
             } else {
