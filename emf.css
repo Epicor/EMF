@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.355 built: 25-12-2016
+ * version:1.0.10-dev.356 built: 25-12-2016
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -668,7 +668,7 @@
 }
 .ep-contacts-list li {
   border-bottom: 1px solid #eee;
-  line-height: 44px;
+  line-height: 35px;
 }
 .ep-index-list {
   position: absolute;
@@ -737,9 +737,17 @@
   margin-right: 40px;
 }
 .ep-contact-list-arrow {
-  float: right;
-  margin-right: 25px;
-  margin-top: -20px;
+  padding-right: 30px !important;
+  padding-top: 5px !important;
+}
+.ep-contact-list-subtitle-arrow {
+  margin-top: -25px !important;
+}
+.ep-contact-list-maintitle-arrow {
+  margin-top: -40px;
+}
+.ep-contact-list-additionalTitle-arrow {
+  margin-top: -5px !important;
 }
 .ep-contact-search {
   margin-left: -25px;
@@ -758,6 +766,9 @@
   width: 60px;
   font-size: 1.2em;
   color: #129ff4;
+}
+.col-xs-4 .col-xs-6 {
+  padding-left: 0 !important;
 }
 
 /* ----->>>> Pagination styling taken from dataTables.jqueryui.css -------------->>>>*/
