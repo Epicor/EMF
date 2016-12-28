@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.364 built: 27-12-2016
+ * version:1.0.10-dev.365 built: 28-12-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.364","built":"2016-12-27"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.365","built":"2016-12-28"};
 
 (function() {
     'use strict';
@@ -84,7 +84,7 @@ angular.module('ep.binding', [
 'use strict';
 (function() {
     angular.module('ep.token')
-        .service('epErpRestService', ['$http', '$resource', 'epTokenService', function ($http, $resource, epTokenService) {
+        .service('epErpRestService', ['$http', '$resource', 'epTokenService', function($http, $resource, epTokenService) {
             var serverUrl = '';
 
             function call(method, path, query) {
@@ -100,6 +100,30 @@ angular.module('ep.binding', [
                             'Content-Type': 'application/json'
                         }
                     }
+                });
+            }
+
+            function postCall(method, svc, data) {
+                var tkn = epTokenService.getToken();
+                if (!tkn) {
+                    return;
+                }
+
+                var d = data;
+                if (data && !angular.isString(data)) {
+                    d = JSON.stringify(data);
+                }
+
+                return $http({
+                    method: 'POST',
+                    dataType: 'json',
+                    data: d,
+                    headers: {
+                        'Authorization': 'Bearer ' + tkn.token.AccessToken,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    url: serverUrl + svc,
                 });
             }
 
@@ -139,13 +163,14 @@ angular.module('ep.binding', [
                 get: function(path, query) {
                     return call('GET', path, query).get();
                 },
-                post: function() {
-                    //POST and other methods TO BE Implemented when needed
+                post: function(path, data) {
+                    return postCall('POST', path, data);
                 },
                 patch: patch
             }
         }])
 })();
+
 (function() {
 'use strict';
 
