@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.370 built: 28-12-2016
+ * version:1.0.10-dev.371 built: 29-12-2016
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.370","built":"2016-12-28"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.371","built":"2016-12-29"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -1935,6 +1935,15 @@ angular.module('ep.binding').
                     }
                 });
 
+                $rootScope.$on('EP_BINDING_VIEW_ROW_ADDED', function(event, data) {
+                    if (scope.state.epBinding && data.viewId === scope.state.epBinding.view) {
+                        var view = scope.view;
+                        scope.record = view.dataRow();
+                        scope.totalItems = view.data().length;
+                        scope.currentPage = view.row() + 1;
+                    }
+                });
+
                 scope.$watch('epBinding', function(newValue, oldValue) {
                     if (newValue !== undefined) {
                         scope.state.epBinding = epBindingService.parseBinding(newValue);
@@ -2725,7 +2734,7 @@ angular.module('ep.binding').
         /**
          * @ngdoc method
          * @name parseBinding
-         * @methodOf ep.binding.factory:epBindingService
+         * @methodOf ep.binding.service:epBindingService
          * @public
          * @description
          * open dialog with select binding
@@ -2755,7 +2764,7 @@ angular.module('ep.binding').
         /**
          * @ngdoc method
          * @name parseBinding
-         * @methodOf ep.binding.factory:epBindingService
+         * @methodOf ep.binding.service:epBindingService
          * @public
          * @description
          * parse binding passed as string into view and column
@@ -2799,7 +2808,7 @@ angular.module('ep.binding').
         /**
          * @ngdoc method
          * @name logBindingEvents
-         * @methodOf ep.binding.factory:epBindingService
+         * @methodOf ep.binding.service:epBindingService
          * @public
          * @description
          * turn on/off binding events log
@@ -2818,7 +2827,7 @@ angular.module('ep.binding').
                     var vstate = v.__state;
                     var info = 'ViewId:' + data.viewId + ';Row:' + data.row + ';Old Value:' + data.oldValue +
                         ';New value:' + data.newValue +
-                        ';isDirty:' + v.isDirty() + ';isModified:' + v.isModified() +
+                        ';isDirty:' + v.isDirty() + ';hasModified:' + v.hasModified() +
                         ';Modified rows:' + Object.keys(vstate.modifiedRows).length;
                     $log.warn('[EP_BINDING_COLUMN_VALUE_CHANGED] ' + info);
                     angular.forEach(vstate.modifiedRows, function(idx) {
@@ -2869,9 +2878,11 @@ angular.module('ep.binding').
                 state.data = _data;
                 state.row = state.data && state.data.length ? 0 : -1;
                 state.isDirty = false;
-                state.isModified = false;
                 state.modified = Array(state.data.length);
                 state.modifiedRows = {};
+                state.addedRows = {};
+                state.hasModified = false;
+                state.hasAdded = false;
                 state.original = epUtilsService.merge({}, state.data);
             }
 
@@ -2882,6 +2893,7 @@ angular.module('ep.binding').
              * @public
              * @description
              * returns id of the view
+             * @returns {string} id of the view
              */
             function id() {
                 return state.id;
@@ -2894,6 +2906,7 @@ angular.module('ep.binding').
              * @public
              * @description
              * returns data array of the view
+             * @returns {array} array of view data rows
              */
             function data() {
                 return state.data;
@@ -2906,6 +2919,7 @@ angular.module('ep.binding').
              * @public
              * @description
              * returns current data row of the view
+             * @returns {object} current data row object
              */
             function dataRow() {
                 if (state.row < 0) {
@@ -2921,6 +2935,7 @@ angular.module('ep.binding').
              * @public
              * @description
              * returns true if view has at least one data row
+             * @returns {bool} true if view has data
              */
             function hasData() {
                 return (state.data && state.data.length);
@@ -2933,6 +2948,8 @@ angular.module('ep.binding').
              * @public
              * @description
              * returns current row index or sets a new current row by index
+             * @param {int} index - (optional) index of row to be set as current
+             * @returns {int} current row index
              */
             function row(index) {
                 if (index !== undefined) {
@@ -2949,11 +2966,47 @@ angular.module('ep.binding').
 
             /**
              * @ngdoc method
+             * @name addRow
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * Inserts a row into current data, keeping track of added rows and firing events
+             * @param {array} dataRow - data row to be appended
+             * @param {bool} setCurrentRow - (optional) set currently added row as current
+             * @returns {int} added row index
+             */
+            function addRow(dataRow, setCurrentRow) {
+                if (!angular.isArray(state.data)) {
+                    state.data = [];
+                }
+                state.data.push(dataRow);
+                var rowIdx = state.data.length - 1;
+                state.addedRows[rowIdx] = rowIdx;
+                state.hasAdded = true;
+
+                $rootScope.$emit('EP_BINDING_VIEW_ROW_ADDED', {
+                    viewId: state.id,
+                    view: this,
+                    row: rowIdx
+                });
+
+                if (setCurrentRow === true) {
+                    row(rowIdx);
+                }
+
+                return rowIdx;
+            }
+
+            /**
+             * @ngdoc method
              * @name columnValue
              * @methodOf ep.binding.factory:epDataViewFactory
              * @public
              * @description
              * returns or sets specified column's value
+             * @param {string} column - column name
+             * @param {object} value - (optional) column value to set
+             * @returns {object} column value
              */
             function columnValue(column, value) {
                 var record = state.data[state.row];
@@ -2964,21 +3017,23 @@ angular.module('ep.binding').
                         state.isDirty = true;
 
                         var rowIdx = state.row; //nned to handle deleted or new
+                        if (state.addedRows[rowIdx] === undefined) {
 
-                        var mod = state.modified[rowIdx] || { state: 'M', columns: {} };
-                        if (Object.keys(mod.columns).length > 0 && record[column] === state.original[rowIdx][column]) {
-                            delete mod.columns[column];
-                        } else {
-                            mod.columns[column] = value;
-                        }
-                        mod.state = Object.keys(mod.columns).length > 0 ? 'M' : '';
-                        state.modified[rowIdx] = mod.state === '' ? undefined : mod;
+                            var mod = state.modified[rowIdx] || { state: 'M', columns: {} };
+                            if (Object.keys(mod.columns).length > 0 && record[column] === state.original[rowIdx][column]) {
+                                delete mod.columns[column];
+                            } else {
+                                mod.columns[column] = value;
+                            }
+                            mod.state = Object.keys(mod.columns).length > 0 ? 'M' : '';
+                            state.modified[rowIdx] = mod.state === '' ? undefined : mod;
 
-                        state.modifiedRows[rowIdx] = rowIdx;
-                        if (mod.state === '') {
-                            delete state.modifiedRows[rowIdx];
+                            state.modifiedRows[rowIdx] = rowIdx;
+                            if (mod.state === '') {
+                                delete state.modifiedRows[rowIdx];
+                            }
+                            state.hasModified = (Object.keys(state.modifiedRows).length > 0);
                         }
-                        state.isModified = Object.keys(state.modifiedRows).length > 0;
 
                         $rootScope.$emit('EP_BINDING_COLUMN_VALUE_CHANGED', {
                             viewId: state.id,
@@ -3002,20 +3057,23 @@ angular.module('ep.binding').
             function rollback() {
                 state.data = epUtilsService.merge({}, state.original);
                 state.isDirty = false;
-                state.isModified = false;
                 state.modifiedRows = {};
+                state.addedRows = {};
+                state.hasModified = false;
+                state.hasAdded = false;
             }
 
             /**
              * @ngdoc method
-             * @name isModified
+             * @name hasModified
              * @methodOf ep.binding.factory:epDataViewFactory
              * @public
              * @description
              * returns true if view has been modified
+             * @returns {bool} true if there are modified records
              */
-            function isModified() {
-                return state.isModified;
+            function hasModified() {
+                return state.hasModified;
             }
 
             /**
@@ -3025,6 +3083,7 @@ angular.module('ep.binding').
              * @public
              * @description
              * returns true if view been edited
+             * @returns {bool} true if there were changes
              */
             function isDirty() {
                 return state.isDirty;
@@ -3037,6 +3096,7 @@ angular.module('ep.binding').
              * @public
              * @description
              * returns modified rows
+             * @returns {array} array of modified rows
              */
             function modifiedRows() {
                 var ret = [];
@@ -3053,10 +3113,69 @@ angular.module('ep.binding').
              * @public
              * @description
              * returns modified row by its index
+             * @param {int} index - index of row to be returned
+             * @returns {bool} true if row is modified
              */
-            function rowModified(idx) {
-                var index = idx == undefined ? state.row : idx;
-                return (state.modified[index] !== undefined && state.modified[index].state === 'M');
+            function rowModified(index) {
+                var idx = (index == undefined) ? state.row : index;
+                return (state.modified[idx] !== undefined && state.modified[idx].state === 'M');
+            }
+
+            /**
+             * @ngdoc method
+             * @name addedRows
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * returns added rows
+             * @returns {array} array of added rows
+             */
+            function addedRows() {
+                var ret = [];
+                angular.forEach(Object.keys(state.addedRows), function(idx) {
+                    ret.push(state.data[idx]);
+                })
+                return ret;
+            }
+
+            /**
+             * @ngdoc method
+             * @name changedRows
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * returns modified and added rows
+             * @returns {array} array of modified/added rows
+             */
+            function changedRows() {
+                var ret = modifiedRows().concat(addedRows());
+                return ret;
+            }
+
+            /**
+             * @ngdoc method
+             * @name hasAdded
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * returns true if view has added rows
+             * @returns {bool} true if there are added records
+             */
+            function hasAdded() {
+                return state.hasAdded;
+            }
+
+            /**
+             * @ngdoc method
+             * @name hasChanges
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * returns true if view has added/modified rows
+             * @returns {bool} true if there are added/modified records
+             */
+            function hasChanges() {
+                return state.hasAdded || state.hasModified;
             }
 
             init(viewId, viewData);
@@ -3067,11 +3186,16 @@ angular.module('ep.binding').
                 data: data,
                 dataRow: dataRow,
                 row: row,
-                hasData: hasData,
                 columnValue: columnValue,
-                isModified: isModified,
+                addRow: addRow,
                 isDirty: isDirty,
+                hasData: hasData,
+                hasModified: hasModified,
+                hasAdded: hasAdded,
+                hasChanges: hasChanges,
                 modifiedRows: modifiedRows,
+                addedRows: addedRows,
+                changedRows: changedRows,
                 rowModified: rowModified,
                 rollback: rollback
             };
@@ -4862,7 +4986,7 @@ app.directive('epCardTitle',
         return {
             replace: true,
             restrict: 'E',
-            templateUrl: 'components/ep.customization/ep-customization-container.html',
+            templateUrl: 'src/components/ep.customization/ep-customization-container.html',
             scope: {
                 epCustomizationInfo: '='
             },
@@ -5005,7 +5129,7 @@ app.directive('epCardTitle',
             scope: {
                 customizationData: '='
             },
-            templateUrl: 'components/ep.customization/ep-customization-eptable.html',
+            templateUrl: 'src/components/ep.customization/ep-customization-eptable.html',
             link: function(scope, element) {
                 scope.changes = {};
                 var columns = [];
@@ -5205,7 +5329,7 @@ app.directive('epCardTitle',
             scope: {
                 customizationData: '='
             },
-            templateUrl: 'components/ep.customization/ep-customization-freeform.html',
+            templateUrl: 'src/components/ep.customization/ep-customization-freeform.html',
             link: function(scope, element) {
                 scope.changes = {};
                 scope.customization = null;
@@ -5692,7 +5816,7 @@ app.directive('epCardTitle',
             scope: {
                 customizationData: '='
             },
-            templateUrl: 'components/ep.customization/ep-customization-record-editor.html',
+            templateUrl: 'src/components/ep.customization/ep-customization-record-editor.html',
             link: function(scope, element) {
                 scope.changes = {};
                 var columns = [];
@@ -5975,7 +6099,7 @@ app.directive('epCardTitle',
             restrict: 'E',
             scope: {
             },
-            templateUrl: 'components/ep.customization/ep-customization.html',
+            templateUrl: 'src/components/ep.customization/ep-customization.html',
             link: function(scope, element) {
                 var customizationScopes = {};
 

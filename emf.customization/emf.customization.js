@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.370 built: 28-12-2016
+ * version:1.0.10-dev.371 built: 29-12-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["customization"] = {"libName":"customization","version":"1.0.10-dev.370","built":"2016-12-28"};
+__ep_build_info["customization"] = {"libName":"customization","version":"1.0.10-dev.371","built":"2016-12-29"};
 
 'use strict';
 /**
@@ -105,7 +105,7 @@ angular.module('ep.customization', [
         return {
             replace: true,
             restrict: 'E',
-            templateUrl: 'components/ep.customization/ep-customization-container.html',
+            templateUrl: 'src/components/ep.customization/ep-customization-container.html',
             scope: {
                 epCustomizationInfo: '='
             },
@@ -248,7 +248,7 @@ angular.module('ep.customization', [
             scope: {
                 customizationData: '='
             },
-            templateUrl: 'components/ep.customization/ep-customization-eptable.html',
+            templateUrl: 'src/components/ep.customization/ep-customization-eptable.html',
             link: function(scope, element) {
                 scope.changes = {};
                 var columns = [];
@@ -448,7 +448,7 @@ angular.module('ep.customization', [
             scope: {
                 customizationData: '='
             },
-            templateUrl: 'components/ep.customization/ep-customization-freeform.html',
+            templateUrl: 'src/components/ep.customization/ep-customization-freeform.html',
             link: function(scope, element) {
                 scope.changes = {};
                 scope.customization = null;
@@ -935,7 +935,7 @@ angular.module('ep.customization', [
             scope: {
                 customizationData: '='
             },
-            templateUrl: 'components/ep.customization/ep-customization-record-editor.html',
+            templateUrl: 'src/components/ep.customization/ep-customization-record-editor.html',
             link: function(scope, element) {
                 scope.changes = {};
                 var columns = [];
@@ -1218,7 +1218,7 @@ angular.module('ep.customization', [
             restrict: 'E',
             scope: {
             },
-            templateUrl: 'components/ep.customization/ep-customization.html',
+            templateUrl: 'src/components/ep.customization/ep-customization.html',
             link: function(scope, element) {
                 var customizationScopes = {};
 
