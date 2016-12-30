@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.373 built: 29-12-2016
+ * version:1.0.10-dev.374 built: 29-12-2016
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.10-dev.373","built":"2016-12-29"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.10-dev.374","built":"2016-12-29"};
 
 (function() {
     'use strict';
@@ -1362,7 +1362,15 @@ angular.module('ep.menu.builder', [
                     },
                     /*ngInject*/
                     controller: ['$rootScope', '$scope', 'epFeatureDetectionService', function($rootScope, $scope, epFeatureDetectionService) {
-                        $scope.isMobile = epFeatureDetectionService.browserIsMobile();
+                        $scope.isMobile = false;
+                        epFeatureDetectionService.initialize()
+                            .then(function(features) {
+                                //if the app is running packaged up for mobile then disallow several things through the UI to open external
+                                if (features.platform.app.toLowerCase() === 'cordova') {
+                                    $scope.isMobile = true;
+                                }
+                            });
+
                         $scope.$watch('item.isExpanded', function(val) {
                             if (val !== undefined) {
                                 if ($scope.onExpand) { $scope.onExpand($scope.item); }
