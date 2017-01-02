@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.387 built: 01-01-2017
+ * version:1.0.10-dev.388 built: 02-01-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.10-dev.387","built":"2017-01-01"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.10-dev.388","built":"2017-01-02"};
 
 (function() {
     'use strict';
@@ -2142,17 +2142,28 @@ angular.module('ep.menu.builder', [
 
 /**
  * @ngdoc directive
- * @name ep.contacts.list:epContactsList
+ * @name ep.list:epList
  * @restrict EA
  *
  * @description
- * Represents contacts list with alphabet indexes on right side
- * - data: contacts list array
- * - handler: handler function when clicks on a contact.
+ * Represents list with grouping
+ * - data: list array
+ * - handler: handler function when clicks on a list item.
+ * - mainTitle: main title to display on list
+ * - subTitle: sub title to display on list just below main title.
+ * - additionalTitle: additional title to display on list just below sub title.
+ * - id: value to be displayed on right side of the list.
+ * - groupBy: groupBy field name by which the list has to be grouped.
+ * - subHeader: (true/false) shows sub header with filter/sort/add buttons just below the search component.
+ * - arrow: (true/false) whether to show arrow on right side of list or not.
+ * - statuses: additional list fields that needs to be displayed on right side of the list.
+ * - filter: handler function on click of filter button in sub header section of the list
+ * - sort: handler function on click of sort button in sub header section of the list.
+ * - add: handler function on click of add button in sub header section of the list.
  *
  * @example
  *  <pre>
- *      <ep-contacts-list data="['Bname', 'Cname', 'Aname'"></ep-contacts-list>
+ *      <ep-list data="['Bname', 'Cname', 'Aname'"></ep-list>
  *  </pre>
  */
 (function() {
@@ -2193,7 +2204,7 @@ angular.module('ep.menu.builder', [
                     scope.statusesNotDanger = ['Open', 'Shipped', 'Invoiced', 'On Hold'];
                 }
 
-                scope.isAmount = function (amount) {
+                scope.isAmount = function(amount) {
                     var decimalCheck = amount.split('.');
                     return !isNaN(amount) && angular.isDefined(decimalCheck[1]);
                 }
@@ -2204,9 +2215,9 @@ angular.module('ep.menu.builder', [
 
 /**
  * @ngdoc service
- * @name ep.contacts.list:epContactsListService
+ * @name ep.list:epListService
  * @description
- * Provides methods for dislaying contacts list with indexes.
+ * Provides methods for dislaying list with groups.
  *
  * @example
  *
@@ -2214,19 +2225,19 @@ angular.module('ep.menu.builder', [
 (function() {
     'use strict';
 
-    epListService.$inject = ['$filter', '$timeout', 'epContactsListConstants'];
     angular.module('ep.list').factory('epListService', epListService);
 
-    function epListService($filter, $timeout, epContactsListConstants) {
+    function epListService() {
 
         /**
          * @ngdoc method
          * @name getGroupedList
-         * @methodOf ep.contacts.list:epContactsListService
+         * @methodOf ep.list:epListService
          * @public
-         * @param {Array} listData - list of contacts to display
+         * @param {Array} listData - list of items to display
+         * @param {String} groupBy - field name by which the list has to be grouped
          * @description
-         * To group the contacts list based on alphabets
+         * To group the list based on groupBy Value
          */
         function getGroupedList(listData, groupBy) {
             var listName = [];
@@ -2237,8 +2248,8 @@ angular.module('ep.menu.builder', [
             var prevAlphabet = '';
             for (var i = 0; i < sortedlist.length; i++) {
 
-                var fetchDate = sortedlist[i][groupBy].split("-", 2);
-                var concatDate = fetchDate[1] + "-" + fetchDate[0];
+                var fetchDate = sortedlist[i][groupBy].split('-', 2);
+                var concatDate = fetchDate[1] + '-' + fetchDate[0];
 
                 currAlphabet = concatDate;
 
@@ -2258,39 +2269,8 @@ angular.module('ep.menu.builder', [
             return groupedObj;
         }
 
-        /**
-         * @ngdoc method
-         * @name toggleIndexes
-         * @methodOf ep.contacts.list:epContactsListService
-         * @public
-         * @description
-         * To toggle index list based on the contacts container height
-         */
-        function toggleIndexes() {
-            $timeout(function() {
-                var mainContainerHeight = $('.ep-contacts-list').height();
-                var indexesLength = 0;
-                var indexItemHeight = 0;
-                if (mainContainerHeight < epContactsListConstants.CONTACTS_LIST_INDEXES_HIDDEN_BREAKPOINT) {
-                    $('.ep-index-list').hide();
-                } else if (mainContainerHeight < epContactsListConstants.CONTACTS_LIST_INDEXES_BREAKPOINT) {
-                    $('.ep-index-list.large-index-list').hide();
-                    $('.ep-index-list.small-index-list').show();
-                    indexesLength = $('.ep-index-list.small-index-list li').length;
-                } else {
-                    $('.ep-index-list.small-index-list').hide();
-                    $('.ep-index-list.large-index-list').show();
-                    indexesLength = $('.ep-index-list.large-index-list li').length;
-                }
-                //adjust index list height based on the list container height
-                indexItemHeight = parseInt(mainContainerHeight / indexesLength);
-                $('.ep-index-list li').css('line-height', indexItemHeight + 'px');
-            });
-        }
-
         return {
-            getGroupedList: getGroupedList,
-            toggleIndexes: toggleIndexes
+            getGroupedList: getGroupedList
         };
     }
 })();

@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.387 built: 01-01-2017
+ * version:1.0.10-dev.388 built: 02-01-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["tiles"] = {"libName":"tiles","version":"1.0.10-dev.387","built":"2017-01-01"};
+__ep_build_info["tiles"] = {"libName":"tiles","version":"1.0.10-dev.388","built":"2017-01-02"};
 
 'use strict';
 /**
@@ -239,6 +239,13 @@ app.directive('epCardTitle',
  * Represents contacts list with alphabet indexes on right side
  * - data: contacts list array
  * - handler: handler function when clicks on a contact.
+ * - mainTitle: main title to display on list
+ * - subTitle: sub title to display on list just below main title.
+ * - additionalTitle: additional title to display on list just below sub title.
+ * - id: value to be displayed on right side of the list.
+ * - filter: handler function on click of filter button in sub header section of the list
+ * - sort: handler function on click of sort button in sub header section of the list.
+ * - add: handler function on click of add button in sub header section of the list.
  *
  * @example
  *  <pre>
@@ -332,7 +339,7 @@ app.directive('epCardTitle',
          */
         function getGroupedList(listData, mainTitle) {
             var listName = [];
-            var sortedlist = _.sortBy(listData, mainTitle);
+            var sortedlist = _.sortBy(listData, function (obj) { return obj[mainTitle].toLowerCase(); });
             var groupedObj = {};
             var itemGroup = [];
             var currAlphabet = '';
