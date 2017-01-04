@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.397 built: 04-01-2017
+ * version:1.0.10-dev.398 built: 04-01-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.397","built":"2017-01-04"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.398","built":"2017-01-04"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -9178,6 +9178,23 @@ angular.module('ep.datagrid').
                 return attrVal.split(',').map(function(v) { return v.trim().toLowerCase(); })
             }
 
+            function processFlow(zones){
+                zoneNames.forEach(function(zoneName){
+                    zones[zoneName].forEach(function($zone){
+                        
+                        var flowPropName = zoneName + 'Flow';
+                        var flowPropValue = $zone.epOrientation + ($zone.epWrap ? ' wrap': '');
+                        $scope[flowPropName] = flowPropValue;
+
+                        var children = $zone.children();
+                        children.each(function(){
+                            var $child = $(this);
+                            
+                        })
+                    });
+                })
+            }
+
             function processAnchors(zones) {
 
                 // This is a very naive anchor implementation that only works when there is
@@ -9263,6 +9280,8 @@ angular.module('ep.datagrid').
                     var dockElement = $el.find('.ep-dock-panel-' + pos);
                     var dockContent = content.find('[dock=' + pos + ']');
                     dockElement.epPanelMode = dockContent.attr('mode');
+                    dockElement.epOrientation = dockContent.attr('orientation') || 'vertical';
+                    dockElement.epWrap = (dockElement.attr('wrap') || 'false').toLowerCase() === 'true';
                     dockElement.hasContent = !!dockContent.length;
                     if (dockElement.epPanelMode === 'static') {
                         dockElement.css('flex', '0 0');
@@ -9311,18 +9330,19 @@ angular.module('ep.datagrid').
 
                 // count how many zones there are that are set to "stretch"
                 var flex;
+                var stretchCount = 0;
                 // set each docked element to stretch the correct amount
                 if (topFirst) {
                     // if topFirst is true, then the main axis is the y-axis, and the cross axis is the x-axis
                     // the flex count will be 0, 1, 2, or 3 depending on how  many sections
                     // (out of top, center, and bottom) have their mode set to stretch
-                    c =
+                    stretchCount =
                         (docks.top.hasContent && docks.top.epPanelMode === 'stretch' ? 1 : 0) +
                         ((docks.left.hasContent || docks.center.hasContent || docks.right.hasContent) ? 1 : 0) +
                         (docks.bottom.hasContent && docks.bottom.epPanelMode === 'stretch' ? 1 : 0);
 
-                    if (c) {
-                        flex = 100 / c;
+                    if (stretchCount) {
+                        flex = 100 / stretchCount;
                         // set the flex value for the top row
                         if (docks.top.hasContent && docks.top.epPanelMode === 'stretch') {
                             $scope.topFlex = '1 1 ' + flex + '%';
@@ -9360,13 +9380,13 @@ angular.module('ep.datagrid').
                     // if topFirst is false, then the main axis is the x-axis, and the cross axis is
                     // the y- axis. The flex count will be 0, 1, 2, or 3 depending on how  many sections
                     // (out of left, center, and right) have their mode set to stretch.
-                    var c =
+                    stretchCount =
                         (docks.left.hasContent && docks.left.epPanelMode === 'stretch' ? 1 : 0) +
                         ((docks.top.hasContent || docks.center.hasContent || docks.bottom.hasContent) ? 1 : 0) +
                         (docks.right.hasContent && docks.right.epPanelMode === 'stretch' ? 1 : 0);
 
-                    if (c) {
-                        flex = 100 / c;
+                    if (stretchCount) {
+                        flex = 100 / stretchCount;
                         // set the flex value for the left side
                         if (docks.left.hasContent && docks.left.epPanelMode === 'stretch') {
                             $scope.leftFlex = '1 1' + flex + '%';
@@ -9388,7 +9408,6 @@ angular.module('ep.datagrid').
                             if (docks.bottom.hasContent && docks.bottom.epPanelMode === 'stretch') {
                                 $scope.bottomFlex = '1 1 ' + innerFlex + '%';
                             }
-
                         }
                         // set the flex value for the right side
                         if (docks.right.hasContent && docks.right.epPanelMode === 'stretch') {
@@ -9397,7 +9416,7 @@ angular.module('ep.datagrid').
                     }
                 }
                 $timeout(function() {
-                    processAnchors(zones);
+                    processFlow(zones);
                 });
 
             }
@@ -22513,59 +22532,54 @@ angular.module('ep.record.editor').
 (function() {
     'use strict';
 
-    angular.module('ep.shell').directive('epShellSidebar', [
-    '$rootScope',
-    '$routeParams',
-    'epSidebarService',
-    'epShellService',
-    'epShellConstants',
-    'epFeatureDetectionService',
-    function($rootScope, $routeParams,
-        epSidebarService, epShellService, epShellConstants, epFeatureDetectionService) {
-        return {
-            restrict: 'E',
-            replace: true,
-            transclude: true,
-            templateUrl: 'src/components/ep.shell/sidebar/sidebar.html',
-            controller: ['$scope', function($scope) {
-                function init() {
-                    $scope.platform = epFeatureDetectionService.getFeatures().platform;
-                    $scope.shellState = epShellService.__state;
-                    $scope.sidebarState = epSidebarService.state;
+    angular.module('ep.shell').directive('epShellSidebar', 
+        /*@ngInject */
+        ['$rootScope', '$routeParams', 'epSidebarService', 'epShellService', 'epShellConstants', 'epFeatureDetectionService', function($rootScope, $routeParams, epSidebarService, epShellService, 
+                 epShellConstants, epFeatureDetectionService) {
+            return {
+                restrict: 'E',
+                replace: true,
+                transclude: true,
+                templateUrl: 'src/components/ep.shell/sidebar/sidebar.html',
+                controller: ['$scope', function($scope) {
+                    function init() {
+                        $scope.platform = epFeatureDetectionService.getFeatures().platform;
+                        $scope.shellState = epShellService.__state;
+                        $scope.sidebarState = epSidebarService.state;
 
-                    $scope.menuId = $routeParams.menuId;
-                    $scope.dismissRightSidebar = function() {
-                        if (!$scope.shellState.suspend) {
-                            epShellService.hideRightSidebar();
-                        }
-                    };
+                        $scope.menuId = $routeParams.menuId;
+                        $scope.dismissRightSidebar = function() {
+                            if (!$scope.shellState.suspend) {
+                                epShellService.hideRightSidebar();
+                            }
+                        };
 
-                    $scope.dismissLeftSidebar = function() {
-                        if (epShellService.getMediaMode() === epShellConstants.MEDIA_MODE_SMALL &&
-                            !$scope.shellState.suspend) {
-                            epShellService.hideLeftSidebar();
-                        }
-                    };
+                        $scope.dismissLeftSidebar = function() {
+                            if (epShellService.getMediaMode() === epShellConstants.MEDIA_MODE_SMALL &&
+                                !$scope.shellState.suspend) {
+                                epShellService.hideLeftSidebar();
+                            }
+                        };
 
-                    var dismissSidebars = function() {
-                        $scope.dismissRightSidebar();
-                        $scope.dismissLeftSidebar();
-                    };
-                    // this event is bound programmatically so that it doesn't
-                    // participate in the ng-click lifecycle (which causes sporadic
-                    // problems with click events on child elements)
-                    $('#viewContainerBackdrop').bind('click', dismissSidebars);
-                }
-
-                $rootScope.$watch('initComplete', function(initComplete) {
-                    if (initComplete) {
-                        init();
+                        var dismissSidebars = function() {
+                            $scope.dismissRightSidebar();
+                            $scope.dismissLeftSidebar();
+                        };
+                        // this event is bound programmatically so that it doesn't
+                        // participate in the ng-click lifecycle (which causes sporadic
+                        // problems with click events on child elements)
+                        $('#viewContainerBackdrop').bind('click', dismissSidebars);
                     }
-                });
-            }]
-        };
-    }
-    ]);
+
+                    $rootScope.$watch('initComplete', function(initComplete) {
+                        if (initComplete) {
+                            init();
+                        }
+                    });
+                }]
+            };
+        }]
+    );
 })();
 
 'use strict';
@@ -27032,7 +27046,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.dock.panel/epDockPanel.html',
-    "<div class=\"ep-dock-panel ep-fullscreen\" id={{panelId}} ng-style=\"{ 'flex-flow': mainFlow}\"><div id={{id}}_left class=ep-dock-panel-left ng-show=leftVisible ng-style=\"{ 'flex': leftFlex}\"></div><div id={{id}}_right class=ep-dock-panel-right ng-show=rightVisible ng-style=\"{ 'flex': rightFlex,}\"></div><div id={{id}}_top class=ep-dock-panel-top ng-show=topVisible ng-style=\"{ 'flex': topFlex}\"></div><div id={{id}}_bottom class=ep-dock-panel-bottom ng-show=bottomVisible ng-style=\"{ 'flex': bottomFlex}\"></div><div id={{id}}_cross class=ep-dock-panel-cross-axis ng-style=\"{ 'flex-flow': crossFlow, 'flex': crossFlex}\"><div id={{id}}_center class=ep-dock-panel-center ng-show=centerVisible ng-style=\"{ 'flex':centerFlex}\"></div></div><div ng-show=false id=transclusion ng-transclude></div></div>"
+    "<div class=\"ep-dock-panel ep-fullscreen\" id={{panelId}} ng-style=\"{ 'flex-flow': mainFlow}\"><div id={{id}}_left class=ep-dock-panel-left ng-show=leftVisible ng-style=\"{ 'flex': leftFlex, 'flex-flow': leftFlow, 'justify-content': leftJustify }\"></div><div id={{id}}_right class=ep-dock-panel-right ng-show=rightVisible ng-style=\"{ 'flex': rightFlex, 'flex-flow': rightFlow, 'justify-content': rightJustify  }\"></div><div id={{id}}_top class=ep-dock-panel-top ng-show=topVisible ng-style=\"{ 'flex': topFlex, 'flex-flow': topflow, 'justify-content': topJustify  }\"></div><div id={{id}}_bottom class=ep-dock-panel-bottom ng-show=bottomVisible ng-style=\"{ 'flex': bottomFlex, 'flex-flow': bottomFlow, 'justify-content': bottomJustify  }\"></div><div id={{id}}_cross class=ep-dock-panel-cross-axis ng-style=\"{ 'flex-flow': crossFlow, 'flex': crossFlex }\"><div id={{id}}_center class=ep-dock-panel-center ng-show=centerVisible ng-style=\"{ 'flex':centerFlex, 'flex-flow': centerflow, 'justify-content': centerJustify  }\"></div></div><div ng-show=false id=transclusion ng-transclude></div></div>"
   );
 
 
@@ -27157,7 +27171,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/shell.html',
-    "<div><section ng-controller=epShellCtrl class=ep-shell ng-cloak><div ng-show=state.showProgressIndicator class=ep-progress-idicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\" tabindex=-1></a></li><li ng-repeat=\"button in leftNavButtons | orderBy:'index':true\" index={{button.index}} ng-class=\"{'hidden': button.hidden}\"><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"pull-left fa {{button.icon}} fa-2x ep-navbar-button left-button\" ng-click=state.executeButton(button,$event) ng-mousedown=state.buttonMouseDown(button) ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"pull-left ep-navbar-button left-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"><i class=\"fa {{button.icon}} fa-2x\"></i><span ng-bind=button.title style=\"padding-right: 5px\"></span><span class=caret></span></a><ep-include class=\"pull-left ep-navbar-button left-button\" ng-if=\"button.type === 'template'\" options=button.options user-data=button></ep-include><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator' && opt.type !== 'checked'\" ng-click=state.executeButton(opt,$event) ng-mousedown=state.buttonMouseDown(opt)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i><span class=ep-navmenu-item-text>{{opt.title}}</span></span></a> <a ng-if=\"opt.type !== 'separator' && opt.type === 'checked'\" ng-click=state.executeButton(opt,$event) ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><input type=checkbox class=ep-dropdown-btn-chk ng-model=\"opt.checked\"><span class=ep-navmenu-item-text ng-bind=opt.title></span></span></a></li></ul></li><li id=brandItem ng-hide=\"state.showBrand === false\" ng-class=\"{'ep-center-brand': state.centerBrand}\"><a id=apptitle ng-cloak=\"\" ng-if=state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-href=#{{(state.brandTarget)}} ng-bind-html=state.brandHTML></a> <span id=apptitle ng-cloak=\"\" ng-if=!state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-bind-html=state.brandHTML></span></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in rightNavButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.enabled === false}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button,$event) ng-mousedown=state.buttonMouseDown(button)></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false><i class=\"fa {{button.icon}} fa-2x\"></i><span ng-bind=button.title style=\"padding-right: 5px\"></span><span class=caret></span></a><ep-include class=ep-navbar-button ng-if=\"button.type === 'template'\" options=button.options user-data=button></ep-include><ul ng-if=\"button.type === 'select'\" class=\"dropdown-menu dropdown-menu-right\" ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator' && opt.type !== 'checked'\" ng-click=state.executeButton(opt,$event) ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i><span class=ep-navmenu-item-text ng-bind=opt.title></span></span></a> <a ng-if=\"opt.type !== 'separator' && opt.type === 'checked'\" ng-click=state.executeButton(opt,$event) ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><input type=checkbox class=ep-dropdown-btn-chk ng-model=\"opt.checked\"><span class=ep-navmenu-item-text ng-bind=opt.title></span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div class=ep-fullscreen><div ng-view class=\"ep-fullscreen ep-anim-speed-{{state.animationSpeed}} {{state.animationIn}} {{state.animationOut}} ep-view{{options.enableViewAnimations? ' ep-view-transition' : ''}}\" ng-class=state.viewAnimation></div></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" ng-if=state.footerTarget ng-href={{state.footerTarget}}><sup id=footerElement ng-bind-html=state.footerHTML></sup></a> <sup ng-if=!state.footerTarget id=footerElement ng-bind-html=state.footerHTML></sup></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.enableFeedback ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
+    "<div><section ng-controller=epShellCtrl class=ep-shell ng-cloak><div ng-show=state.showProgressIndicator class=ep-progress-indicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\" tabindex=-1></a></li><li ng-repeat=\"button in leftNavButtons | orderBy:'index':true\" index={{button.index}} ng-class=\"{'hidden': button.hidden}\"><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"pull-left fa {{button.icon}} fa-2x ep-navbar-button left-button\" ng-click=state.executeButton(button,$event) ng-mousedown=state.buttonMouseDown(button) ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"><span ng-if=button.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=button.badge.value></span></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"pull-left ep-navbar-button left-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"><i class=\"fa {{button.icon}} fa-2x\"></i> <span ng-bind=button.title style=\"padding-right: 5px\"></span> <span class=caret></span> <span ng-if=button.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=button.badge.value></span></a><ep-include class=\"pull-left ep-navbar-button left-button\" ng-if=\"button.type === 'template'\" options=button.options user-data=button></ep-include><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator' && opt.type !== 'checked'\" ng-click=state.executeButton(opt,$event) ng-mousedown=state.buttonMouseDown(opt)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i> <span class=ep-navmenu-item-text>{{opt.title}}</span> <span ng-if=opt.badge class=\"ep-badge {{opt.badge.cssClass}}\" ng-bind=opt.badge.value></span></span></a> <a ng-if=\"opt.type !== 'separator' && opt.type === 'checked'\" ng-click=state.executeButton(opt,$event) ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><input type=checkbox class=ep-dropdown-btn-chk ng-model=\"opt.checked\"> <span class=ep-navmenu-item-text ng-bind=opt.title></span> <span ng-if=opt.badge class=\"ep-badge {{opt.badge.cssClass}}\" ng-bind=opt.badge.value></span></span></a></li></ul></li><li id=brandItem ng-hide=\"state.showBrand === false\" ng-class=\"{'ep-center-brand': state.centerBrand}\"><a id=apptitle ng-cloak=\"\" ng-if=state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-href=#{{(state.brandTarget)}} ng-bind-html=state.brandHTML></a> <span id=apptitle ng-cloak=\"\" ng-if=!state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-bind-html=state.brandHTML></span></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa fa-bars fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in rightNavButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.enabled === false}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button,$event) ng-mousedown=state.buttonMouseDown(button)><span ng-if=button.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=button.badge.value></span></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false><i class=\"fa {{button.icon}} fa-2x\"></i> <span ng-bind=button.title style=\"padding-right: 5px\"></span> <span class=caret></span> <span ng-if=button.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=button.badge.value></span></a><ep-include class=ep-navbar-button ng-if=\"button.type === 'template'\" options=button.options user-data=button></ep-include><ul ng-if=\"button.type === 'select'\" class=\"dropdown-menu dropdown-menu-right\" ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator' && opt.type !== 'checked'\" ng-click=state.executeButton(opt,$event) ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i> <span class=ep-navmenu-item-text ng-bind=opt.title></span> <span ng-if=opt.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=opt.badge.value></span></span></a> <a ng-if=\"opt.type !== 'separator' && opt.type === 'checked'\" ng-click=state.executeButton(opt,$event) ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><input type=checkbox class=ep-dropdown-btn-chk ng-model=\"opt.checked\"> <span class=ep-navmenu-item-text ng-bind=opt.title></span> <span ng-if=opt.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=opt.badge.value></span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div class=ep-fullscreen><div ng-view class=\"ep-fullscreen ep-anim-speed-{{state.animationSpeed}} {{state.animationIn}} {{state.animationOut}} ep-view{{options.enableViewAnimations? ' ep-view-transition' : ''}}\" ng-class=state.viewAnimation></div></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" ng-if=state.footerTarget ng-href={{state.footerTarget}}><sup id=footerElement ng-bind-html=state.footerHTML></sup></a> <sup ng-if=!state.footerTarget id=footerElement ng-bind-html=state.footerHTML></sup></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.enableFeedback ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
   );
 
 

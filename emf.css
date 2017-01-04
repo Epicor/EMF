@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.397 built: 04-01-2017
+ * version:1.0.10-dev.398 built: 04-01-2017
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -1192,6 +1192,10 @@
   position: relative;
   height: 100%;
   display: flex;
+}
+.ep-dock-panel > div {
+  display: flex;
+  flex-wrap: wrap;
 }
 .ep-dock-panel-top {
   flex: 0 0 0;
@@ -2468,6 +2472,21 @@ span.ep-center-brand {
 }
 .ep-navmenu-item-icon {
   padding-right: 4px;
+}
+.ep-navbar-button .ep-badge {
+  position: absolute;
+  transform: translate(-75%, -35%);
+  display: inline-block;
+  min-width: 10px;
+  padding: 3px 7px;
+  font-size: 12px;
+  font-weight: bold;
+  color: #ffffff;
+  line-height: 1;
+  vertical-align: baseline;
+  white-space: nowrap;
+  text-align: center;
+  border-radius: 10px;
 }
 /*
 =================================================================
