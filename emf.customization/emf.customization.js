@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.403 built: 05-01-2017
+ * version:1.0.10-dev.404 built: 05-01-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["customization"] = {"libName":"customization","version":"1.0.10-dev.403","built":"2017-01-05"};
+__ep_build_info["customization"] = {"libName":"customization","version":"1.0.10-dev.404","built":"2017-01-05"};
 
 'use strict';
 /**
@@ -923,12 +923,12 @@ angular.module('ep.customization', [
     *
     * @example
     */
-    epCustomizationRecordEditorDirective.$inject = ['$timeout', 'epBindingService', 'epCustomizationService'];
+    epCustomizationRecordEditorDirective.$inject = ['$timeout', 'epCustomizationService', 'epTransactionFactory'];
     angular.module('ep.customization')
         .directive('epCustomizationRecordEditor', epCustomizationRecordEditorDirective);
 
     /*@ngInject*/
-    function epCustomizationRecordEditorDirective($timeout, epBindingService, epCustomizationService) {
+    function epCustomizationRecordEditorDirective($timeout, epCustomizationService, epTransactionFactory) {
         return {
             replace: false,
             restrict: 'E',
@@ -963,9 +963,9 @@ angular.module('ep.customization', [
                         columns = [];
                         scope.customization = scope.customizationData.customization;
                         if (scope.customization.ctrl.epBinding) {
-                            var view = epBindingService.getView(scope.customization.ctrl.epBinding);
-                            if (view.api().hasData()) {
-                                record = view.api().dataRow();
+                            var view = epTransactionFactory.current().view(scope.customization.ctrl.epBinding);
+                            if (view.hasData()) {
+                                record = view.dataRow();
                                 angular.forEach(record, function(v, n) {
                                     columns.push({
                                         label: n,

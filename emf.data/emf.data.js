@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.403 built: 05-01-2017
+ * version:1.0.10-dev.404 built: 05-01-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.403","built":"2017-01-05"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.404","built":"2017-01-05"};
 
 (function() {
     'use strict';
@@ -80,6 +80,15 @@ angular.module('ep.binding', [
     'ep.templates',
     'ep.sysconfig'
 ]);
+
+'use strict';
+/**
+ * @ngdoc overview
+ * @name ep.embedded.apps
+ * @description
+ * Provides services for embedded application hosting
+ */
+angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odata', 'ep.binding']);
 
 'use strict';
 (function() {
@@ -1789,11 +1798,11 @@ angular.module('ep.token').
     *
     * @example
     */
-    epBindingEditorDirective.$inject = ['$location', 'epBindingFactory', 'epUtilsService'];
+    epBindingEditorDirective.$inject = ['$location', 'epBindingFactory', 'epUtilsService', 'epBindingMetadataService'];
     angular.module('ep.binding').directive('epBindingEditor', epBindingEditorDirective);
 
     /*@ngInject*/
-    function epBindingEditorDirective($location, epBindingFactory, epUtilsService) {
+    function epBindingEditorDirective($location, epBindingFactory, epUtilsService, epBindingMetadataService) {
         return {
             restrict: 'E',
             templateUrl: 'src/components/ep.binding/controls/ep-binding-editor.html',
@@ -1829,6 +1838,13 @@ angular.module('ep.token').
                             scope.state.epBinding.view !== scope.epBindingInfo.epBinding.view) {
                             scope.state.column.caption = scope.epBindingInfo.epBinding.column;
                         }
+
+                        var meta = epBindingMetadataService.get(scope.epBindingInfo.epBinding.view);
+                        if (meta && meta.columns && meta.columns[scope.epBindingInfo.epBinding.column]) {
+                            var col = meta.columns[scope.epBindingInfo.epBinding.column];
+                            epUtilsService.copyProperties(col, scope.state.column);
+                        }
+
                         scope.state.epBinding.view = scope.epBindingInfo.epBinding.view;
                         scope.state.epBinding.column = scope.epBindingInfo.epBinding.column;
                     }
@@ -1946,12 +1962,12 @@ angular.module('ep.binding').
     *
     * @example
     */
-    epBindingRecordEditorDirective.$inject = ['$log', '$location', 'epBindingFactory', 'epCustomizationService', 'epUtilsService'];
+    epBindingRecordEditorDirective.$inject = ['$log', '$location', 'epBindingFactory', 'epCustomizationService', 'epUtilsService', 'epBindingMetadataService'];
     angular.module('ep.binding').directive('epBindingRecordEditor', epBindingRecordEditorDirective);
 
     /*@ngInject*/
     function epBindingRecordEditorDirective($log, $location,
-        epBindingFactory, epCustomizationService, epUtilsService) {
+        epBindingFactory, epCustomizationService, epUtilsService, epBindingMetadataService) {
         return {
             restrict: 'E',
             templateUrl: 'src/components/ep.binding/controls/ep-binding-record-editor.html',
@@ -2000,8 +2016,28 @@ angular.module('ep.binding').
                     }
                 }
 
-                scope.$watch('options', function(newValue, oldValue) {
-                    if (newValue !== undefined && !angular.equals(newValue, oldValue)) {
+                function setOptions() {
+                    if (scope.options !== undefined) {
+                        if (scope.options.columnList && !scope.options.columns) {
+                            var columns = [];
+                            var colNames = scope.options.columnList.split(',');
+                            var meta = epBindingMetadataService.get(scope.epBinding);
+                            angular.forEach(colNames, function(c) {
+                                var column = {
+                                    columnIndex: c,
+                                    editor: 'auto', // getEditorByValue(scope.record[c]),
+                                    updatable: true
+                                };
+                                if (meta && meta.columns && meta.columns[c]) {
+                                    var col = meta.columns[c];
+                                    epUtilsService.copyProperties(col, column);
+                                }
+                                columns.push(column);
+                            });
+
+                            scope.options.columns = columns;
+                        }
+
                         if (scope.options.columns && scope.options.columns.length) {
                             var customProps = epCustomizationService.getCustomization(scope.state.id);
 
@@ -2034,6 +2070,10 @@ angular.module('ep.binding').
                             }
                         }
                     }
+                }
+
+                scope.$watch('options', function(newValue, oldValue) {
+                    setOptions();
                 }, true);
             }
         }
@@ -2309,6 +2349,63 @@ angular.module('ep.binding').
                 };
             }
         }
+    }
+}());
+
+(function() {
+    'use strict';
+    /**
+     * @ngdoc service
+     * @name ep.binding.metadata.service:epBindingMetadataService
+     * @description
+     * Service for the ep.binding module
+     * ep binding
+     *
+     * @example
+     *
+     */
+    angular.module('ep.binding').
+        service('epBindingMetadataService', epBindingMetadataService);
+
+    /*@ngInject*/
+    function epBindingMetadataService() {
+        var store = {};
+        var aliases = {};
+
+        function add(id, kind, columns) {
+            var cols = columns;
+            if (kind === 'baq') {
+                cols = {};
+                angular.forEach(columns, function(cc) {
+                    cols[cc.Alias] = {
+                        name: cc.Alias,
+                        caption: cc.FieldLabel || cc.Alias,
+                        updatable: cc.Updatable,
+                        required: cc.IsRequired,
+                        requiredFlag: cc.IsRequired
+                    };
+                });
+            }
+            store[id] = {
+                id: id,
+                kind: kind,
+                columns: cols
+            };
+        }
+
+        function get(id) {
+            return aliases[id] ? store[aliases[id]] : store[id];
+        }
+
+        function addAlias(id, alias) {
+            aliases[alias] = id;
+        }
+
+        return {
+            add: add,
+            get: get,
+            addAlias: addAlias
+        };
     }
 }());
 
@@ -3323,6 +3420,162 @@ angular.module('ep.binding').
         };
     }
 }());
+
+(function() {
+    'use strict';
+    epErpBaqService.$inject = ['$q', 'epErpRestService', 'epModalDialogService', 'epTransactionFactory', 'odataQueryFactory', 'epBindingMetadataService'];
+    angular.module('ep.erp').
+    service('epErpBaqService', epErpBaqService);
+
+    /*@ngInject*/
+    function epErpBaqService($q, epErpRestService, epModalDialogService, epTransactionFactory, odataQueryFactory, epBindingMetadataService) {
+        function getBAQList(idStartsWith) {
+            var url = 'Ice.BO.BAQDesignerSvc/BAQDesigners';
+            var query = odataQueryFactory
+                .setSelect(['QueryID', 'Company', 'IsShared', 'Version', 'Updatable', 'SysRevID']);
+            if (idStartsWith){
+                query = query.setWhereCustom('startswith(QueryID,\'' + idStartsWith + '\')');
+            }
+            query = query.compose();
+
+            var promise = epErpRestService.get(url, query).$promise;
+            promise.then(function(data) {
+                var baqList = data.value;
+            }, function(data) {
+                var msg = data['odata.error'] ? data['odata.error'].message.value : data.statusText;
+                epModalDialogService.showException({ title: 'Exception', message: msg });
+            });
+            return promise;
+        }
+
+        function getBAQ(baqId, myQuery, viewId, options) {
+            if (!options) {
+                options = {};
+            }
+            var showProgress = (options.showProgress !== false);
+            if (showProgress) {
+                epModalDialogService.showProgress({
+                    title: 'Retrieving BAQ data',
+                    message: 'retrieving data from server...',
+                    showProgress: true
+                });
+            }
+
+            var deferred = $q.defer();
+
+            var url = 'BaqSvc/' + baqId;
+            var promise = epErpRestService.get(url, myQuery).$promise;
+            promise.then(function(data) {
+                //if (data.value) {
+                //    epTransactionFactory.current().add(viewId, data.value);
+                //}
+            }, function(data) {
+                var msg = data['odata.error'] ? data['odata.error'].message.value : data.statusText;
+                epModalDialogService.showException({ title: 'Exception', message: msg });
+                deferred.reject(msg, data);
+            });
+
+            var promiseMeta;
+            if (!epBindingMetadataService.get(viewId)) {
+                promiseMeta = getBAQDesigner(baqId);
+                promiseMeta.then(function(result) {
+                    epBindingMetadataService.add(viewId, 'baq', result.data.returnObj);
+                }, function(data) { });
+            }
+
+            $q.all([promise, promiseMeta]).then(function(results) {
+                if (showProgress) {
+                    epModalDialogService.hide();
+                }
+                var baqData = results[0].value;
+                if (baqData) {
+                    epTransactionFactory.current().add(viewId, baqData);
+                }
+                deferred.resolve(results[0]);
+            })
+
+            return deferred.promise;
+        }
+
+        function updateBAQ(baqId, data) {
+            var url = 'BaqSvc/' + baqId;
+            var promise = epErpRestService.patch(url, data); 
+            promise.error(function(response) {
+                epModalDialogService.showException({
+                    title: 'Info', message: response.ErrorMessage || '',
+                    messageDetails: angular.toJson(response,2)
+                });
+            });
+            return promise;
+        }
+
+        function getNewBAQ(baqId, viewId, options) {
+            if (!options) {
+                options = {};
+            }
+
+            var showProgress = (options.showProgress !== false);
+            if (showProgress) {
+                epModalDialogService.showProgress({
+                    title: 'Retrieving BAQ data',
+                    message: 'getting new record from server...',
+                    showProgress: true
+                });
+            }
+
+            var url = 'BaqSvc/' + baqId + '/GetNew';
+            var promise = epErpRestService.get(url, '').$promise;
+            promise.then(function(data) {
+                if (showProgress) {
+                    epModalDialogService.hide();
+                }
+                if (data.value) {
+                    var rowIdx = 0;
+                    var view = epTransactionFactory.current().view(viewId);
+                    if (!view) {
+                        epTransactionFactory.current().add(viewId, data.value);
+                    } else {
+                        rowIdx = view.addRow(data.value[0]);
+                    }
+                    if (!options || options.setCurrentRow === true) {
+                        view.row(rowIdx);
+                    }
+                }
+            }, function(data) {
+                if (showProgress) {
+                    epModalDialogService.hide();
+                }
+                var msg = data['odata.error'] ? data['odata.error'].message.value : data.statusText;
+                epModalDialogService.showException({ title: 'Exception', message: msg });
+            });
+            return promise;
+        }
+
+        function getBAQDesigner(baqId) {
+            var url = 'Ice.BO.BAQDesignerSvc/GetByID';
+            var data = {
+                queryID: baqId
+            };
+            var promise = epErpRestService.post(url, data);
+            promise.error(function(response) {
+                epModalDialogService.showException({
+                    title: 'Info', message: response.ErrorMessage || '',
+                    messageDetails: angular.toJson(response, 2)
+                });
+            });
+            return promise;
+        }
+
+        return {
+            getBAQList: getBAQList,
+            getBAQ: getBAQ,
+            updateBAQ: updateBAQ,
+            getNewBAQ: getNewBAQ,
+            getBAQDesigner: getBAQDesigner
+        };
+    }
+}());
+
 
 //# sourceMappingURL=emf.data.min.js.map
 angular.module('ep.templates').run(['$templateCache', function($templateCache) {

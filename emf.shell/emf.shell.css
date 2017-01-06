@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.403 built: 05-01-2017
+ * version:1.0.10-dev.404 built: 05-01-2017
 */
 .ep-ease-animation {
   -moz-backface-visibility: hidden;
@@ -679,6 +679,9 @@ span.ep-center-brand {
   white-space: nowrap;
   text-align: center;
   border-radius: 10px;
+}
+.ep-navbar-button .ep-badge:empty {
+  display: none;
 }
 /*
 =================================================================
