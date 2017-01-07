@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.407 built: 06-01-2017
+ * version:1.0.10-dev.408 built: 06-01-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.407","built":"2017-01-06"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.408","built":"2017-01-06"};
 
 (function() {
     'use strict';
@@ -2016,6 +2016,16 @@ angular.module('ep.binding').
                     }
                 }
 
+                function getEditor(dataType) {
+                    //        # editor {string} - 'number' | 'text' | 'multiline' | 'date' | 'checkbox' | 'select' | 'image' | 'custom'
+                    var ret = 'auto';
+                    var dt = (dataType || '').toLowerCase();
+                    if (dt === 'bool' || dt === 'boolean' || dt === 'logical' || dt === 'bit') {
+                        ret = 'checkbox';
+                    }
+                    return ret;
+                }
+
                 function setOptions() {
                     if (scope.options !== undefined) {
                         if (scope.options.columnList && !scope.options.columns) {
@@ -2031,6 +2041,7 @@ angular.module('ep.binding').
                                 if (meta && meta.columns && meta.columns[c]) {
                                     var col = meta.columns[c];
                                     epUtilsService.copyProperties(col, column);
+                                    column.editor = getEditor(col.dataType);
                                 }
                                 columns.push(column);
                             });
@@ -2369,8 +2380,10 @@ angular.module('ep.binding').
 
     /*@ngInject*/
     function epBindingMetadataService() {
-        var store = {};
-        var aliases = {};
+        var store = {
+            meta: {},
+            aliases: {}
+        };
 
         function add(id, kind, columns) {
             var cols = columns;
@@ -2382,11 +2395,14 @@ angular.module('ep.binding').
                         caption: cc.FieldLabel || cc.Alias,
                         updatable: cc.Updatable,
                         required: cc.IsRequired,
-                        requiredFlag: cc.IsRequired
+                        requiredFlag: cc.IsRequired,
+                        tableId: cc.TableID,
+                        columnName: cc.FieldName,
+                        dataType: cc.DataType
                     };
                 });
             }
-            store[id] = {
+            store.meta[id] = {
                 id: id,
                 kind: kind,
                 columns: cols
@@ -2394,17 +2410,33 @@ angular.module('ep.binding').
         }
 
         function get(id) {
-            return aliases[id] ? store[aliases[id]] : store[id];
+            return store.aliases[id] ? store.meta[store.aliases[id]] : store.meta[id];
         }
 
         function addAlias(id, alias) {
-            aliases[alias] = id;
+            store.aliases[alias] = id;
+        }
+
+        function data(dt) {
+            if (dt) {
+                store = angular.copy(dt);
+            }
+            return store;
+        }
+
+        function clear() {
+            store = {
+                meta: {},
+                aliases: {}
+            };
         }
 
         return {
             add: add,
             get: get,
-            addAlias: addAlias
+            addAlias: addAlias,
+            data: data,
+            clear: clear
         };
     }
 }());
