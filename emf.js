@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.418 built: 09-01-2017
+ * version:1.0.10-dev.419 built: 09-01-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.418","built":"2017-01-09"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.419","built":"2017-01-09"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -2055,16 +2055,6 @@ angular.module('ep.binding').
                     }
                 }
 
-                function getEditor(dataType) {
-                    //        # editor {string} - 'number' | 'text' | 'multiline' | 'date' | 'checkbox' | 'select' | 'image' | 'custom'
-                    var ret = 'auto';
-                    var dt = (dataType || '').toLowerCase();
-                    if (dt === 'bool' || dt === 'boolean' || dt === 'logical' || dt === 'bit') {
-                        ret = 'checkbox';
-                    }
-                    return ret;
-                }
-
                 function setOptions() {
                     if (scope.options !== undefined) {
                         if (scope.options.columnList && !scope.options.columns) {
@@ -2074,13 +2064,13 @@ angular.module('ep.binding').
                             angular.forEach(colNames, function(c) {
                                 var column = {
                                     columnIndex: c,
-                                    editor: 'auto', // getEditorByValue(scope.record[c]),
+                                    editor: 'auto',
                                     updatable: true
                                 };
                                 if (meta && meta.columns && meta.columns[c]) {
                                     var col = meta.columns[c];
                                     epUtilsService.copyProperties(col, column);
-                                    column.editor = getEditor(col.dataType);
+                                    column.editor = col.editor || column.editor;
                                 }
                                 columns.push(column);
                             });
@@ -2424,27 +2414,27 @@ angular.module('ep.binding').
             aliases: {}
         };
 
-        function add(id, kind, columns) {
-            var cols = columns;
-            if (kind === 'baq') {
-                cols = {};
-                angular.forEach(columns, function(cc) {
-                    cols[cc.Alias] = {
-                        name: cc.Alias,
-                        caption: cc.FieldLabel || cc.Alias,
-                        updatable: cc.Updatable,
-                        required: cc.IsRequired,
-                        requiredFlag: cc.IsRequired,
-                        tableId: cc.TableID,
-                        columnName: cc.FieldName,
-                        dataType: cc.DataType
-                    };
-                });
+        function getEditor(dataType) {
+            //# editor {string} - 'number' | 'text' | 'multiline' | 'date' | 'checkbox' 
+            //| 'select' | 'image' | 'custom'
+            var ret = 'auto';
+            var dt = (dataType || '').toLowerCase();
+            if (dt === 'bool' || dt === 'boolean' || dt === 'logical' || dt === 'bit') {
+                ret = 'checkbox';
+            } else if (dt === 'date' || dt === 'datetime' || dt === 'system.datetime') {
+                ret = 'date';
+            } else if (dt === 'byte' || dt === 'int32' || dt === 'integer' || dt === 'decimal'
+                || dt === 'system.decimal' || dt === 'system.int32') {
+                ret = 'number';
             }
+            return ret;
+        }
+
+        function add(id, kind, columns) {
             store.meta[id] = {
                 id: id,
                 kind: kind,
-                columns: cols
+                columns: columns
             };
         }
 
@@ -2962,7 +2952,9 @@ angular.module('ep.binding').
                 logWatches.onViewRowChanged = $rootScope.$on('EP_BINDING_COLUMN_VALUE_CHANGED', function(event, data) {
                     var v = epTransactionFactory.current().view(data.viewId);
                     var vstate = v.__state;
-                    var info = 'ViewId:' + data.viewId + ';Row:' + data.row + ';Old Value:' + data.oldValue +
+                    var info = 'ViewId:' + data.viewId + ';Row:' + data.row +
+                        ';Orig. Value:' + (data.originalValue || '') +
+                        ';Old Value:' + data.oldValue +
                         ';New value:' + data.newValue +
                         ';isDirty:' + v.isDirty() + ';hasModified:' + v.hasModified() +
                         ';Modified rows:' + Object.keys(vstate.modifiedRows).length;
@@ -3152,12 +3144,12 @@ angular.module('ep.binding').
                     if (record[column] !== value) {
                         record[column] = value;
                         state.isDirty = true;
-
-                        var rowIdx = state.row; //nned to handle deleted or new
+                        var origValue = '';
+                        var rowIdx = state.row; //need to handle deleted or new
                         if (state.addedRows[rowIdx] === undefined) {
-
                             var mod = state.modified[rowIdx] || { state: 'M', columns: {} };
-                            if (Object.keys(mod.columns).length > 0 && record[column] === state.original[rowIdx][column]) {
+                            origValue = state.original[rowIdx][column];
+                            if (Object.keys(mod.columns).length > 0 && record[column] === origValue) {
                                 delete mod.columns[column];
                             } else {
                                 mod.columns[column] = value;
@@ -3176,7 +3168,8 @@ angular.module('ep.binding').
                             viewId: state.id,
                             row: state.row,
                             newValue: value,
-                            oldValue: oldValue
+                            oldValue: oldValue,
+                            originalValue: origValue
                         });
                     }
                 }
@@ -11588,8 +11581,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 //    epTransactionFactory.current().add(viewId, data.value);
                 //}
             }, function(data) {
-                var msg = data['odata.error'] ? data['odata.error'].message.value : data.statusText;
-                epModalDialogService.showException({ title: 'Exception', message: msg });
+                showException(data);
                 deferred.reject(msg, data);
             });
 
@@ -11597,7 +11589,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             if (!epBindingMetadataService.get(viewId)) {
                 promiseMeta = getBAQDesigner(baqId);
                 promiseMeta.then(function(result) {
-                    epBindingMetadataService.add(viewId, 'baq', result.data.returnObj);
+                    var columns = getMetaColumns(result.data.returnObj);
+                    epBindingMetadataService.add(viewId, 'baq', columns);
                 }, function(data) { });
             }
 
@@ -11617,12 +11610,24 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
         function updateBAQ(baqId, data) {
             var url = 'BaqSvc/' + baqId;
+
+            var d = data;
+            var meta = epBindingMetadataService.get(baqId);
+            if (meta && meta.columns) {
+                d = angular.copy(data);
+                angular.forEach(Object.keys(d), function(key) {
+                    var col = meta.columns[key];
+                    if (col && col.dataType === 'decimal' && !angular.isString(d[key])) {
+                        //decimals must be sent as strings
+                        var v = '' + d[key] + '';
+                        d[key] = v;
+                    }
+                });
+            }
+
             var promise = epErpRestService.patch(url, data); 
             promise.error(function(response) {
-                epModalDialogService.showException({
-                    title: 'Info', message: response.ErrorMessage || '',
-                    messageDetails: angular.toJson(response,2)
-                });
+                showException(response);
             });
             return promise;
         }
@@ -11663,25 +11668,102 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 if (showProgress) {
                     epModalDialogService.hide();
                 }
-                var msg = data['odata.error'] ? data['odata.error'].message.value : data.statusText;
-                epModalDialogService.showException({ title: 'Exception', message: msg });
+                showException(data);
             });
             return promise;
         }
 
-        function getBAQDesigner(baqId) {
+        function getBAQDesigner(baqId, metaDataKey) {
             var url = 'Ice.BO.BAQDesignerSvc/GetByID';
             var data = {
                 queryID: baqId
             };
             var promise = epErpRestService.post(url, data);
+            promise.then(function(result) {
+                if (metaDataKey) {
+                    var columns = getMetaColumns(result.data.returnObj);
+                    epBindingMetadataService.add(metaDataKey, 'baq', columns);
+                    if (baqId !== metaDataKey) {
+                        epBindingMetadataService.addAlias(metaDataKey, baqId);
+                    }
+                }
+            });
             promise.error(function(response) {
-                epModalDialogService.showException({
-                    title: 'Info', message: response.ErrorMessage || '',
-                    messageDetails: angular.toJson(response, 2)
-                });
+                showException(response);
             });
             return promise;
+        }
+
+        //private functions --->
+        function showException(response) {
+            var msg = response.ErrorMessage || '';
+            if (!msg && response['odata.error']) {
+                msg = response['odata.error'].message.value;
+            }
+            if (!msg && response.statusText) {
+                msg = response.statusText;
+            }
+            epModalDialogService.showException({
+                title: 'Info', message: msg || '',
+                messageDetails: angular.toJson(response, 2)
+            });
+        }
+
+        function getMetaColumns(metaData) {
+            var cols = {};
+            angular.forEach(metaData.QueryFieldDesigner, function(cc) {
+                cols[cc.Alias] = {
+                    name: cc.Alias,
+                    caption: cc.FieldLabel || cc.Alias,
+                    updatable: cc.Updatable,
+                    required: cc.IsRequired,
+                    requiredFlag: cc.IsRequired,
+                    tableId: cc.TableID,
+                    columnName: cc.FieldName,
+                    dataType: cc.DataType,
+                    editor: getBaqEditor(cc)
+                };
+                if (cc.FieldFormat) {
+                    setBaqFormat(cc, cols[cc.Alias]);
+                }
+            });
+            return cols;
+        }
+
+        function getBaqEditor(field) {
+            //# editor {string} - 'number' | 'text' | 'multiline' | 'date' | 'checkbox' 
+            //| 'select' | 'image' | 'custom'
+            var ret = 'auto';
+            var dt = (field.DataType || '').toLowerCase();
+            if (dt === 'bool' || dt === 'boolean' || dt === 'logical' || dt === 'bit') {
+                ret = 'checkbox';
+            } else if (dt === 'date' || dt === 'datetime' || dt === 'system.datetime') {
+                ret = 'date';
+            } else if (dt === 'byte' || dt === 'int32' || dt === 'integer' || dt === 'decimal'
+                || dt === 'system.decimal' || dt === 'system.int32') {
+                ret = 'number';
+            } else if (dt === 'nvarchar') {
+                ret = 'text';
+            }
+            return ret;
+        }
+
+        function setBaqFormat(field, column) {
+            if (!field.FieldFormat) {
+                return;
+            }
+            var fmt = field.FieldFormat.trim().toLowerCase();
+            if (fmt && fmt.indexOf('x(') === 0 && fmt.endsWith(')')) {
+                var num = fmt.substr(2, fmt.length - 3);
+                var val = parseInt(num);
+                if (!isNaN(val)) {
+                    column.maxLength = val;
+                    var multiLineThreshold = 90;
+                    if (column.maxLength >= multiLineThreshold) {
+                        column.editor = 'multiline';
+                    }
+                }
+            }
         }
 
         return {
@@ -18677,8 +18759,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
         # checkBoxSize {string}  - applicable to checkbox only (for now). Can be '1x', '2x', '3x'
         # style {string} - sets inline styling. eg. '{ "color" : "red", "margin" : "0px" }
         # oFormat {object}
-        #   - MaxLength {int}
-        #   -
+        # maxLength {int} - set max length for string entry default is 30
         # buttons {array} - array of button objects that conatin properties:
             text {string} - button text
             style {string} - button class
@@ -18810,7 +18891,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                 requiredFlag: col.requiredFlag,  //to display the required flag
                 bizType: col.bizType,
                 label: col.caption || name || '',
-                maxlength: col.oFormat.MaxLength,
+                maxlength: col.maxLength || 30,
                 justification: col.justification,
                 hidden: col.hidden,
                 updatable: col.updatable,
@@ -25406,7 +25487,7 @@ angular.module('ep.signature').directive('epSignature',
 
                 var d = data;
                 if (data && !angular.isString(data)) {
-                    d = JSON.stringify(data);
+                    d = JSON.stringify(d);
                     //data = data.replace(/,(?=[^,]*$)/, '');
                 }
                 return $http({

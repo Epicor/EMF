@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.418 built: 09-01-2017
+ * version:1.0.10-dev.419 built: 09-01-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.418","built":"2017-01-09"};
+__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.419","built":"2017-01-09"};
 
 (function() {
     'use strict';
@@ -808,8 +808,7 @@ angular.module('ep.record.editor', [
         # checkBoxSize {string}  - applicable to checkbox only (for now). Can be '1x', '2x', '3x'
         # style {string} - sets inline styling. eg. '{ "color" : "red", "margin" : "0px" }
         # oFormat {object}
-        #   - MaxLength {int}
-        #   -
+        # maxLength {int} - set max length for string entry default is 30
         # buttons {array} - array of button objects that conatin properties:
             text {string} - button text
             style {string} - button class
@@ -941,7 +940,7 @@ angular.module('ep.record.editor', [
                 requiredFlag: col.requiredFlag,  //to display the required flag
                 bizType: col.bizType,
                 label: col.caption || name || '',
-                maxlength: col.oFormat.MaxLength,
+                maxlength: col.maxLength || 30,
                 justification: col.justification,
                 hidden: col.hidden,
                 updatable: col.updatable,
