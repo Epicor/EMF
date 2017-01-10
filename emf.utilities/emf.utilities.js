@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.422 built: 10-01-2017
+ * version:1.0.10-dev.423 built: 10-01-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.10-dev.422","built":"2017-01-10"};
+__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.10-dev.423","built":"2017-01-10"};
 
 (function() {
   'use strict';
@@ -1187,7 +1187,8 @@ angular.module('ep.signature').directive('epSignature',
             restrict: 'E',
             replace: true,
             scope: {
-                searchBy: '='
+                searchBy: '=',
+                count: '='
             },
             templateUrl: 'src/components/ep.filter.list/filter_list.html',
             link: function(scope) {
@@ -1872,7 +1873,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.filter.list/filter_list.html',
-    "<div class=\"ep-search-list-container vertical-align\"><div class=\"container ep-search-container\"><div class=\"row ep-search-row\"><div id=custom-search-input class=col-xs-10><div class=\"input-group col-md-12\"><span class=input-group-btn><button id=searchbutton class=\"btn btn-danger ep-search-button\" type=button><span class=\"fa fa-search\"></span></button></span> <input id=searchinput class=\"search-query form-control\" ng-model=searchBy placeholder=\"Search\"> <span class=input-group-btn><button id=searchclear class=\"btn btn-danger ep-close-button\" type=button ng-click=clearSearch()><span class=\"fa fa-remove\"></span></button></span></div></div><div class=\"input-group col-xs-2 ep-search-result-container\"><div>31</div><div>Results</div></div></div></div></div>"
+    "<div class=\"ep-search-list-container vertical-align\"><div class=\"container ep-search-container\"><div class=\"row ep-search-row\"><div id=custom-search-input class=col-xs-10><div class=\"input-group col-md-12\"><span class=input-group-btn><button id=searchbutton class=\"btn btn-danger ep-search-button\" type=button><span class=\"fa fa-search\"></span></button></span> <input id=searchinput class=\"search-query form-control\" ng-model=searchBy placeholder=\"Search\"> <span class=input-group-btn><button id=searchclear class=\"btn btn-danger ep-close-button\" type=button ng-click=clearSearch()><span class=\"fa fa-remove\"></span></button></span></div></div><div class=\"input-group col-xs-2 ep-search-result-container\"><div>{{count}}</div><div>Results</div></div></div></div></div>"
   );
 
 }]);
