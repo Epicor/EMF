@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.424 built: 10-01-2017
+ * version:1.0.10-dev.425 built: 10-01-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.424","built":"2017-01-10"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.425","built":"2017-01-10"};
 
 (function() {
     'use strict';
@@ -165,6 +165,23 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                 });
             }
 
+            function getXML(svc) {
+                var tkn = epTokenService.getToken();
+                if (!tkn) {
+                    return;
+                }
+
+                return $http({
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + tkn.token.AccessToken,
+                        'Content-Type': 'application/xml; charset=utf-8',
+                        'Accept': 'application/xml'
+                    },
+                    url: serverUrl + svc,
+                });
+            }
+
             return {
                 setUrl: function(url) {
                     serverUrl = url;
@@ -175,7 +192,8 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                 post: function(path, data) {
                     return postCall('POST', path, data);
                 },
-                patch: patch
+                patch: patch,
+                getXML: getXML
             }
         }])
 })();
@@ -2395,7 +2413,8 @@ angular.module('ep.binding').
             store.meta[id] = {
                 id: id,
                 kind: kind,
-                columns: columns
+                columns: columns,
+                metadata: {}
             };
         }
 
@@ -3509,12 +3528,28 @@ angular.module('ep.binding').
             }
 
             $q.all([promise, promiseMeta]).then(function(results) {
-                if (showProgress) {
-                    epModalDialogService.hide();
-                }
                 var baqData = results[0].value;
                 if (baqData) {
+                    if (options.convertToJsonType !== false) {
+                        //identify decimal data type and convert to float
+                        var meta = epBindingMetadataService.get(baqId);
+                        if (meta && meta.columns) {
+                            angular.forEach(meta.columns, function(col) {
+                                if (col && col.dataType === 'decimal') {
+                                    for (var r = 0; r < baqData.length; r++) {
+                                        var v = baqData[r][col.name];
+                                        if (angular.isString(v) && v.length) {
+                                            baqData[r][col.name] = parseFloat(v);
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    }
                     epTransactionFactory.current().add(viewId, baqData);
+                }
+                if (showProgress) {
+                    epModalDialogService.hide();
                 }
                 deferred.resolve(results[0]);
             })
@@ -3522,24 +3557,30 @@ angular.module('ep.binding').
             return deferred.promise;
         }
 
-        function updateBAQ(baqId, data) {
+        function updateBAQ(baqId, data, options) {
+            if (!options) {
+                options = {};
+            }
+
             var url = 'BaqSvc/' + baqId;
 
             var d = data;
-            var meta = epBindingMetadataService.get(baqId);
-            if (meta && meta.columns) {
-                d = angular.copy(data);
-                angular.forEach(Object.keys(d), function(key) {
-                    var col = meta.columns[key];
-                    if (col && col.dataType === 'decimal' && !angular.isString(d[key])) {
-                        //decimals must be sent as strings
-                        var v = '' + d[key] + '';
-                        d[key] = v;
-                    }
-                });
+            if (options.convertToJsonType !== false) {
+                var meta = epBindingMetadataService.get(baqId);
+                if (meta && meta.columns) {
+                    d = angular.copy(data);
+                    angular.forEach(Object.keys(d), function(key) {
+                        var col = meta.columns[key];
+                        if (col && col.dataType === 'decimal' && !angular.isString(d[key])) {
+                            //decimals must be sent as strings at least in oData v3
+                            var v = '' + d[key] + '';
+                            d[key] = v;
+                        }
+                    });
+                }
             }
 
-            var promise = epErpRestService.patch(url, data); 
+            var promise = epErpRestService.patch(url, d); 
             promise.error(function(response) {
                 showException(response);
             });
@@ -3606,6 +3647,28 @@ angular.module('ep.binding').
                 showException(response);
             });
             return promise;
+        }
+
+        function getBAQMetadata(baqId) {
+            var url = 'BaqSvc/' + baqId + '/$metadata';
+            var promiseMetadata = epErpRestService.getXML(url);
+            promiseMetadata.then(function(data) {
+                var dt = data.data;
+                var idx1 = dt.indexOf('<EntityType Name="QueryResult">');
+                if (idx1) {
+                    idx1 = dt.indexOf('<Property ');
+                    var idx2 = dt.indexOf("</EntityType>", idx1 + 1);
+                    var str = dt.substr(idx1, idx2 - idx1);
+                    var regExp1 = /Name\=\"([A-Za-z0-9. _]*)\" Type\=\"([A-Za-z0-9. _]*)\"/g;
+                    var props = [];
+                    while (regExp1.exec(str)) {
+                        props.push({ name: RegExp.$1, type: RegExp.$2 });
+                    }
+                }
+            }, function(data) {
+                showException(data);
+                deferred.reject(msg, data);
+            });
         }
 
         //private functions --->

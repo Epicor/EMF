@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.424 built: 10-01-2017
+ * version:1.0.10-dev.425 built: 10-01-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.10-dev.424","built":"2017-01-10"};
+__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.10-dev.425","built":"2017-01-10"};
 
 (function() {
   'use strict';
@@ -104,7 +104,7 @@ angular.module('ep.signature', [
  */
 (function () {
     'use strict';
-    epFileService.$inject = ['$q', '$log', '$window', 'epIndexedDbService', 'epFeatureDetectionService', 'epFileConstants'];
+    epFileService.$inject = ['$q', '$log', '$window', 'epFeatureDetectionService', 'epFileConstants', 'epIndexedDbService', 'epLocalStorageService'];
     angular.module('ep.file')
         //TODO: consider converting this constant into a sysconfig value
         .constant('epFileConstants', {
@@ -112,7 +112,7 @@ angular.module('ep.signature', [
         })
         .service('epFileService', /*@ngInject*/ epFileService);
 
-    function epFileService($q, $log, $window, epIndexedDbService, epFeatureDetectionService, epFileConstants) {
+    function epFileService($q, $log, $window, epFeatureDetectionService, epFileConstants, epIndexedDbService, epLocalStorageService) {
 
         var storageSystems = {
             'localStorage': 0,
@@ -161,7 +161,7 @@ angular.module('ep.signature', [
             12: 'Path exists error.'
         };
 
-        var fileSystem = storageSystems.localStorage;
+        var storageSystem = storageSystems.localStorage;
 
         function failWith(deferred, url) {
             return function (error) {
@@ -218,7 +218,7 @@ angular.module('ep.signature', [
             var deferred = $q.defer();
             var filePath;
 
-            switch (fileSystem) {
+            switch (storageSystem) {
                 case storageSystems.fileStorage:
                     if (!filename) {
                         filename = path;
@@ -310,7 +310,7 @@ angular.module('ep.signature', [
                 if (!type) {
                     type = 'text/plain';
                 }
-                switch (fileSystem) {
+                switch (storageSystem) {
                     case storageSystems.fileStorage:
                         if (!filename) {
                             filename = path;
@@ -381,7 +381,7 @@ angular.module('ep.signature', [
         function fileExists(path, filename) {
             var deferred = $q.defer();
             try {
-                switch (fileSystem) {
+                switch (storageSystem) {
                     case storageSystems.fileStorage:
                         if (!filename) {
                             filename = path;
@@ -438,7 +438,7 @@ angular.module('ep.signature', [
          * to the given file.
          */
         function getFilePath(filename) {
-            switch (fileSystem) {
+            switch (storageSystem) {
                 case storageSystems.fileStorage:
                     return $window.cordova.file.dataDirectory + filename;
                     break;
@@ -461,7 +461,7 @@ angular.module('ep.signature', [
         function remove(filename) {
             var deferred = $q.defer();
             try {
-                switch (fileSystem) {
+                switch (storageSystem) {
                     case storageSystems.fileStorage:
                         $window.resolveLocalFileSystemURL($window.cordova.file.dataDirectory + filename,
                             function (fileEntry) {
@@ -490,23 +490,90 @@ angular.module('ep.signature', [
             return deferred.promise;
         }
 
-        if (epFeatureDetectionService.getFeatures().platform.app === 'Cordova') {
-                $log.debug('FileStorage system selected.');
-                fileSystem = storageSystems.fileStorage;
-        } else {
-            try {
-                epIndexedDbService.createSchema('ep-file-db')
-                    .defineVersion(1, function (db) {
-                        db.createObjectStore('ep-file', { keyPath: 'filename' });
-                    });
-                $log.debug('IndexedDB system selected.');
-                fileSystem = storageSystems.indexedDB;
-            } catch (err) {
-                $log.warn(err);
-                fileSystem = storageSystems.localStorage;
-                $log.debug('LocalStorage system selected.');
+        /**
+         * @ngdoc method
+         * @name setStorageSystem
+         * @methodOf ep.file:epFileService
+         * @public
+         * @description
+         * This function sets the system to use when working with files. 
+         * Valid values are 'localStorage', 'indexedDB', and 'fileStorage'
+         * File storage is only available if the current running context is
+         * cordova or electron.
+         */
+        function setStorageSystem(system){
+            initialize(system);
+        }
+        /**
+         * @ngdoc method
+         * @name getStorageSystem
+         * @methodOf ep.file:epFileService
+         * @public
+         * @description
+         * This function returns the currently selected file system. 
+         * Possible values are 'localStorage', 'indexedDB', and 'fileStorage'.
+         */
+        function getStorageSystem(){
+            var sys = '';
+            switch(storageSystem){
+                case storageSystems.localStorage: sys = 'localStorage'; break;
+                case storageSystems.indexedDB: sys = 'indexedDB'; break;
+                case storageSystems.fileStorage: sys = 'fileStorage'; break;
+            }
+            return sys;
+        }
+
+        function setSystemToFileStorage(){
+            $log.debug('FileStorage system selected.');
+            storageSystem = storageSystems.fileStorage;
+        }
+
+        function setSystemToIndexedDb(){
+            epIndexedDbService.createSchema('ep-file-db')
+                .defineVersion(1, function (db) {
+                    db.createObjectStore('ep-file', { keyPath: 'filename' });
+                });
+            $log.debug('IndexedDB system selected.');
+            storageSystem = storageSystems.indexedDB;
+        }
+
+        function setSystemToLocalStorage(){
+            $log.debug('LocalStorage system selected.');
+            storageSystem = storageSystems.localStorage;
+        }
+
+        function initialize(manualSelection){
+            if(!manualSelection){
+                if (epFeatureDetectionService.getFeatures().platform.app === 'Cordova') {
+                    setSystemToLocalStorage();
+                } else {
+                    try {
+                        setSystemToIndexedDb();
+                    } catch (err) {
+                        $log.warn(err);
+                        setSystemToLocalStorage();
+                    }
+                }
+            } else {
+                switch(manualSelection.toLowerCase()){
+                    case 'localstorage': setSystemToLocalStorage(); break;
+                    case 'indexeddb': 
+                        try {
+                            setSystemToIndexedDb();
+                        } catch (err) {
+                            $log.warn(err);
+                            setSystemToLocalStorage();
+                        }
+                        break;
+                    case 'filestorage': setSystemToFileStorage(); break; 
+                    default: 
+                        log.warn('Unable to set file storage system to ' + manualSelection + '.');
+                        setSystemToLocalStorage();
+                        break;
+                }
             }
         }
+        initialize();
 
         return {
             load: load,
@@ -515,7 +582,9 @@ angular.module('ep.signature', [
             saveText: saveText,
             getFilePath: getFilePath,
             fileExists: fileExists,
-            remove: remove
+            remove: remove,
+            setStorageSystem: setStorageSystem,
+            getStorageSystem: getStorageSystem
         };
     }
 })();

@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.424 built: 10-01-2017
+ * version:1.0.10-dev.425 built: 10-01-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["customization"] = {"libName":"customization","version":"1.0.10-dev.424","built":"2017-01-10"};
+__ep_build_info["customization"] = {"libName":"customization","version":"1.0.10-dev.425","built":"2017-01-10"};
 
 'use strict';
 /**
@@ -964,7 +964,7 @@ angular.module('ep.customization', [
                         scope.customization = scope.customizationData.customization;
                         if (scope.customization.ctrl.epBinding) {
                             var view = epTransactionFactory.current().view(scope.customization.ctrl.epBinding);
-                            if (view.hasData()) {
+                            if (view && view.hasData()) {
                                 record = view.dataRow();
                                 angular.forEach(record, function(v, n) {
                                     columns.push({
@@ -1274,7 +1274,7 @@ angular.module('ep.customization', [
                 };
 
                 scope.btnClickSave = function() {
-                    if (scope.customizationData.fnGetChanges) {
+                    if (scope.customization && scope.customizationData.fnGetChanges) {
                         var changes = scope.customizationData.fnGetChanges();
                         epCustomizationService.saveCustomForView(scope.customization.id, changes);
                         $route.reload();
@@ -1282,8 +1282,10 @@ angular.module('ep.customization', [
                 };
 
                 scope.btnClickClearCustomization = function() {
-                    epCustomizationService.clearCustomForView(scope.customization.id);
-                    $route.reload();
+                    if (scope.customization) {
+                        epCustomizationService.clearCustomForView(scope.customization.id);
+                        $route.reload();
+                    }
                 };
 
                 function onCustomizationChange(id) {

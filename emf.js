@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.424 built: 10-01-2017
+ * version:1.0.10-dev.425 built: 10-01-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.424","built":"2017-01-10"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.425","built":"2017-01-10"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -2434,7 +2434,8 @@ angular.module('ep.binding').
             store.meta[id] = {
                 id: id,
                 kind: kind,
-                columns: columns
+                columns: columns,
+                metadata: {}
             };
         }
 
@@ -5988,7 +5989,7 @@ app.directive('epCardTitle',
                         scope.customization = scope.customizationData.customization;
                         if (scope.customization.ctrl.epBinding) {
                             var view = epTransactionFactory.current().view(scope.customization.ctrl.epBinding);
-                            if (view.hasData()) {
+                            if (view && view.hasData()) {
                                 record = view.dataRow();
                                 angular.forEach(record, function(v, n) {
                                     columns.push({
@@ -6298,7 +6299,7 @@ app.directive('epCardTitle',
                 };
 
                 scope.btnClickSave = function() {
-                    if (scope.customizationData.fnGetChanges) {
+                    if (scope.customization && scope.customizationData.fnGetChanges) {
                         var changes = scope.customizationData.fnGetChanges();
                         epCustomizationService.saveCustomForView(scope.customization.id, changes);
                         $route.reload();
@@ -6306,8 +6307,10 @@ app.directive('epCardTitle',
                 };
 
                 scope.btnClickClearCustomization = function() {
-                    epCustomizationService.clearCustomForView(scope.customization.id);
-                    $route.reload();
+                    if (scope.customization) {
+                        epCustomizationService.clearCustomForView(scope.customization.id);
+                        $route.reload();
+                    }
                 };
 
                 function onCustomizationChange(id) {
@@ -11601,12 +11604,28 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             }
 
             $q.all([promise, promiseMeta]).then(function(results) {
-                if (showProgress) {
-                    epModalDialogService.hide();
-                }
                 var baqData = results[0].value;
                 if (baqData) {
+                    if (options.convertToJsonType !== false) {
+                        //identify decimal data type and convert to float
+                        var meta = epBindingMetadataService.get(baqId);
+                        if (meta && meta.columns) {
+                            angular.forEach(meta.columns, function(col) {
+                                if (col && col.dataType === 'decimal') {
+                                    for (var r = 0; r < baqData.length; r++) {
+                                        var v = baqData[r][col.name];
+                                        if (angular.isString(v) && v.length) {
+                                            baqData[r][col.name] = parseFloat(v);
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    }
                     epTransactionFactory.current().add(viewId, baqData);
+                }
+                if (showProgress) {
+                    epModalDialogService.hide();
                 }
                 deferred.resolve(results[0]);
             })
@@ -11614,24 +11633,30 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             return deferred.promise;
         }
 
-        function updateBAQ(baqId, data) {
+        function updateBAQ(baqId, data, options) {
+            if (!options) {
+                options = {};
+            }
+
             var url = 'BaqSvc/' + baqId;
 
             var d = data;
-            var meta = epBindingMetadataService.get(baqId);
-            if (meta && meta.columns) {
-                d = angular.copy(data);
-                angular.forEach(Object.keys(d), function(key) {
-                    var col = meta.columns[key];
-                    if (col && col.dataType === 'decimal' && !angular.isString(d[key])) {
-                        //decimals must be sent as strings
-                        var v = '' + d[key] + '';
-                        d[key] = v;
-                    }
-                });
+            if (options.convertToJsonType !== false) {
+                var meta = epBindingMetadataService.get(baqId);
+                if (meta && meta.columns) {
+                    d = angular.copy(data);
+                    angular.forEach(Object.keys(d), function(key) {
+                        var col = meta.columns[key];
+                        if (col && col.dataType === 'decimal' && !angular.isString(d[key])) {
+                            //decimals must be sent as strings at least in oData v3
+                            var v = '' + d[key] + '';
+                            d[key] = v;
+                        }
+                    });
+                }
             }
 
-            var promise = epErpRestService.patch(url, data); 
+            var promise = epErpRestService.patch(url, d); 
             promise.error(function(response) {
                 showException(response);
             });
@@ -11698,6 +11723,28 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 showException(response);
             });
             return promise;
+        }
+
+        function getBAQMetadata(baqId) {
+            var url = 'BaqSvc/' + baqId + '/$metadata';
+            var promiseMetadata = epErpRestService.getXML(url);
+            promiseMetadata.then(function(data) {
+                var dt = data.data;
+                var idx1 = dt.indexOf('<EntityType Name="QueryResult">');
+                if (idx1) {
+                    idx1 = dt.indexOf('<Property ');
+                    var idx2 = dt.indexOf("</EntityType>", idx1 + 1);
+                    var str = dt.substr(idx1, idx2 - idx1);
+                    var regExp1 = /Name\=\"([A-Za-z0-9. _]*)\" Type\=\"([A-Za-z0-9. _]*)\"/g;
+                    var props = [];
+                    while (regExp1.exec(str)) {
+                        props.push({ name: RegExp.$1, type: RegExp.$2 });
+                    }
+                }
+            }, function(data) {
+                showException(data);
+                deferred.reject(msg, data);
+            });
         }
 
         //private functions --->
@@ -12219,7 +12266,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  */
 (function () {
     'use strict';
-    epFileService.$inject = ['$q', '$log', '$window', 'epIndexedDbService', 'epFeatureDetectionService', 'epFileConstants'];
+    epFileService.$inject = ['$q', '$log', '$window', 'epFeatureDetectionService', 'epFileConstants', 'epIndexedDbService', 'epLocalStorageService'];
     angular.module('ep.file')
         //TODO: consider converting this constant into a sysconfig value
         .constant('epFileConstants', {
@@ -12227,7 +12274,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         })
         .service('epFileService', /*@ngInject*/ epFileService);
 
-    function epFileService($q, $log, $window, epIndexedDbService, epFeatureDetectionService, epFileConstants) {
+    function epFileService($q, $log, $window, epFeatureDetectionService, epFileConstants, epIndexedDbService, epLocalStorageService) {
 
         var storageSystems = {
             'localStorage': 0,
@@ -12276,7 +12323,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             12: 'Path exists error.'
         };
 
-        var fileSystem = storageSystems.localStorage;
+        var storageSystem = storageSystems.localStorage;
 
         function failWith(deferred, url) {
             return function (error) {
@@ -12333,7 +12380,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             var deferred = $q.defer();
             var filePath;
 
-            switch (fileSystem) {
+            switch (storageSystem) {
                 case storageSystems.fileStorage:
                     if (!filename) {
                         filename = path;
@@ -12425,7 +12472,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 if (!type) {
                     type = 'text/plain';
                 }
-                switch (fileSystem) {
+                switch (storageSystem) {
                     case storageSystems.fileStorage:
                         if (!filename) {
                             filename = path;
@@ -12496,7 +12543,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         function fileExists(path, filename) {
             var deferred = $q.defer();
             try {
-                switch (fileSystem) {
+                switch (storageSystem) {
                     case storageSystems.fileStorage:
                         if (!filename) {
                             filename = path;
@@ -12553,7 +12600,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * to the given file.
          */
         function getFilePath(filename) {
-            switch (fileSystem) {
+            switch (storageSystem) {
                 case storageSystems.fileStorage:
                     return $window.cordova.file.dataDirectory + filename;
                     break;
@@ -12576,7 +12623,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         function remove(filename) {
             var deferred = $q.defer();
             try {
-                switch (fileSystem) {
+                switch (storageSystem) {
                     case storageSystems.fileStorage:
                         $window.resolveLocalFileSystemURL($window.cordova.file.dataDirectory + filename,
                             function (fileEntry) {
@@ -12605,23 +12652,90 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             return deferred.promise;
         }
 
-        if (epFeatureDetectionService.getFeatures().platform.app === 'Cordova') {
-                $log.debug('FileStorage system selected.');
-                fileSystem = storageSystems.fileStorage;
-        } else {
-            try {
-                epIndexedDbService.createSchema('ep-file-db')
-                    .defineVersion(1, function (db) {
-                        db.createObjectStore('ep-file', { keyPath: 'filename' });
-                    });
-                $log.debug('IndexedDB system selected.');
-                fileSystem = storageSystems.indexedDB;
-            } catch (err) {
-                $log.warn(err);
-                fileSystem = storageSystems.localStorage;
-                $log.debug('LocalStorage system selected.');
+        /**
+         * @ngdoc method
+         * @name setStorageSystem
+         * @methodOf ep.file:epFileService
+         * @public
+         * @description
+         * This function sets the system to use when working with files. 
+         * Valid values are 'localStorage', 'indexedDB', and 'fileStorage'
+         * File storage is only available if the current running context is
+         * cordova or electron.
+         */
+        function setStorageSystem(system){
+            initialize(system);
+        }
+        /**
+         * @ngdoc method
+         * @name getStorageSystem
+         * @methodOf ep.file:epFileService
+         * @public
+         * @description
+         * This function returns the currently selected file system. 
+         * Possible values are 'localStorage', 'indexedDB', and 'fileStorage'.
+         */
+        function getStorageSystem(){
+            var sys = '';
+            switch(storageSystem){
+                case storageSystems.localStorage: sys = 'localStorage'; break;
+                case storageSystems.indexedDB: sys = 'indexedDB'; break;
+                case storageSystems.fileStorage: sys = 'fileStorage'; break;
+            }
+            return sys;
+        }
+
+        function setSystemToFileStorage(){
+            $log.debug('FileStorage system selected.');
+            storageSystem = storageSystems.fileStorage;
+        }
+
+        function setSystemToIndexedDb(){
+            epIndexedDbService.createSchema('ep-file-db')
+                .defineVersion(1, function (db) {
+                    db.createObjectStore('ep-file', { keyPath: 'filename' });
+                });
+            $log.debug('IndexedDB system selected.');
+            storageSystem = storageSystems.indexedDB;
+        }
+
+        function setSystemToLocalStorage(){
+            $log.debug('LocalStorage system selected.');
+            storageSystem = storageSystems.localStorage;
+        }
+
+        function initialize(manualSelection){
+            if(!manualSelection){
+                if (epFeatureDetectionService.getFeatures().platform.app === 'Cordova') {
+                    setSystemToLocalStorage();
+                } else {
+                    try {
+                        setSystemToIndexedDb();
+                    } catch (err) {
+                        $log.warn(err);
+                        setSystemToLocalStorage();
+                    }
+                }
+            } else {
+                switch(manualSelection.toLowerCase()){
+                    case 'localstorage': setSystemToLocalStorage(); break;
+                    case 'indexeddb': 
+                        try {
+                            setSystemToIndexedDb();
+                        } catch (err) {
+                            $log.warn(err);
+                            setSystemToLocalStorage();
+                        }
+                        break;
+                    case 'filestorage': setSystemToFileStorage(); break; 
+                    default: 
+                        log.warn('Unable to set file storage system to ' + manualSelection + '.');
+                        setSystemToLocalStorage();
+                        break;
+                }
             }
         }
+        initialize();
 
         return {
             load: load,
@@ -12630,7 +12744,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             saveText: saveText,
             getFilePath: getFilePath,
             fileExists: fileExists,
-            remove: remove
+            remove: remove,
+            setStorageSystem: setStorageSystem,
+            getStorageSystem: getStorageSystem
         };
     }
 })();
@@ -25515,6 +25631,23 @@ angular.module('ep.signature').directive('epSignature',
                 });
             }
 
+            function getXML(svc) {
+                var tkn = epTokenService.getToken();
+                if (!tkn) {
+                    return;
+                }
+
+                return $http({
+                    method: 'GET',
+                    headers: {
+                        'Authorization': 'Bearer ' + tkn.token.AccessToken,
+                        'Content-Type': 'application/xml; charset=utf-8',
+                        'Accept': 'application/xml'
+                    },
+                    url: serverUrl + svc,
+                });
+            }
+
             return {
                 setUrl: function(url) {
                     serverUrl = url;
@@ -25525,7 +25658,8 @@ angular.module('ep.signature').directive('epSignature',
                 post: function(path, data) {
                     return postCall('POST', path, data);
                 },
-                patch: patch
+                patch: patch,
+                getXML: getXML
             }
         }])
 })();
