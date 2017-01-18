@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.427 built: 11-01-2017
+ * version:1.0.10-dev.427 built: 18-01-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.427","built":"2017-01-11"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.427","built":"2017-01-18"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -2134,12 +2134,12 @@ angular.module('ep.binding').
  * @example
  *
  */
-    epBindingSelectorCtrl.$inject = ['$scope', '$timeout', 'epTransactionFactory'];
+    epBindingSelectorCtrl.$inject = ['$scope', '$timeout', 'epTransactionFactory', 'epBindingMetadataService'];
     angular.module('ep.binding')
         .controller('epBindingSelectorCtrl', epBindingSelectorCtrl);
 
     /*@ngInject*/
-    function epBindingSelectorCtrl($scope, $timeout, epTransactionFactory) {
+    function epBindingSelectorCtrl($scope, $timeout, epTransactionFactory, epBindingMetadataService) {
         var scope = $scope;
 
         if (!scope.config) {
@@ -2203,15 +2203,26 @@ angular.module('ep.binding').
             scope.loadingColumns = true;
             $timeout(function() {
                 var view = epTransactionFactory.current().view(viewId);
+                var meta = epBindingMetadataService.get(viewId);
+                if (meta && meta.columns) {
+                    angular.forEach(meta.columns, function(val, key) {
+                        cols.push({
+                            label: key,
+                            value: key
+                        });
+                    })
+                }
                 if (view.hasData()) {
                     var record = view.dataRow();
-                    angular.forEach(record, function(v, n) {
-                        cols.push({
-                            label: n,
-                            value: n
-                        });
-                    });
                     scope.meta.preview = JSON.stringify(record, null, '    ');
+                    if (cols.length == 0) {
+                        angular.forEach(record, function(v, n) {
+                            cols.push({
+                                label: n,
+                                value: n
+                            });
+                        });
+                    }
                 }
                 scope.columns = cols;
                 scope.columnList.list = scope.columns;
@@ -2877,7 +2888,9 @@ angular.module('ep.binding').
                     {
                         text: 'Ok',
                         action: function(cfg) {
-                            fnOnSelect(cfg.binding);
+                            if (fnOnSelect) {
+                                fnOnSelect(cfg.binding);
+                            }
                         }
                     },
                     {
@@ -3192,6 +3205,7 @@ angular.module('ep.binding').
                 state.addedRows = {};
                 state.hasModified = false;
                 state.hasAdded = false;
+                state.modified = Array(state.data.length);
             }
 
             /**
@@ -3309,6 +3323,24 @@ angular.module('ep.binding').
                 return state.hasAdded || state.hasModified;
             }
 
+            /**
+             * @ngdoc method
+             * @name commit
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * commits all changes (the changes are rolled into original data and modified flags reset)
+             */
+            function commit() {
+                state.original = epUtilsService.merge({}, state.data);
+                state.isDirty = false;
+                state.modifiedRows = {};
+                state.addedRows = {};
+                state.hasModified = false;
+                state.hasAdded = false;
+                state.modified = Array(state.data.length);
+            }
+
             init(viewId, viewData);
 
             return {
@@ -3328,7 +3360,8 @@ angular.module('ep.binding').
                 addedRows: addedRows,
                 changedRows: changedRows,
                 rowModified: rowModified,
-                rollback: rollback
+                rollback: rollback,
+                commit: commit
             };
 
         }
@@ -4921,7 +4954,6 @@ app.directive('epCardTitle',
                     epContactsListService.toggleIndexes();
                 });
                 epContactsListService.toggleIndexes();
-
                 scope.getDetails = function(obj) {
                     return obj;
                 };
@@ -4931,15 +4963,31 @@ app.directive('epCardTitle',
                     scope.items.count = val.length;
                 });
 
-                scope.goToLink = function(id) {
-                    if (id === '.') {
+                scope.goToLink = function(key, index) {
+                    var container = $('.ep-contacts-list');
+                    //on smaller devices, go to next available list group on clicking the dots.
+                    if (key === '.') { //only on smaller devices
+                        var prevKey = scope.smallIndexKeys[index - 1];
+                        var nextKey = scope.smallIndexKeys[index + 1];
+                        //get the keys in between prevkey and nextkey
+                        var betweenKeys = scope.indexKeys.substring(scope.indexKeys.indexOf(prevKey) + 1,
+                            scope.indexKeys.indexOf(nextKey));
+                        for (var i = 0; i < betweenKeys.length; i++) {
+                            var scrollToElem = $('#list-group-' + betweenKeys[i]);
+                            if (scrollToElem.length) {
+                                container.animate({
+                                    scrollTop: scrollToElem.offset().top - container.offset().top +
+                                        container.scrollTop() - 90
+                                });
+                                break;
+                            }
+                        }
                         return;
                     }
-                    var container = $('.ep-contacts-list');
 
                     //hash index will scroll to numbers list
-                    id = (id === '#') ? '1' : id;
-                    var scrollToElem = $('#list-group-' + id);
+                    key = (key === '#') ? '1' : key;
+                    var scrollToElem = $('#list-group-' + key);
                     if (scrollToElem.length) {
                         container.animate({
                             scrollTop: scrollToElem.offset().top - container.offset().top + container.scrollTop() - 90
@@ -10181,25 +10229,25 @@ angular.module('ep.embedded.apps').directive('epEmbeddedAppsHref', [
         };
     }]);
 
-'use strict';
 /**
-     * @ngdoc directive
-     * @name ep.modaldialog.directive:epmodaldialog
-     * @restrict E
-     *
-     * @description
-     * Represents the dialog pane (confirmation) directive. For internal use from epModalDialogService
-     *
-     */
-angular.module('ep.embedded.apps').directive('epEmbeddedAppsLoader', [
-    '$http',
-    '$log',
-    '$q',
-    '$compile',
-    '$timeout',
-    'epEmbeddedAppsCacheService',
-    'epEmbeddedAppsProvider',
-    function($http, $log, $q, $compile, $timeout, epEmbeddedAppsCacheService, epEmbeddedAppsProvider) {
+* @ngdoc directive
+* @name ep.modaldialog.directive:epmodaldialog
+* @restrict E
+*
+* @description
+* Represents the dialog pane (confirmation) directive. For internal use from epModalDialogService
+*
+*/
+(function() {
+    'use strict';
+
+    epEmbeddedAppsLoader.$inject = ['$http', '$log', '$q', '$compile', '$timeout', '$templateCache', 'epEmbeddedAppsCacheService', 'epEmbeddedAppsProvider'];
+    angular.module('ep.embedded.apps').
+    directive('epEmbeddedAppsLoader', epEmbeddedAppsLoader);
+
+    /*@ngInject*/
+    function epEmbeddedAppsLoader($http, $log, $q, $compile, $timeout, $templateCache,
+        epEmbeddedAppsCacheService, epEmbeddedAppsProvider) {
         return {
             scope: {
                 'config': '=',
@@ -10221,7 +10269,7 @@ angular.module('ep.embedded.apps').directive('epEmbeddedAppsLoader', [
                     var resourceId = 'view:' + url;
                     var view;
                     if (!epEmbeddedAppsCacheService.scriptCache.get(resourceId)) {
-                        $http.get(url).
+                        $http.get(url, { cache: $templateCache }).
                             then(function(result) {
                                 epEmbeddedAppsCacheService.scriptCache.put(resourceId, result.data);
                                 deferred.resolve(result.data);
@@ -10267,7 +10315,8 @@ angular.module('ep.embedded.apps').directive('epEmbeddedAppsLoader', [
                 });
             }
         };
-    }]);
+    }
+})();
 
 'use strict';
 /**
@@ -10963,11 +11012,13 @@ angular.module('ep.embedded.apps')
                             loadScriptList(thirdPartyScripts).then(function() {
                                 // next get the module script syncronously
                                 var url = config.resources.scripts.module;
-                                return epUtilsService.loadScript(
-                                    getAppPath(config.id, url), epEmbeddedAppsCacheService.scriptCache).then(
-                                    function(id) {
-                                        onLoadScript(id);
-                                    });
+                                if (url) {
+                                    return epUtilsService.loadScript(
+                                        getAppPath(config.id, url), epEmbeddedAppsCacheService.scriptCache).then(
+                                        function(id) {
+                                            onLoadScript(id);
+                                        });
+                                }
                             }).then(function() {
                                 // finally load the rest of the app's scripts
                                 var appScripts = config.resources.scripts.app.map(function(url) {
@@ -12777,7 +12828,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             replace: true,
             scope: {
                 searchBy: '=',
-                count: '='
+                count: '=',
+                changeHandler: '='
             },
             templateUrl: 'src/components/ep.filter.list/filter_list.html',
             link: function(scope) {
@@ -15271,6 +15323,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             },
             templateUrl: 'src/components/ep.list/ep-list.html',
             link: function(scope) {
+                scope.items = { count: 0 };
+
                 if (scope.groupBy) {
                     scope.data = epListService.getGroupedList(scope.data, scope.groupBy);
                 }
@@ -15286,6 +15340,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     var decimalCheck = amount.split('.');
                     return !isNaN(amount) && angular.isDefined(decimalCheck[1]);
                 }
+
+                scope.$watch('contactListSearch', function(term) {
+                    var val = $filter('filter')(scope.data, term);
+                    scope.items.count = val.length;
+                });
 
                 scope.showCommaSeparator = function(value1, value2) {
                     if ((value1 && value1.length > 0 && !scope.isAmount(value1)) ||
@@ -27450,7 +27509,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.contacts.list/contacts_list.html',
-    "<div class=ep-contacts-list-container><!--Calling filter list component for search option--><ep-filter-list search-by=contactListSearch count=items.count></ep-filter-list><!--Header as optional--><div class=ep-contact-sub-header><label class=ep-contact-sub-header-label ng-click=filter()>Filter</label><label class=ep-contact-sub-header-label ng-click=sort()>Sort</label><span class=pull-right style=padding-right:5% ng-click=add()><i class=\"fa fa-plus-square-o fa-2x\" aria-hidden=true style=color:#129ff4></i></span></div><!--List area--><div class=ep-contacts-list><div class=ep-contacts-list-inner><div ng-repeat=\"(key, value) in nameList\"><div class=ep-group-heading ng-if=\"filterVal.length > 0\" id=\"list-group-{{key == '#' ? 1 : (key | uppercase)}}\">{{key | uppercase}}</div><ul><li ng-repeat=\"obj in filterVal = (value | filter: contactListSearch)\" ng-click=handler(obj)><div class=\"row mainTitle\"><div class=col-xs-7><label>{{ obj[mainTitle] }}</label></div><div class=\"col-xs-3 text-right\">{{obj[id]}}</div></div><div class=\"pull-right ep-contact-list-arrow\" ng-class=\"{'ep-contact-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-contact-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-contact-list-additionalTitle-arrow': additionalTitle}\"><i class=\"fa fa-angle-right fa-2x\"></i></div><div ng-if=subTitle class=subTitle><span ng-show=\"{{obj[setTitles[0]].length>=1}}\">{{obj[setTitles[0]]}}</span><span ng-show=\"{{obj[setTitles[1]].length>=1}}\"><span ng-show=\"{{obj[setTitles[0]].length>=1}}\">,&nbsp</span>{{obj[setTitles[1]]}}</span><span ng-show=\"{{obj[setTitles[2]].length>=1}}\"><span ng-show=\"{{obj[setTitles[0]].length>=1}} || {{obj[setTitles[1]].length>=1}}\">,&nbsp</span>{{obj[setTitles[2]]}}</span></div><div class=additionalTitle ng-if=additionalTitle>{{obj[additionalTitle]}}</div></li></ul></div></div></div><!--Index--><ul class=\"ep-index-list large-index-list\" ng-hide=contactListSearch><li ng-repeat=\"(key, value) in nameList\" ng-click=goToLink(key)>{{key}}</li></ul><!--Index for smaller device screen--><ul class=\"ep-index-list small-index-list\" ng-hide=contactListSearch><li ng-repeat=\"key in smallIndexKeys track by $index\" ng-click=goToLink(key)><span ng-if=\"key == '.'\" class=\"fa fa-circle\"></span> <span ng-if=\"key !='.'\">{{key}}</span></li></ul></div>"
+    "<div class=ep-contacts-list-container><!--Calling filter list component for search option--><ep-filter-list search-by=contactListSearch count=items.count></ep-filter-list><!--Header as optional--><div class=ep-contact-sub-header><label class=ep-contact-sub-header-label ng-click=filter()>Filter</label><label class=ep-contact-sub-header-label ng-click=sort()>Sort</label><span class=pull-right style=padding-right:5% ng-click=add()><i class=\"fa fa-plus-square-o fa-2x\" aria-hidden=true style=color:#129ff4></i></span></div><!--List area--><div class=ep-contacts-list><div class=ep-contacts-list-inner><div ng-repeat=\"(key, value) in nameList\"><div class=ep-group-heading ng-if=\"filterVal.length > 0\" id=\"list-group-{{key == '#' ? 1 : (key | uppercase)}}\">{{key | uppercase}}</div><ul><li ng-repeat=\"obj in filterVal = (value | filter: contactListSearch)\" ng-click=handler(obj)><div class=\"row mainTitle\"><div class=col-xs-7><label>{{ obj[mainTitle] }}</label></div><div class=\"col-xs-3 text-right\">{{obj[id]}}</div></div><div class=\"pull-right ep-contact-list-arrow\" ng-class=\"{'ep-contact-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-contact-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-contact-list-additionalTitle-arrow': additionalTitle}\"><i class=\"fa fa-angle-right fa-2x\"></i></div><div ng-if=subTitle class=subTitle><span ng-show=\"{{obj[setTitles[0]].length>=1}}\">{{obj[setTitles[0]]}}</span><span ng-show=\"{{obj[setTitles[1]].length>=1}}\"><span ng-show=\"{{obj[setTitles[0]].length>=1}}\">,&nbsp</span>{{obj[setTitles[1]]}}</span><span ng-show=\"{{obj[setTitles[2]].length>=1}}\"><span ng-show=\"{{obj[setTitles[0]].length>=1}} || {{obj[setTitles[1]].length>=1}}\">,&nbsp</span>{{obj[setTitles[2]]}}</span></div><div class=additionalTitle ng-if=additionalTitle>{{obj[additionalTitle]}}</div></li></ul></div></div></div><!--Index--><ul class=\"ep-index-list large-index-list\" ng-hide=contactListSearch><li ng-repeat=\"(key, value) in nameList\" ng-click=goToLink(key)>{{key}}</li></ul><!--Index for smaller device screen--><ul class=\"ep-index-list small-index-list\" ng-hide=contactListSearch><li ng-repeat=\"key in smallIndexKeys track by $index\" ng-click=\"goToLink(key, $index)\"><span ng-if=\"key == '.'\" class=\"fa fa-circle\"></span> <span ng-if=\"key !='.'\">{{key}}</span></li></ul></div>"
   );
 
 
@@ -27568,7 +27627,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.filter.list/filter_list.html',
-    "<div class=\"ep-search-list-container vertical-align\"><div class=\"container ep-search-container\"><div class=\"row ep-search-row\"><div id=custom-search-input class=col-xs-10><div class=\"input-group col-md-12\"><span class=input-group-btn><button id=searchbutton class=\"btn btn-danger ep-search-button\" type=button><span class=\"fa fa-search\"></span></button></span> <input id=searchinput class=\"search-query form-control\" ng-model=searchBy placeholder=\"Search\"> <span class=input-group-btn><button id=searchclear class=\"btn btn-danger ep-close-button\" type=button ng-click=clearSearch()><span class=\"fa fa-remove\"></span></button></span></div></div><div class=\"input-group col-xs-2 ep-search-result-container\"><div>{{count}}</div><div>Results</div></div></div></div></div>"
+    "<div class=\"ep-search-list-container vertical-align\"><div class=\"container ep-search-container\"><div class=\"row ep-search-row\"><div id=custom-search-input class=col-xs-10><div class=\"input-group col-md-12\"><span class=input-group-btn><button id=searchbutton class=\"btn btn-danger ep-search-button\" type=button><span class=\"fa fa-search\"></span></button></span> <input id=searchinput class=\"search-query form-control\" ng-model=searchBy placeholder=Search ng-change=\"changeHandler(searchBy)\"> <span class=input-group-btn><button id=searchclear class=\"btn btn-danger ep-close-button\" type=button ng-click=clearSearch()><span class=\"fa fa-remove\"></span></button></span></div></div><div class=\"input-group col-xs-2 ep-search-result-container\"><div>{{count}}</div><div>Results</div></div></div></div></div>"
   );
 
 
@@ -27578,7 +27637,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.list/ep-list.html',
-    "<div class=ep-list-container><!--Calling filter list component for search option--><ep-filter-list search-by=contactListSearch></ep-filter-list><!--Header as optional--><div class=ep-contact-sub-header ng-if=\"subHeader == 'true'\"><label class=ep-contact-sub-header-label ng-click=filter()>Filter</label><label class=ep-contact-sub-header-label ng-click=sort()>Sort</label><span class=pull-right style=padding-right:5% ng-click=add()><i class=\"fa fa-plus-square-o fa-2x\" aria-hidden=true style=color:#129ff4></i></span></div><div class=ep-list ng-class=\"{'ep-list-header-padding':subHeader == 'true'}\"><div class=ep-list-inner ng-if=groupBy><div ng-repeat=\"(key, value) in data\"><div class=ep-group-heading ng-if=\"filterVal.length > 0\">{{key}}</div><ul><li ng-repeat=\"obj in filterVal = (value | filter: contactListSearch)\" ng-click=handler(obj)><div class=\"row mainTitle\"><div class=col-xs-7><label>{{ obj[mainTitle] }}</label></div><div class=\"col-xs-3 text-right\">{{obj[id]}}</div></div><div class=\"pull-right ep-list-arrow\" ng-if=\"arrow == 'true'\" ng-class=\"{'ep-contact-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-contact-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-contact-list-additionalTitle-arrow': additionalTitle}\"><i class=\"fa fa-angle-right fa-2x\"></i></div><div ng-if=subTitle class=subTitle><span ng-show=\"{{obj[subTitles[0]].length>=1}}\">{{isAmount(obj[subTitles[0]]) ? (obj[subTitles[0]] | currency) : obj[subTitles[0]]}}</span> <span ng-show=\"{{obj[subTitles[1]].length>=1}}\"><span ng-show=showCommaSeparator(obj[subTitles[0]])>,&nbsp;</span> {{obj[subTitles[1]]}}</span> <span ng-show=\"{{obj[subTitles[2]].length>=1}}\"><span ng-show=\"showCommaSeparator(obj[subTitles[0]], obj[subTitles[1]])\">,&nbsp;</span> {{obj[subTitles[2]]}}</span></div><div ng-if=additionalTitle class=additionalTitle>{{obj[additionalTitle]}}</div><div ng-if=statuses class=statuses><div class=status-period>{{obj[statusesArr[0]]}}</div><div class=\"status status-text\" ng-class=\"{'text-success': (['Open', 'Shipped', 'Invoiced'].indexOf(obj[statusesArr[1]]) !== -1), 'text-warning': (obj[statusesArr[1]] === 'On Hold'), 'text-danger': (statusesNotDanger.indexOf(obj[statusesArr[1]]) === -1)}\">{{obj[statusesArr[1]]}}</div><div class=\"status-source text-success\">{{obj[statusesArr[2]]}}</div></div></li></ul></div></div><div class=ep-list-inner ng-if=!groupBy><ul><li ng-repeat=\"obj in data | filter: contactListSearch\" ng-click=handler(obj)><div class=\"row mainTitle\"><div class=col-xs-7><label>{{ obj[mainTitle] }}</label></div><div class=\"col-xs-3 text-right\">{{obj[id]}}</div></div><div class=\"pull-right ep-list-arrow\" ng-if=\"arrow == 'true'\" ng-class=\"{'ep-contact-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-contact-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-contact-list-additionalTitle-arrow': additionalTitle}\"><i class=\"fa fa-angle-right fa-2x\"></i></div><div ng-if=subTitle class=subTitle><span ng-show=\"{{obj[subTitles[0]].length>=1}}\">{{isAmount(obj[subTitles[0]]) ? (obj[subTitles[0]] | currency) : obj[subTitles[0]]}}</span> <span ng-show=\"{{obj[subTitles[1]].length>=1}}\"><span ng-show=showCommaSeparator(obj[subTitles[0]])>,&nbsp;</span> {{obj[subTitles[1]]}}</span> <span ng-show=\"{{obj[subTitles[2]].length>=1}}\"><span ng-show=\"showCommaSeparator(obj[subTitles[0]], obj[subTitles[1]])\">,&nbsp;</span> {{obj[subTitles[2]]}}</span></div><div class=additionalTitle ng-if=additionalTitle>{{obj[additionalTitle]}}</div><div ng-if=statuses class=statuses><div class=\"status status-period\">{{obj[statusesArr[0]]}}</div><div class=\"status status-text\" ng-class=\"{'text-success': (['Open', 'Shipped', 'Invoiced'].indexOf(obj[statusesArr[1]]) !== -1), 'text-warning': (obj[statusesArr[1]] === 'On Hold'), 'text-danger': (statusesNotDanger.indexOf(obj[statusesArr[1]]) === -1)}\">{{obj[statusesArr[1]]}}</div><div class=\"status status-source text-success\">{{obj[statusesArr[2]]}}</div></div></li></ul></div></div></div>"
+    "<div class=ep-list-container><!--Calling filter list component for search option--><ep-filter-list search-by=contactListSearch count=items.count></ep-filter-list><!--Header as optional--><div class=ep-contact-sub-header ng-if=\"subHeader == 'true'\"><label class=ep-contact-sub-header-label ng-click=filter()>Filter</label><label class=ep-contact-sub-header-label ng-click=sort()>Sort</label><span class=pull-right style=padding-right:5% ng-click=add()><i class=\"fa fa-plus-square-o fa-2x\" aria-hidden=true style=color:#129ff4></i></span></div><div class=ep-list ng-class=\"{'ep-list-header-padding':subHeader == 'true'}\"><div class=ep-list-inner ng-if=groupBy><div ng-repeat=\"(key, value) in data\"><div class=ep-group-heading ng-if=\"filterVal.length > 0\">{{key}}</div><ul><li ng-repeat=\"obj in filterVal = (value | filter: contactListSearch)\" ng-click=handler(obj)><div class=\"row mainTitle\"><div class=col-xs-7><label>{{ obj[mainTitle] }}</label></div><div class=\"col-xs-3 text-right\">{{obj[id]}}</div></div><div class=\"pull-right ep-list-arrow\" ng-if=\"arrow == 'true'\" ng-class=\"{'ep-contact-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-contact-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-contact-list-additionalTitle-arrow': additionalTitle}\"><i class=\"fa fa-angle-right fa-2x\"></i></div><div ng-if=subTitle class=subTitle><span ng-show=\"{{obj[subTitles[0]].length>=1}}\">{{isAmount(obj[subTitles[0]]) ? (obj[subTitles[0]] | currency) : obj[subTitles[0]]}}</span> <span ng-show=\"{{obj[subTitles[1]].length>=1}}\"><span ng-show=showCommaSeparator(obj[subTitles[0]])>,&nbsp;</span> {{obj[subTitles[1]]}}</span> <span ng-show=\"{{obj[subTitles[2]].length>=1}}\"><span ng-show=\"showCommaSeparator(obj[subTitles[0]], obj[subTitles[1]])\">,&nbsp;</span> {{obj[subTitles[2]]}}</span></div><div ng-if=additionalTitle class=additionalTitle>{{obj[additionalTitle]}}</div><div ng-if=statuses class=statuses><div class=status-period>{{obj[statusesArr[0]]}}</div><div class=\"status status-text\" ng-class=\"{'text-success': (['Open', 'Shipped', 'Invoiced'].indexOf(obj[statusesArr[1]]) !== -1), 'text-warning': (obj[statusesArr[1]] === 'On Hold'), 'text-danger': (statusesNotDanger.indexOf(obj[statusesArr[1]]) === -1)}\">{{obj[statusesArr[1]]}}</div><div class=\"status-source text-success\">{{obj[statusesArr[2]]}}</div></div></li></ul></div></div><div class=ep-list-inner ng-if=!groupBy><ul><li ng-repeat=\"obj in data | filter: contactListSearch\" ng-click=handler(obj)><div class=\"row mainTitle\"><div class=col-xs-7><label>{{ obj[mainTitle] }}</label></div><div class=\"col-xs-3 text-right\">{{obj[id]}}</div></div><div class=\"pull-right ep-list-arrow\" ng-if=\"arrow == 'true'\" ng-class=\"{'ep-contact-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-contact-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-contact-list-additionalTitle-arrow': additionalTitle}\"><i class=\"fa fa-angle-right fa-2x\"></i></div><div ng-if=subTitle class=subTitle><span ng-show=\"{{obj[subTitles[0]].length>=1}}\">{{isAmount(obj[subTitles[0]]) ? (obj[subTitles[0]] | currency) : obj[subTitles[0]]}}</span> <span ng-show=\"{{obj[subTitles[1]].length>=1}}\"><span ng-show=showCommaSeparator(obj[subTitles[0]])>,&nbsp;</span> {{obj[subTitles[1]]}}</span> <span ng-show=\"{{obj[subTitles[2]].length>=1}}\"><span ng-show=\"showCommaSeparator(obj[subTitles[0]], obj[subTitles[1]])\">,&nbsp;</span> {{obj[subTitles[2]]}}</span></div><div class=additionalTitle ng-if=additionalTitle>{{obj[additionalTitle]}}</div><div ng-if=statuses class=statuses><div class=\"status status-period\">{{obj[statusesArr[0]]}}</div><div class=\"status status-text\" ng-class=\"{'text-success': (['Open', 'Shipped', 'Invoiced'].indexOf(obj[statusesArr[1]]) !== -1), 'text-warning': (obj[statusesArr[1]] === 'On Hold'), 'text-danger': (statusesNotDanger.indexOf(obj[statusesArr[1]]) === -1)}\">{{obj[statusesArr[1]]}}</div><div class=\"status status-source text-success\">{{obj[statusesArr[2]]}}</div></div></li></ul></div></div></div>"
   );
 
 

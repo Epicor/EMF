@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.427 built: 11-01-2017
+ * version:1.0.10-dev.427 built: 18-01-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["embedded.apps"] = {"libName":"embedded.apps","version":"1.0.10-dev.427","built":"2017-01-11"};
+__ep_build_info["embedded.apps"] = {"libName":"embedded.apps","version":"1.0.10-dev.427","built":"2017-01-18"};
 
 'use strict';
 /**
@@ -71,25 +71,25 @@ angular.module('ep.embedded.apps').directive('epEmbeddedAppsHref', [
         };
     }]);
 
-'use strict';
 /**
-     * @ngdoc directive
-     * @name ep.modaldialog.directive:epmodaldialog
-     * @restrict E
-     *
-     * @description
-     * Represents the dialog pane (confirmation) directive. For internal use from epModalDialogService
-     *
-     */
-angular.module('ep.embedded.apps').directive('epEmbeddedAppsLoader', [
-    '$http',
-    '$log',
-    '$q',
-    '$compile',
-    '$timeout',
-    'epEmbeddedAppsCacheService',
-    'epEmbeddedAppsProvider',
-    function($http, $log, $q, $compile, $timeout, epEmbeddedAppsCacheService, epEmbeddedAppsProvider) {
+* @ngdoc directive
+* @name ep.modaldialog.directive:epmodaldialog
+* @restrict E
+*
+* @description
+* Represents the dialog pane (confirmation) directive. For internal use from epModalDialogService
+*
+*/
+(function() {
+    'use strict';
+
+    epEmbeddedAppsLoader.$inject = ['$http', '$log', '$q', '$compile', '$timeout', '$templateCache', 'epEmbeddedAppsCacheService', 'epEmbeddedAppsProvider'];
+    angular.module('ep.embedded.apps').
+    directive('epEmbeddedAppsLoader', epEmbeddedAppsLoader);
+
+    /*@ngInject*/
+    function epEmbeddedAppsLoader($http, $log, $q, $compile, $timeout, $templateCache,
+        epEmbeddedAppsCacheService, epEmbeddedAppsProvider) {
         return {
             scope: {
                 'config': '=',
@@ -111,7 +111,7 @@ angular.module('ep.embedded.apps').directive('epEmbeddedAppsLoader', [
                     var resourceId = 'view:' + url;
                     var view;
                     if (!epEmbeddedAppsCacheService.scriptCache.get(resourceId)) {
-                        $http.get(url).
+                        $http.get(url, { cache: $templateCache }).
                             then(function(result) {
                                 epEmbeddedAppsCacheService.scriptCache.put(resourceId, result.data);
                                 deferred.resolve(result.data);
@@ -157,7 +157,8 @@ angular.module('ep.embedded.apps').directive('epEmbeddedAppsLoader', [
                 });
             }
         };
-    }]);
+    }
+})();
 
 'use strict';
 /**
@@ -853,11 +854,13 @@ angular.module('ep.embedded.apps')
                             loadScriptList(thirdPartyScripts).then(function() {
                                 // next get the module script syncronously
                                 var url = config.resources.scripts.module;
-                                return epUtilsService.loadScript(
-                                    getAppPath(config.id, url), epEmbeddedAppsCacheService.scriptCache).then(
-                                    function(id) {
-                                        onLoadScript(id);
-                                    });
+                                if (url) {
+                                    return epUtilsService.loadScript(
+                                        getAppPath(config.id, url), epEmbeddedAppsCacheService.scriptCache).then(
+                                        function(id) {
+                                            onLoadScript(id);
+                                        });
+                                }
                             }).then(function() {
                                 // finally load the rest of the app's scripts
                                 var appScripts = config.resources.scripts.app.map(function(url) {

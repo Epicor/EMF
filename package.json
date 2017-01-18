@@ -3,8 +3,8 @@
     "description": "Epicor Mobile Framework",
     "author": "Epicor Software Corporation",
     "version": "1.0.10-dev.427",
-    "ep-build":"679",
-    "ep-build-date":"2017-01-11",
+    "ep-build":"690",
+    "ep-build-date":"2017-01-18",
     "publishConfig": {
         "registry": "http://epichub.americas.epicor.net:4873"
     },

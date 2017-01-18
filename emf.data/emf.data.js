@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.427 built: 11-01-2017
+ * version:1.0.10-dev.427 built: 18-01-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.427","built":"2017-01-11"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.427","built":"2017-01-18"};
 
 (function() {
     'use strict';
@@ -2113,12 +2113,12 @@ angular.module('ep.binding').
  * @example
  *
  */
-    epBindingSelectorCtrl.$inject = ['$scope', '$timeout', 'epTransactionFactory'];
+    epBindingSelectorCtrl.$inject = ['$scope', '$timeout', 'epTransactionFactory', 'epBindingMetadataService'];
     angular.module('ep.binding')
         .controller('epBindingSelectorCtrl', epBindingSelectorCtrl);
 
     /*@ngInject*/
-    function epBindingSelectorCtrl($scope, $timeout, epTransactionFactory) {
+    function epBindingSelectorCtrl($scope, $timeout, epTransactionFactory, epBindingMetadataService) {
         var scope = $scope;
 
         if (!scope.config) {
@@ -2182,15 +2182,26 @@ angular.module('ep.binding').
             scope.loadingColumns = true;
             $timeout(function() {
                 var view = epTransactionFactory.current().view(viewId);
+                var meta = epBindingMetadataService.get(viewId);
+                if (meta && meta.columns) {
+                    angular.forEach(meta.columns, function(val, key) {
+                        cols.push({
+                            label: key,
+                            value: key
+                        });
+                    })
+                }
                 if (view.hasData()) {
                     var record = view.dataRow();
-                    angular.forEach(record, function(v, n) {
-                        cols.push({
-                            label: n,
-                            value: n
-                        });
-                    });
                     scope.meta.preview = JSON.stringify(record, null, '    ');
+                    if (cols.length == 0) {
+                        angular.forEach(record, function(v, n) {
+                            cols.push({
+                                label: n,
+                                value: n
+                            });
+                        });
+                    }
                 }
                 scope.columns = cols;
                 scope.columnList.list = scope.columns;
@@ -2856,7 +2867,9 @@ angular.module('ep.binding').
                     {
                         text: 'Ok',
                         action: function(cfg) {
-                            fnOnSelect(cfg.binding);
+                            if (fnOnSelect) {
+                                fnOnSelect(cfg.binding);
+                            }
                         }
                     },
                     {
@@ -3171,6 +3184,7 @@ angular.module('ep.binding').
                 state.addedRows = {};
                 state.hasModified = false;
                 state.hasAdded = false;
+                state.modified = Array(state.data.length);
             }
 
             /**
@@ -3288,6 +3302,24 @@ angular.module('ep.binding').
                 return state.hasAdded || state.hasModified;
             }
 
+            /**
+             * @ngdoc method
+             * @name commit
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * commits all changes (the changes are rolled into original data and modified flags reset)
+             */
+            function commit() {
+                state.original = epUtilsService.merge({}, state.data);
+                state.isDirty = false;
+                state.modifiedRows = {};
+                state.addedRows = {};
+                state.hasModified = false;
+                state.hasAdded = false;
+                state.modified = Array(state.data.length);
+            }
+
             init(viewId, viewData);
 
             return {
@@ -3307,7 +3339,8 @@ angular.module('ep.binding').
                 addedRows: addedRows,
                 changedRows: changedRows,
                 rowModified: rowModified,
-                rollback: rollback
+                rollback: rollback,
+                commit: commit
             };
 
         }
