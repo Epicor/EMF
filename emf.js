@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.430 built: 19-01-2017
+ * version:1.0.10-dev.431 built: 19-01-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.430","built":"2017-01-19"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.431","built":"2017-01-19"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -3134,7 +3134,7 @@ angular.module('ep.binding').
                 });
 
                 if (setCurrentRow === true) {
-                    row(rowIdx);
+                    this.row(rowIdx);
                 }
 
                 return rowIdx;
@@ -3200,6 +3200,23 @@ angular.module('ep.binding').
              */
             function rollback() {
                 state.data = epUtilsService.merge({}, state.original);
+                resetState();
+            }
+
+            /**
+             * @ngdoc method
+             * @name commit
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * commits all changes (the changes are rolled into original data and modified flags reset)
+             */
+            function commit() {
+                state.original = epUtilsService.merge({}, state.data);
+                resetState();
+            }
+
+            function resetState() {
                 state.isDirty = false;
                 state.modifiedRows = {};
                 state.addedRows = {};
@@ -3325,20 +3342,28 @@ angular.module('ep.binding').
 
             /**
              * @ngdoc method
-             * @name commit
+             * @name findRow
              * @methodOf ep.binding.factory:epDataViewFactory
              * @public
              * @description
-             * commits all changes (the changes are rolled into original data and modified flags reset)
+             * Looks through each row in the data view, returning the first one that passes a truth test (predicate), 
+             * or undefined if no value passes the test. The function returns as soon as it finds an acceptable row, 
+             * and doesn't traverse the entire list. Row is passed into predicateFunction
+             * @param {function} predicateFunction - predicate function that returns true or false
+             * @param {bool} setRowCurrent - if true then set found row as current
+             * @returns {object} dataRow or undefined
              */
-            function commit() {
-                state.original = epUtilsService.merge({}, state.data);
-                state.isDirty = false;
-                state.modifiedRows = {};
-                state.addedRows = {};
-                state.hasModified = false;
-                state.hasAdded = false;
-                state.modified = Array(state.data.length);
+            function findRow(predicateFunction, setRowCurrent) {
+                for (var i = 0; state.data.length; i++) {
+                    var dr = state.data[i];
+                    if (predicateFunction(dr)) {
+                        if (setRowCurrent) {
+                            this.row(i);
+                        }
+                        return dr;
+                    }
+                }
+                return undefined;
             }
 
             init(viewId, viewData);
@@ -3360,6 +3385,7 @@ angular.module('ep.binding').
                 addedRows: addedRows,
                 changedRows: changedRows,
                 rowModified: rowModified,
+                findRow: findRow,
                 rollback: rollback,
                 commit: commit
             };
@@ -11876,6 +11902,102 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             updateBAQ: updateBAQ,
             getNewBAQ: getNewBAQ,
             getBAQDesigner: getBAQDesigner
+        };
+    }
+}());
+
+
+(function() {
+    'use strict';
+    epErpSvcService.$inject = ['$q', 'epErpRestService', 'epModalDialogService', 'epTransactionFactory', 'epBindingMetadataService'];
+    angular.module('ep.erp').
+    service('epErpSvcService', epErpSvcService);
+
+    /*@ngInject*/
+    function epErpSvcService($q, epErpRestService, epModalDialogService, epTransactionFactory, epBindingMetadataService) {
+
+        function getSvc(svc, myQuery, viewId, options) {
+            if (!options) {
+                options = {};
+            }
+            var showProgress = (options.showProgress !== false);
+            if (showProgress) {
+                epModalDialogService.showProgress({
+                    title: 'Retrieving data',
+                    message: 'retrieving data from server...',
+                    showProgress: true
+                });
+            }
+
+            var deferred = $q.defer();
+
+            var promise = epErpRestService.get(svc, myQuery).$promise;
+            promise.then(function(data) {
+                //if (data.value) {
+                //    epTransactionFactory.current().add(viewId, data.value);
+                //}
+            }, function(data) {
+                showException(data);
+                deferred.reject(msg, data);
+            });
+
+            var promiseMeta;
+            //TO DO: fetch meta data for svc
+            //if (!epBindingMetadataService.get(viewId)) {
+            //    promiseMeta = getBAQDesigner(baqId);
+            //    promiseMeta.then(function(result) {
+            //        var columns = getMetaColumns(result.data.returnObj);
+            //        epBindingMetadataService.add(viewId, 'baq', columns);
+            //    }, function(data) { });
+            //}
+
+            $q.all([promise, promiseMeta]).then(function(results) {
+                var retData = results[0].value;
+                if (retData) {
+                    if (options.convertToJsonType !== false) {
+                        //identify decimal data type and convert to float
+                        var meta = epBindingMetadataService.get(viewId);
+                        if (meta && meta.columns) {
+                            angular.forEach(meta.columns, function(col) {
+                                if (col && col.dataType === 'decimal') {
+                                    for (var r = 0; r < retData.length; r++) {
+                                        var v = retData[r][col.name];
+                                        if (angular.isString(v) && v.length) {
+                                            retData[r][col.name] = parseFloat(v);
+                                        }
+                                    }
+                                }
+                            });
+                        }
+                    }
+                    epTransactionFactory.current().add(viewId, retData);
+                }
+                if (showProgress) {
+                    epModalDialogService.hide();
+                }
+                deferred.resolve(results[0]);
+            })
+
+            return deferred.promise;
+        }
+
+        //private functions --->
+        function showException(response) {
+            var msg = response.ErrorMessage || '';
+            if (!msg && response['odata.error']) {
+                msg = response['odata.error'].message.value;
+            }
+            if (!msg && response.statusText) {
+                msg = response.statusText;
+            }
+            epModalDialogService.showException({
+                title: 'Info', message: msg || '',
+                messageDetails: angular.toJson(response, 2)
+            });
+        }
+
+        return {
+            getSvc: getSvc
         };
     }
 }());
