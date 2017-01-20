@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.432 built: 19-01-2017
+ * version:1.0.10-dev.433 built: 19-01-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.432","built":"2017-01-19"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.433","built":"2017-01-19"};
 
 (function() {
     'use strict';
@@ -102,6 +102,17 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                     return;
                 }
                 var url = serverUrl + (path ? path : '');
+                if (path) {
+                    var p = path.toLowerCase();
+                    if (p.indexOf('http') === 0) {
+                        //ability to override entire url
+                        url = path;
+                    } else if (p.indexOf('/api/swagger') === 0) {
+                        //fetch swagger metada
+                        url = tkn.user.serverUrl + path;
+                    }
+                }
+
                 return $resource(url, query, {
                     get: {
                         method: 'GET', headers: {
@@ -2404,6 +2415,8 @@ angular.module('ep.binding').
             aliases: {}
         };
 
+        //TO DO: make keys case insensitive!
+
         function getEditor(dataType) {
             //# editor {string} - 'number' | 'text' | 'multiline' | 'date' | 'checkbox' 
             //| 'select' | 'image' | 'custom'
@@ -2420,12 +2433,12 @@ angular.module('ep.binding').
             return ret;
         }
 
-        function add(id, kind, columns) {
+        function add(id, kind, columns, metadata) {
             store.meta[id] = {
                 id: id,
                 kind: kind,
-                columns: columns,
-                metadata: {}
+                columns: columns || {},
+                metadata: metadata || {}
             };
         }
 
@@ -2562,6 +2575,7 @@ angular.module('ep.binding').
                                         }, true);
                                     viewAlias = viewAlias || scope.epBindingInfo.epBinding.view;
                                     scope.epb = scope.epBindingInfo;
+                                    scope['epb_' + viewAlias] = scope.epBindingInfo;
                                     if (viewAlias) {
                                         scope[viewAlias] = scope.epBindingInfo.record;
                                     }
@@ -2619,6 +2633,12 @@ angular.module('ep.binding').
                 bi.record = undefined;
                 bi.rec = undefined;
                 bi.value = undefined;
+                bi.rowCount = function() {
+                    if (bi.view && bi.view.hasData()) {
+                        return bi.view.data().length;
+                    }
+                    return 0;
+                };
                 bi.trx = epTransactionFactory.current();
 
                 function setValueFromBoundRecord() {
@@ -2662,6 +2682,7 @@ angular.module('ep.binding').
                 function onViewInit(view) {
                     if (view && view.hasData()) {
                         bi.view = view;
+
                         if (callbacks.onViewReady) {
                             callbacks.onViewReady(view);
                         }
@@ -3118,7 +3139,7 @@ angular.module('ep.binding').
 
                 return rowIdx;
             }
-
+                
             /**
              * @ngdoc method
              * @name columnValue
@@ -3848,6 +3869,22 @@ angular.module('ep.binding').
             });
 
             var promiseMeta;
+            if (options.retrieveMetadata === true) {
+                var sIdx = svc.indexOf('/');
+                var sSvcName = svc.substr(0, sIdx);
+                if (!epBindingMetadataService.get(sSvcName)) {
+                    promiseMeta = epErpRestService.get('/api/swagger/v1/odata/' + sSvcName, '').$promise;
+                    promiseMeta.then(function(data) {
+                        if (data) {
+                            epBindingMetadataService.add(sSvcName, 'swagger', undefined, data);
+                        }
+                    }, function(data) {
+                        showException(data);
+                        deferred.reject(msg, data);
+                    });
+                }
+            }
+
             //TO DO: fetch meta data for svc
             //if (!epBindingMetadataService.get(viewId)) {
             //    promiseMeta = getBAQDesigner(baqId);
