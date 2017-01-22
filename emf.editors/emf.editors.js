@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.439 built: 21-01-2017
+ * version:1.0.10-dev.440 built: 21-01-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.439","built":"2017-01-21"};
+__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.440","built":"2017-01-21"};
 
 (function() {
     'use strict';
@@ -809,6 +809,8 @@ angular.module('ep.record.editor', [
         # style {string} - sets inline styling. eg. '{ "color" : "red", "margin" : "0px" }
         # oFormat {object}
         # maxLength {int} - set max length for string entry default is 30
+        # rows {int} - set rows for multiline editor (default is 5)
+        # mode {string} - set display mode ('mini' otherwise standard)
         # buttons {array} - array of button objects that conatin properties:
             text {string} - button text
             style {string} - button class
@@ -954,7 +956,8 @@ angular.module('ep.record.editor', [
                 placeholder: col.placeholder,
                 size: col.size,
                 style: col.style,
-                checkBoxSize: col.checkBoxSize
+                checkBoxSize: col.checkBoxSize,
+                mode: col.mode || 'default'
             };
 
             if (col.style && angular.isString(col.style)) {
@@ -1354,6 +1357,7 @@ angular.module('ep.record.editor', [
                 return {
                     pre: function($scope) {
                         var ctx = $scope.ctx;
+                        ctx.rows = ctx.col.rows || 5;
                         //set size class larger for multiline
                         ctx.fnSetSizeClass('col-xs-12 col-sm-12 col-md-8 col-lg-8');
                     }
@@ -2410,7 +2414,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-editor-control.html',
-    "<div class=\"ep-editor-control {{ctx.sizeClass}}\" ng-hide=ctx.hidden ep-drop-area drop-enabled=\"isDropEnabled === true\" drop-handler=handleDrop drop-item-types=typeEditorCtrl ng-style=ctx.style><fieldset class=\"form-group ep-record-editor-container\" ng-class=\"{'has-error': ctx.invalidFlag}\" ep-draggable drag-enabled=\"isDragEnabled === true\" drag-item=ctx drag-item-type=\"'typeEditorCtrl'\"><label class=ep-editor-label for={{ctx.name}}>{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label><section id=xtemplate></section></fieldset></div>"
+    "<div class=\"ep-editor-control {{ctx.sizeClass}} ep-editor-mode-{{ctx.mode}}\" ng-hide=ctx.hidden ep-drop-area drop-enabled=\"isDropEnabled === true\" drop-handler=handleDrop drop-item-types=typeEditorCtrl ng-style=ctx.style><fieldset class=\"form-group ep-record-editor-container\" ng-class=\"{'has-error': ctx.invalidFlag}\" ep-draggable drag-enabled=\"isDragEnabled === true\" drag-item=ctx drag-item-type=\"'typeEditorCtrl'\"><label class=ep-editor-label for={{ctx.name}} ng-if=\"ctx.mode !== 'mini'\">{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label><section id=xtemplate></section></fieldset></div>"
   );
 
 
@@ -2420,7 +2424,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-multiline-editor.html',
-    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span><textarea id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=value ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-hide=ctx.fnDoValidations() maxlength={{ctx.maxlength}} ng-style=\"{'text-align': ctx.justification }\"></textarea><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
+    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span><textarea id={{ctx.name}} name={{ctx.name}} placeholder={{ctx.placeholder}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=value ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) rows={{ctx.rows}} class=\"form-control editor\" ng-hide=ctx.fnDoValidations() maxlength={{ctx.maxlength}} ng-style=\"{'text-align': ctx.justification }\"></textarea><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
   );
 
 

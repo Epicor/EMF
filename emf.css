@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.439 built: 21-01-2017
+ * version:1.0.10-dev.440 built: 21-01-2017
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -2312,11 +2312,20 @@ uiload > div {
 /*.ep-editor-control .ep-editor-checkbox >span {
     padding: 14px;
 }*/
-.ep-editor-control textarea.form-control.editor {
-  height: 145px;
-}
 .ep-editor-control .form-control.editor[disabled] {
   cursor: default;
+}
+.ep-editor-control.ep-editor-mode-mini {
+  padding-left: 2px;
+  padding-right: 2px;
+}
+.ep-editor-control.ep-editor-mode-mini input {
+  border: none;
+  outline: none;
+}
+.ep-editor-control.ep-editor-mode-mini .ep-record-editor-container {
+  margin-bottom: 2px;
+  margin-top: 2px;
 }
 
 .ep-shell .ep-shell-feedback-btn {

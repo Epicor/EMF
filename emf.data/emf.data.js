@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.439 built: 21-01-2017
+ * version:1.0.10-dev.440 built: 21-01-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.439","built":"2017-01-21"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.440","built":"2017-01-21"};
 
 (function() {
     'use strict';
@@ -2956,6 +2956,13 @@ angular.module('ep.binding').
          */
         function logBindingEvents(onOff) {
             if (onOff && !logWatches.onViewRowChanged) {
+                logWatches.onViewRowChanged = $rootScope.$on('EP_BINDING_COMMIT', function(event, data) {
+                    $log.warn('[EP_BINDING_COMMIT] ViewId:' + data.viewId);
+                });
+                logWatches.onViewRowChanged = $rootScope.$on('EP_BINDING_ROLLBACK', function(event, data) {
+                    $log.warn('[EP_BINDING_ROLLBACK] ViewId:' + data.viewId);
+                });
+
                 logWatches.onViewRowChanged = $rootScope.$on('EP_BINDING_VIEW_ADDED', function(event, data) {
                     $log.warn('[EP_BINDING_VIEW_ADDED] ViewId:' + data.viewId);
                 });
@@ -3026,7 +3033,7 @@ angular.module('ep.binding').
                 state.addedRows = {};
                 state.hasModified = false;
                 state.hasAdded = false;
-                state.original = epUtilsService.merge({}, state.data);
+                state.original = epUtilsService.merge([], state.data);
             }
 
             /**
@@ -3183,7 +3190,7 @@ angular.module('ep.binding').
                             row: state.row,
                             newValue: value,
                             oldValue: oldValue,
-                            originalValue: origValue
+                                Value: origValue
                         });
                     }
                 }
@@ -3199,8 +3206,11 @@ angular.module('ep.binding').
              * rollback current view changes
              */
             function rollback() {
-                state.data = epUtilsService.merge({}, state.original);
+                state.data = epUtilsService.merge([], state.original);
                 resetState();
+                $rootScope.$emit('EP_BINDING_ROLLBACK', {
+                    viewId: state.id
+                });
             }
 
             /**
@@ -3212,8 +3222,11 @@ angular.module('ep.binding').
              * commits all changes (the changes are rolled into original data and modified flags reset)
              */
             function commit() {
-                state.original = epUtilsService.merge({}, state.data);
+                state.original = epUtilsService.merge([], state.data);
                 resetState();
+                $rootScope.$emit('EP_BINDING_COMMIT', {
+                    viewId: state.id
+                });
             }
 
             function resetState() {
@@ -3579,8 +3592,8 @@ angular.module('ep.binding').
             var showProgress = (options.showProgress !== false);
             if (showProgress) {
                 epModalDialogService.showProgress({
-                    title: 'Retrieving BAQ data',
-                    message: 'retrieving data from server...',
+                    title: options.title || 'Retrieving BAQ data',
+                    message: options.message || 'retrieving data from server...',
                     showProgress: true
                 });
             }
@@ -3642,6 +3655,15 @@ angular.module('ep.binding').
                 options = {};
             }
 
+            var showProgress = (options.showProgress !== false);
+            if (showProgress) {
+                epModalDialogService.showProgress({
+                    title: options.title || 'Updating data',
+                    message: options.message || 'sending data to server...',
+                    showProgress: true
+                });
+            }
+
             var url = 'BaqSvc/' + baqId;
 
             var d = data;
@@ -3660,8 +3682,16 @@ angular.module('ep.binding').
                 }
             }
 
-            var promise = epErpRestService.patch(url, d); 
+            var promise = epErpRestService.patch(url, d);
+            promise.then(function() {
+                if (showProgress) {
+                    epModalDialogService.hide();
+                }
+            });
             promise.error(function(response) {
+                if (showProgress) {
+                    epModalDialogService.hide();
+                }
                 showException(response);
             });
             return promise;

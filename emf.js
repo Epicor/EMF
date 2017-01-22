@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.439 built: 21-01-2017
+ * version:1.0.10-dev.440 built: 21-01-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.439","built":"2017-01-21"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.440","built":"2017-01-21"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -2966,6 +2966,13 @@ angular.module('ep.binding').
          */
         function logBindingEvents(onOff) {
             if (onOff && !logWatches.onViewRowChanged) {
+                logWatches.onViewRowChanged = $rootScope.$on('EP_BINDING_COMMIT', function(event, data) {
+                    $log.warn('[EP_BINDING_COMMIT] ViewId:' + data.viewId);
+                });
+                logWatches.onViewRowChanged = $rootScope.$on('EP_BINDING_ROLLBACK', function(event, data) {
+                    $log.warn('[EP_BINDING_ROLLBACK] ViewId:' + data.viewId);
+                });
+
                 logWatches.onViewRowChanged = $rootScope.$on('EP_BINDING_VIEW_ADDED', function(event, data) {
                     $log.warn('[EP_BINDING_VIEW_ADDED] ViewId:' + data.viewId);
                 });
@@ -3036,7 +3043,7 @@ angular.module('ep.binding').
                 state.addedRows = {};
                 state.hasModified = false;
                 state.hasAdded = false;
-                state.original = epUtilsService.merge({}, state.data);
+                state.original = epUtilsService.merge([], state.data);
             }
 
             /**
@@ -3193,7 +3200,7 @@ angular.module('ep.binding').
                             row: state.row,
                             newValue: value,
                             oldValue: oldValue,
-                            originalValue: origValue
+                                Value: origValue
                         });
                     }
                 }
@@ -3209,8 +3216,11 @@ angular.module('ep.binding').
              * rollback current view changes
              */
             function rollback() {
-                state.data = epUtilsService.merge({}, state.original);
+                state.data = epUtilsService.merge([], state.original);
                 resetState();
+                $rootScope.$emit('EP_BINDING_ROLLBACK', {
+                    viewId: state.id
+                });
             }
 
             /**
@@ -3222,8 +3232,11 @@ angular.module('ep.binding').
              * commits all changes (the changes are rolled into original data and modified flags reset)
              */
             function commit() {
-                state.original = epUtilsService.merge({}, state.data);
+                state.original = epUtilsService.merge([], state.data);
                 resetState();
+                $rootScope.$emit('EP_BINDING_COMMIT', {
+                    viewId: state.id
+                });
             }
 
             function resetState() {
@@ -11662,8 +11675,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             var showProgress = (options.showProgress !== false);
             if (showProgress) {
                 epModalDialogService.showProgress({
-                    title: 'Retrieving BAQ data',
-                    message: 'retrieving data from server...',
+                    title: options.title || 'Retrieving BAQ data',
+                    message: options.message || 'retrieving data from server...',
                     showProgress: true
                 });
             }
@@ -11725,6 +11738,15 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 options = {};
             }
 
+            var showProgress = (options.showProgress !== false);
+            if (showProgress) {
+                epModalDialogService.showProgress({
+                    title: options.title || 'Updating data',
+                    message: options.message || 'sending data to server...',
+                    showProgress: true
+                });
+            }
+
             var url = 'BaqSvc/' + baqId;
 
             var d = data;
@@ -11743,8 +11765,16 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 }
             }
 
-            var promise = epErpRestService.patch(url, d); 
+            var promise = epErpRestService.patch(url, d);
+            promise.then(function() {
+                if (showProgress) {
+                    epModalDialogService.hide();
+                }
+            });
             promise.error(function(response) {
+                if (showProgress) {
+                    epModalDialogService.hide();
+                }
                 showException(response);
             });
             return promise;
@@ -19090,6 +19120,8 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
         # style {string} - sets inline styling. eg. '{ "color" : "red", "margin" : "0px" }
         # oFormat {object}
         # maxLength {int} - set max length for string entry default is 30
+        # rows {int} - set rows for multiline editor (default is 5)
+        # mode {string} - set display mode ('mini' otherwise standard)
         # buttons {array} - array of button objects that conatin properties:
             text {string} - button text
             style {string} - button class
@@ -19235,7 +19267,8 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                 placeholder: col.placeholder,
                 size: col.size,
                 style: col.style,
-                checkBoxSize: col.checkBoxSize
+                checkBoxSize: col.checkBoxSize,
+                mode: col.mode || 'default'
             };
 
             if (col.style && angular.isString(col.style)) {
@@ -19635,6 +19668,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                 return {
                     pre: function($scope) {
                         var ctx = $scope.ctx;
+                        ctx.rows = ctx.col.rows || 5;
                         //set size class larger for multiline
                         ctx.fnSetSizeClass('col-xs-12 col-sm-12 col-md-8 col-lg-8');
                     }
@@ -27851,7 +27885,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-editor-control.html',
-    "<div class=\"ep-editor-control {{ctx.sizeClass}}\" ng-hide=ctx.hidden ep-drop-area drop-enabled=\"isDropEnabled === true\" drop-handler=handleDrop drop-item-types=typeEditorCtrl ng-style=ctx.style><fieldset class=\"form-group ep-record-editor-container\" ng-class=\"{'has-error': ctx.invalidFlag}\" ep-draggable drag-enabled=\"isDragEnabled === true\" drag-item=ctx drag-item-type=\"'typeEditorCtrl'\"><label class=ep-editor-label for={{ctx.name}}>{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label><section id=xtemplate></section></fieldset></div>"
+    "<div class=\"ep-editor-control {{ctx.sizeClass}} ep-editor-mode-{{ctx.mode}}\" ng-hide=ctx.hidden ep-drop-area drop-enabled=\"isDropEnabled === true\" drop-handler=handleDrop drop-item-types=typeEditorCtrl ng-style=ctx.style><fieldset class=\"form-group ep-record-editor-container\" ng-class=\"{'has-error': ctx.invalidFlag}\" ep-draggable drag-enabled=\"isDragEnabled === true\" drag-item=ctx drag-item-type=\"'typeEditorCtrl'\"><label class=ep-editor-label for={{ctx.name}} ng-if=\"ctx.mode !== 'mini'\">{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label><section id=xtemplate></section></fieldset></div>"
   );
 
 
@@ -27861,7 +27895,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-multiline-editor.html',
-    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span><textarea id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=value ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-hide=ctx.fnDoValidations() maxlength={{ctx.maxlength}} ng-style=\"{'text-align': ctx.justification }\"></textarea><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
+    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span><textarea id={{ctx.name}} name={{ctx.name}} placeholder={{ctx.placeholder}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=value ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) rows={{ctx.rows}} class=\"form-control editor\" ng-hide=ctx.fnDoValidations() maxlength={{ctx.maxlength}} ng-style=\"{'text-align': ctx.justification }\"></textarea><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
   );
 
 
