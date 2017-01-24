@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.447 built: 23-01-2017
+ * version:1.0.10-dev.448 built: 23-01-2017
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -468,6 +468,34 @@
   background-color: #9ad268;
 }
 
+.ep-transparent-lighter {
+  background: rgba(0, 0, 0, 0.3) !important;
+}
+.ep-transparent-normal {
+  background: rgba(0, 0, 0, 0.5) !important;
+}
+.ep-transparent-darker {
+  background: rgba(0, 0, 0, 0.7) !important;
+}
+.btn-round {
+  width: 40px !important;
+  height: 40px !important;
+  border-radius: 50% !important;
+  margin-left: 3px !important;
+  margin-right: 3px !important;
+}
+.btn-round.btn-lg {
+  width: 48px !important;
+  height: 48px !important;
+}
+.btn-round.btn-sm {
+  width: 34px !important;
+  height: 34px !important;
+}
+.btn-round.btn-xs {
+  width: 24px !important;
+  height: 24px !important;
+}
 .ep-ease-animation {
   -moz-backface-visibility: hidden;
   -ms-backface-visibility: hidden;
@@ -499,6 +527,275 @@
 }
 .ep-clickable {
   cursor: pointer;
+}
+/* Utility - Padding Classes */
+/* Padding 0px */
+.ep-pad-all-0,
+.ep-pad-none {
+  padding: 0 !important;
+}
+.ep-pad-vert-0,
+.ep-pad-top-0 {
+  padding-top: 0 !important;
+}
+.ep-pad-horz-0,
+.ep-pad-right-0 {
+  padding-right: 0 !important;
+}
+.ep-pad-vert-0,
+.ep-pad-bottom-0 {
+  padding-bottom: 0 !important;
+}
+.ep-pad-horz-0,
+.ep-pad-left-0 {
+  padding-left: 0 !important;
+}
+/* Padding 5px */
+.ep-pad-all-5 {
+  padding: 5px !important;
+}
+.ep-pad-vert-5,
+.ep-pad-top-5 {
+  padding-top: 5px !important;
+}
+.ep-pad-horz-5,
+.ep-pad-right-5 {
+  padding-right: 5px !important;
+}
+.ep-pad-vert-5,
+.ep-pad-bottom-5 {
+  padding-bottom: 5px !important;
+}
+.ep-pad-horz-5,
+.ep-pad-left-5 {
+  padding-left: 5px !important;
+}
+/* Padding 10px */
+.ep-pad-all-10 {
+  padding: 10px !important;
+}
+.ep-pad-vert-10,
+.ep-pad-top-10 {
+  padding-top: 10px !important;
+}
+.ep-pad-horz-10,
+.ep-pad-right-10 {
+  padding-right: 10px !important;
+}
+.ep-pad-vert-10,
+.ep-pad-bottom-10 {
+  padding-bottom: 10px !important;
+}
+.ep-pad-horz-10,
+.ep-pad-left-10 {
+  padding-left: 10px !important;
+}
+/* Padding 15px */
+.ep-pad-all-15 {
+  padding: 15px !important;
+}
+.ep-pad-vert-15,
+.ep-pad-top-15 {
+  padding-top: 15px !important;
+}
+.ep-pad-horz-15,
+.ep-pad-right-15 {
+  padding-right: 15px !important;
+}
+.ep-pad-vert-15,
+.ep-pad-bottom-15 {
+  padding-bottom: 15px !important;
+}
+.ep-pad-horz-15,
+.ep-pad-left-15 {
+  padding-left: 15px !important;
+}
+/* Padding 20px */
+.ep-pad-all-20 {
+  padding: 20px !important;
+}
+.ep-pad-vert-20,
+.ep-pad-top-20 {
+  padding-top: 20px !important;
+}
+.ep-pad-horz-20,
+.ep-pad-right-20 {
+  padding-right: 20px !important;
+}
+.ep-pad-vert-20,
+.ep-pad-bottom-20 {
+  padding-bottom: 20px !important;
+}
+.ep-pad-horz-20,
+.ep-pad-left-20 {
+  padding-left: 20px !important;
+}
+/* Utility - Margin Classes */
+/* Margin 0px */
+.ep-margin-all-0,
+.ep-margin-none {
+  margin: 0 !important;
+}
+.ep-margin-vert-0,
+.ep-margin-top-0 {
+  margin-top: 0 !important;
+}
+.ep-margin-horz-0,
+.ep-margin-right-0 {
+  margin-right: 0 !important;
+}
+.ep-margin-vert-0,
+.ep-margin-bottom-0 {
+  margin-bottom: 0 !important;
+}
+.ep-margin-horz-0,
+.ep-margin-left-0 {
+  margin-left: 0 !important;
+}
+/* Margin 5px */
+.ep-margin-all-5 {
+  margin: 5px !important;
+}
+.ep-margin-vert-5,
+.ep-margin-top-5 {
+  margin-top: 5px !important;
+}
+.ep-margin-horz-5,
+.ep-margin-right-5 {
+  margin-right: 5px !important;
+}
+.ep-margin-vert-5,
+.ep-margin-bottom-5 {
+  margin-bottom: 5px !important;
+}
+.ep-margin-horz-5,
+.ep-margin-left-5 {
+  margin-left: 5px !important;
+}
+/* Margin 10px */
+.ep-margin-all-10 {
+  margin: 10px !important;
+}
+.ep-margin-vert-10,
+.ep-margin-top-10 {
+  margin-top: 10px !important;
+}
+.ep-margin-horz-10,
+.ep-margin-right-10 {
+  margin-right: 10px !important;
+}
+.ep-margin-vert-10,
+.ep-margin-bottom-10 {
+  margin-bottom: 10px !important;
+}
+.ep-margin-horz-10,
+.ep-margin-left-10 {
+  margin-left: 10px !important;
+}
+/* Margin 15px */
+.ep-margin-all-15 {
+  margin: 15px !important;
+}
+.ep-margin-vert-15,
+.ep-margin-top-15 {
+  margin-top: 15px !important;
+}
+.ep-margin-horz-15,
+.ep-margin-right-15 {
+  margin-right: 15px !important;
+}
+.ep-margin-vert-15,
+.ep-margin-bottom-15 {
+  margin-bottom: 15px !important;
+}
+.ep-margin-horz-15,
+.ep-margin-left-15 {
+  margin-left: 15px !important;
+}
+/* Margin 20px */
+.ep-margin-all-20 {
+  margin: 20px !important;
+}
+.ep-margin-vert-20,
+.ep-margin-top-20 {
+  margin-top: 20px !important;
+}
+.ep-margin-horz-20,
+.ep-margin-right-20 {
+  margin-right: 20px !important;
+}
+.ep-margin-vert-20,
+.ep-margin-bottom-20 {
+  margin-bottom: 20px !important;
+}
+.ep-margin-horz-20,
+.ep-margin-left-20 {
+  margin-left: 20px !important;
+}
+/* Negative Margin Classes */
+/* Negative Margin -5 */
+.ep-margin-all-neg-5 {
+  margin: -5px !important;
+}
+.ep-margin-top-neg-5 {
+  margin-top: -5px !important;
+}
+.ep-margin-right-neg-5 {
+  margin-right: -5px !important;
+}
+.ep-margin-bottom-neg-5 {
+  margin-bottom: -5px !important;
+}
+.ep-margin-left-neg-5 {
+  margin-left: -5px !important;
+}
+/* Negative Margin -10 */
+.ep-margin-all-neg-10 {
+  margin: -10px !important;
+}
+.ep-margin-top-neg-10 {
+  margin-top: -10px !important;
+}
+.ep-margin-right-neg-10 {
+  margin-right: -10px !important;
+}
+.ep-margin-bottom-neg-10 {
+  margin-bottom: -10px !important;
+}
+.ep-margin-left-neg-10 {
+  margin-left: -10px !important;
+}
+/* Negative Margin -15 */
+.ep-margin-all-neg-15 {
+  margin: -15px !important;
+}
+.ep-margin-top-neg-15 {
+  margin-top: -15px !important;
+}
+.ep-margin-right-neg-15 {
+  margin-right: -15px !important;
+}
+.ep-margin-bottom-neg-15 {
+  margin-bottom: -15px !important;
+}
+.ep-margin-left-neg-15 {
+  margin-left: -15px !important;
+}
+/* Negative Margin -20 */
+.ep-margin-all-neg-20 {
+  margin: -20px !important;
+}
+.ep-margin-top-neg-20 {
+  margin-top: -20px !important;
+}
+.ep-margin-right-neg-20 {
+  margin-right: -20px !important;
+}
+.ep-margin-bottom-neg-20 {
+  margin-bottom: -20px !important;
+}
+.ep-margin-left-neg-20 {
+  margin-left: -20px !important;
 }
 .ep-center-item {
   /* The order of these transform rules is important, proceed with caution */
@@ -2476,6 +2773,9 @@ span.ep-center-brand {
   text-decoration: none;
   cursor: pointer;
   margin-right: 0;
+}
+.ep-shell .ep-main-navbar .ep-navbar-button.dropdown-toggle {
+  padding-top: 5px;
 }
 .ep-navmenu-item {
   padding-left: 6px;

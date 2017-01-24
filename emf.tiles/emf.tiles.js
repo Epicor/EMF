@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.447 built: 23-01-2017
+ * version:1.0.10-dev.448 built: 23-01-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["tiles"] = {"libName":"tiles","version":"1.0.10-dev.447","built":"2017-01-23"};
+__ep_build_info["tiles"] = {"libName":"tiles","version":"1.0.10-dev.448","built":"2017-01-23"};
 
 'use strict';
 /**
@@ -939,8 +939,8 @@ app.directive('epCardTitle',
         $rootScope.$on(epMultiLevelMenuConstants.MLM_FAVORITES_CHANGED, $scope.onFavoritesChange);
         $rootScope.$on(epMultiLevelMenuConstants.MLM_ITEM_CLICKED, $scope.onMenuItemClicked);
 
-        $scope.$watch('menuId', function(newValue) {
-            if (newValue) {
+        $scope.$watch('menuId', function(newValue, oldValue) {
+            if (newValue && newValue !== oldValue) {
 
                 $scope.menuFactory = epMultiLevelMenuService.getMenuFactory(newValue);
                 if ($scope.menuFactory) {
