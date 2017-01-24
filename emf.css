@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.451 built: 24-01-2017
+ * version:1.0.10-dev.452 built: 24-01-2017
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -483,6 +483,7 @@
   border-radius: 50% !important;
   margin-left: 3px !important;
   margin-right: 3px !important;
+  outline: none;
 }
 .btn-round.btn-lg {
   width: 48px !important;
