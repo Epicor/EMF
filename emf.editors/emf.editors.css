@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.458 built: 25-01-2017
+ * version:1.0.10-dev.459 built: 25-01-2017
 */
 .ep-color-selector-container .btn {
   background-color: #F5F5F5;
@@ -254,4 +254,17 @@
 .ep-editor-control.ep-editor-mode-mini .ep-record-editor-container {
   margin-bottom: 2px;
   margin-top: 2px;
+}
+/* ep-is-row-editor for "is-row" mode */
+ep-editor-control .ep-record-editor-container.ep-is-row-editor {
+  width: 100%;
+}
+/* make label vertically aligned inside the column */
+.ep-editor-control .ep-record-editor-container .ep-div-editor-label {
+  position: relative;
+}
+.ep-editor-control .ep-record-editor-container.ep-is-row-editor .ep-editor-label {
+  margin-top: 5px;
+  position: absolute;
+  transform: translateX(10%);
 }

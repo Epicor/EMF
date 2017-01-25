@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.458 built: 25-01-2017
+ * version:1.0.10-dev.459 built: 25-01-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.458","built":"2017-01-25"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.459","built":"2017-01-25"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -1839,12 +1839,15 @@ angular.module('ep.signature', [
     'use strict';
     /**
     * @ngdoc directive
-    * @name ep.customization.directive:epCustomization
+    * @name ep.binding.directive:epBindingEditor
     * @restrict E
     *
     * @description
-    * Represents the ep.customization directive
+    * Represents the ep.binding directive
     *
+    * @param {object} column - the following are properties of the column:
+    * if column is not set the default is { editor: 'auto', updatable: true }
+    * 
     * @example
     */
     epBindingEditorDirective.$inject = ['$location', 'epBindingFactory', 'epUtilsService', 'epBindingMetadataService'];
@@ -1857,7 +1860,8 @@ angular.module('ep.signature', [
             templateUrl: 'src/components/ep.binding/controls/ep-binding-editor.html',
             scope: {
                 epBinding: '=',
-                column: '='
+                column: '=',
+                isRow: '='
             },
             link: function(scope, element, attrs) {
                 var bindingFactory;
@@ -1867,45 +1871,137 @@ angular.module('ep.signature', [
                     value: undefined, kind: 'ep-editor-control'
                 };
 
+                var defaultColumn = {
+                    editor: 'auto',
+                    updatable: true
+                };
+
                 scope.state = {
-                    column: {
-                        editor: 'auto',
-                        updatable: true
-                    },
+                    column: undefined,
+                    metaColumn: {},
                     epBinding: {}
                 };
 
+                scope.setBinding = function(binding) {
+                    if (bindingFactory) {
+                        bindingFactory.changeBinding(binding);
+                    } else {
+                        bindingFactory = new epBindingFactory(scope, binding, scope.epBindingInfo);
+                    }
+
+                    scope.state.metaColumn = {};
+
+                    if (scope.state.epBinding.column !== scope.epBindingInfo.epBinding.column ||
+                        scope.state.epBinding.view !== scope.epBindingInfo.epBinding.view) {
+                        scope.state.metaColumn.caption = scope.epBindingInfo.epBinding.column;
+                    }
+
+                    var meta = epBindingMetadataService.get(scope.epBindingInfo.epBinding.view);
+                    if (meta && meta.columns && meta.columns[scope.epBindingInfo.epBinding.column]) {
+                        var col = meta.columns[scope.epBindingInfo.epBinding.column];
+                        epUtilsService.copyProperties(col, scope.state.metaColumn);
+                    }
+
+                    //if (scope.state.column.caption === undefined ||
+                    //    scope.state.epBinding.column !== scope.epBindingInfo.epBinding.column ||
+                    //    scope.state.epBinding.view !== scope.epBindingInfo.epBinding.view) {
+                    //    scope.state.column.caption = scope.epBindingInfo.epBinding.column;
+                    //}
+
+                    //var meta = epBindingMetadataService.get(scope.epBindingInfo.epBinding.view);
+                    //if (meta && meta.columns && meta.columns[scope.epBindingInfo.epBinding.column]) {
+                    //    var col = meta.columns[scope.epBindingInfo.epBinding.column];
+                    //    epUtilsService.copyProperties(col, scope.state.column);
+                    //}
+
+                    scope.state.epBinding.view = scope.epBindingInfo.epBinding.view;
+                    scope.state.epBinding.column = scope.epBindingInfo.epBinding.column;
+                }
+
+                scope.setColumn = function() {
+                    var col = angular.extend({}, defaultColumn);
+
+                    if (scope.state.metaColumn && Object.keys(scope.state.metaColumn).length) {
+                        //if metadata is available let's merge it
+                        epUtilsService.copyProperties(scope.state.metaColumn, col);
+                    }
+
+                    if (scope.column) {
+                        //column settings are passed, they take precedence over all
+                        epUtilsService.copyProperties(scope.column, col);
+                    }
+                    if (!angular.equals(scope.state.column, col)) {
+                        scope.state.column = col;
+                    }
+                }
+
                 scope.$watch('epBinding', function(newValue, oldValue) {
-                    if (newValue !== undefined) {
-                        if (bindingFactory) {
-                            bindingFactory.changeBinding(newValue);
-                        } else {
-                            bindingFactory = new epBindingFactory(scope, newValue, scope.epBindingInfo);
-                        }
-                        if (scope.state.column.caption === undefined ||
-                            scope.state.epBinding.column !== scope.epBindingInfo.epBinding.column ||
-                            scope.state.epBinding.view !== scope.epBindingInfo.epBinding.view) {
-                            scope.state.column.caption = scope.epBindingInfo.epBinding.column;
-                        }
-
-                        var meta = epBindingMetadataService.get(scope.epBindingInfo.epBinding.view);
-                        if (meta && meta.columns && meta.columns[scope.epBindingInfo.epBinding.column]) {
-                            var col = meta.columns[scope.epBindingInfo.epBinding.column];
-                            epUtilsService.copyProperties(col, scope.state.column);
-                        }
-
-                        scope.state.epBinding.view = scope.epBindingInfo.epBinding.view;
-                        scope.state.epBinding.column = scope.epBindingInfo.epBinding.column;
+                    if (newValue !== undefined && newValue !== oldValue) {
+                        scope.setBinding(newValue);
                     }
                 });
 
                 scope.$watch('column', function(newValue, oldValue) {
+                    if (newValue !== undefined && !angular.equals(newValue, oldValue)) {
+                        scope.setColumn();
+                    }
+                });
+
+                if (scope.epBinding) {
+                    scope.setBinding(scope.epBinding);
+                }
+                scope.setColumn();
+            }
+        }
+    }
+}());
+
+(function() {
+    'use strict';
+    /**
+    * @ngdoc directive
+    * @name ep.binding.directive:epBindingLabel
+    * @restrict E
+    *
+    * @description
+    * Represents the epBindingLabel directive
+    *
+    * @example
+    */
+    epBindingLabelDirective.$inject = ['epBindingService', 'epBindingMetadataService'];
+    angular.module('ep.binding').directive('epBindingLabel', epBindingLabelDirective);
+
+    /*@ngInject*/
+    function epBindingLabelDirective(epBindingService, epBindingMetadataService) {
+        return {
+            restrict: 'E',
+            templateUrl: 'src/components/ep.binding/controls/ep-binding-label.html',
+            scope: {
+                epBinding: '=',
+                label: '@',
+                labelClass: '@',
+                required: '=',
+                forCtrl: '@'
+            },
+            link: function(scope, element, attrs) {
+                scope.state = {
+                    epBinding: {},
+                    label: scope.label || '',
+                    requiredFlag: false,
+                    column: {}
+                };
+
+                scope.$watch('epBinding', function(newValue, oldValue) {
                     if (newValue !== undefined) {
-                        //TO DO!!!!
-                        var col = {};
-                        epUtilsService.copyProperties(scope.state.column, col);
-                        epUtilsService.copyProperties(scope.column, col);
-                        scope.state.column = col;
+                        scope.state.epBinding = epBindingService.parseBinding(newValue);
+
+                        var meta = epBindingMetadataService.get(scope.state.epBinding.view);
+                        if (meta && meta.columns && meta.columns[scope.state.epBinding.column]) {
+                            scope.state.column = meta.columns[scope.state.epBinding.column];
+                            scope.state.label = scope.state.column.caption || scope.label ||
+                                scope.state.epBinding.column || '';
+                            scope.state.requiredFlag = scope.state.column.required === true;
+                        }
                     }
                 });
             }
@@ -11700,7 +11796,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 //    epTransactionFactory.current().add(viewId, data.value);
                 //}
             }, function(data) {
-                showException(data);
+                var msg = showException(data);
                 deferred.reject(msg, data);
             });
 
@@ -11869,7 +11965,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     }
                 }
             }, function(data) {
-                showException(data);
+                var msg = showException(data);
                 deferred.reject(msg, data);
             });
         }
@@ -11887,6 +11983,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 title: 'Info', message: msg || '',
                 messageDetails: angular.toJson(response, 2)
             });
+            return msg;
         }
 
         function getMetaColumns(metaData) {
@@ -11987,7 +12084,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 //    epTransactionFactory.current().add(viewId, data.value);
                 //}
             }, function(data) {
-                showException(data);
+                var msg = showException(data);
                 deferred.reject(msg, data);
             });
 
@@ -12047,6 +12144,54 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             return deferred.promise;
         }
 
+        function updateSvc(svc, data, viewId, options) {
+            if (!options) {
+                options = {};
+            }
+
+            var showProgress = (options.showProgress !== false);
+            if (showProgress) {
+                epModalDialogService.showProgress({
+                    title: options.title || 'Updating data',
+                    message: options.message || 'sending data to server...',
+                    showProgress: true
+                });
+            }
+
+            var d = angular.copy(data);
+            if (options.convertToJsonType !== false) {
+                var meta = epBindingMetadataService.get(viewId);
+                if (meta && meta.columns) {
+                    angular.forEach(Object.keys(d), function(key) {
+                        var col = meta.columns[key];
+                        if (col && col.dataType === 'decimal' && !angular.isString(d[key])) {
+                            //decimals must be sent as strings at least in oData v3
+                            var v = '' + d[key] + '';
+                            d[key] = v;
+                        }
+                    });
+                }
+            }
+            if (d.$$hashKey) {
+                delete d.$$hashKey;
+            }
+
+            var url = svc;
+            var promise = epErpRestService.post(url, d);
+            promise.then(function() {
+                if (showProgress) {
+                    epModalDialogService.hide();
+                }
+            });
+            promise.error(function(response) {
+                if (showProgress) {
+                    epModalDialogService.hide();
+                }
+                showException(response);
+            });
+            return promise;
+        }
+
         //private functions --->
         function showException(response) {
             var msg = response.ErrorMessage || '';
@@ -12063,7 +12208,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         }
 
         return {
-            getSvc: getSvc
+            getSvc: getSvc,
+            updateSvc: updateSvc
         };
     }
 }());
@@ -19144,10 +19290,14 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
         # fnOnFldValidate(ctx, event, inputValue, originalValue) - callback function on validation
         # fnOnChange(ctx, event) - callback function on change
         # fnOnBlur(ctx, event) - callback function on change
+        # classLabel {string} - label class (used in is-row mode to set boostrap column width, eg. 'col-xs-4')
+        # classEditor {string} - editor class (used in is-row mode to set boostrap column width, eg. 'col-xs-8')
     *
     * @param {object} value - the value binding for the editor
     * @param {bool} isDropEnabled - is drop enabled for the editor
     * @param {bool} isDragEnabled - is drag enabled for the editor
+    * @param {bool} isRow - when true - caption and editor are is in boostrap grid row mode;
+    *   otherwise caption is on top of the editor. (default is false)
     *
     * @example
     *   HTML:
@@ -19508,7 +19658,8 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                 ctx.seq = ctrl.seq;
             }
 
-            var target = angular.element(scope.state.iElement).find('#xtemplate');
+            var idTemplate = '#xtemplate';
+            var target = angular.element(scope.state.iElement).find(idTemplate);
             target.empty().append($compile(scope.editorDirective)(scope));
         }
 
@@ -19613,7 +19764,8 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                 value: '=',
                 options: '=',
                 isDragEnabled: '=',
-                isDropEnabled: '='
+                isDropEnabled: '=',
+                isRow: '='
             }
         };
     }
@@ -28017,7 +28169,12 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.binding/controls/ep-binding-editor.html',
-    "<ep-editor-control drag-enabled=false column=state.column value=epBindingInfo.value></ep-editor-control>"
+    "<ep-editor-control drag-enabled=false column=state.column value=epBindingInfo.value is-row=isRow></ep-editor-control>"
+  );
+
+
+  $templateCache.put('src/components/ep.binding/controls/ep-binding-label.html',
+    "<label class=\"ep-binding-label {{labelClass}}\" for={{forCtrl}}>{{state.label}}<span ng-if=\"state.requiredFlag && required !== false\" class=\"ep-required-indicator text-danger fa fa-asterisk\"></span></label>"
   );
 
 
@@ -28292,7 +28449,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-editor-control.html',
-    "<div class=\"ep-editor-control {{ctx.sizeClass}} ep-editor-mode-{{ctx.mode}}\" ng-hide=ctx.hidden ep-drop-area drop-enabled=\"isDropEnabled === true\" drop-handler=handleDrop drop-item-types=typeEditorCtrl ng-style=ctx.style><fieldset class=\"form-group ep-record-editor-container\" ng-class=\"{'has-error': ctx.invalidFlag}\" ep-draggable drag-enabled=\"isDragEnabled === true\" drag-item=ctx drag-item-type=\"'typeEditorCtrl'\"><label class=ep-editor-label for={{ctx.name}} ng-if=\"ctx.mode !== 'mini'\">{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label><section id=xtemplate></section></fieldset></div>"
+    "<div class=\"ep-editor-control {{ctx.sizeClass}} ep-editor-mode-{{ctx.mode}}\" ng-hide=ctx.hidden ep-drop-area drop-enabled=\"isDropEnabled === true\" drop-handler=handleDrop drop-item-types=typeEditorCtrl ng-style=ctx.style><!--display caption above editor or just editor (mini mode)--><fieldset ng-if=\"isRow !== true\" class=\"form-group ep-record-editor-container\" ng-class=\"{'has-error': ctx.invalidFlag}\" ep-draggable drag-enabled=\"isDragEnabled === true\" drag-item=ctx drag-item-type=\"'typeEditorCtrl'\"><div class=\"ep-div-editor-label {{ctx.col.classLabel}}\"><label class=ep-editor-label for={{ctx.name}} ng-if=\"ctx.mode !== 'mini'\">{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label></div><div class={{ctx.col.classEditor}}><section id=xtemplate></section></div></fieldset><!--display caption and editor in a bootstarp grid system in horizontal row--><div ng-if=\"isRow === true\" class=\"ep-record-editor-container ep-is-row-editor row\"><div class=\"ep-div-editor-label {{ctx.col.classLabel || 'col-xs-4'}}\"><label class=ep-editor-label for={{ctx.name}}>{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label></div><div class=\"{{ctx.col.classEditor || 'col-xs-8'}}\"><section id=xtemplate></section></div></div></div>"
   );
 
 

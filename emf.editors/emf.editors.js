@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.458 built: 25-01-2017
+ * version:1.0.10-dev.459 built: 25-01-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.458","built":"2017-01-25"};
+__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.459","built":"2017-01-25"};
 
 (function() {
     'use strict';
@@ -823,10 +823,14 @@ angular.module('ep.record.editor', [
         # fnOnFldValidate(ctx, event, inputValue, originalValue) - callback function on validation
         # fnOnChange(ctx, event) - callback function on change
         # fnOnBlur(ctx, event) - callback function on change
+        # classLabel {string} - label class (used in is-row mode to set boostrap column width, eg. 'col-xs-4')
+        # classEditor {string} - editor class (used in is-row mode to set boostrap column width, eg. 'col-xs-8')
     *
     * @param {object} value - the value binding for the editor
     * @param {bool} isDropEnabled - is drop enabled for the editor
     * @param {bool} isDragEnabled - is drag enabled for the editor
+    * @param {bool} isRow - when true - caption and editor are is in boostrap grid row mode;
+    *   otherwise caption is on top of the editor. (default is false)
     *
     * @example
     *   HTML:
@@ -1187,7 +1191,8 @@ angular.module('ep.record.editor', [
                 ctx.seq = ctrl.seq;
             }
 
-            var target = angular.element(scope.state.iElement).find('#xtemplate');
+            var idTemplate = '#xtemplate';
+            var target = angular.element(scope.state.iElement).find(idTemplate);
             target.empty().append($compile(scope.editorDirective)(scope));
         }
 
@@ -1292,7 +1297,8 @@ angular.module('ep.record.editor', [
                 value: '=',
                 options: '=',
                 isDragEnabled: '=',
-                isDropEnabled: '='
+                isDropEnabled: '=',
+                isRow: '='
             }
         };
     }
@@ -2414,7 +2420,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-editor-control.html',
-    "<div class=\"ep-editor-control {{ctx.sizeClass}} ep-editor-mode-{{ctx.mode}}\" ng-hide=ctx.hidden ep-drop-area drop-enabled=\"isDropEnabled === true\" drop-handler=handleDrop drop-item-types=typeEditorCtrl ng-style=ctx.style><fieldset class=\"form-group ep-record-editor-container\" ng-class=\"{'has-error': ctx.invalidFlag}\" ep-draggable drag-enabled=\"isDragEnabled === true\" drag-item=ctx drag-item-type=\"'typeEditorCtrl'\"><label class=ep-editor-label for={{ctx.name}} ng-if=\"ctx.mode !== 'mini'\">{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label><section id=xtemplate></section></fieldset></div>"
+    "<div class=\"ep-editor-control {{ctx.sizeClass}} ep-editor-mode-{{ctx.mode}}\" ng-hide=ctx.hidden ep-drop-area drop-enabled=\"isDropEnabled === true\" drop-handler=handleDrop drop-item-types=typeEditorCtrl ng-style=ctx.style><!--display caption above editor or just editor (mini mode)--><fieldset ng-if=\"isRow !== true\" class=\"form-group ep-record-editor-container\" ng-class=\"{'has-error': ctx.invalidFlag}\" ep-draggable drag-enabled=\"isDragEnabled === true\" drag-item=ctx drag-item-type=\"'typeEditorCtrl'\"><div class=\"ep-div-editor-label {{ctx.col.classLabel}}\"><label class=ep-editor-label for={{ctx.name}} ng-if=\"ctx.mode !== 'mini'\">{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label></div><div class={{ctx.col.classEditor}}><section id=xtemplate></section></div></fieldset><!--display caption and editor in a bootstarp grid system in horizontal row--><div ng-if=\"isRow === true\" class=\"ep-record-editor-container ep-is-row-editor row\"><div class=\"ep-div-editor-label {{ctx.col.classLabel || 'col-xs-4'}}\"><label class=ep-editor-label for={{ctx.name}}>{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label></div><div class=\"{{ctx.col.classEditor || 'col-xs-8'}}\"><section id=xtemplate></section></div></div></div>"
   );
 
 
