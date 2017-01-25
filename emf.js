@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.457 built: 25-01-2017
+ * version:1.0.10-dev.458 built: 25-01-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.457","built":"2017-01-25"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.458","built":"2017-01-25"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -24201,7 +24201,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name finish
-         * @methodOf ep.sliding.panel:epSlidingPanelService
+         * @methodOf ep.sliding.panel.factory:epSlidingPanelService
          * @public
          * @param {string} panelId (optional) The id of the ep-sliding-panel element to control
          * @returns {Promise} a promise that is resolved with an object with oldPane and newPane properties
@@ -24225,7 +24225,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name goToPaneIndex
-         * @methodOf ep.sliding.panel:epSlidingPanelService
+         * @methodOf ep.sliding.panel.factory:epSlidingPanelService
          * @public
          * @param {string} panelId (optional) The id of the ep-sliding-panel element to control
          * @param {number} paneIndex the index of the pane to go to
@@ -24276,7 +24276,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name goToPane
-         * @methodOf ep.sliding.panel:epSlidingPanelService
+         * @methodOf ep.sliding.panel.factory:epSlidingPanelService
          * @public
          * @param {string} panelId The id of the ep-sliding-panel element to control
          * @param {string} paneid the id of the pane to go to
@@ -24297,7 +24297,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name next
-         * @methodOf ep.sliding.panel:epSlidingPanelService
+         * @methodOf ep.sliding.panel.factory:epSlidingPanelService
          * @public
          * @param {string} panelId The id of the ep-sliding-panel element to control
          * @returns {Promise} a promise that is resolved with an object with oldPane and newPane properties
@@ -24312,7 +24312,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name prev
-         * @methodOf ep.sliding.panel:epSlidingPanelService
+         * @methodOf ep.sliding.panel.factory:epSlidingPanelService
          * @public
          * @param {string} panelId (optional) The id of the ep-sliding-panel element to control
          * @returns {Promise} a promise that is resolved with an object with oldPane and newPane properties
@@ -24327,7 +24327,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name enableNext
-         * @methodOf ep.sliding.panel:epSlidingPanelService
+         * @methodOf ep.sliding.panel.factory:epSlidingPanelService
          * @public
          * @param {string} panelId The id of the ep-sliding-panel element to control
          * @param {boolean} value The value to set the enabled flag to
@@ -24346,7 +24346,7 @@ angular.module('ep.signature').directive('epSignature',
                 /**
          * @ngdoc method
          * @name enablePrev
-         * @methodOf ep.sliding.panel:epSlidingPanelService
+         * @methodOf ep.sliding.panel.factory:epSlidingPanelService
          * @public
          * @param {string} panelId (optional) The id of the ep-sliding-panel element to control
          * @param {boolean} value The value to set the enabled flag to
@@ -24365,7 +24365,7 @@ angular.module('ep.signature').directive('epSignature',
                 /**
          * @ngdoc method
          * @name enableFinish
-         * @methodOf ep.sliding.panel:epSlidingPanelService
+         * @methodOf ep.sliding.panel.factory:epSlidingPanelService
          * @public
          * @param {string} panelId (optional)The id of the ep-sliding-panel element to control
          * @param {boolean} value The value to set the enabled flag to
@@ -24384,7 +24384,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name getState
-         * @methodOf ep.sliding.panel:epSlidingPanelService
+         * @methodOf ep.sliding.panel.factory:epSlidingPanelService
          * @public
          * @param {string} panelId (optional)The id of the ep-sliding-panel element to control
          * @returns {Object} the internal state of the ep-sliding-panel control with the given id
@@ -24397,7 +24397,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name register
-         * @methodOf ep.sliding.panel:epSlidingPanelService
+         * @methodOf ep.sliding.panel.factory:epSlidingPanelService
          * @private
          * @param {object} state The internal state to register
          * @description
@@ -24409,7 +24409,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name unregister
-         * @methodOf ep.sliding.panel:epSlidingPanelService
+         * @methodOf ep.sliding.panel.factory:epSlidingPanelService
          * @private
          * @description
          * For internal use only: This is used internally by the ep-sliding-panel directive
