@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.456 built: 25-01-2017
+ * version:1.0.10-dev.457 built: 25-01-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.456","built":"2017-01-25"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.457","built":"2017-01-25"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -570,6 +570,16 @@ angular.module('ep.signature', [
     'ep.sysconfig'
 ]);
 
+(function(){
+    'use strict';
+    /**
+     * @ngdoc overview
+     * @name ep.sliding.panel
+     * @description
+     * Encapsulates the sliding panel with simple wizard-like functionality.
+     */
+    angular.module('ep.sliding.panel', []);
+})();
 /**
  * @ngdoc overview
  * @name ep.theme
@@ -24026,6 +24036,403 @@ angular.module('ep.signature').directive('epSignature',
         };
     }]);
 
+(function(){
+    'use strict';
+    epPane.$inject = ['$timeout'];
+    angular.module('ep.sliding.panel')
+    .directive('epPane', epPane);
+    /*@ngInject */
+    var counter = {};
+    function epPane($timeout){
+        return {
+            restrict: 'E',
+            transclude: true,
+            templateUrl: 'src/components/ep.sliding.panel/ep-pane.html',
+            require: '^epSlidingPanel',
+            scope: {
+                'onEnter': '&',
+                'onLeave': '&'
+            },
+            link: function($scope, $element, $attrs){
+                $scope.state = $element.controller('epSlidingPanel').getState();
+                $scope.pane = {
+                    onEnter: $attrs.onEnter && $scope.onEnter,
+                    onLeave: $attrs.onLeave && $scope.onLeave,
+                    panelId: $scope.state.id,
+                    index: $scope.state.panes.length,
+                    id: $element.attr('id') || $scope.state.panes.length,
+                    $el: $element
+                };
+                $scope.state.panes.push($scope.pane);
+            }
+        }
+    }
+})();
+(function(){
+    'use strict';
+    /**
+    * @ngdoc directive
+    * @name ep.sliding.panel.directive:epSlidingPanel
+    * @restrict E
+    * @description
+    * This component encapsulates a simple wizard-like control with 
+    * multiple panes of content that scroll horizontally as the active pane
+    * index is changed.
+    * @example
+    <doc:example module="ep.sliding.panel">
+        <doc:source>
+            <form class="form">
+                <ep-sliding-panel id="setupWizard">
+                    <ep-pane>
+                        <h3>Step 1, please enter your name.</h3>
+                        <div class="form-group">
+                            <label for="nameInput">Name</label>
+                            <input id="nameInput" type="text" class="form-control" placeholder="Your Name" ng-model="myModel.name" />
+                        </div>
+                    </ep-pane>
+                    <ep-pane>
+                        <h3>Ok, {{myModel.name}}, what's your email address?</h3>
+                        <div class="form-group">
+                            <label for="emailInput">Email</label>
+                            <input id="emailInput" type="email" class="form-control" placeholder="Your Email" ng-model="myModel.email" />
+                        </div>
+                    </ep-pane>
+                    <ep-pane>
+                        <h3>Thanks, {{myModel.name}}! Here's what we've done so far.</h3>
+                        <div class="form-group">
+                            <label class="col-xs-2 control-label">Name</label>
+                            <div class="col-xs-10">
+                                <p class="form-control-static" ng-bind="myModel.name"></p>
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label class="col-xs-2 control-label">Email</label>
+                            <div class="col-xs-10">
+                                <p class="form-control-static" ng-bind="myModel.email"></p>
+                            </div>
+                        </div>
+                    </ep-pane>
+                </ep-sliding-panel>
+            </form>
+    </doc:source>
+    </doc:example>
+    */
+    epSlidingPanel.$inject = ['$timeout', 'epSlidingPanelService'];
+    angular.module('ep.sliding.panel')
+    .directive('epSlidingPanel', epSlidingPanel);
+    /*@ngInject */
+    function epSlidingPanel($timeout, epSlidingPanelService){
+        return {
+            restrict: 'E',
+            transclude: true,
+            scope: {
+                onChange: '&',
+                onStart: '&',
+                onFinish: '&'
+            },
+            templateUrl: 'src/components/ep.sliding.panel/ep-sliding-panel.html',
+            controller: /*@ngInject*/['$scope', '$element', function($scope, $element){
+                this.getState = function(){ return $scope.state; };
+            }],
+            link:function($scope, $el, $attrs){
+                    
+                var paneElements = $el.find('ep-pane').toArray();
+                var id = $attrs.id || 'epSlidingPanel';
+                $scope.state = {
+                    $el: $el,
+                    id: id,
+                    toLeft: false,
+                    toRight: false,
+                    nextButtonEnabled: true,
+                    prevButtonEnabled: true,
+                    finishButtonEnabled: true,
+                    displayPaneIndex: 0,
+                    onChange: $attrs.onChange && $scope.onChange,
+                    onFinish: $attrs.onFinish && $scope.onFinish,
+                    onStart: $attrs.onStart && $scope.onStart,
+                    panes: []
+                };
+                if ($scope.state.onStart){
+                    $timeout(function(){
+                        var locals = {$state: $scope.state};
+                        $scope.state.onStart(locals);
+                    });
+                }
+                // register/unregister internal state with the service so that it can be controlled from there
+                epSlidingPanelService.register($scope.state);
+                $scope.$on('destroy', epSlidingPanelService.unregister.bind(null, $scope.state.id));
+                
+                //when pressing prev, panel should slide to the right
+                $scope.prev = epSlidingPanelService.prev.bind(null, $scope.state.id);
+
+                //when pressing next, panel should slide to the left
+                $scope.next = epSlidingPanelService.next.bind(null, $scope.state.id);
+
+                $scope.finish = epSlidingPanelService.finish.bind(null, $scope.state.id);
+            }
+        }
+    }
+})();
+(function(){
+    'use strict';
+    angular.module('ep.sliding.panel')
+    .factory('epSlidingPanelService', /*ngInject*/['$timeout', '$q', function($timeout, $q){
+        var panelState = {};
+        function checkStep(owner, stepName, locals){
+            var deferred = $q.defer();
+            // the fired property is used to make sure we don't fire these events recursively (and endlessly)
+            if(owner[stepName] && !owner.fired){
+                owner.fired = true;
+                var result = owner[stepName](locals);
+                if (result && result.then){
+                    result.then(function(val){
+                        deferred.resolve(val);
+                    });
+                } else {
+                    deferred.resolve(result);
+                }
+                
+            }
+            else {
+                deferred.resolve(true);
+            }
+            return deferred.promise;
+        }
+        /**
+         * @ngdoc method
+         * @name finish
+         * @methodOf ep.sliding.panel:epSlidingPanelService
+         * @public
+         * @param {string} panelId (optional) The id of the ep-sliding-panel element to control
+         * @returns {Promise} a promise that is resolved with an object with oldPane and newPane properties
+         * @description
+         * Executes the on-finish attribute of the panel.
+         */
+        function finish(panelId) {
+            panelId = panelId || 'epSlidingPanel';
+            var state = getState(panelId);
+            var oldPane = state.panes[state.displayPaneIndex];
+
+            var locals = {$state: state, $oldPane: oldPane};
+            return checkStep(oldPane, 'onLeave', locals)
+                .then(function(val){
+                    if(val){
+                        return checkStep(state, 'onFinish', locals);
+                    }
+                });
+        }
+
+        /**
+         * @ngdoc method
+         * @name goToPaneIndex
+         * @methodOf ep.sliding.panel:epSlidingPanelService
+         * @public
+         * @param {string} panelId (optional) The id of the ep-sliding-panel element to control
+         * @param {number} paneIndex the index of the pane to go to
+         * @returns {Promise} a promise that is resolved with an object with oldPane and newPane properties
+         * @description
+         * Changes the currently displayed pane to the pane with the given index
+         */
+        function goToPaneIndex(panelId, paneIndex){
+            if(paneIndex === undefined) {
+                paneIndex = panelId;
+                panelId = 'epSlidingPanel';
+            }
+            var state = getState(panelId);
+            // clamp the pane index to valid values
+            paneIndex = Math.max(0, Math.min(state.panes.length -1, paneIndex));
+            var newPane = state.panes[paneIndex];
+            var oldPane = state.panes[state.displayPaneIndex];
+
+            //attributes that control the slide-direction css classes
+            state.toRight = state.displayPaneIndex < paneIndex;
+            state.toLeft = !state.toRight;
+
+            var locals = {$state: state, $oldPane: oldPane, $newPane: newPane, $direction: state.toRight ? 'next' : 'prev'};
+            
+            return checkStep(state, 'onChange', locals)
+                .then(function(doNext){
+                    state.fired = false;
+                    return doNext && checkStep(oldPane, 'onLeave', locals);
+                })
+                .then(function(doNext){
+                    oldPane.fired = false;
+                    return doNext && checkStep(newPane, 'onEnter', locals);
+                })
+                .then(function(doMove){
+                    $timeout(function(){
+                        newPane.fired = false;
+                        if (doMove){
+                            state.displayPaneIndex = paneIndex;
+                        }
+                        return {
+                            oldPane: oldPane,
+                            newPane: newPane
+                        }
+                    })
+                    
+                });
+        }
+        /**
+         * @ngdoc method
+         * @name goToPane
+         * @methodOf ep.sliding.panel:epSlidingPanelService
+         * @public
+         * @param {string} panelId The id of the ep-sliding-panel element to control
+         * @param {string} paneid the id of the pane to go to
+         * @returns {Promise} a promise that is resolved with an object with oldPane and newPane properties
+         * @description
+         * Changes the currently displayed pane to the pane with the given id
+         */
+        function goToPane(panelId, paneId) {
+            if(paneId === undefined) {
+                paneId = panelId;
+                panelId = 'epSlidingPanel';
+            }
+            var state = getState(panelId);
+            var pane = state.panes.find(function(p){ return p.id === paneId; });
+            var paneIndex = pane ? pane.index : 0;
+            return goToPaneIndex(panelId, paneIndex);
+        }
+        /**
+         * @ngdoc method
+         * @name next
+         * @methodOf ep.sliding.panel:epSlidingPanelService
+         * @public
+         * @param {string} panelId The id of the ep-sliding-panel element to control
+         * @returns {Promise} a promise that is resolved with an object with oldPane and newPane properties
+         * @description
+         * Changes the currently displayed pane to the next pane in the control
+         */
+        function next(panelId) {
+            panelId = panelId || 'epSlidingPanel';
+            var state = getState(panelId);
+            return goToPaneIndex(panelId, state.displayPaneIndex + 1)
+        }
+        /**
+         * @ngdoc method
+         * @name prev
+         * @methodOf ep.sliding.panel:epSlidingPanelService
+         * @public
+         * @param {string} panelId (optional) The id of the ep-sliding-panel element to control
+         * @returns {Promise} a promise that is resolved with an object with oldPane and newPane properties
+         * @description
+         * Changes the currently displayed pane to the previous pane in the control
+         */
+        function prev(panelId) {
+            panelId = panelId || 'epSlidingPanel';
+            var state = getState(panelId);
+            return goToPaneIndex(panelId, state.displayPaneIndex - 1);
+        }
+        /**
+         * @ngdoc method
+         * @name enableNext
+         * @methodOf ep.sliding.panel:epSlidingPanelService
+         * @public
+         * @param {string} panelId The id of the ep-sliding-panel element to control
+         * @param {boolean} value The value to set the enabled flag to
+         
+         * @description
+         * Enables or disables the next button
+         */
+        function enableNext(panelId, value) {
+            if(value === undefined) {
+                value = panelId;
+                panelId = 'epSlidingPanel';
+            }
+            var state = getState(panelId);
+            state.nextButtonEnabled = value;
+        }
+                /**
+         * @ngdoc method
+         * @name enablePrev
+         * @methodOf ep.sliding.panel:epSlidingPanelService
+         * @public
+         * @param {string} panelId (optional) The id of the ep-sliding-panel element to control
+         * @param {boolean} value The value to set the enabled flag to
+         
+         * @description
+         * Enables or disables the prev button
+         */
+        function enablePrev(panelId, value) {
+            if(value === undefined) {
+                value = panelId;
+                panelId = 'epSlidingPanel';
+            }
+            var state = getState(panelId);
+            state.prevButtonEnabled = value;
+        }
+                /**
+         * @ngdoc method
+         * @name enableFinish
+         * @methodOf ep.sliding.panel:epSlidingPanelService
+         * @public
+         * @param {string} panelId (optional)The id of the ep-sliding-panel element to control
+         * @param {boolean} value The value to set the enabled flag to
+         
+         * @description
+         * Enables or disables the finish button
+         */
+        function enableFinish(panelId, value) {
+             if(value === undefined) {
+                value = panelId;
+                panelId = 'epSlidingPanel';
+            }
+            var state = getState(panelId);
+            state.finishButtonEnabled = value;
+        }
+        /**
+         * @ngdoc method
+         * @name getState
+         * @methodOf ep.sliding.panel:epSlidingPanelService
+         * @public
+         * @param {string} panelId (optional)The id of the ep-sliding-panel element to control
+         * @returns {Object} the internal state of the ep-sliding-panel control with the given id
+         * @description
+         * Gets the internal state of the given ep-sliding-panel control.
+         */
+        function getState(panelId) {
+            return panelState[panelId];
+        }
+        /**
+         * @ngdoc method
+         * @name register
+         * @methodOf ep.sliding.panel:epSlidingPanelService
+         * @private
+         * @param {object} state The internal state to register
+         * @description
+         * For internal use only: This is used internally by the ep-sliding-panel directive
+         */
+        function register(state){
+            panelState[state.id] = state;
+        }
+        /**
+         * @ngdoc method
+         * @name unregister
+         * @methodOf ep.sliding.panel:epSlidingPanelService
+         * @private
+         * @description
+         * For internal use only: This is used internally by the ep-sliding-panel directive
+         */
+        function unregister(panelId){
+            delete panelState[panelId];
+        }
+
+        return {
+            finish: finish,
+            getState:getState,
+            goToPane: goToPane,
+            goToPaneIndex: goToPaneIndex,
+            enableNext: enableNext,
+            enablePrev: enablePrev,
+            enableFinish: enableFinish,
+            next:next,
+            prev:prev,
+            register:register,
+            unregister:unregister
+        }
+    }])
+})();
 /**
  * @ngdoc object
  * @name ep.sysconfig.config:epSysConfig
@@ -27963,6 +28370,16 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
   $templateCache.put('src/components/ep.signature/ep-signature.html',
     "<!--This is a partial for the ep-signature directive --><div id=signature_parent style=\"min-height: 100px\"><div id=signature style=\"background-color: #ffffffff\"></div></div><div class=row><div class=col-xs-3><button id=clearButton class=\"btn btn-primary\" ng-disabled=!isEnabled tabindex=-1 ng-click=reset()>Clear</button></div><div class=\"col-xs-6 text-center\"><strong ng-bind=acknowledgeText></strong></div><div class=col-xs-3><button ng-click=accept() tabindex=-1 type=submit id=saveButton ng-disabled=\"!isEnabled || !acceptIsEnabled\" class=\"btn btn-success pull-right\">Accept</button></div></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.sliding.panel/ep-pane.html',
+    "<div ng-if=\"state.displayPaneIndex === pane.index\" class=ep-sliding-pane ng-class=\"{'toLeft': state.toLeft, 'toRight': state.toRight}\" ng-transclude></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.sliding.panel/ep-sliding-panel.html',
+    "<div class=ep-sliding-panel><div ng-transclude></div><div class=\"navbar navbar-fixed-bottom ep-pad-all-10\"><span class=pull-right><button type=button class=\"btn btn-info btn-med btn-round\" ng-click=prev() ng-disabled=!state.prevButtonEnabled ng-hide=\"state.displayPaneIndex === 0\"><i class=\"fa-fw fa fa-lg fa-arrow-left ep-padding-right\"></i></button> <button type=button class=\"btn btn-info btn-med btn-round\" ng-click=next() ng-disabled=!state.nextButtonEnabled ng-hide=\"state.displayPaneIndex === state.panes.length -1\"><i class=\"fa-fw fa fa-lg fa-arrow-right ep-padding-right\"></i></button> <button type=button class=\"btn btn-success btn-med btn-round\" ng-click=finish() ng-disabled=!state.finishButtonEnabled ng-hide=\"state.displayPaneIndex !== state.panes.length -1\"><i class=\"fa-fw fa fa-lg fa-check ep-padding-right\"></i></button></span></div></div>"
   );
 
 
