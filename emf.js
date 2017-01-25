@@ -24328,6 +24328,12 @@ angular.module('ep.signature').directive('epSignature',
 (function(){
     'use strict';
     angular.module('ep.sliding.panel')
+    /**
+    * @ngdoc factory
+    * @name ep.sliding.panel.factory:epSlidingPanelService
+    * @description
+    * Encapsulates the sliding panel with simple wizard-like functionality.
+    */
     .factory('epSlidingPanelService', /*ngInject*/['$timeout', '$q', function($timeout, $q){
         var panelState = {};
         function checkStep(owner, stepName, locals){
