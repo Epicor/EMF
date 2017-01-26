@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.459 built: 25-01-2017
+ * version:1.0.10-dev.459 built: 26-01-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.459","built":"2017-01-25"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.459","built":"2017-01-26"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -578,7 +578,7 @@ angular.module('ep.signature', [
      * @description
      * Encapsulates the sliding panel with simple wizard-like functionality.
      */
-    angular.module('ep.sliding.panel', []);
+    angular.module('ep.sliding.panel', ['ngAnimate']);
 })();
 /**
  * @ngdoc overview
@@ -24329,12 +24329,12 @@ angular.module('ep.signature').directive('epSignature',
     'use strict';
     angular.module('ep.sliding.panel')
     /**
-    * @ngdoc factory
-    * @name ep.sliding.panel.factory:epSlidingPanelService
+    * @ngdoc service
+    * @name ep.sliding.panel.service:epSlidingPanelService
     * @description
     * Encapsulates the sliding panel with simple wizard-like functionality.
     */
-    .factory('epSlidingPanelService', /*ngInject*/['$timeout', '$q', function($timeout, $q){
+    .service('epSlidingPanelService', /*ngInject*/['$timeout', '$q', function($timeout, $q){
         var panelState = {};
         function checkStep(owner, stepName, locals){
             var deferred = $q.defer();
@@ -24359,7 +24359,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name finish
-         * @methodOf ep.sliding.panel.factory:epSlidingPanelService
+         * @methodOf ep.sliding.panel.service:epSlidingPanelService
          * @public
          * @param {string} panelId (optional) The id of the ep-sliding-panel element to control
          * @returns {Promise} a promise that is resolved with an object with oldPane and newPane properties
@@ -24383,7 +24383,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name goToPaneIndex
-         * @methodOf ep.sliding.panel.factory:epSlidingPanelService
+         * @methodOf ep.sliding.panel.service:epSlidingPanelService
          * @public
          * @param {string} panelId (optional) The id of the ep-sliding-panel element to control
          * @param {number} paneIndex the index of the pane to go to
@@ -24434,7 +24434,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name goToPane
-         * @methodOf ep.sliding.panel.factory:epSlidingPanelService
+         * @methodOf ep.sliding.panel.service:epSlidingPanelService
          * @public
          * @param {string} panelId The id of the ep-sliding-panel element to control
          * @param {string} paneid the id of the pane to go to
@@ -24455,7 +24455,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name next
-         * @methodOf ep.sliding.panel.factory:epSlidingPanelService
+         * @methodOf ep.sliding.panel.service:epSlidingPanelService
          * @public
          * @param {string} panelId The id of the ep-sliding-panel element to control
          * @returns {Promise} a promise that is resolved with an object with oldPane and newPane properties
@@ -24470,7 +24470,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name prev
-         * @methodOf ep.sliding.panel.factory:epSlidingPanelService
+         * @methodOf ep.sliding.panel.service:epSlidingPanelService
          * @public
          * @param {string} panelId (optional) The id of the ep-sliding-panel element to control
          * @returns {Promise} a promise that is resolved with an object with oldPane and newPane properties
@@ -24485,7 +24485,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name enableNext
-         * @methodOf ep.sliding.panel.factory:epSlidingPanelService
+         * @methodOf ep.sliding.panel.service:epSlidingPanelService
          * @public
          * @param {string} panelId The id of the ep-sliding-panel element to control
          * @param {boolean} value The value to set the enabled flag to
@@ -24504,7 +24504,7 @@ angular.module('ep.signature').directive('epSignature',
                 /**
          * @ngdoc method
          * @name enablePrev
-         * @methodOf ep.sliding.panel.factory:epSlidingPanelService
+         * @methodOf ep.sliding.panel.service:epSlidingPanelService
          * @public
          * @param {string} panelId (optional) The id of the ep-sliding-panel element to control
          * @param {boolean} value The value to set the enabled flag to
@@ -24523,7 +24523,7 @@ angular.module('ep.signature').directive('epSignature',
                 /**
          * @ngdoc method
          * @name enableFinish
-         * @methodOf ep.sliding.panel.factory:epSlidingPanelService
+         * @methodOf ep.sliding.panel.service:epSlidingPanelService
          * @public
          * @param {string} panelId (optional)The id of the ep-sliding-panel element to control
          * @param {boolean} value The value to set the enabled flag to
@@ -24542,7 +24542,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name getState
-         * @methodOf ep.sliding.panel.factory:epSlidingPanelService
+         * @methodOf ep.sliding.panel.service:epSlidingPanelService
          * @public
          * @param {string} panelId (optional)The id of the ep-sliding-panel element to control
          * @returns {Object} the internal state of the ep-sliding-panel control with the given id
@@ -24555,7 +24555,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name register
-         * @methodOf ep.sliding.panel.factory:epSlidingPanelService
+         * @methodOf ep.sliding.panel.service:epSlidingPanelService
          * @private
          * @param {object} state The internal state to register
          * @description
@@ -24567,7 +24567,7 @@ angular.module('ep.signature').directive('epSignature',
         /**
          * @ngdoc method
          * @name unregister
-         * @methodOf ep.sliding.panel.factory:epSlidingPanelService
+         * @methodOf ep.sliding.panel.service:epSlidingPanelService
          * @private
          * @description
          * For internal use only: This is used internally by the ep-sliding-panel directive
@@ -28542,7 +28542,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.sliding.panel/ep-sliding-panel.html',
-    "<div class=ep-sliding-panel><div ng-transclude></div><div class=\"navbar navbar-fixed-bottom ep-pad-all-10\"><span class=pull-right><button type=button class=\"btn btn-info btn-med btn-round\" ng-click=prev() ng-disabled=!state.prevButtonEnabled ng-hide=\"state.displayPaneIndex === 0\"><i class=\"fa-fw fa fa-lg fa-arrow-left ep-padding-right\"></i></button> <button type=button class=\"btn btn-info btn-med btn-round\" ng-click=next() ng-disabled=!state.nextButtonEnabled ng-hide=\"state.displayPaneIndex === state.panes.length -1\"><i class=\"fa-fw fa fa-lg fa-arrow-right ep-padding-right\"></i></button> <button type=button class=\"btn btn-success btn-med btn-round\" ng-click=finish() ng-disabled=!state.finishButtonEnabled ng-hide=\"state.displayPaneIndex !== state.panes.length -1\"><i class=\"fa-fw fa fa-lg fa-check ep-padding-right\"></i></button></span></div></div>"
+    "<div class=ep-sliding-panel ng-swipe-left=\"state.displayPaneIndex !== state.panes.length -1 && state.nextButtonEnabled && next()\" ng-swipe-right=\"state.displayPaneIndex !== 0 && state.prevButtonEnabled && prev()\"><div ng-transclude></div><div class=\"navbar navbar-fixed-bottom ep-pad-all-10\"><span class=pull-right><button type=button class=\"btn btn-info btn-med btn-round\" ng-click=prev() ng-disabled=!state.prevButtonEnabled ng-hide=\"state.displayPaneIndex === 0\"><i class=\"fa-fw fa fa-lg fa-arrow-left ep-padding-right\"></i></button> <button type=button class=\"btn btn-info btn-med btn-round\" ng-click=next() ng-disabled=!state.nextButtonEnabled ng-hide=\"state.displayPaneIndex === state.panes.length -1\"><i class=\"fa-fw fa fa-lg fa-arrow-right ep-padding-right\"></i></button> <button type=button class=\"btn btn-success btn-med btn-round\" ng-click=finish() ng-disabled=!state.finishButtonEnabled ng-hide=\"state.displayPaneIndex !== state.panes.length -1\"><i class=\"fa-fw fa fa-lg fa-check ep-padding-right\"></i></button></span></div></div>"
   );
 
 

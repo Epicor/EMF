@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.459 built: 25-01-2017
+ * version:1.0.10-dev.459 built: 26-01-2017
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -3276,6 +3276,47 @@ VIEW CONTAINER [ep-view-container]
   opacity: 0;
 }
 
+
+.ep-sliding-panel {
+  background-color: transparent;
+  position: relative;
+}
+.ep-sliding-pane {
+  width: 100%;
+  position: absolute;
+  background-color: transparent;
+}
+.ep-sliding-pane.ng-animate {
+  -webkit-transition: 250ms cubic-bezier(0.25, 0.25, 0.75, 0.75) all;
+  -moz-transition: 250ms cubic-bezier(0.25, 0.25, 0.75, 0.75) all;
+  -ms-transition: 250ms cubic-bezier(0.25, 0.25, 0.75, 0.75) all;
+  -o-transition: 250ms cubic-bezier(0.25, 0.25, 0.75, 0.75) all;
+  transition: 250ms cubic-bezier(0.25, 0.25, 0.75, 0.75) all;
+}
+.ep-sliding-pane.ng-enter.toLeft {
+  left: -100%;
+}
+.ep-sliding-pane.ng-enter-active.toLeft {
+  left: 0;
+}
+.ep-sliding-pane.ng-leave.toLeft {
+  left: 0;
+}
+.ep-sliding-pane.ng-leave-active.toLeft {
+  left: 100%;
+}
+.ep-sliding-pane.ng-enter.toRight {
+  left: 100%;
+}
+.ep-sliding-pane.ng-enter-active.toRight {
+  left: 0;
+}
+.ep-sliding-pane.ng-leave.toRight {
+  left: 0;
+}
+.ep-sliding-pane.ng-leave-active.toRight {
+  left: -100%;
+}
 
 .ep-tabbar .ep-tabbar-contents {
   text-align: center;
