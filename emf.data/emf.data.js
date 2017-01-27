@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.462 built: 26-01-2017
+ * version:1.0.10-dev.463 built: 26-01-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.462","built":"2017-01-26"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.463","built":"2017-01-26"};
 
 (function() {
     'use strict';
@@ -2717,6 +2717,7 @@ angular.module('ep.binding').
                 state = {
                     trackBufferRecord: trackBufferRecord,
                     scope: scope,
+                    binding: binding,
                     epBinding: epBindingService.parseBinding(binding),
                     bi: {}
                 };
@@ -2799,15 +2800,40 @@ angular.module('ep.binding').
                 }
 
                 var view = epTransactionFactory.current().view(state.epBinding.view);
-                if (!view) {
+                if (!watches.main) {
                     watches.main = $rootScope.$on('EP_BINDING_VIEW_ADDED', function(event, data) {
                         if (data.viewId === state.epBinding.view) {
-                            onViewInit(epTransactionFactory.current().view(state.epBinding.view));
+                            if (data.action === 'RELOAD') {
+                                freeze();
+                                $timeout(function() {
+                                    init(state.binding);
+                                });
+                            } else {
+                                onViewInit(epTransactionFactory.current().view(state.epBinding.view));
+                            }
                         }
                     });
-                } else {
+                }
+                if (view) {
                     onViewInit(view);
                 }
+
+                //if (!view) {
+                //    watches.main = $rootScope.$on('EP_BINDING_VIEW_ADDED', function(event, data) {
+                //        if (data.viewId === state.epBinding.view) {
+                //            if (data.action === 'RELOAD') {
+                //                freeze();
+                //                $timeout(function() {
+                //                    init(state.binding);
+                //                });
+                //            } else {
+                //                onViewInit(epTransactionFactory.current().view(state.epBinding.view));
+                //            }
+                //        }
+                //    });
+                //} else {
+                //    onViewInit(view);
+                //}
 
                 watches.onViewRowChanged = $rootScope.$on('EP_BINDING_VIEW_ROW_CHANGED', function(event, data) {
                     if (data.viewId === state.epBinding.view) {
@@ -3060,7 +3086,11 @@ angular.module('ep.binding').
                 });
 
                 logWatches.onViewRowChanged = $rootScope.$on('EP_BINDING_VIEW_ADDED', function(event, data) {
-                    $log.warn('[EP_BINDING_VIEW_ADDED] ViewId:' + data.viewId);
+                    var v = epTransactionFactory.current().view(data.viewId);
+                    var info = 'ViewId:' + data.viewId + ';Row:' + v.row() +
+                        ';Count:' + (v.data() ? v.data().length : 0) + 
+                        ';Action:' + data.action;
+                    $log.warn('[EP_BINDING_VIEW_ADDED] ' + info);
                 });
                 logWatches.onViewRowChanged = $rootScope.$on('EP_BINDING_VIEW_ROW_CHANGED', function(event, data) {
                     $log.warn('[EP_BINDING_VIEW_ROW_CHANGED] ViewId:' + data.viewId + ';Row:' + data.view.row() +
@@ -3116,20 +3146,27 @@ angular.module('ep.binding').
     /*@ngInject*/
     function epDataViewFactory($rootScope, epUtilsService) {
         var factoryInstance = function(viewId, viewData) {
-            var state = {};
+            var state = {
+                userData: {}
+            };
+
             var _view = this;
 
-            function init(_id, _data) {
+            function init(_id, _data, isReload) {
                 state.id = _id;
                 state.data = _data;
                 state.row = state.data && state.data.length ? 0 : -1;
+                state.original = epUtilsService.merge([], state.data);
+                resetState();
+            }
+
+            function resetState() {
                 state.isDirty = false;
-                state.modified = Array(state.data.length);
                 state.modifiedRows = {};
                 state.addedRows = {};
                 state.hasModified = false;
                 state.hasAdded = false;
-                state.original = epUtilsService.merge([], state.data);
+                state.modified = Array(state.data.length);
             }
 
             /**
@@ -3168,7 +3205,7 @@ angular.module('ep.binding').
              * @returns {object} current data row object
              */
             function dataRow() {
-                if (state.row < 0) {
+                if ((state.row < 0) || !state.data || (state.data.length < 1) || (state.row > state.data.length)) {
                     return null;
                 }
                 return state.data[state.row];
@@ -3325,15 +3362,6 @@ angular.module('ep.binding').
                 });
             }
 
-            function resetState() {
-                state.isDirty = false;
-                state.modifiedRows = {};
-                state.addedRows = {};
-                state.hasModified = false;
-                state.hasAdded = false;
-                state.modified = Array(state.data.length);
-            }
-
             /**
              * @ngdoc method
              * @name hasModified
@@ -3475,11 +3503,44 @@ angular.module('ep.binding').
                 return undefined;
             }
 
+            /**
+             * @ngdoc method
+             * @name userData
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * Get user data
+             * @returns {object} user data
+             */
+            function userData(data, merge) {
+                if (data) {
+                    if (merge === true) {
+                        epUtilsService.merge(data, state.userData);
+                    } else {
+                        state.userData = data;
+                    }
+                }
+                return state.userData;
+            }
+
+            /**
+             * @ngdoc method
+             * @name reload
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * Re-initialize with new data
+             */
+            function reload(data) {
+                init(this.id(), data, true);
+            }
+
             init(viewId, viewData);
 
             return {
                 __state: state, //internal usage only
                 id: id,
+                reload: reload,
                 data: data,
                 dataRow: dataRow,
                 row: row,
@@ -3496,7 +3557,8 @@ angular.module('ep.binding').
                 rowModified: rowModified,
                 findRow: findRow,
                 rollback: rollback,
-                commit: commit
+                commit: commit,
+                userData: userData
             };
 
         }
@@ -3516,12 +3578,12 @@ angular.module('ep.binding').
      * @example
      *
      */
-    epTransactionFactory.$inject = ['$rootScope', 'epDataViewFactory'];
+    epTransactionFactory.$inject = ['$rootScope', 'epDataViewFactory', 'epBindingMetadataService'];
     angular.module('ep.binding').
         factory('epTransactionFactory', epTransactionFactory);
 
     /*@ngInject*/
-    function epTransactionFactory($rootScope, epDataViewFactory) {
+    function epTransactionFactory($rootScope, epDataViewFactory, epBindingMetadataService) {
         var factoryInstance = function(trxId) {
             var _id = trxId;
             var _views = {};
@@ -3548,9 +3610,17 @@ angular.module('ep.binding').
              */
             function add(id, data) {
                 //To do check if exists already
-                var v = _views[id] = new epDataViewFactory(id, data);
+                var action = 'CREATE';
+                var v = this.view(id); 
+                if (v) {
+                    v.reload(data);
+                    action = 'RELOAD';
+                } else {
+                    v = _views[id] = new epDataViewFactory(id, data);
+                }
                 $rootScope.$emit('EP_BINDING_VIEW_ADDED', {
-                    viewId: id
+                    viewId: id,
+                    action: action
                 });
                 if (v.data() && v.data().length) {
                     //TO DO: call api
@@ -3606,9 +3676,45 @@ angular.module('ep.binding').
                 return ret;
             }
 
+            /**
+             * @ngdoc method
+             * @name clone
+             * @methodOf ep.binding.factory:epTransactionFactory
+             * @public
+             * @description
+             * Clone an existing view to another view
+             * @param {string} viewId - existing view id
+             * @param {string} cloneViewId - cloned view id
+             * @param {string} options - by default clone without data
+             *    'data' : 'data'/'record'/'none'
+             */
+            function clone(viewId, cloneViewId, options) {
+                var v = this.view(viewId);
+                if (v) {
+                    if (!options) {
+                        options = {};
+                    }
+                    if (options.data === 'data') {
+                        this.add(cloneViewId, v.data());
+                    } else if (options.data === 'record') {
+                        var dr = v.dataRow();
+                        this.add(cloneViewId, dr ? [dr] : []);
+                    } else if (options.data === 'none') {
+                        this.add(cloneViewId, []);
+                    } else {
+                        this.add(cloneViewId, []);
+                    }
+                    var meta = epBindingMetadataService.get(viewId);
+                    if (meta) {
+                        epBindingMetadataService.addAlias(viewId, cloneViewId);
+                    }
+                }
+            }
+
             return {
                 id: id,
                 add: add,
+                clone: clone,
                 //remove: remove,
                 view: view,
                 views: views,
