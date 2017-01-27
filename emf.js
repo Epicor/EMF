@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.461 built: 26-01-2017
+ * version:1.0.10-dev.462 built: 26-01-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.461","built":"2017-01-26"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.462","built":"2017-01-26"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -23783,6 +23783,10 @@ angular.module('ep.shell').service('epSidebarService', [
                                 if (!def.type) {
                                     def.type = 'button';
                                 }
+                                if (def.persist === undefined) {
+                                    //The default is for buttons not to persist when changing views
+                                    def.persist = false;
+                                }
                                 if (scope && def.type === 'button') {
                                     bindButtonAttributes(scope, def);
                                 } else if (scope && def.type === 'select' && def.options && def.options.length) {
@@ -23810,6 +23814,17 @@ angular.module('ep.shell').service('epSidebarService', [
                                 return def;
                             });
 
+                            //First lets remove all non-persisting buttons defined on views
+                            var btns = epShellService.getNavbarButtons();
+                            var deleteIds = btns.filter(function(btn) {
+                                return btn.persist !== undefined && btn.persist === false;
+                            }).map(function(btn) {
+                                return btn.id;
+                            });
+                            if (deleteIds.length) {
+                                epShellService.deleteNavbarButton(deleteIds);
+                            }
+                            //Now lets add the new buttons defined on views
                             if (buttonDefs.length) {
                                 epShellService.updateNavbarButtons(buttonDefs);
                             }

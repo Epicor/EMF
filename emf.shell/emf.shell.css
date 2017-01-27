@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.461 built: 26-01-2017
+ * version:1.0.10-dev.462 built: 26-01-2017
 */
 .ep-background-img {
   width: 100%;
@@ -11,8 +11,14 @@
   height: 100%;
   opacity: .4;
 }
+.ep-background-img-medium {
+  width: 100%;
+  height: 100%;
+  opacity: .7;
+}
 img.ep-background-img,
-img.ep-background-img-lightest {
+img.ep-background-img-lightest,
+img.ep-background-img-medium {
   z-index: -1;
   /* Ensure div tag stays behind content; -999 might work, too. */
   /* Set rules to fill background */
@@ -44,11 +50,20 @@ img.ep-background-img-lightest {
 .ep-transparent-lighter {
   background: rgba(0, 0, 0, 0.3) !important;
 }
-.ep-transparent-normal {
+.ep-transparent {
   background: rgba(0, 0, 0, 0.5) !important;
 }
 .ep-transparent-darker {
   background: rgba(0, 0, 0, 0.7) !important;
+}
+.ep-white {
+  color: white !important;
+}
+.ep-red {
+  color: red !important;
+}
+.ep-black {
+  color: black !important;
 }
 .btn-round {
   width: 40px !important;
@@ -407,6 +422,9 @@ img.ep-background-img-lightest {
   -webkit-transform: translate3d(-50%, 0, 0);
   transform: translate3d(-50%, 0, 0);
   margin-left: 50%;
+}
+.ep-underline-none {
+  text-decoration: none;
 }
 .ep-align-hleft {
   float: left;
