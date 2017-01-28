@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.465 built: 27-01-2017
+ * version:1.0.10-dev.466 built: 27-01-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.465","built":"2017-01-27"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.466","built":"2017-01-27"};
 
 (function() {
     'use strict';
@@ -1013,21 +1013,20 @@ angular.module('ep.token').
     }
 }());
 
-/**
- * @ngdoc overview
- * @name ep.data.model:epDataModelService
- * @description
- * # A simple service to manage the transactional data store.
- *
- * Main module of the application.
- */
+
 
 (function() {
     'use strict';
 
     angular.module('ep.data.model')
         //Application Initialization
-        .factory('epDataModelService', [
+        /**
+         * @ngdoc service
+         * @name ep.data.model:epDataModelService
+         * @description
+         * # A simple service to manage the transactional data store.
+        */
+        .service('epDataModelService', [
             'epUtilsService',
             function(epUtilsService) {
 
@@ -1968,22 +1967,32 @@ angular.module('ep.token').
                     epBinding: {},
                     label: scope.label || '',
                     requiredFlag: false,
-                    column: {}
+                    metaColumn: {}
                 };
 
-                scope.$watch('epBinding', function(newValue, oldValue) {
-                    if (newValue !== undefined) {
-                        scope.state.epBinding = epBindingService.parseBinding(newValue);
+                scope.setBinding = function(binding) {
+                    var epb = scope.state.epBinding = epBindingService.parseBinding(binding);
+                    var meta = epBindingMetadataService.get(epb.view);
+                    if (meta && meta.columns && meta.columns[epb.column]) {
+                        scope.state.metaColumn = meta.columns[epb.column] || {};
+                    }
+                }
 
-                        var meta = epBindingMetadataService.get(scope.state.epBinding.view);
-                        if (meta && meta.columns && meta.columns[scope.state.epBinding.column]) {
-                            scope.state.column = meta.columns[scope.state.epBinding.column];
-                            scope.state.label = scope.state.column.caption || scope.label ||
-                                scope.state.epBinding.column || '';
-                            scope.state.requiredFlag = scope.state.column.required === true;
-                        }
+                scope.setLabel = function() {
+                    scope.state.label = scope.state.metaColumn.caption || scope.label || 
+                        scope.state.epBinding.column || '';
+                }
+
+                scope.$watch('epBinding', function(newValue, oldValue) {
+                    if (newValue !== undefined && newValue !== oldValue) {
+                        scope.setBinding(newValue);
                     }
                 });
+
+                if (scope.epBinding) {
+                    scope.setBinding(scope.epBinding);
+                }
+                scope.setLabel();
             }
         }
     }
@@ -2543,7 +2552,8 @@ angular.module('ep.binding').
         }
 
         function addAlias(id, alias) {
-            store.aliases[alias] = id;
+            //if "id" is an alias itself, point to original id
+            store.aliases[alias] = store.aliases[id] || id;
         }
 
         function data(dt) {
@@ -3711,11 +3721,38 @@ angular.module('ep.binding').
                 }
             }
 
+            /**
+             * @ngdoc method
+             * @name remove
+             * @methodOf ep.binding.factory:epTransactionFactory
+             * @public
+             * @description
+             * remove a view by id
+             */
+            function remove(id) {
+                if (this.view(id)) {
+                    delete _views[id];
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name clear
+             * @methodOf ep.binding.factory:epTransactionFactory
+             * @public
+             * @description
+             * clear all views
+             */
+            function clear() {
+                _views = {};
+            }
+
             return {
                 id: id,
                 add: add,
                 clone: clone,
-                //remove: remove,
+                remove: remove,
+                clear: clear,
                 view: view,
                 views: views,
                 rollback: rollback
@@ -4258,7 +4295,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.binding/controls/ep-binding-label.html',
-    "<label class=\"ep-binding-label {{labelClass}}\" for={{forCtrl}}>{{state.label}}<span ng-if=\"state.requiredFlag && required !== false\" class=\"ep-required-indicator text-danger fa fa-asterisk\"></span></label>"
+    "<div class=\"ep-binding-label {{labelClass}}\"><label for={{forCtrl}}>{{state.label}}<span ng-if=\"state.requiredFlag && required !== false\" class=\"ep-required-indicator text-danger fa fa-asterisk\"></span></label></div>"
   );
 
 

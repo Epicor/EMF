@@ -1,7 +1,13 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.465 built: 27-01-2017
+ * version:1.0.10-dev.466 built: 27-01-2017
 */
+.ep-hover-none {
+  text-decoration: none !important;
+}
+.ep-border-none {
+  border: none !important;
+}
 .ep-background-img {
   width: 100%;
   height: 100%;
@@ -422,9 +428,6 @@ img.ep-background-img-medium {
   -webkit-transform: translate3d(-50%, 0, 0);
   transform: translate3d(-50%, 0, 0);
   margin-left: 50%;
-}
-.ep-underline-none {
-  text-decoration: none;
 }
 .ep-align-hleft {
   float: left;
