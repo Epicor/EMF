@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.469 built: 28-01-2017
+ * version:1.0.10-dev.470 built: 28-01-2017
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -314,9 +314,13 @@
   color: red;
 }
 
+div.ep-binding-label {
+  padding-left: 5px;
+}
 .ep-binding-label label {
   text-align: left;
   width: 100%;
+  padding-left: 0px;
 }
 .ep-binding-label.ep-label-editor {
   padding-top: 8px;
@@ -2702,8 +2706,10 @@ ep-editor-control .ep-record-editor-container.ep-is-row-editor {
 }
 .ep-editor-control .ep-record-editor-container.ep-is-row-editor .ep-editor-label {
   padding-top: 10px;
+  padding-left: 5px;
   position: absolute;
-  transform: translateX(10%);
+  /*transform: translateX(10%);*/
+  text-align: left;
 }
 
 .ep-shell .ep-shell-feedback-btn {

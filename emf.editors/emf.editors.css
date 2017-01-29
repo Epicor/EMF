@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.469 built: 28-01-2017
+ * version:1.0.10-dev.470 built: 28-01-2017
 */
 .ep-color-selector-container .btn {
   background-color: #F5F5F5;
@@ -265,6 +265,8 @@ ep-editor-control .ep-record-editor-container.ep-is-row-editor {
 }
 .ep-editor-control .ep-record-editor-container.ep-is-row-editor .ep-editor-label {
   padding-top: 10px;
+  padding-left: 5px;
   position: absolute;
-  transform: translateX(10%);
+  /*transform: translateX(10%);*/
+  text-align: left;
 }

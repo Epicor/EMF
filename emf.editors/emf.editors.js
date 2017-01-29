@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.469 built: 28-01-2017
+ * version:1.0.10-dev.470 built: 28-01-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.469","built":"2017-01-28"};
+__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.470","built":"2017-01-28"};
 
 (function() {
     'use strict';
@@ -789,6 +789,7 @@ angular.module('ep.record.editor', [
             if 'auto' or blank then editor will be detected from value
         # editorDirective {string} - directive name as in html for custom editor
         # bizType {string} - 'phone' | 'address' | 'email' | 'url' | 'password'
+        # bizTypeRight {bool} - to display biz button on the right (default is false)
         # columnIndex - data ordinal index (data array index) or property name
         # seq {int} - (optional) sequence index for ordering
         # required {bool} - is entry required
@@ -810,7 +811,8 @@ angular.module('ep.record.editor', [
         # oFormat {object}
         # maxLength {int} - set max length for string entry default is 30
         # rows {int} - set rows for multiline editor (default is 5)
-        # mode {string} - set display mode ('mini' otherwise standard)
+        # mode {string} - set display mode ('mini' otherwise standard). In 'mini' mode the margins will
+        #      be minimal and not borders
         # buttons {array} - array of button objects that conatin properties:
             text {string} - button text
             style {string} - button class
@@ -1149,7 +1151,7 @@ angular.module('ep.record.editor', [
                         href: btnHref,
                         style: btnStyle,
                         seq: 2,
-                        position: 'pre',
+                        position: col.bizTypeRight === true ? 'post': 'pre',
                     });
                 }
             }

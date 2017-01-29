@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.469 built: 28-01-2017
+ * version:1.0.10-dev.470 built: 28-01-2017
 */
 .ep-login-background {
   width: 100%;
@@ -64,9 +64,13 @@
 }
 
 
+div.ep-binding-label {
+  padding-left: 5px;
+}
 .ep-binding-label label {
   text-align: left;
   width: 100%;
+  padding-left: 0px;
 }
 .ep-binding-label.ep-label-editor {
   padding-top: 8px;
