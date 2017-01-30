@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.476 built: 30-01-2017
+ * version:1.0.10-dev.477 built: 30-01-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.476","built":"2017-01-30"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.477","built":"2017-01-30"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -4547,10 +4547,19 @@ function() {
                 footerTarget: '',
                 freezeNavButtons: false,
                 viewContainerScope: null,
-                leftToggleButtonIcon: 'fa-bars',
-                rightToggleButtonIcon: 'fa-bars',
                 viewSettings: {
-                    sidebar: {},
+                    sidebar: {
+                        left: {
+                            enabled: true,
+                            showToggleButton: true,
+                            toggleIcon: 'fa-bars'
+                        },
+                        right: {
+                            enabled: true,
+                            showToggleButton: true,
+                            toggleIcon: 'fa-bars'
+                        }
+                    },
                     small: {
                         animateViewContainer: true,
                         autoActivateSidebar: false,
@@ -4715,17 +4724,20 @@ function() {
              */
             function setCurrentModeFlags(viewScope) {
                 var mode = shellState.viewSettings[shellState.mediaMode];
+                var left = shellState.viewSettings.sidebar.left || { showToggleButton: true, enabled: false, toggleButtonIcon: 'fa-bars' };
+                var right = shellState.viewSettings.sidebar.right || { showToggleButton: true, enabled: false, toggleButtonIcon: 'fa-bars' };
+
                 mode.autoActivateSidebar = mode.autoActivateSidebar !== false;
 
-                shellState.showLeftToggleButton = (mode.showLeftToggleButton !== false) && mode.enableLeftSidebar;
-                shellState.enableLeftSidebar = mode.enableLeftSidebar;
-                shellState.showRightToggleButton = (mode.showRightToggleButton !== false) && mode.enableRightSidebar;
-                shellState.enableRightSidebar = mode.enableRightSidebar;
+                shellState.showLeftToggleButton = left.showToggleButton !== false && mode.enableLeftSidebar;
+                shellState.enableLeftSidebar = left.enabled !== false;
+                shellState.showRightToggleButton = right.showToggleButton !== false && mode.enableRightSidebar;
+                shellState.enableRightSidebar = right.enabled !== false;
                 shellState.showNavbar = mode.showNavbar;
                 shellState.showFooter = mode.showFooter;
                 shellState.showHomeButton = mode.showHomeButton;
-                shellState.leftToggleButtonIcon = mode.leftToggleButtonIcon || 'fa-bars';
-                shellState.rightToggleButtonIcon = mode.rightToggleButtonIcon || 'fa-bars';
+                shellState.leftToggleButtonIcon = left.toggleButtonIcon || 'fa-bars';
+                shellState.rightToggleButtonIcon = right.toggleButtonIcon || 'fa-bars';
                 shellState.showBrand = mode.showBrand;
                 shellState.centerBrand = mode.centerBrand;
                 shellState.autoActivateSidebar = mode.autoActivateSidebar;
