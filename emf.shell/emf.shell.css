@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.474 built: 29-01-2017
+ * version:1.0.10-dev.475 built: 29-01-2017
 */
 .ep-hover-none {
   text-decoration: none !important;
@@ -53,14 +53,23 @@ img.ep-background-img-medium {
   top: 0;
   height: 100%;
 }
-.ep-transparent-lighter {
+.ep-transparent-black-lighter {
   background: rgba(0, 0, 0, 0.3) !important;
 }
-.ep-transparent {
+.ep-transparent-black {
   background: rgba(0, 0, 0, 0.5) !important;
 }
-.ep-transparent-darker {
+.ep-transparent-black-darker {
   background: rgba(0, 0, 0, 0.7) !important;
+}
+.ep-transparent-white-lighter {
+  background: rgba(255, 255, 255, 0.3) !important;
+}
+.ep-transparent-white {
+  background: rgba(255, 255, 255, 0.5) !important;
+}
+.ep-transparent-white-darker {
+  background: rgba(255, 255, 255, 0.7) !important;
 }
 .ep-white {
   color: white !important;
