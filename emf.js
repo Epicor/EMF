@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.479 built: 30-01-2017
+ * version:1.0.10-dev.480 built: 31-01-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.479","built":"2017-01-30"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.480","built":"2017-01-31"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -26606,6 +26606,24 @@ angular.module('ep.signature').directive('epSignature',
                 });
             }
 
+            function deleteCall(path) {
+                var tkn = epTokenService.getToken();
+                if (!tkn) {
+                    return;
+                }
+
+                return $http({
+                    method: 'DELETE',
+                    dataType: 'json',
+                    headers: {
+                        'Authorization': 'Bearer ' + tkn.token.AccessToken,
+                        'Content-Type': 'application/json',
+                        'Accept': 'application/json'
+                    },
+                    url: serverUrl + path,
+                });
+            }
+
             function patch(svc, data) {
                 var tkn = epTokenService.getToken();
                 if (!tkn || !serverUrl) {
@@ -26661,6 +26679,9 @@ angular.module('ep.signature').directive('epSignature',
                 },
                 post: function(path, data) {
                     return postCall('POST', path, data);
+                },
+                remove: function(path) {
+                    return deleteCall(path);
                 },
                 patch: patch,
                 getXML: getXML
