@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.481 built: 31-01-2017
+ * version:1.0.10-dev.482 built: 31-01-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.481","built":"2017-01-31"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.482","built":"2017-01-31"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -23728,9 +23728,24 @@ angular.module('ep.shell').service('epSidebarService', [
  * can be used to control the behavior of the view declaratively.
  *
  * @property {object} sidebarsettings:object
- *  This property will allow you to designate a left or right sidebar template URL.
+ *  This property will allow you to designate a left or right sidebar template URL, enabled property, and toggleButtonIcon
  *  <br/><br/>
- *  sidebarsettings='{"left": {"templateUrl": "/home-lsidebar.html"}, "right": {"templateUrl": "/home-rsidebar.html"}'
+ *  sidebarsettings='{"left": {"templateUrl": "/home-lsidebar.html", "enabled": true, "toggleButtonIcon": "fa-ellipses"}, "right": {"templateUrl": "/home-rsidebar.html"}'
+
+ * @property {object} sidebarsettings:templateUrl:string
+ *  This property will allow you to declaratively set the template to use for the left/right sidebars
+ *  <br/><br/>
+ *  sidebarsettings='{"left": {"templateUrl": "/home-lsidebar.html", "enabled": true, "toggleButtonIcon": "fa-ellipses"}, "right": {"templateUrl": "/home-rsidebar.html"}'
+
+ * @property {object} sidebarsettings:toggleButtonIcon:string
+ *  This property will allow you to declaratively set the icon for the left/right sidebar toggle buttons. Defaults to "fa-bars".
+ *  <br/><br/>
+ *  sidebarsettings='{"left": {"templateUrl": "/home-lsidebar.html", "enabled": true, "toggleButtonIcon": "fa-ellipses"}, "right": {"templateUrl": "/home-rsidebar.html"}'
+
+ * @property {object} sidebarsettings:enabled:boolean
+ *  This property will allow you to declaratively enable and disable the left and right sidebars. Defaults to true.
+ *  <br/><br/>
+ *  sidebarsettings='{"left": {"templateUrl": "/home-lsidebar.html", "enabled": true, "toggleButtonIcon": "fa-ellipses"}, "right": {"templateUrl": "/home-rsidebar.html"}'
 
  * @property {object} smallmodesettings:object
  *  This property will allow you to designate options on how the view behaves in small mode (800px or below).
