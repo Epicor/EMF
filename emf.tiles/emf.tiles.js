@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.487 built: 01-02-2017
+ * version:1.0.10-dev.488 built: 02-02-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["tiles"] = {"libName":"tiles","version":"1.0.10-dev.487","built":"2017-02-01"};
+__ep_build_info["tiles"] = {"libName":"tiles","version":"1.0.10-dev.488","built":"2017-02-02"};
 
 'use strict';
 /**
