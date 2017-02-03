@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.491 built: 02-02-2017
+ * version:1.0.10-dev.492 built: 03-02-2017
 */
 .card {
   position: relative;
@@ -82,7 +82,7 @@
   height: 100%;
   position: absolute;
   width: 100%;
-  padding-left: 5%;
+  padding-left: 8px;
   padding-top: 90px;
   top: 0;
 }
@@ -180,7 +180,7 @@
   background-color: #f0f0f0;
   height: 40px;
   padding-top: 10px;
-  padding-left: 5%;
+  padding-left: 8px;
   position: fixed;
   z-index: 1;
   width: 100%;

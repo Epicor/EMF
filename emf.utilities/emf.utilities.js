@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.491 built: 02-02-2017
+ * version:1.0.10-dev.492 built: 03-02-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.10-dev.491","built":"2017-02-02"};
+__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.10-dev.492","built":"2017-02-03"};
 
 (function() {
   'use strict';
@@ -1264,6 +1264,7 @@ angular.module('ep.signature').directive('epSignature',
             link: function(scope) {
                 scope.clearSearch = function() {
                     scope.searchBy = '';
+                    scope.showRemove = false;
                 }
             }
         };
@@ -1943,7 +1944,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.filter.list/filter_list.html',
-    "<div class=\"ep-search-list-container vertical-align\"><div class=\"container ep-search-container\"><div class=\"row ep-search-row\"><div id=custom-search-input class=col-xs-10><div class=\"input-group col-md-12\"><span class=input-group-btn><button id=searchbutton class=\"btn btn-danger ep-search-button\" type=button><span class=\"fa fa-search\"></span></button></span> <input id=searchinput class=\"search-query form-control\" ng-model=searchBy placeholder=Search ng-change=\"changeHandler(searchBy)\"> <span class=input-group-btn><button id=searchclear class=\"btn btn-danger ep-close-button\" type=button ng-click=clearSearch()><span class=\"fa fa-remove\"></span></button></span></div></div><div class=\"input-group col-xs-2 ep-search-result-container\"><div>{{count}}</div><div>Results</div></div></div></div></div>"
+    "<div class=ep-search-list-container><div class=row><div class=col-xs-10><span class=\"fa fa-search ep-pad-left-10\"></span> <input id=searchinput class=\"search-query form-control\" ng-focus=\"showRemove=true\" ng-model=searchBy placeholder=Search ng-change=\"changeHandler(searchBy)\"> <span class=\"fa fa-remove text-danger\" ng-if=showRemove ng-click=clearSearch()></span></div><div class=\"col-xs-2 result-count-container text-center\"><div>{{count}}</div><div>Results</div></div></div></div>"
   );
 
 }]);
