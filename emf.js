@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.501 built: 05-02-2017
+ * version:1.0.10-dev.502 built: 05-02-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.501","built":"2017-02-05"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.502","built":"2017-02-05"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -12004,11 +12004,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
             var url = 'BaqSvc/' + baqId;
 
-            var d = data;
+            var d = angular.copy(data);
             if (options.convertToJsonType !== false) {
                 var meta = epBindingMetadataService.get(baqId);
                 if (meta && meta.columns) {
-                    d = angular.copy(data);
                     angular.forEach(Object.keys(d), function(key) {
                         var col = meta.columns[key];
                         if (col && col.dataType === 'decimal' && !angular.isString(d[key])) {
@@ -12018,6 +12017,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         }
                     });
                 }
+            }
+
+            if (d.hasOwnProperty('$$hashKey')) {
+                delete d.$$hashKey;
             }
 
             var promise = epErpRestService.patch(url, d);
@@ -12321,7 +12324,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     });
                 }
             }
-            if (d.$$hashKey) {
+            if (d.hasOwnProperty('$$hashKey')) {
                 delete d.$$hashKey;
             }
 
