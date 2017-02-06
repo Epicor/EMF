@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.504 built: 06-02-2017
+ * version:1.0.10-dev.505 built: 06-02-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.504","built":"2017-02-06"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.505","built":"2017-02-06"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -3230,6 +3230,10 @@ function() {
  *          templateUrl: 'src/components/ep.modaldialog/modals/modaldialog-error.html',
  *          title: 'This is a custom dialog (error template)', status: 'warning', message: 'Hello world' });
  *
+ *  # Show modal form
+ *       epModalDialogService.showModalForm({
+ *          templateUrl: 'src/components/ep.modaldialog/modals/modaldialog-error.html',
+ *          title: 'This is a custom dialog (error template)', status: 'warning', message: 'Hello world' });
  */
 (function() {
     'use strict';
@@ -3243,12 +3247,12 @@ function() {
      * @example
      *
      */
-    epModalDialogService.$inject = ['$sce', '$uibModal', '$compile', '$rootScope', '$timeout', '$interval', '$injector', 'epLocalStorageService'];
+    epModalDialogService.$inject = ['$sce', '$uibModal', '$uibModalStack', '$compile', '$rootScope', '$timeout', '$interval', '$injector', 'epLocalStorageService'];
     angular.module('ep.modaldialog').service('epModalDialogService', epModalDialogService);
 
     /*@ngInject*/
-    function epModalDialogService($sce, $uibModal, $compile, $rootScope, $timeout, $interval, $injector,
-                                  epLocalStorageService) {
+    function epModalDialogService($sce, $uibModal, $uibModalStack, $compile, $rootScope, $timeout,
+        $interval, $injector, epLocalStorageService) {
 
         /**
          * @private
@@ -3276,14 +3280,18 @@ function() {
         var dialogState = {
             isVisible: false,
             config: {},
-            //timerPromise: null,
-            //autoClosePromise: null,
+            isModal: false,
             paneScope: null
         };
         angular.copy(defaultConfig, dialogState.config);
 
         // @private
-        var currentModalInstance = null;
+        // list of open dialogs
+        var dialogs = [];
+
+        // @private
+        // current open dialog
+        var currentDialog = null;
 
         // @private
         // prefix for dialogs RememberMe option. Must end with a dot '.'
@@ -3462,6 +3470,42 @@ function() {
 
         /**
          * @ngdoc method
+         * @name showModalForm
+         * @methodOf ep.modaldialog.factory:epModalDialogService
+         * @public
+         * @description
+         * Shows a modal form
+         * @param {object} options - optional settings as follows:
+         * <pre>
+         *      all options from showCustomDialog() and additional:
+         *      title - the title (header)
+         *      icon - font awesome icon class
+         *      fnDefaultAction - function applied to default button if buttons are not supplied or isDefault = true
+         *      fnCancelAction - function to be fired on Cancel button if button has isCancel = true
+         *      btnBlock - block the buttons
+         * </pre>
+         * @param {object} ex - Error object thrown by javascript. Optional - not used for server exceptions
+         */
+        function showModalForm(options) {
+            var cfg = {
+                stackable: true,
+                kind: 'modal-form',
+                title: 'Modal Form',
+                icon: '',
+                size: 'fullscreen',
+                closeButton: true,
+                buttons: [{
+                    id: 'btnOk', text: 'Ok', isDefault: true, type: 'primary'
+                }]
+            };
+
+            copyProperties(options, cfg);
+
+            return showCustomDialog(cfg).result;
+        }
+
+        /**
+         * @ngdoc method
          * @name showMessageBox
          * @methodOf ep.modaldialog.factory:epModalDialogService
          * @public
@@ -3554,17 +3598,24 @@ function() {
          *      closeButton - set true to display close button (default false)
          *      windowClass - set class to the dialog window
          *      btnBlock - block the buttons
+         *      stackable - if true this dialog is stackable (other dialogs can be hosted in it)
          * </pre>
          */
         function showCustomDialog(options) {
             var cfg = options; //for compatability with show()
 
-            hide(); // hide dialog pane if it was open
+            //If previous dialog was not stackable
+            var prevIsStackable = (currentDialog && currentDialog.isModal && currentDialog.cfg.stackable === true);
+            if (!prevIsStackable) {
+                hide(); // hide previous if it was open
+            }
 
             if (checkRememberMe(cfg) === 1) {
                 return;
             }
+
             cfg._isModalDialog = true;
+            dialogState.isModal = true;
             setCommonOptions(cfg);
 
             //In case someone wants to set status bar text from within modal dialog
@@ -3580,7 +3631,6 @@ function() {
             if (cfg.windowClass) {
                 winClass += ' ' + cfg.windowClass;
             }
-
          
             return $uibModal.open({
                 windowClass: winClass,
@@ -3591,8 +3641,16 @@ function() {
                 controller: ['$scope', '$uibModalInstance', '$document', '$timeout',
                     function($scope, $uibModalInstance, $document, $timeout) {
 
-                        currentModalInstance = $uibModalInstance;
+                        dialogs.push({
+                            isModal: true,
+                            scope: $scope,
+                            cfg: cfg,
+                            modalInstance: $uibModalInstance
+                        });
+                        currentDialog = dialogs[dialogs.length - 1];
+
                         $scope.config = cfg;
+                        $scope.modalInstance = $uibModalInstance;
 
                         //For compatibility of just templateUrl (without templateOptions)
                         if (cfg.templateUrl && !cfg.templateOptions) {
@@ -3627,7 +3685,7 @@ function() {
                         }
 
                         if (cfg.controller) {
-                            $injector.invoke(cfg.controller, currentModalInstance,
+                            $injector.invoke(cfg.controller, $scope.modalInstance,
                                 {'$scope': $scope, '$uibModalInstance': $uibModalInstance});
                         }
 
@@ -3638,17 +3696,24 @@ function() {
                             var result = onButtonClick($scope.config, btn, action);
                             if (result !== -1) {
                                 $timeout(function() {
-                                    release(prevCfg);
+                                    //release(prevCfg);
                                     if (action === 'fnCancelAction' || (btn && btn.isCancel)) {
-                                        $uibModalInstance.dismiss('cancel');
+                                        closeCurrentDialog(true);
+                                        //$scope.modalInstance.dismiss('cancel');
+                                    } else if ($scope.config.stackable !== true) {
+                                        closeCurrentDialog(false, result);
+                                        //$scope.modalInstance.close(!result ? 0 : result);
                                     } else {
-                                        $uibModalInstance.close(!result ? 0 : result);
+                                        release();
                                     }
                                 });
                             }
                         };
 
                         function onKeydown(evt) {
+                            if ($scope.modalInstance !== currentDialog.modalInstance) {
+                                return;
+                            }
                             if (evt.which === 13 || evt.which === 27) {
                                 var processed = true;
                                 var btn = _.find(cfg.buttons, function(btn) {
@@ -3662,8 +3727,7 @@ function() {
                                     $scope.btnclick(null, 'fnCancelAction');
                                 } else if (evt.which === 27) {
                                     $timeout(function() {
-                                        release();
-                                        $uibModalInstance.dismiss('cancel');
+                                        closeCurrentDialog(true);
                                     });
                                 } else {
                                     processed = false;
@@ -3705,14 +3769,31 @@ function() {
          * @methodOf ep.modaldialog.factory:epModalDialogService
          * @public
          * @description
-         * Hides any modal dialog currently in operation by this service.
+         * Hides any current dialog in operation by this service.
+         * @param {string} mode - optional mode:
+         *  # 'all' - closes all open dialogs
+         *  # 'panel' - closes only if current dialog is a panel
+         *  # 'modal' - closes only if current dialog is a modal
+         *  # 'current' - closes current dialog
          */
-        function hide() {
-            release();
-            dialogState.isVisible = false;
-            if (currentModalInstance) {
-                currentModalInstance.close(0);
-                currentModalInstance = null;
+        function hide(mode) {
+            if (mode === 'all') {
+                release();
+                $uibModalStack.dismissAll();
+                currentDialog = undefined;
+                dialogs = [];
+                dialogState.isVisible = false;
+                dialogState.isModal = false;
+            } else if (mode === 'panel') {
+                if (currentDialog && currentDialog.isModal !== true) {
+                    closeCurrentDialog();
+                }
+            } else if (mode === 'modal') {
+                if (currentDialog && currentDialog.isModal === true) {
+                    closeCurrentDialog();
+                }
+            } else {
+                closeCurrentDialog();
             }
         }
 
@@ -3777,6 +3858,12 @@ function() {
         function show(options) {
             release();
 
+            //If previous dialog was not stackable
+            var prevIsStackable = (currentDialog && currentDialog.isModal && currentDialog.cfg.stackable === true);
+            if (!prevIsStackable) {
+                hide(); // hide previous if it was open
+            }
+
             // reset the config object to default values.
             var cfg = {};
 
@@ -3791,6 +3878,7 @@ function() {
             }
 
             dialogState.isVisible = true;
+            dialogState.isModal = false;
 
             if (!angular.element('body .ep-modaldialog.ep-modaldialog-pane').length) {
                 dialogState.paneScope = $rootScope.$new();
@@ -3810,13 +3898,21 @@ function() {
                 //update the panel scope
                 dialogState.paneScope.config = cfg;
             }
+
+            dialogs.push({
+                isModal: false,
+                scope: dialogState.paneScope,
+                cfg: cfg,
+                modalInstance: undefined
+            });
+            currentDialog = dialogs[dialogs.length - 1];
         }
 
         /**
          * @name setCommonOptions
          * @private
          * @description
-         * Sets options common both to a dialog and a .
+         * Sets options common both to a dialog and pane
          */
         function setCommonOptions(cfg) {
             dialogState.config = cfg;
@@ -4009,7 +4105,26 @@ function() {
             }
         }
 
+        function closeCurrentDialog(isCancel, result) {
+            release();
+            dialogState.isVisible = false;
+
+            if (currentDialog && currentDialog.isModal) {
+                var instance = currentDialog.modalInstance;
+                if (instance) {
+                    if (isCancel) {
+                        instance.dismiss('cancel');
+                    } else {
+                        instance.close(!result ? 0 : result);
+                    }
+                }
+            }
+            dialogs.pop();
+            currentDialog = (dialogs.length) ? dialogs[dialogs.length - 1] : undefined;
+        }
+
         return {
+            showModalForm: showModalForm,
             showMessage: showMessage,
             showConfirm: showConfirm,
             showProgress: showProgress,
@@ -4022,6 +4137,7 @@ function() {
         };
 
     }
+
 }());
 
 /**
@@ -4619,7 +4735,7 @@ function() {
                                 });
                             }
                         }
-                        btn.action();
+                        btn.action(btn,evt);
                         if (btn.type === 'checked') {
                             evt.preventDefault();
                             evt.stopPropagation();

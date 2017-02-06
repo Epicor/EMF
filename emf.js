@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.504 built: 06-02-2017
+ * version:1.0.10-dev.505 built: 06-02-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.504","built":"2017-02-06"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.505","built":"2017-02-06"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -1847,7 +1847,7 @@ angular.module('ep.signature', [
     *
     * @param {object} column - the following are properties of the column:
     * if column is not set the default is { editor: 'auto', updatable: true }
-    * 
+    *
     * @example
     */
     epBindingEditorDirective.$inject = ['$location', 'epBindingFactory', 'epUtilsService', 'epBindingMetadataService'];
@@ -2000,7 +2000,7 @@ angular.module('ep.signature', [
                 }
 
                 scope.setLabel = function() {
-                    scope.state.label = scope.state.metaColumn.caption || scope.label || 
+                    scope.state.label = scope.state.metaColumn.caption || scope.label ||
                         scope.state.epBinding.column || '';
                 }
 
@@ -2544,7 +2544,7 @@ angular.module('ep.binding').
         //TO DO: make keys case insensitive!
 
         function getEditor(dataType) {
-            //# editor {string} - 'number' | 'text' | 'multiline' | 'date' | 'checkbox' 
+            //# editor {string} - 'number' | 'text' | 'multiline' | 'date' | 'checkbox'
             //| 'select' | 'image' | 'custom'
             var ret = 'auto';
             var dt = (dataType || '').toLowerCase();
@@ -2552,8 +2552,8 @@ angular.module('ep.binding').
                 ret = 'checkbox';
             } else if (dt === 'date' || dt === 'datetime' || dt === 'system.datetime') {
                 ret = 'date';
-            } else if (dt === 'byte' || dt === 'int32' || dt === 'integer' || dt === 'decimal'
-                || dt === 'system.decimal' || dt === 'system.int32') {
+            } else if (dt === 'byte' || dt === 'int32' || dt === 'integer' || dt === 'decimal' ||
+                dt === 'system.decimal' || dt === 'system.int32') {
                 ret = 'number';
             }
             return ret;
@@ -3119,7 +3119,7 @@ angular.module('ep.binding').
                 logWatches.onViewRowChanged = $rootScope.$on('EP_BINDING_VIEW_ADDED', function(event, data) {
                     var v = epTransactionFactory.current().view(data.viewId);
                     var info = 'ViewId:' + data.viewId + ';Row:' + v.row() +
-                        ';Count:' + (v.data() ? v.data().length : 0) + 
+                        ';Count:' + (v.data() ? v.data().length : 0) +
                         ';Action:' + data.action;
                     $log.warn('[EP_BINDING_VIEW_ADDED] ' + info);
                 });
@@ -3237,7 +3237,7 @@ angular.module('ep.binding').
              */
             function dataRow() {
                 if ((state.row < 0) || !state.data || (state.data.length < 1) || (state.row > state.data.length)) {
-                    return null;
+                    return undefined;
                 }
                 return state.data[state.row];
             }
@@ -3303,14 +3303,12 @@ angular.module('ep.binding').
                     view: this,
                     row: rowIdx
                 });
-
                 if (setCurrentRow === true) {
                     this.row(rowIdx);
                 }
-
                 return rowIdx;
             }
-                
+
             /**
              * @ngdoc method
              * @name columnValue
@@ -3514,8 +3512,8 @@ angular.module('ep.binding').
              * @methodOf ep.binding.factory:epDataViewFactory
              * @public
              * @description
-             * Looks through each row in the data view, returning the first one that passes a truth test (predicate), 
-             * or undefined if no value passes the test. The function returns as soon as it finds an acceptable row, 
+             * Looks through each row in the data view, returning the first one that passes a truth test (predicate),
+             * or undefined if no value passes the test. The function returns as soon as it finds an acceptable row,
              * and doesn't traverse the entire list. Row is passed into predicateFunction
              * @param {function} predicateFunction - predicate function that returns true or false
              * @param {bool} setRowCurrent - if true then set found row as current
@@ -3642,7 +3640,7 @@ angular.module('ep.binding').
             function add(id, data) {
                 //To do check if exists already
                 var action = 'CREATE';
-                var v = this.view(id); 
+                var v = this.view(id);
                 if (v) {
                     v.reload(data);
                     action = 'RELOAD';
@@ -4149,7 +4147,6 @@ app.directive('epCardTitle',
             templateUrl: 'src/components/ep.card/ep-card-title-template.html'
         };
 	});
-
 
 (function() {
     'use strict';
@@ -11903,12 +11900,13 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
     service('epErpBaqService', epErpBaqService);
 
     /*@ngInject*/
-    function epErpBaqService($q, epErpRestService, epModalDialogService, epTransactionFactory, odataQueryFactory, epBindingMetadataService) {
+    function epErpBaqService($q, epErpRestService, epModalDialogService, epTransactionFactory, odataQueryFactory,
+        epBindingMetadataService) {
         function getBAQList(idStartsWith) {
             var url = 'Ice.BO.BAQDesignerSvc/BAQDesigners';
             var query = odataQueryFactory
                 .setSelect(['QueryID', 'Company', 'IsShared', 'Version', 'Updatable', 'SysRevID']);
-            if (idStartsWith){
+            if (idStartsWith) {
                 query = query.setWhereCustom('startswith(QueryID,\'' + idStartsWith + '\')');
             }
             query = query.compose();
@@ -12108,7 +12106,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 var idx1 = dt.indexOf('<EntityType Name="QueryResult">');
                 if (idx1) {
                     idx1 = dt.indexOf('<Property ');
-                    var idx2 = dt.indexOf("</EntityType>", idx1 + 1);
+                    var idx2 = dt.indexOf('</EntityType>', idx1 + 1);
                     var str = dt.substr(idx1, idx2 - idx1);
                     var regExp1 = /Name\=\"([A-Za-z0-9. _]*)\" Type\=\"([A-Za-z0-9. _]*)\"/g;
                     var props = [];
@@ -12160,7 +12158,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         }
 
         function getBaqEditor(field) {
-            //# editor {string} - 'number' | 'text' | 'multiline' | 'date' | 'checkbox' 
+            //# editor {string} - 'number' | 'text' | 'multiline' | 'date' | 'checkbox'
             //| 'select' | 'image' | 'custom'
             var ret = 'auto';
             var dt = (field.DataType || '').toLowerCase();
@@ -12168,8 +12166,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 ret = 'checkbox';
             } else if (dt === 'date' || dt === 'datetime' || dt === 'system.datetime') {
                 ret = 'date';
-            } else if (dt === 'byte' || dt === 'int32' || dt === 'integer' || dt === 'decimal'
-                || dt === 'system.decimal' || dt === 'system.int32') {
+            } else if (dt === 'byte' || dt === 'int32' || dt === 'integer' || dt === 'decimal' ||
+                dt === 'system.decimal' || dt === 'system.int32') {
                 ret = 'number';
             } else if (dt === 'nvarchar') {
                 ret = 'text';
@@ -12213,7 +12211,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
     service('epErpSvcService', epErpSvcService);
 
     /*@ngInject*/
-    function epErpSvcService($q, epErpRestService, epModalDialogService, epTransactionFactory, epBindingMetadataService) {
+    function epErpSvcService($q, epErpRestService, epModalDialogService, epTransactionFactory,
+        epBindingMetadataService) {
 
         function getSvc(svc, myQuery, viewId, options) {
             if (!options) {
@@ -16574,6 +16573,10 @@ angular.module('ep.menu.builder').
  *          templateUrl: 'src/components/ep.modaldialog/modals/modaldialog-error.html',
  *          title: 'This is a custom dialog (error template)', status: 'warning', message: 'Hello world' });
  *
+ *  # Show modal form
+ *       epModalDialogService.showModalForm({
+ *          templateUrl: 'src/components/ep.modaldialog/modals/modaldialog-error.html',
+ *          title: 'This is a custom dialog (error template)', status: 'warning', message: 'Hello world' });
  */
 (function() {
     'use strict';
@@ -16587,12 +16590,12 @@ angular.module('ep.menu.builder').
      * @example
      *
      */
-    epModalDialogService.$inject = ['$sce', '$uibModal', '$compile', '$rootScope', '$timeout', '$interval', '$injector', 'epLocalStorageService'];
+    epModalDialogService.$inject = ['$sce', '$uibModal', '$uibModalStack', '$compile', '$rootScope', '$timeout', '$interval', '$injector', 'epLocalStorageService'];
     angular.module('ep.modaldialog').service('epModalDialogService', epModalDialogService);
 
     /*@ngInject*/
-    function epModalDialogService($sce, $uibModal, $compile, $rootScope, $timeout, $interval, $injector,
-                                  epLocalStorageService) {
+    function epModalDialogService($sce, $uibModal, $uibModalStack, $compile, $rootScope, $timeout,
+        $interval, $injector, epLocalStorageService) {
 
         /**
          * @private
@@ -16620,14 +16623,18 @@ angular.module('ep.menu.builder').
         var dialogState = {
             isVisible: false,
             config: {},
-            //timerPromise: null,
-            //autoClosePromise: null,
+            isModal: false,
             paneScope: null
         };
         angular.copy(defaultConfig, dialogState.config);
 
         // @private
-        var currentModalInstance = null;
+        // list of open dialogs
+        var dialogs = [];
+
+        // @private
+        // current open dialog
+        var currentDialog = null;
 
         // @private
         // prefix for dialogs RememberMe option. Must end with a dot '.'
@@ -16806,6 +16813,42 @@ angular.module('ep.menu.builder').
 
         /**
          * @ngdoc method
+         * @name showModalForm
+         * @methodOf ep.modaldialog.factory:epModalDialogService
+         * @public
+         * @description
+         * Shows a modal form
+         * @param {object} options - optional settings as follows:
+         * <pre>
+         *      all options from showCustomDialog() and additional:
+         *      title - the title (header)
+         *      icon - font awesome icon class
+         *      fnDefaultAction - function applied to default button if buttons are not supplied or isDefault = true
+         *      fnCancelAction - function to be fired on Cancel button if button has isCancel = true
+         *      btnBlock - block the buttons
+         * </pre>
+         * @param {object} ex - Error object thrown by javascript. Optional - not used for server exceptions
+         */
+        function showModalForm(options) {
+            var cfg = {
+                stackable: true,
+                kind: 'modal-form',
+                title: 'Modal Form',
+                icon: '',
+                size: 'fullscreen',
+                closeButton: true,
+                buttons: [{
+                    id: 'btnOk', text: 'Ok', isDefault: true, type: 'primary'
+                }]
+            };
+
+            copyProperties(options, cfg);
+
+            return showCustomDialog(cfg).result;
+        }
+
+        /**
+         * @ngdoc method
          * @name showMessageBox
          * @methodOf ep.modaldialog.factory:epModalDialogService
          * @public
@@ -16898,17 +16941,24 @@ angular.module('ep.menu.builder').
          *      closeButton - set true to display close button (default false)
          *      windowClass - set class to the dialog window
          *      btnBlock - block the buttons
+         *      stackable - if true this dialog is stackable (other dialogs can be hosted in it)
          * </pre>
          */
         function showCustomDialog(options) {
             var cfg = options; //for compatability with show()
 
-            hide(); // hide dialog pane if it was open
+            //If previous dialog was not stackable
+            var prevIsStackable = (currentDialog && currentDialog.isModal && currentDialog.cfg.stackable === true);
+            if (!prevIsStackable) {
+                hide(); // hide previous if it was open
+            }
 
             if (checkRememberMe(cfg) === 1) {
                 return;
             }
+
             cfg._isModalDialog = true;
+            dialogState.isModal = true;
             setCommonOptions(cfg);
 
             //In case someone wants to set status bar text from within modal dialog
@@ -16924,7 +16974,6 @@ angular.module('ep.menu.builder').
             if (cfg.windowClass) {
                 winClass += ' ' + cfg.windowClass;
             }
-
          
             return $uibModal.open({
                 windowClass: winClass,
@@ -16935,8 +16984,16 @@ angular.module('ep.menu.builder').
                 controller: ['$scope', '$uibModalInstance', '$document', '$timeout',
                     function($scope, $uibModalInstance, $document, $timeout) {
 
-                        currentModalInstance = $uibModalInstance;
+                        dialogs.push({
+                            isModal: true,
+                            scope: $scope,
+                            cfg: cfg,
+                            modalInstance: $uibModalInstance
+                        });
+                        currentDialog = dialogs[dialogs.length - 1];
+
                         $scope.config = cfg;
+                        $scope.modalInstance = $uibModalInstance;
 
                         //For compatibility of just templateUrl (without templateOptions)
                         if (cfg.templateUrl && !cfg.templateOptions) {
@@ -16971,7 +17028,7 @@ angular.module('ep.menu.builder').
                         }
 
                         if (cfg.controller) {
-                            $injector.invoke(cfg.controller, currentModalInstance,
+                            $injector.invoke(cfg.controller, $scope.modalInstance,
                                 {'$scope': $scope, '$uibModalInstance': $uibModalInstance});
                         }
 
@@ -16982,17 +17039,24 @@ angular.module('ep.menu.builder').
                             var result = onButtonClick($scope.config, btn, action);
                             if (result !== -1) {
                                 $timeout(function() {
-                                    release(prevCfg);
+                                    //release(prevCfg);
                                     if (action === 'fnCancelAction' || (btn && btn.isCancel)) {
-                                        $uibModalInstance.dismiss('cancel');
+                                        closeCurrentDialog(true);
+                                        //$scope.modalInstance.dismiss('cancel');
+                                    } else if ($scope.config.stackable !== true) {
+                                        closeCurrentDialog(false, result);
+                                        //$scope.modalInstance.close(!result ? 0 : result);
                                     } else {
-                                        $uibModalInstance.close(!result ? 0 : result);
+                                        release();
                                     }
                                 });
                             }
                         };
 
                         function onKeydown(evt) {
+                            if ($scope.modalInstance !== currentDialog.modalInstance) {
+                                return;
+                            }
                             if (evt.which === 13 || evt.which === 27) {
                                 var processed = true;
                                 var btn = _.find(cfg.buttons, function(btn) {
@@ -17006,8 +17070,7 @@ angular.module('ep.menu.builder').
                                     $scope.btnclick(null, 'fnCancelAction');
                                 } else if (evt.which === 27) {
                                     $timeout(function() {
-                                        release();
-                                        $uibModalInstance.dismiss('cancel');
+                                        closeCurrentDialog(true);
                                     });
                                 } else {
                                     processed = false;
@@ -17049,14 +17112,31 @@ angular.module('ep.menu.builder').
          * @methodOf ep.modaldialog.factory:epModalDialogService
          * @public
          * @description
-         * Hides any modal dialog currently in operation by this service.
+         * Hides any current dialog in operation by this service.
+         * @param {string} mode - optional mode:
+         *  # 'all' - closes all open dialogs
+         *  # 'panel' - closes only if current dialog is a panel
+         *  # 'modal' - closes only if current dialog is a modal
+         *  # 'current' - closes current dialog
          */
-        function hide() {
-            release();
-            dialogState.isVisible = false;
-            if (currentModalInstance) {
-                currentModalInstance.close(0);
-                currentModalInstance = null;
+        function hide(mode) {
+            if (mode === 'all') {
+                release();
+                $uibModalStack.dismissAll();
+                currentDialog = undefined;
+                dialogs = [];
+                dialogState.isVisible = false;
+                dialogState.isModal = false;
+            } else if (mode === 'panel') {
+                if (currentDialog && currentDialog.isModal !== true) {
+                    closeCurrentDialog();
+                }
+            } else if (mode === 'modal') {
+                if (currentDialog && currentDialog.isModal === true) {
+                    closeCurrentDialog();
+                }
+            } else {
+                closeCurrentDialog();
             }
         }
 
@@ -17121,6 +17201,12 @@ angular.module('ep.menu.builder').
         function show(options) {
             release();
 
+            //If previous dialog was not stackable
+            var prevIsStackable = (currentDialog && currentDialog.isModal && currentDialog.cfg.stackable === true);
+            if (!prevIsStackable) {
+                hide(); // hide previous if it was open
+            }
+
             // reset the config object to default values.
             var cfg = {};
 
@@ -17135,6 +17221,7 @@ angular.module('ep.menu.builder').
             }
 
             dialogState.isVisible = true;
+            dialogState.isModal = false;
 
             if (!angular.element('body .ep-modaldialog.ep-modaldialog-pane').length) {
                 dialogState.paneScope = $rootScope.$new();
@@ -17154,13 +17241,21 @@ angular.module('ep.menu.builder').
                 //update the panel scope
                 dialogState.paneScope.config = cfg;
             }
+
+            dialogs.push({
+                isModal: false,
+                scope: dialogState.paneScope,
+                cfg: cfg,
+                modalInstance: undefined
+            });
+            currentDialog = dialogs[dialogs.length - 1];
         }
 
         /**
          * @name setCommonOptions
          * @private
          * @description
-         * Sets options common both to a dialog and a .
+         * Sets options common both to a dialog and pane
          */
         function setCommonOptions(cfg) {
             dialogState.config = cfg;
@@ -17353,7 +17448,26 @@ angular.module('ep.menu.builder').
             }
         }
 
+        function closeCurrentDialog(isCancel, result) {
+            release();
+            dialogState.isVisible = false;
+
+            if (currentDialog && currentDialog.isModal) {
+                var instance = currentDialog.modalInstance;
+                if (instance) {
+                    if (isCancel) {
+                        instance.dismiss('cancel');
+                    } else {
+                        instance.close(!result ? 0 : result);
+                    }
+                }
+            }
+            dialogs.pop();
+            currentDialog = (dialogs.length) ? dialogs[dialogs.length - 1] : undefined;
+        }
+
         return {
+            showModalForm: showModalForm,
             showMessage: showMessage,
             showConfirm: showConfirm,
             showProgress: showProgress,
@@ -17366,6 +17480,7 @@ angular.module('ep.menu.builder').
         };
 
     }
+
 }());
 
 /**
@@ -21835,7 +21950,7 @@ angular.module('ep.record.editor').
                                 });
                             }
                         }
-                        btn.action();
+                        btn.action(btn,evt);
                         if (btn.type === 'checked') {
                             evt.preventDefault();
                             evt.stopPropagation();

@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.504 built: 06-02-2017
+ * version:1.0.10-dev.505 built: 06-02-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.504","built":"2017-02-06"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.505","built":"2017-02-06"};
 
 (function() {
     'use strict';
@@ -1847,7 +1847,7 @@ angular.module('ep.token').
     *
     * @param {object} column - the following are properties of the column:
     * if column is not set the default is { editor: 'auto', updatable: true }
-    * 
+    *
     * @example
     */
     epBindingEditorDirective.$inject = ['$location', 'epBindingFactory', 'epUtilsService', 'epBindingMetadataService'];
@@ -2000,7 +2000,7 @@ angular.module('ep.token').
                 }
 
                 scope.setLabel = function() {
-                    scope.state.label = scope.state.metaColumn.caption || scope.label || 
+                    scope.state.label = scope.state.metaColumn.caption || scope.label ||
                         scope.state.epBinding.column || '';
                 }
 
@@ -2544,7 +2544,7 @@ angular.module('ep.binding').
         //TO DO: make keys case insensitive!
 
         function getEditor(dataType) {
-            //# editor {string} - 'number' | 'text' | 'multiline' | 'date' | 'checkbox' 
+            //# editor {string} - 'number' | 'text' | 'multiline' | 'date' | 'checkbox'
             //| 'select' | 'image' | 'custom'
             var ret = 'auto';
             var dt = (dataType || '').toLowerCase();
@@ -2552,8 +2552,8 @@ angular.module('ep.binding').
                 ret = 'checkbox';
             } else if (dt === 'date' || dt === 'datetime' || dt === 'system.datetime') {
                 ret = 'date';
-            } else if (dt === 'byte' || dt === 'int32' || dt === 'integer' || dt === 'decimal'
-                || dt === 'system.decimal' || dt === 'system.int32') {
+            } else if (dt === 'byte' || dt === 'int32' || dt === 'integer' || dt === 'decimal' ||
+                dt === 'system.decimal' || dt === 'system.int32') {
                 ret = 'number';
             }
             return ret;
@@ -3119,7 +3119,7 @@ angular.module('ep.binding').
                 logWatches.onViewRowChanged = $rootScope.$on('EP_BINDING_VIEW_ADDED', function(event, data) {
                     var v = epTransactionFactory.current().view(data.viewId);
                     var info = 'ViewId:' + data.viewId + ';Row:' + v.row() +
-                        ';Count:' + (v.data() ? v.data().length : 0) + 
+                        ';Count:' + (v.data() ? v.data().length : 0) +
                         ';Action:' + data.action;
                     $log.warn('[EP_BINDING_VIEW_ADDED] ' + info);
                 });
@@ -3237,7 +3237,7 @@ angular.module('ep.binding').
              */
             function dataRow() {
                 if ((state.row < 0) || !state.data || (state.data.length < 1) || (state.row > state.data.length)) {
-                    return null;
+                    return undefined;
                 }
                 return state.data[state.row];
             }
@@ -3303,14 +3303,12 @@ angular.module('ep.binding').
                     view: this,
                     row: rowIdx
                 });
-
                 if (setCurrentRow === true) {
                     this.row(rowIdx);
                 }
-
                 return rowIdx;
             }
-                
+
             /**
              * @ngdoc method
              * @name columnValue
@@ -3514,8 +3512,8 @@ angular.module('ep.binding').
              * @methodOf ep.binding.factory:epDataViewFactory
              * @public
              * @description
-             * Looks through each row in the data view, returning the first one that passes a truth test (predicate), 
-             * or undefined if no value passes the test. The function returns as soon as it finds an acceptable row, 
+             * Looks through each row in the data view, returning the first one that passes a truth test (predicate),
+             * or undefined if no value passes the test. The function returns as soon as it finds an acceptable row,
              * and doesn't traverse the entire list. Row is passed into predicateFunction
              * @param {function} predicateFunction - predicate function that returns true or false
              * @param {bool} setRowCurrent - if true then set found row as current
@@ -3642,7 +3640,7 @@ angular.module('ep.binding').
             function add(id, data) {
                 //To do check if exists already
                 var action = 'CREATE';
-                var v = this.view(id); 
+                var v = this.view(id);
                 if (v) {
                     v.reload(data);
                     action = 'RELOAD';
@@ -3825,12 +3823,13 @@ angular.module('ep.binding').
     service('epErpBaqService', epErpBaqService);
 
     /*@ngInject*/
-    function epErpBaqService($q, epErpRestService, epModalDialogService, epTransactionFactory, odataQueryFactory, epBindingMetadataService) {
+    function epErpBaqService($q, epErpRestService, epModalDialogService, epTransactionFactory, odataQueryFactory,
+        epBindingMetadataService) {
         function getBAQList(idStartsWith) {
             var url = 'Ice.BO.BAQDesignerSvc/BAQDesigners';
             var query = odataQueryFactory
                 .setSelect(['QueryID', 'Company', 'IsShared', 'Version', 'Updatable', 'SysRevID']);
-            if (idStartsWith){
+            if (idStartsWith) {
                 query = query.setWhereCustom('startswith(QueryID,\'' + idStartsWith + '\')');
             }
             query = query.compose();
@@ -4030,7 +4029,7 @@ angular.module('ep.binding').
                 var idx1 = dt.indexOf('<EntityType Name="QueryResult">');
                 if (idx1) {
                     idx1 = dt.indexOf('<Property ');
-                    var idx2 = dt.indexOf("</EntityType>", idx1 + 1);
+                    var idx2 = dt.indexOf('</EntityType>', idx1 + 1);
                     var str = dt.substr(idx1, idx2 - idx1);
                     var regExp1 = /Name\=\"([A-Za-z0-9. _]*)\" Type\=\"([A-Za-z0-9. _]*)\"/g;
                     var props = [];
@@ -4082,7 +4081,7 @@ angular.module('ep.binding').
         }
 
         function getBaqEditor(field) {
-            //# editor {string} - 'number' | 'text' | 'multiline' | 'date' | 'checkbox' 
+            //# editor {string} - 'number' | 'text' | 'multiline' | 'date' | 'checkbox'
             //| 'select' | 'image' | 'custom'
             var ret = 'auto';
             var dt = (field.DataType || '').toLowerCase();
@@ -4090,8 +4089,8 @@ angular.module('ep.binding').
                 ret = 'checkbox';
             } else if (dt === 'date' || dt === 'datetime' || dt === 'system.datetime') {
                 ret = 'date';
-            } else if (dt === 'byte' || dt === 'int32' || dt === 'integer' || dt === 'decimal'
-                || dt === 'system.decimal' || dt === 'system.int32') {
+            } else if (dt === 'byte' || dt === 'int32' || dt === 'integer' || dt === 'decimal' ||
+                dt === 'system.decimal' || dt === 'system.int32') {
                 ret = 'number';
             } else if (dt === 'nvarchar') {
                 ret = 'text';
@@ -4135,7 +4134,8 @@ angular.module('ep.binding').
     service('epErpSvcService', epErpSvcService);
 
     /*@ngInject*/
-    function epErpSvcService($q, epErpRestService, epModalDialogService, epTransactionFactory, epBindingMetadataService) {
+    function epErpSvcService($q, epErpRestService, epModalDialogService, epTransactionFactory,
+        epBindingMetadataService) {
 
         function getSvc(svc, myQuery, viewId, options) {
             if (!options) {
