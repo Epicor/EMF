@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.510 built: 07-02-2017
+ * version:1.0.10-dev.511 built: 07-02-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.510","built":"2017-02-07"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.511","built":"2017-02-07"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -580,6 +580,20 @@ angular.module('ep.signature', [
      */
     angular.module('ep.sliding.panel', ['ngAnimate']);
 })();
+/**
+ * @ngdoc overview
+ * @name ep.switch
+ * @description
+ * ep.switch is based on bootstrap switch
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.switch', [
+        'ep.templates'
+    ]);
+})();
+
 /**
  * @ngdoc overview
  * @name ep.theme
@@ -3361,6 +3375,36 @@ angular.module('ep.binding').
 
             /**
              * @ngdoc method
+             * @name set
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * sets specified column's value
+             * @param {string} column - column name
+             * @param {object} value - (optional) column value to set
+             * @returns {object} column value
+             */
+            function set(column, value) {
+                this.columnValue(column, value);
+            }
+
+            /**
+             * @ngdoc method
+             * @name get
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * returns specified column's value
+             * @param {string} column - column name
+             * @param {object} value - (optional) column value to set
+             * @returns {object} column value
+             */
+            function get(column) {
+                return this.columnValue(column);
+            }
+
+            /**
+             * @ngdoc method
              * @name rollback
              * @methodOf ep.binding.factory:epDataViewFactory
              * @public
@@ -3574,6 +3618,8 @@ angular.module('ep.binding').
                 dataRow: dataRow,
                 row: row,
                 columnValue: columnValue,
+                set: set,
+                get: get,
                 addRow: addRow,
                 isDirty: isDirty,
                 hasData: hasData,
@@ -12060,7 +12106,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     var rowIdx = 0;
                     var view = epTransactionFactory.current().view(viewId);
                     if (!view) {
-                        epTransactionFactory.current().add(viewId, data.value);
+                        view = epTransactionFactory.current().add(viewId, data.value);
                     } else {
                         rowIdx = view.addRow(data.value[0]);
                     }
@@ -12139,6 +12185,13 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         function getMetaColumns(metaData) {
             var cols = {};
             angular.forEach(metaData.QueryFieldDesigner, function(cc) {
+                var qUpdFld = _.find(metaData.QueryUpdateFieldDesigner, function(qf) {
+                    return cc.QueryID === qf.QueryID && cc.TableID === qf.MapTableName &&
+                        cc.FieldName === qf.MapFieldName;
+                });
+
+                var hasUpdMap = !!qUpdFld;
+                var isKeyField = hasUpdMap && (qUpdFld.IsKeyField === true);
                 cols[cc.Alias] = {
                     name: cc.Alias,
                     caption: cc.FieldLabel || cc.Alias,
@@ -12148,8 +12201,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     tableId: cc.TableID,
                     columnName: cc.FieldName,
                     dataType: cc.DataType,
-                    editor: getBaqEditor(cc)
+                    editor: getBaqEditor(cc),
+                    hasUpdateMapping: hasUpdMap,
+                    isKeyField: isKeyField
                 };
+
                 if (cc.FieldFormat) {
                     setBaqFormat(cc, cols[cc.Alias]);
                 }
@@ -12697,6 +12753,13 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             if ((verOffset = nAgt.indexOf('Version')) !== -1) {
                                 fullVersion = nAgt.substring(verOffset + 8);
                             }
+                        } else if ((verOffset = nAgt.indexOf('OPR/')) !== -1) {
+                            //The newer versions of Opera have OPR
+                            browserName = 'Opera';
+                            fullVersion = nAgt.substring(verOffset + 4);
+                            if ((verOffset = nAgt.indexOf('Version')) !== -1) {
+                                fullVersion = nAgt.substring(verOffset + 8);
+                            }
                         } else if ((verOffset = nAgt.indexOf('MSIE')) !== -1) {
                             // In MSIE, the true version is after 'MSIE' in userAgent
                             browserName = 'Microsoft Internet Explorer';
@@ -12756,7 +12819,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             app: 'Web',
                             os: os,
                             browser: {
-                                name: browserName,
+                                name: browserName || '',
                                 fullVersion: fullVersion,
                                 majorVersion: majorVersion,
                                 appName: navigator.appName,
@@ -19287,26 +19350,45 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
             },
             compile: function() {
                 return {
-                    pre: function($scope) {
+                    pre: function($scope, element) {
                         var ctx = $scope.ctx;
 
-                        //set size class smaller for check box
-                        ctx.fnSetSizeClass('col-xs-12 col-sm-4 col-md-3 col-lg-2');
-                        ctx.checkBoxSize = ctx.checkBoxSize || '2x';
+                        $scope.temp = {
+                            chk: false
+                        };
 
-                        if (ctx.updatable) {
-                            ctx.toggleValue = function(c, ev) {
-                                if ($scope.value !== undefined && !ctx.disabled) {
-                                    var newVal = !$scope.value;
-                                    ctx.fnSetCurrentValue(newVal, false);
+                        $scope.checkBoxMode = ctx.col.checkBoxMode || 'checkbox';
+                        if ($scope.checkBoxMode === 'checkbox') {
+                            //set size class smaller for check box
+                            ctx.fnSetSizeClass('col-xs-12 col-sm-4 col-md-3 col-lg-2');
+                            ctx.checkBoxSize = ctx.checkBoxSize || '2x';
 
-                                    if (ctx.fnValidate && ctx.updatable) {
-                                        ctx.fnValidate(ctx.col, this, ev);
+                            if (ctx.updatable) {
+                                ctx.toggleValue = function(c, ev) {
+                                    if ($scope.value !== undefined && !ctx.disabled) {
+                                        var newVal = !$scope.value;
+                                        ctx.fnSetCurrentValue(newVal, false);
+
+                                        if (ctx.fnValidate && ctx.updatable) {
+                                            ctx.fnValidate(ctx.col, this, ev);
+                                        }
                                     }
-                                }
-                            };
+                                };
+                            }
+                            ctx.checked = ctx.value ? 'checked' : '';
+                        } else if ($scope.checkBoxMode === 'switch') {
+                            //set initial value
+                            $scope.temp.chk = !!$scope.value;
+
+                            //watch for changes
+                            if (ctx.updatable) {
+                                $scope.$watch('temp.chk', function(newValue, oldValue) {
+                                    if (newValue !== undefined && newValue !== oldValue && newValue !== $scope.value) {
+                                        $scope.value = newValue;
+                                    }
+                                });
+                            }
                         }
-                        ctx.checked = ctx.value ? 'checked' : '';
                         $scope.handleKey = function($event) {
                             if ($event.which === 32) {
                                 $scope.ctx.toggleValue($scope.ctx);
@@ -19544,6 +19626,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
         #                   class to this element. if node is passed then sets size class on it.
         #
         # checkBoxSize {string}  - applicable to checkbox only (for now). Can be '1x', '2x', '3x'
+        # checkBoxMode {string}  - applicable to checkbox only. 'checkbox'/'switch' (default is 'checkbox')
         # style {string} - sets inline styling. eg. '{ "color" : "red", "margin" : "0px" }
         # oFormat {object}
         # maxLength {int} - set max length for string entry default is 30
@@ -23728,6 +23811,7 @@ angular.module('ep.record.editor').
                 controller: ['$scope', function($scope) {
                     function init() {
                         $scope.platform = epFeatureDetectionService.getFeatures().platform;
+                        $scope.browserName = ($scope.platform.browser.name || '').toLowerCase();
                         $scope.shellState = epShellService.__state;
                         $scope.sidebarState = epSidebarService.state;
 
@@ -24913,6 +24997,79 @@ angular.module('ep.signature').directive('epSignature',
         }
     }])
 })();
+(function() {
+    'use strict';
+    /**
+    * @ngdoc directive
+    * @name ep.switch.directive:epSwitch
+    * @restrict E
+    *
+    * @description
+    * Represents the ep.switch directive
+    * This directive draws a simple ON/OFF switch
+    *
+    * @property {string} ng-model:string
+    *  This property sets the binding to a object property.
+    *
+    * @property {string} onChangeHandler:string
+    *  This attribute sets the name of handler function on the scope called when switch value changes.
+    *
+    * @example
+    <doc:example module="ep.switch">
+      <doc:source>
+        <ep-switch ng-model="onOff"><ep-switch>
+      </doc:source>
+    </doc:example>
+    
+    */
+    epSwitchDirective.$inject = ['$timeout'];
+    angular.module('ep.switch').
+        directive('epSwitch', epSwitchDirective);
+
+    /*@ngInject*/
+    function epSwitchDirective($timeout) {
+        return {
+            restrict: 'E',
+            require: '?ngModel',
+            template: '<input type="checkbox" class="bs-switch">',
+            link: function(scope, element, attrs, ngModel) {
+
+                if (!ngModel) { return; }
+
+                //Outward (from control to bound object)
+                ngModel.$parsers.unshift(function(value) {
+                    return value;
+                });
+
+                //Inward (from bound object to control)
+                ngModel.$formatters.push(function(value) {
+                    return value;
+                });
+
+                $timeout(function() {
+                    var el = $(element).find('input');
+                    el.bootstrapSwitch({
+                        state: ngModel.$viewValue
+                    });
+
+                    el.on('switchChange.bootstrapSwitch', function(e) {
+                        ngModel.$setViewValue(e.target.checked);
+
+                        if (scope[attrs.onChangeHandler]) {
+                            scope[attrs.onChangeHandler].call(e.target.checked);
+                        }
+                    });
+
+                    // On destroy, collect garbage
+                    scope.$on('$destroy', function() {
+                        el.bootstrapSwitch('destroy');
+                    });
+                });
+            }
+        };
+    }
+}());
+
 /**
  * @ngdoc object
  * @name ep.sysconfig.config:epSysConfig
@@ -28788,7 +28945,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-checkbox-editor.html',
-    "<section class=\"ep-editor-checkbox ep-center-item editor\" tabindex=0 ng-keyup=handleKey($event) ng-click=ctx.toggleValue(ctx,$event) ng-hide=ctx.fnDoValidations()><span ng-class=\"{'fa-square-o': !value, 'fa-check-square-o': value}\" class=\"fa fa-{{ctx.checkBoxSize}}\"></span></section>"
+    "<section><section ng-if=\"checkBoxMode ==='checkbox'\" class=\"ep-editor-checkbox ep-center-item editor\" tabindex=0 ng-keyup=handleKey($event) ng-click=ctx.toggleValue(ctx,$event) ng-hide=ctx.fnDoValidations()><span ng-class=\"{'fa-square-o': !value, 'fa-check-square-o': value}\" class=\"fa fa-{{ctx.checkBoxSize}}\"></span></section><section ng-if=\"checkBoxMode ==='switch'\" class=\"ep-editor-switch editor\" ng-keyup=handleKey($event) ng-hide=ctx.fnDoValidations()><ep-switch ng-model=temp.chk></ep-switch></section></section>"
   );
 
 
@@ -28843,7 +29000,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/shell.html',
-    "<div><section ng-controller=epShellCtrl class=ep-shell ng-cloak><div ng-show=state.showProgressIndicator class=ep-progress-indicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa {{state.leftToggleButtonIcon}} fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\" tabindex=-1></a></li><li ng-repeat=\"button in leftNavButtons | orderBy:'index':true\" index={{button.index}} ng-class=\"{'hidden': button.hidden}\"><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"pull-left fa {{button.icon}} fa-2x ep-navbar-button left-button\" ng-click=state.executeButton(button,$event) ng-mousedown=state.buttonMouseDown(button) ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"><span ng-if=button.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=button.badge.value></span></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"pull-left ep-navbar-button left-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"><i class=\"fa {{button.icon}} fa-2x\"></i> <span ng-bind=button.title style=\"padding-right: 5px\"></span> <span class=caret></span> <span ng-if=button.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=button.badge.value></span></a><ep-include class=\"pull-left ep-navbar-button left-button\" ng-if=\"button.type === 'template'\" options=button.options user-data=button></ep-include><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator' && opt.type !== 'checked'\" ng-click=state.executeButton(opt,$event) ng-mousedown=state.buttonMouseDown(opt)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i> <span class=ep-navmenu-item-text>{{opt.title}}</span> <span ng-if=opt.badge class=\"ep-badge {{opt.badge.cssClass}}\" ng-bind=opt.badge.value></span></span></a> <a ng-if=\"opt.type !== 'separator' && opt.type === 'checked'\" ng-click=state.executeButton(opt,$event) ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><input type=checkbox class=ep-dropdown-btn-chk ng-model=\"opt.checked\"> <span class=ep-navmenu-item-text ng-bind=opt.title></span> <span ng-if=opt.badge class=\"ep-badge {{opt.badge.cssClass}}\" ng-bind=opt.badge.value></span></span></a></li></ul></li><li id=brandItem ng-hide=\"state.showBrand === false\" ng-class=\"{'ep-center-brand': state.centerBrand}\"><a id=apptitle ng-cloak=\"\" ng-if=state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-href=#{{(state.brandTarget)}} ng-bind-html=state.brandHTML></a> <span id=apptitle ng-cloak=\"\" ng-if=!state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-bind-html=state.brandHTML></span></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa {{state.rightToggleButtonIcon}} fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in rightNavButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.enabled === false}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button,$event) ng-mousedown=state.buttonMouseDown(button)><span ng-if=button.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=button.badge.value></span></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false><i class=\"fa {{button.icon}} fa-2x\"></i> <span ng-bind=button.title style=\"padding-right: 5px\"></span> <span class=caret></span> <span ng-if=button.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=button.badge.value></span></a><ep-include class=ep-navbar-button ng-if=\"button.type === 'template'\" options=button.options user-data=button></ep-include><ul ng-if=\"button.type === 'select'\" class=\"dropdown-menu dropdown-menu-right\" ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator' && opt.type !== 'checked'\" ng-click=state.executeButton(opt,$event) ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i> <span class=ep-navmenu-item-text ng-bind=opt.title></span> <span ng-if=opt.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=opt.badge.value></span></span></a> <a ng-if=\"opt.type !== 'separator' && opt.type === 'checked'\" ng-click=state.executeButton(opt,$event) ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><input type=checkbox class=ep-dropdown-btn-chk ng-model=\"opt.checked\"> <span class=ep-navmenu-item-text ng-bind=opt.title></span> <span ng-if=opt.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=opt.badge.value></span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div class=ep-fullscreen ng-if=\"options.enableViewAnimations !== false\"><div ng-view class=\"ep-fullscreen {{'ep-anim-speed-' + state.animationSpeed}} {{state.animationIn}} {{state.animationOut}} ep-view ep-view-transition\" ng-class=state.viewAnimation></div></div><div class=ep-fullscreen ng-if=\"options.enableViewAnimations === false\"><div ng-view class=\"ep-fullscreen ep-view\"></div></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" ng-if=state.footerTarget ng-href={{state.footerTarget}}><sup id=footerElement ng-bind-html=state.footerHTML></sup></a> <sup ng-if=!state.footerTarget id=footerElement ng-bind-html=state.footerHTML></sup></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.enableFeedback ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
+    "<div><section ng-controller=epShellCtrl class=\"ep-shell ep-browser-{{browserName}}\" ng-cloak><div ng-show=state.showProgressIndicator class=ep-progress-indicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa {{state.leftToggleButtonIcon}} fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\" tabindex=-1></a></li><li ng-repeat=\"button in leftNavButtons | orderBy:'index':true\" index={{button.index}} ng-class=\"{'hidden': button.hidden}\"><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"pull-left fa {{button.icon}} fa-2x ep-navbar-button left-button\" ng-click=state.executeButton(button,$event) ng-mousedown=state.buttonMouseDown(button) ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"><span ng-if=button.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=button.badge.value></span></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"pull-left ep-navbar-button left-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"><i class=\"fa {{button.icon}} fa-2x\"></i> <span ng-bind=button.title style=\"padding-right: 5px\"></span> <span class=caret></span> <span ng-if=button.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=button.badge.value></span></a><ep-include class=\"pull-left ep-navbar-button left-button\" ng-if=\"button.type === 'template'\" options=button.options user-data=button></ep-include><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator' && opt.type !== 'checked'\" ng-click=state.executeButton(opt,$event) ng-mousedown=state.buttonMouseDown(opt)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i> <span class=ep-navmenu-item-text>{{opt.title}}</span> <span ng-if=opt.badge class=\"ep-badge {{opt.badge.cssClass}}\" ng-bind=opt.badge.value></span></span></a> <a ng-if=\"opt.type !== 'separator' && opt.type === 'checked'\" ng-click=state.executeButton(opt,$event) ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><input type=checkbox class=ep-dropdown-btn-chk ng-model=\"opt.checked\"> <span class=ep-navmenu-item-text ng-bind=opt.title></span> <span ng-if=opt.badge class=\"ep-badge {{opt.badge.cssClass}}\" ng-bind=opt.badge.value></span></span></a></li></ul></li><li id=brandItem ng-hide=\"state.showBrand === false\" ng-class=\"{'ep-center-brand': state.centerBrand}\"><a id=apptitle ng-cloak=\"\" ng-if=state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-href=#{{(state.brandTarget)}} ng-bind-html=state.brandHTML></a> <span id=apptitle ng-cloak=\"\" ng-if=!state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-bind-html=state.brandHTML></span></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa {{state.rightToggleButtonIcon}} fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in rightNavButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.enabled === false}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button,$event) ng-mousedown=state.buttonMouseDown(button)><span ng-if=button.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=button.badge.value></span></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false><i class=\"fa {{button.icon}} fa-2x\"></i> <span ng-bind=button.title style=\"padding-right: 5px\"></span> <span class=caret></span> <span ng-if=button.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=button.badge.value></span></a><ep-include class=ep-navbar-button ng-if=\"button.type === 'template'\" options=button.options user-data=button></ep-include><ul ng-if=\"button.type === 'select'\" class=\"dropdown-menu dropdown-menu-right\" ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator' && opt.type !== 'checked'\" ng-click=state.executeButton(opt,$event) ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i> <span class=ep-navmenu-item-text ng-bind=opt.title></span> <span ng-if=opt.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=opt.badge.value></span></span></a> <a ng-if=\"opt.type !== 'separator' && opt.type === 'checked'\" ng-click=state.executeButton(opt,$event) ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><input type=checkbox class=ep-dropdown-btn-chk ng-model=\"opt.checked\"> <span class=ep-navmenu-item-text ng-bind=opt.title></span> <span ng-if=opt.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=opt.badge.value></span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div class=ep-fullscreen ng-if=\"options.enableViewAnimations !== false\"><div ng-view class=\"ep-fullscreen {{'ep-anim-speed-' + state.animationSpeed}} {{state.animationIn}} {{state.animationOut}} ep-view ep-view-transition\" ng-class=state.viewAnimation></div></div><div class=ep-fullscreen ng-if=\"options.enableViewAnimations === false\"><div ng-view class=\"ep-fullscreen ep-view\"></div></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" ng-if=state.footerTarget ng-href={{state.footerTarget}}><sup id=footerElement ng-bind-html=state.footerHTML></sup></a> <sup ng-if=!state.footerTarget id=footerElement ng-bind-html=state.footerHTML></sup></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.enableFeedback ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
   );
 
 

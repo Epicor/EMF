@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.510 built: 07-02-2017
+ * version:1.0.10-dev.511 built: 07-02-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.510","built":"2017-02-07"};
+__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.511","built":"2017-02-07"};
 
 (function() {
     'use strict';
@@ -55,6 +55,20 @@ angular.module('ep.record.editor', [
     'ep.sysconfig',
     'ep.include'
 ]);
+
+/**
+ * @ngdoc overview
+ * @name ep.switch
+ * @description
+ * ep.switch is based on bootstrap switch
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.switch', [
+        'ep.templates'
+    ]);
+})();
 
 /**
  * @ngdoc directive
@@ -550,26 +564,45 @@ angular.module('ep.record.editor', [
             },
             compile: function() {
                 return {
-                    pre: function($scope) {
+                    pre: function($scope, element) {
                         var ctx = $scope.ctx;
 
-                        //set size class smaller for check box
-                        ctx.fnSetSizeClass('col-xs-12 col-sm-4 col-md-3 col-lg-2');
-                        ctx.checkBoxSize = ctx.checkBoxSize || '2x';
+                        $scope.temp = {
+                            chk: false
+                        };
 
-                        if (ctx.updatable) {
-                            ctx.toggleValue = function(c, ev) {
-                                if ($scope.value !== undefined && !ctx.disabled) {
-                                    var newVal = !$scope.value;
-                                    ctx.fnSetCurrentValue(newVal, false);
+                        $scope.checkBoxMode = ctx.col.checkBoxMode || 'checkbox';
+                        if ($scope.checkBoxMode === 'checkbox') {
+                            //set size class smaller for check box
+                            ctx.fnSetSizeClass('col-xs-12 col-sm-4 col-md-3 col-lg-2');
+                            ctx.checkBoxSize = ctx.checkBoxSize || '2x';
 
-                                    if (ctx.fnValidate && ctx.updatable) {
-                                        ctx.fnValidate(ctx.col, this, ev);
+                            if (ctx.updatable) {
+                                ctx.toggleValue = function(c, ev) {
+                                    if ($scope.value !== undefined && !ctx.disabled) {
+                                        var newVal = !$scope.value;
+                                        ctx.fnSetCurrentValue(newVal, false);
+
+                                        if (ctx.fnValidate && ctx.updatable) {
+                                            ctx.fnValidate(ctx.col, this, ev);
+                                        }
                                     }
-                                }
-                            };
+                                };
+                            }
+                            ctx.checked = ctx.value ? 'checked' : '';
+                        } else if ($scope.checkBoxMode === 'switch') {
+                            //set initial value
+                            $scope.temp.chk = !!$scope.value;
+
+                            //watch for changes
+                            if (ctx.updatable) {
+                                $scope.$watch('temp.chk', function(newValue, oldValue) {
+                                    if (newValue !== undefined && newValue !== oldValue && newValue !== $scope.value) {
+                                        $scope.value = newValue;
+                                    }
+                                });
+                            }
                         }
-                        ctx.checked = ctx.value ? 'checked' : '';
                         $scope.handleKey = function($event) {
                             if ($event.which === 32) {
                                 $scope.ctx.toggleValue($scope.ctx);
@@ -807,6 +840,7 @@ angular.module('ep.record.editor', [
         #                   class to this element. if node is passed then sets size class on it.
         #
         # checkBoxSize {string}  - applicable to checkbox only (for now). Can be '1x', '2x', '3x'
+        # checkBoxMode {string}  - applicable to checkbox only. 'checkbox'/'switch' (default is 'checkbox')
         # style {string} - sets inline styling. eg. '{ "color" : "red", "margin" : "0px" }
         # oFormat {object}
         # maxLength {int} - set max length for string entry default is 30
@@ -2392,6 +2426,79 @@ angular.module('ep.record.editor').
     }
 }());
 
+(function() {
+    'use strict';
+    /**
+    * @ngdoc directive
+    * @name ep.switch.directive:epSwitch
+    * @restrict E
+    *
+    * @description
+    * Represents the ep.switch directive
+    * This directive draws a simple ON/OFF switch
+    *
+    * @property {string} ng-model:string
+    *  This property sets the binding to a object property.
+    *
+    * @property {string} onChangeHandler:string
+    *  This attribute sets the name of handler function on the scope called when switch value changes.
+    *
+    * @example
+    <doc:example module="ep.switch">
+      <doc:source>
+        <ep-switch ng-model="onOff"><ep-switch>
+      </doc:source>
+    </doc:example>
+    
+    */
+    epSwitchDirective.$inject = ['$timeout'];
+    angular.module('ep.switch').
+        directive('epSwitch', epSwitchDirective);
+
+    /*@ngInject*/
+    function epSwitchDirective($timeout) {
+        return {
+            restrict: 'E',
+            require: '?ngModel',
+            template: '<input type="checkbox" class="bs-switch">',
+            link: function(scope, element, attrs, ngModel) {
+
+                if (!ngModel) { return; }
+
+                //Outward (from control to bound object)
+                ngModel.$parsers.unshift(function(value) {
+                    return value;
+                });
+
+                //Inward (from bound object to control)
+                ngModel.$formatters.push(function(value) {
+                    return value;
+                });
+
+                $timeout(function() {
+                    var el = $(element).find('input');
+                    el.bootstrapSwitch({
+                        state: ngModel.$viewValue
+                    });
+
+                    el.on('switchChange.bootstrapSwitch', function(e) {
+                        ngModel.$setViewValue(e.target.checked);
+
+                        if (scope[attrs.onChangeHandler]) {
+                            scope[attrs.onChangeHandler].call(e.target.checked);
+                        }
+                    });
+
+                    // On destroy, collect garbage
+                    scope.$on('$destroy', function() {
+                        el.bootstrapSwitch('destroy');
+                    });
+                });
+            }
+        };
+    }
+}());
+
 //# sourceMappingURL=emf.editors.min.js.map
 angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   'use strict';
@@ -2412,7 +2519,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-checkbox-editor.html',
-    "<section class=\"ep-editor-checkbox ep-center-item editor\" tabindex=0 ng-keyup=handleKey($event) ng-click=ctx.toggleValue(ctx,$event) ng-hide=ctx.fnDoValidations()><span ng-class=\"{'fa-square-o': !value, 'fa-check-square-o': value}\" class=\"fa fa-{{ctx.checkBoxSize}}\"></span></section>"
+    "<section><section ng-if=\"checkBoxMode ==='checkbox'\" class=\"ep-editor-checkbox ep-center-item editor\" tabindex=0 ng-keyup=handleKey($event) ng-click=ctx.toggleValue(ctx,$event) ng-hide=ctx.fnDoValidations()><span ng-class=\"{'fa-square-o': !value, 'fa-check-square-o': value}\" class=\"fa fa-{{ctx.checkBoxSize}}\"></span></section><section ng-if=\"checkBoxMode ==='switch'\" class=\"ep-editor-switch editor\" ng-keyup=handleKey($event) ng-hide=ctx.fnDoValidations()><ep-switch ng-model=temp.chk></ep-switch></section></section>"
   );
 
 

@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.510 built: 07-02-2017
+ * version:1.0.10-dev.511 built: 07-02-2017
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -3312,6 +3312,11 @@ VIEW CONTAINER [ep-view-container]
 }
 .ep-sliding-pane.ng-leave-active.toRight {
   left: -100%;
+}
+
+/* This is a workaround opera issue with the ep-switch wrapping */
+.ep-browser-opera ep-switch .bootstrap-switch-label {
+  margin-left: -0.5px;
 }
 
 .ep-tabbar .ep-tabbar-contents {

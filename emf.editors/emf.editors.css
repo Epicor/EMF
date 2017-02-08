@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.510 built: 07-02-2017
+ * version:1.0.10-dev.511 built: 07-02-2017
 */
 .ep-color-selector-container .btn {
   background-color: #F5F5F5;
@@ -269,4 +269,9 @@ ep-editor-control .ep-record-editor-container.ep-is-row-editor {
   position: absolute;
   /*transform: translateX(10%);*/
   text-align: left;
+}
+
+/* This is a workaround opera issue with the ep-switch wrapping */
+.ep-browser-opera ep-switch .bootstrap-switch-label {
+  margin-left: -0.5px;
 }

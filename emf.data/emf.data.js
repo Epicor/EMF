@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.510 built: 07-02-2017
+ * version:1.0.10-dev.511 built: 07-02-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.510","built":"2017-02-07"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.511","built":"2017-02-07"};
 
 (function() {
     'use strict';
@@ -3361,6 +3361,36 @@ angular.module('ep.binding').
 
             /**
              * @ngdoc method
+             * @name set
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * sets specified column's value
+             * @param {string} column - column name
+             * @param {object} value - (optional) column value to set
+             * @returns {object} column value
+             */
+            function set(column, value) {
+                this.columnValue(column, value);
+            }
+
+            /**
+             * @ngdoc method
+             * @name get
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * returns specified column's value
+             * @param {string} column - column name
+             * @param {object} value - (optional) column value to set
+             * @returns {object} column value
+             */
+            function get(column) {
+                return this.columnValue(column);
+            }
+
+            /**
+             * @ngdoc method
              * @name rollback
              * @methodOf ep.binding.factory:epDataViewFactory
              * @public
@@ -3574,6 +3604,8 @@ angular.module('ep.binding').
                 dataRow: dataRow,
                 row: row,
                 columnValue: columnValue,
+                set: set,
+                get: get,
                 addRow: addRow,
                 isDirty: isDirty,
                 hasData: hasData,
@@ -3983,7 +4015,7 @@ angular.module('ep.binding').
                     var rowIdx = 0;
                     var view = epTransactionFactory.current().view(viewId);
                     if (!view) {
-                        epTransactionFactory.current().add(viewId, data.value);
+                        view = epTransactionFactory.current().add(viewId, data.value);
                     } else {
                         rowIdx = view.addRow(data.value[0]);
                     }
@@ -4062,6 +4094,13 @@ angular.module('ep.binding').
         function getMetaColumns(metaData) {
             var cols = {};
             angular.forEach(metaData.QueryFieldDesigner, function(cc) {
+                var qUpdFld = _.find(metaData.QueryUpdateFieldDesigner, function(qf) {
+                    return cc.QueryID === qf.QueryID && cc.TableID === qf.MapTableName &&
+                        cc.FieldName === qf.MapFieldName;
+                });
+
+                var hasUpdMap = !!qUpdFld;
+                var isKeyField = hasUpdMap && (qUpdFld.IsKeyField === true);
                 cols[cc.Alias] = {
                     name: cc.Alias,
                     caption: cc.FieldLabel || cc.Alias,
@@ -4071,8 +4110,11 @@ angular.module('ep.binding').
                     tableId: cc.TableID,
                     columnName: cc.FieldName,
                     dataType: cc.DataType,
-                    editor: getBaqEditor(cc)
+                    editor: getBaqEditor(cc),
+                    hasUpdateMapping: hasUpdMap,
+                    isKeyField: isKeyField
                 };
+
                 if (cc.FieldFormat) {
                     setBaqFormat(cc, cols[cc.Alias]);
                 }
