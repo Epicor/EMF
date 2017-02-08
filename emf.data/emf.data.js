@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.512 built: 08-02-2017
+ * version:1.0.10-dev.513 built: 08-02-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.512","built":"2017-02-08"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.513","built":"2017-02-08"};
 
 (function() {
     'use strict';
@@ -3195,6 +3195,7 @@ angular.module('ep.binding').
                 state.isDirty = false;
                 state.modifiedRows = {};
                 state.addedRows = {};
+                state.deletedRows = [];
                 state.hasModified = false;
                 state.hasAdded = false;
                 state.modified = Array(state.data.length);
@@ -3276,6 +3277,22 @@ angular.module('ep.binding').
                     });
                 }
                 return state.row;
+            }
+
+            /**
+             * @ngdoc method
+             * @name deleteRow
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * Deletes a row, keeping track of deleted rows and firing events
+             * @param {int} index - index of row to be deleted
+             * @returns {int} removed row index
+             */
+            function deleteRow(index) {
+                state.deletedRows[state.deletedRows.length] = state.data[index];
+                state.data.splice(index, 1);
+                return index;
             }
 
             /**
@@ -3512,6 +3529,23 @@ angular.module('ep.binding').
 
             /**
              * @ngdoc method
+             * @name deletedRows
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * returns deleted rows
+             * @returns {array} array of deleted rows
+             */
+            function deletedRows() {
+                var ret = [];
+                angular.forEach(state.deletedRows, function(rowObj) {
+                    ret.push(rowObj);
+                })
+                return ret;
+            }
+
+            /**
+             * @ngdoc method
              * @name hasAdded
              * @methodOf ep.binding.factory:epDataViewFactory
              * @public
@@ -3607,6 +3641,7 @@ angular.module('ep.binding').
                 set: set,
                 get: get,
                 addRow: addRow,
+                deleteRow: deleteRow,
                 isDirty: isDirty,
                 hasData: hasData,
                 hasModified: hasModified,
@@ -3614,6 +3649,7 @@ angular.module('ep.binding').
                 hasChanges: hasChanges,
                 modifiedRows: modifiedRows,
                 addedRows: addedRows,
+                deletedRows: deletedRows,
                 changedRows: changedRows,
                 rowModified: rowModified,
                 findRow: findRow,
