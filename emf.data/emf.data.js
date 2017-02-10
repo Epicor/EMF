@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.517 built: 09-02-2017
+ * version:1.0.10-dev.518 built: 09-02-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.517","built":"2017-02-09"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.518","built":"2017-02-09"};
 
 (function() {
     'use strict';
@@ -1902,18 +1902,6 @@ angular.module('ep.token').
                         epUtilsService.copyProperties(col, scope.state.metaColumn);
                     }
 
-                    //if (scope.state.column.caption === undefined ||
-                    //    scope.state.epBinding.column !== scope.epBindingInfo.epBinding.column ||
-                    //    scope.state.epBinding.view !== scope.epBindingInfo.epBinding.view) {
-                    //    scope.state.column.caption = scope.epBindingInfo.epBinding.column;
-                    //}
-
-                    //var meta = epBindingMetadataService.get(scope.epBindingInfo.epBinding.view);
-                    //if (meta && meta.columns && meta.columns[scope.epBindingInfo.epBinding.column]) {
-                    //    var col = meta.columns[scope.epBindingInfo.epBinding.column];
-                    //    epUtilsService.copyProperties(col, scope.state.column);
-                    //}
-
                     scope.state.epBinding.view = scope.epBindingInfo.epBinding.view;
                     scope.state.epBinding.column = scope.epBindingInfo.epBinding.column;
                 }
@@ -3292,7 +3280,30 @@ angular.module('ep.binding').
             function deleteRow(index) {
                 state.deletedRows[state.deletedRows.length] = state.data[index];
                 state.data.splice(index, 1);
+                adjustAddedRowIndexes(index);
+                state.hasModified = true;
                 return index;
+            }
+
+            /**
+             * @ngdoc method
+             * @name adjustAddedRowIndexes
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @private
+             * @description
+             * Adjusts the addedrow indexes when a row is deleted
+             * @param {int} deletedIndex - index of row deleted
+             * @returns
+             */
+            function adjustAddedRowIndexes(deletedIndex) {
+                var addedRows = state.addedRows;
+                angular.forEach(Object.keys(addedRows), function(idx) {
+                    if (idx > deletedIndex) {
+                        state.addedRows[idx - 1] = state.addedRows[idx - 1];
+                        delete state.addedRows[idx];
+                    }
+                })
+
             }
 
             /**
