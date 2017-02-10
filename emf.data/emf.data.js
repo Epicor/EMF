@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.520 built: 10-02-2017
+ * version:1.0.10-dev.521 built: 10-02-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.520","built":"2017-02-10"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.521","built":"2017-02-10"};
 
 (function() {
     'use strict';
@@ -3293,7 +3293,6 @@ angular.module('ep.binding').
              * @description
              * Adjusts the addedrow indexes when a row is deleted
              * @param {int} deletedIndex - index of row deleted
-             * @returns
              */
             function adjustAddedRowIndexes(deletedIndex) {
                 var addedRows = state.addedRows;
@@ -3303,7 +3302,6 @@ angular.module('ep.binding').
                         delete state.addedRows[idx];
                     }
                 })
-
             }
 
             /**
