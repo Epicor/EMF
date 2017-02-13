@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.533 built: 13-02-2017
+ * version:1.0.10-dev.534 built: 13-02-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.533","built":"2017-02-13"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.534","built":"2017-02-13"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -3611,11 +3611,8 @@ function() {
         function showCustomDialog(options) {
             var cfg = options; //for compatability with show()
 
-            //If previous dialog was not stackable
-            var prevIsStackable = (currentDialog && currentDialog.isModal && currentDialog.cfg.stackable === true);
-            if (!prevIsStackable) {
-                hide(); // hide previous if it was open
-            }
+            //Hide if previous dialog was not stackable
+            hide('non-stackable');
 
             if (checkRememberMe(cfg) === 1) {
                 return;
@@ -3706,10 +3703,8 @@ function() {
                                     //release(prevCfg);
                                     if (action === 'fnCancelAction' || (btn && btn.isCancel)) {
                                         closeCurrentDialog(true);
-                                        //$scope.modalInstance.dismiss('cancel');
                                     } else if ($scope.config.stackable !== true) {
                                         closeCurrentDialog(false, result);
-                                        //$scope.modalInstance.close(!result ? 0 : result);
                                     } else {
                                         release();
                                     }
@@ -3781,25 +3776,42 @@ function() {
          *  # 'all' - closes all open dialogs
          *  # 'panel' - closes only if current dialog is a panel
          *  # 'modal' - closes only if current dialog is a modal
+         *  # 'modal-form' - closes only if current dialog is a modal-form
          *  # 'current' - closes current dialog
+         *  # 'non-stackable' - close only if current modal is not stackable
          */
         function hide(mode) {
-            if (mode === 'all') {
+            var md = (mode || '').toLowerCase();
+            if (md === 'all') {
                 release();
                 $uibModalStack.dismissAll();
                 currentDialog = undefined;
                 dialogs = [];
                 dialogState.isVisible = false;
                 dialogState.isModal = false;
-            } else if (mode === 'panel') {
+            } else if (md === 'panel') {
                 if (currentDialog && currentDialog.isModal !== true) {
                     closeCurrentDialog();
                 }
-            } else if (mode === 'modal') {
+            } else if (md === 'modal') {
                 if (currentDialog && currentDialog.isModal === true) {
                     closeCurrentDialog();
                 }
+            } else if (md === 'modal-form') {
+                if (currentDialog && currentDialog.isModal === true && currentDialog.cfg.kind === 'modal-form') {
+                    closeCurrentDialog();
+                }
+            } else if (md === 'current') {
+                closeCurrentDialog();
+            } else if (md === 'non-stackable') {
+                if (currentDialog && !currentDialog.isModal && !currentDialog.cfg.stackable) {
+                    closeCurrentDialog();
+                }
             } else {
+                if (currentDialog && currentDialog.isModal === true && currentDialog.cfg.kind === 'modal-form') {
+                    //by default we do not close modal forms. You have to select 'modal-form'
+                    return;
+                }
                 closeCurrentDialog();
             }
         }
@@ -3865,11 +3877,8 @@ function() {
         function show(options) {
             release();
 
-            //If previous dialog was not stackable
-            var prevIsStackable = (currentDialog && currentDialog.isModal && currentDialog.cfg.stackable === true);
-            if (!prevIsStackable) {
-                hide(); // hide previous if it was open
-            }
+            //Hide if previous dialog was not stackable
+            hide('non-stackable');
 
             // reset the config object to default values.
             var cfg = {};
@@ -3880,7 +3889,7 @@ function() {
             copyProperties(options, cfg);
 
             if (checkRememberMe(cfg)) {
-                hide();
+                hide('current');
                 return;
             }
 
@@ -3891,7 +3900,7 @@ function() {
                 dialogState.paneScope = $rootScope.$new();
                 dialogState.paneScope.dialogState = dialogState;
                 dialogState.paneScope.btnclick = function(btn) {
-                    hide();
+                    hide('panel');
                     onButtonClick(dialogState.config, btn);
                 };
                 angular.element(document.body).append($compile('<epmodaldialog></epmodaldialog>')(
@@ -3947,7 +3956,7 @@ function() {
                     if ((cfg.autoClosePromise !== null) && cfg.fnDefaultAction) {
                         cfg.fnDefaultAction();
                     }
-                    hide();
+                    hide('current');
                 }, cfg.autoClose * 1000);
 
                 cfg.countDown = cfg.autoClose;

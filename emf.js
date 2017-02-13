@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.533 built: 13-02-2017
+ * version:1.0.10-dev.534 built: 13-02-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.533","built":"2017-02-13"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.534","built":"2017-02-13"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -11987,6 +11987,16 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
 (function() {
     'use strict';
+    /**
+     * @ngdoc service
+     * @name ep.erp.service:epErpBaqService
+     * @description
+     * Service for epErpBaqService. Service for access of ERP BAQ
+     *
+     * @example
+     *
+     */
+
     epErpBaqService.$inject = ['$q', 'epErpRestService', 'epModalDialogService', 'epTransactionFactory', 'odataQueryFactory', 'epBindingMetadataService'];
     angular.module('ep.erp').
     service('epErpBaqService', epErpBaqService);
@@ -12013,7 +12023,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             return promise;
         }
 
-        function getBAQ(baqId, myQuery, viewId, options) {
+        function getBAQ(baqId, query, viewId, options) {
             if (!options) {
                 options = {};
             }
@@ -12028,8 +12038,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
             var deferred = $q.defer();
 
+            if (query && !query.$filter) {
+                query = query.compose();
+            }
+
             var url = 'BaqSvc/' + baqId;
-            var promise = epErpRestService.get(url, myQuery).$promise;
+            var promise = epErpRestService.get(url, query).$promise;
             promise.then(function(data) {
                 //if (data.value) {
                 //    epTransactionFactory.current().add(viewId, data.value);
@@ -12084,48 +12098,84 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             }
 
             var showProgress = (options.showProgress !== false);
-            if (showProgress) {
-                epModalDialogService.showProgress({
-                    title: options.title || 'Updating data',
-                    message: options.message || 'sending data to server...',
-                    showProgress: true
-                });
+            var fnOnComplete = function() {
+                if (showProgress) {
+                    epModalDialogService.hide();
+                }
             }
 
-            var url = 'BaqSvc/' + baqId;
-
-            var d = angular.copy(data);
-            if (options.convertToJsonType !== false) {
-                var meta = epBindingMetadataService.get(baqId);
-                if (meta && meta.columns) {
-                    angular.forEach(Object.keys(d), function(key) {
-                        var col = meta.columns[key];
-                        if (col && col.dataType === 'decimal' && !angular.isString(d[key])) {
-                            //decimals must be sent as strings at least in oData v3
-                            var v = '' + d[key] + '';
-                            d[key] = v;
-                        }
+            var deferred = $q.defer();
+            try{
+                if (showProgress) {
+                    epModalDialogService.showProgress({
+                        title: options.title || 'Updating data',
+                        message: options.message || 'sending data to server...',
+                        showProgress: true
                     });
                 }
-            }
 
-            if (d.hasOwnProperty('$$hashKey')) {
-                delete d.$$hashKey;
-            }
+                var url = 'BaqSvc/' + baqId;
 
-            var promise = epErpRestService.patch(url, d);
-            promise.then(function() {
-                if (showProgress) {
-                    epModalDialogService.hide();
+                var d = angular.copy(data);
+                if (options.convertToJsonType !== false) {
+                    var meta = epBindingMetadataService.get(baqId);
+                    if (meta && meta.columns) {
+                        angular.forEach(Object.keys(d), function(key) {
+                            var col = meta.columns[key];
+                            if (col && col.dataType === 'decimal' && !angular.isString(d[key])) {
+                                //decimals must be sent as strings at least in oData v3
+                                var v = '' + d[key] + '';
+                                d[key] = v;
+                            }
+                        });
+                    }
                 }
-            });
-            promise.error(function(response) {
-                if (showProgress) {
-                    epModalDialogService.hide();
+
+                if (d.hasOwnProperty('$$hashKey')) {
+                    delete d.$$hashKey;
                 }
+
+                var promise = epErpRestService.patch(url, d);
+                promise.then(function() {
+                    var query;
+                    if (options.retrieve) {
+                        if (options.retrieve.keys && options.retrieve.keys.length) {
+                            var query = odataQueryFactory;
+                            angular.forEach(options.retrieve.keys, function(c) {
+                                query = query.setWhere(c, 'eq', d[c]);
+                            });
+                        } else {
+                            var pks = getPK(baqId);
+                            if (pks && pks.length > 0) {
+                                angular.forEach(pks, function(c) {
+                                    query = query.setWhere(c, 'eq', d[c]);
+                                });
+                            }
+                        }
+                    }
+                    if (query) {
+                        var vId = options.retrieve.viewId || (baqId + '_temp');
+                        getBAQ(baqId, query, vId, undefined).then(function() {
+                            fnOnComplete();
+                            var dv = epTransactionFactory.current().view(vId);
+                            deferred.resolve(dv);
+                        });
+                    } else {
+                        fnOnComplete();
+                        deferred.resolve(data);
+                    }
+                });
+                promise.error(function(response) {
+                    fnOnComplete();
+                    showException(response);
+                    deferred.reject(response);
+                });
+            } catch (err) {
                 showException(response);
-            });
-            return promise;
+                fnOnComplete();
+            }
+
+            return deferred.promise;
         }
 
         function getNewBAQ(baqId, viewId, options) {
@@ -12221,6 +12271,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             if (!msg && response.statusText) {
                 msg = response.statusText;
             }
+            if (!msg && response.message) {
+                msg = response.message;
+            }
             epModalDialogService.showException({
                 title: 'Info', message: msg || '',
                 messageDetails: angular.toJson(response, 2)
@@ -12293,6 +12346,31 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     }
                 }
             }
+        }
+
+        /**
+         * @ngdoc method
+         * @name getPK
+         * @methodOf ep.erp.service:epErpBaqService
+         * @private
+         * @description
+         * get primary key information
+         */
+        function getPK(baqId, row) {
+            var ret = [];
+            var meta = epBindingMetadataService.get(baqId);
+            if (meta && meta.columns) {
+                angular.forEach(meta.columns, function(c) {
+                    if (c.isKeyField) {
+                        if (row) {
+                            ret.push({ name: c.name, value: row[c.name] });
+                        } else {
+                            ret.push(c.name);
+                        }                       
+                    }
+                });
+            }
+            return ret;
         }
 
         return {
@@ -17037,11 +17115,8 @@ angular.module('ep.menu.builder').
         function showCustomDialog(options) {
             var cfg = options; //for compatability with show()
 
-            //If previous dialog was not stackable
-            var prevIsStackable = (currentDialog && currentDialog.isModal && currentDialog.cfg.stackable === true);
-            if (!prevIsStackable) {
-                hide(); // hide previous if it was open
-            }
+            //Hide if previous dialog was not stackable
+            hide('non-stackable');
 
             if (checkRememberMe(cfg) === 1) {
                 return;
@@ -17132,10 +17207,8 @@ angular.module('ep.menu.builder').
                                     //release(prevCfg);
                                     if (action === 'fnCancelAction' || (btn && btn.isCancel)) {
                                         closeCurrentDialog(true);
-                                        //$scope.modalInstance.dismiss('cancel');
                                     } else if ($scope.config.stackable !== true) {
                                         closeCurrentDialog(false, result);
-                                        //$scope.modalInstance.close(!result ? 0 : result);
                                     } else {
                                         release();
                                     }
@@ -17207,25 +17280,42 @@ angular.module('ep.menu.builder').
          *  # 'all' - closes all open dialogs
          *  # 'panel' - closes only if current dialog is a panel
          *  # 'modal' - closes only if current dialog is a modal
+         *  # 'modal-form' - closes only if current dialog is a modal-form
          *  # 'current' - closes current dialog
+         *  # 'non-stackable' - close only if current modal is not stackable
          */
         function hide(mode) {
-            if (mode === 'all') {
+            var md = (mode || '').toLowerCase();
+            if (md === 'all') {
                 release();
                 $uibModalStack.dismissAll();
                 currentDialog = undefined;
                 dialogs = [];
                 dialogState.isVisible = false;
                 dialogState.isModal = false;
-            } else if (mode === 'panel') {
+            } else if (md === 'panel') {
                 if (currentDialog && currentDialog.isModal !== true) {
                     closeCurrentDialog();
                 }
-            } else if (mode === 'modal') {
+            } else if (md === 'modal') {
                 if (currentDialog && currentDialog.isModal === true) {
                     closeCurrentDialog();
                 }
+            } else if (md === 'modal-form') {
+                if (currentDialog && currentDialog.isModal === true && currentDialog.cfg.kind === 'modal-form') {
+                    closeCurrentDialog();
+                }
+            } else if (md === 'current') {
+                closeCurrentDialog();
+            } else if (md === 'non-stackable') {
+                if (currentDialog && !currentDialog.isModal && !currentDialog.cfg.stackable) {
+                    closeCurrentDialog();
+                }
             } else {
+                if (currentDialog && currentDialog.isModal === true && currentDialog.cfg.kind === 'modal-form') {
+                    //by default we do not close modal forms. You have to select 'modal-form'
+                    return;
+                }
                 closeCurrentDialog();
             }
         }
@@ -17291,11 +17381,8 @@ angular.module('ep.menu.builder').
         function show(options) {
             release();
 
-            //If previous dialog was not stackable
-            var prevIsStackable = (currentDialog && currentDialog.isModal && currentDialog.cfg.stackable === true);
-            if (!prevIsStackable) {
-                hide(); // hide previous if it was open
-            }
+            //Hide if previous dialog was not stackable
+            hide('non-stackable');
 
             // reset the config object to default values.
             var cfg = {};
@@ -17306,7 +17393,7 @@ angular.module('ep.menu.builder').
             copyProperties(options, cfg);
 
             if (checkRememberMe(cfg)) {
-                hide();
+                hide('current');
                 return;
             }
 
@@ -17317,7 +17404,7 @@ angular.module('ep.menu.builder').
                 dialogState.paneScope = $rootScope.$new();
                 dialogState.paneScope.dialogState = dialogState;
                 dialogState.paneScope.btnclick = function(btn) {
-                    hide();
+                    hide('panel');
                     onButtonClick(dialogState.config, btn);
                 };
                 angular.element(document.body).append($compile('<epmodaldialog></epmodaldialog>')(
@@ -17373,7 +17460,7 @@ angular.module('ep.menu.builder').
                     if ((cfg.autoClosePromise !== null) && cfg.fnDefaultAction) {
                         cfg.fnDefaultAction();
                     }
-                    hide();
+                    hide('current');
                 }, cfg.autoClose * 1000);
 
                 cfg.countDown = cfg.autoClose;

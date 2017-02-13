@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.533 built: 13-02-2017
+ * version:1.0.10-dev.534 built: 13-02-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.533","built":"2017-02-13"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.534","built":"2017-02-13"};
 
 (function() {
     'use strict';
@@ -3895,6 +3895,16 @@ angular.module('ep.binding').
 
 (function() {
     'use strict';
+    /**
+     * @ngdoc service
+     * @name ep.erp.service:epErpBaqService
+     * @description
+     * Service for epErpBaqService. Service for access of ERP BAQ
+     *
+     * @example
+     *
+     */
+
     epErpBaqService.$inject = ['$q', 'epErpRestService', 'epModalDialogService', 'epTransactionFactory', 'odataQueryFactory', 'epBindingMetadataService'];
     angular.module('ep.erp').
     service('epErpBaqService', epErpBaqService);
@@ -3921,7 +3931,7 @@ angular.module('ep.binding').
             return promise;
         }
 
-        function getBAQ(baqId, myQuery, viewId, options) {
+        function getBAQ(baqId, query, viewId, options) {
             if (!options) {
                 options = {};
             }
@@ -3936,8 +3946,12 @@ angular.module('ep.binding').
 
             var deferred = $q.defer();
 
+            if (query && !query.$filter) {
+                query = query.compose();
+            }
+
             var url = 'BaqSvc/' + baqId;
-            var promise = epErpRestService.get(url, myQuery).$promise;
+            var promise = epErpRestService.get(url, query).$promise;
             promise.then(function(data) {
                 //if (data.value) {
                 //    epTransactionFactory.current().add(viewId, data.value);
@@ -3992,48 +4006,84 @@ angular.module('ep.binding').
             }
 
             var showProgress = (options.showProgress !== false);
-            if (showProgress) {
-                epModalDialogService.showProgress({
-                    title: options.title || 'Updating data',
-                    message: options.message || 'sending data to server...',
-                    showProgress: true
-                });
+            var fnOnComplete = function() {
+                if (showProgress) {
+                    epModalDialogService.hide();
+                }
             }
 
-            var url = 'BaqSvc/' + baqId;
-
-            var d = angular.copy(data);
-            if (options.convertToJsonType !== false) {
-                var meta = epBindingMetadataService.get(baqId);
-                if (meta && meta.columns) {
-                    angular.forEach(Object.keys(d), function(key) {
-                        var col = meta.columns[key];
-                        if (col && col.dataType === 'decimal' && !angular.isString(d[key])) {
-                            //decimals must be sent as strings at least in oData v3
-                            var v = '' + d[key] + '';
-                            d[key] = v;
-                        }
+            var deferred = $q.defer();
+            try{
+                if (showProgress) {
+                    epModalDialogService.showProgress({
+                        title: options.title || 'Updating data',
+                        message: options.message || 'sending data to server...',
+                        showProgress: true
                     });
                 }
-            }
 
-            if (d.hasOwnProperty('$$hashKey')) {
-                delete d.$$hashKey;
-            }
+                var url = 'BaqSvc/' + baqId;
 
-            var promise = epErpRestService.patch(url, d);
-            promise.then(function() {
-                if (showProgress) {
-                    epModalDialogService.hide();
+                var d = angular.copy(data);
+                if (options.convertToJsonType !== false) {
+                    var meta = epBindingMetadataService.get(baqId);
+                    if (meta && meta.columns) {
+                        angular.forEach(Object.keys(d), function(key) {
+                            var col = meta.columns[key];
+                            if (col && col.dataType === 'decimal' && !angular.isString(d[key])) {
+                                //decimals must be sent as strings at least in oData v3
+                                var v = '' + d[key] + '';
+                                d[key] = v;
+                            }
+                        });
+                    }
                 }
-            });
-            promise.error(function(response) {
-                if (showProgress) {
-                    epModalDialogService.hide();
+
+                if (d.hasOwnProperty('$$hashKey')) {
+                    delete d.$$hashKey;
                 }
+
+                var promise = epErpRestService.patch(url, d);
+                promise.then(function() {
+                    var query;
+                    if (options.retrieve) {
+                        if (options.retrieve.keys && options.retrieve.keys.length) {
+                            var query = odataQueryFactory;
+                            angular.forEach(options.retrieve.keys, function(c) {
+                                query = query.setWhere(c, 'eq', d[c]);
+                            });
+                        } else {
+                            var pks = getPK(baqId);
+                            if (pks && pks.length > 0) {
+                                angular.forEach(pks, function(c) {
+                                    query = query.setWhere(c, 'eq', d[c]);
+                                });
+                            }
+                        }
+                    }
+                    if (query) {
+                        var vId = options.retrieve.viewId || (baqId + '_temp');
+                        getBAQ(baqId, query, vId, undefined).then(function() {
+                            fnOnComplete();
+                            var dv = epTransactionFactory.current().view(vId);
+                            deferred.resolve(dv);
+                        });
+                    } else {
+                        fnOnComplete();
+                        deferred.resolve(data);
+                    }
+                });
+                promise.error(function(response) {
+                    fnOnComplete();
+                    showException(response);
+                    deferred.reject(response);
+                });
+            } catch (err) {
                 showException(response);
-            });
-            return promise;
+                fnOnComplete();
+            }
+
+            return deferred.promise;
         }
 
         function getNewBAQ(baqId, viewId, options) {
@@ -4129,6 +4179,9 @@ angular.module('ep.binding').
             if (!msg && response.statusText) {
                 msg = response.statusText;
             }
+            if (!msg && response.message) {
+                msg = response.message;
+            }
             epModalDialogService.showException({
                 title: 'Info', message: msg || '',
                 messageDetails: angular.toJson(response, 2)
@@ -4201,6 +4254,31 @@ angular.module('ep.binding').
                     }
                 }
             }
+        }
+
+        /**
+         * @ngdoc method
+         * @name getPK
+         * @methodOf ep.erp.service:epErpBaqService
+         * @private
+         * @description
+         * get primary key information
+         */
+        function getPK(baqId, row) {
+            var ret = [];
+            var meta = epBindingMetadataService.get(baqId);
+            if (meta && meta.columns) {
+                angular.forEach(meta.columns, function(c) {
+                    if (c.isKeyField) {
+                        if (row) {
+                            ret.push({ name: c.name, value: row[c.name] });
+                        } else {
+                            ret.push(c.name);
+                        }                       
+                    }
+                });
+            }
+            return ret;
         }
 
         return {
