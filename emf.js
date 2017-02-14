@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.534 built: 13-02-2017
+ * version:1.0.10-dev.535 built: 13-02-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.534","built":"2017-02-13"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.535","built":"2017-02-13"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -12038,12 +12038,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
             var deferred = $q.defer();
 
-            if (query && !query.$filter) {
-                query = query.compose();
+            var oQuery = query;
+            if (query && query.compose) {
+                //in case compose() has not been applied
+                oQuery = query.compose();
             }
 
             var url = 'BaqSvc/' + baqId;
-            var promise = epErpRestService.get(url, query).$promise;
+            var promise = epErpRestService.get(url, oQuery).$promise;
             promise.then(function(data) {
                 //if (data.value) {
                 //    epTransactionFactory.current().add(viewId, data.value);
