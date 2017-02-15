@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.538 built: 14-02-2017
+ * version:1.0.10-dev.539 built: 14-02-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.538","built":"2017-02-14"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.539","built":"2017-02-14"};
 
 (function() {
     'use strict';
@@ -2249,6 +2249,7 @@ angular.module('ep.binding').
         if (!scope.config) {
             scope.config = { binding: '' };
         }
+        scope.isAllDataPreview = false;
 
         scope.views = [];
         scope.columns = [];
@@ -2304,6 +2305,7 @@ angular.module('ep.binding').
             scope.meta.preview = '';
             scope.config.binding = '[' + viewId + ']';
 
+            scope.isAllDataPreview = false;
             scope.loadingColumns = true;
             $timeout(function() {
                 var view = epTransactionFactory.current().view(viewId);
@@ -2342,6 +2344,19 @@ angular.module('ep.binding').
             readonly: true,
             placeholder: ''
         };
+
+        scope.showAllData = function(allData) {
+            scope.isAllDataPreview = allData;
+
+            var view = epTransactionFactory.current().view(scope.meta.view);
+            if (view.hasData()) {
+                if (!scope.isAllDataPreview) {
+                    scope.meta.preview = JSON.stringify(view.dataRow(), null, '    ');
+                } else {
+                    scope.meta.preview = JSON.stringify(view.data(), null, '    ');
+                }
+            }
+        }
 
         if (viewsList.length) {
             onViewChange(viewsList[0]);
@@ -4501,7 +4516,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.binding/controls/ep-binding-selector.html',
-    "<!--This is a partial for the ep-binding directive --><div class=ep-binding-selector ng-controller=epBindingSelectorCtrl><div class=\"panel panel-default\"><div class=\"panel-heading panel-heading-small\"><ul class=\"nav nav-tabs\"><li class=active><a data-toggle=pill href=.binding>Binding</a></li><li><a data-toggle=pill href=.preview>Data Preview</a></li></ul></div><div class=panel-body><div class=\"tab-content ep-padding-bottom\"><div class=\"binding tab-pane fade in active\"><ep-editor-control column=viewList value=meta.view></ep-editor-control><div ng-if=meta.view><div class=text-center ng-show=loadingColumns><i class=\"fa fa-spinner fa-spin fa-2x\"></i><label>loading columns...</label></div><div ng-hide=loadingColumns><ep-editor-control column=columnList value=meta.column></ep-editor-control></div></div><ep-editor-control column=columnBinding value=config.binding></ep-editor-control></div><div class=\"preview tab-pane fade\"><textarea class=\"form-control alert-info\" ng-model=meta.preview style=\"min-height: 400px; min-width: 300px\"></textarea></div></div></div></div><!--<ep-editor-control column=\"viewList\" value=\"meta.view\"></ep-editor-control>\r" +
+    "<!--This is a partial for the ep-binding directive --><div class=ep-binding-selector ng-controller=epBindingSelectorCtrl><div class=\"panel panel-default\"><div class=\"panel-heading panel-heading-small\"><ul class=\"nav nav-tabs\"><li class=active><a data-toggle=pill href=.binding>Binding</a></li><li><a data-toggle=pill href=.preview>Data Preview</a></li></ul></div><div class=panel-body><div class=\"tab-content ep-padding-bottom\"><div class=\"binding tab-pane fade in active\"><ep-editor-control column=viewList value=meta.view></ep-editor-control><div ng-if=meta.view><div class=text-center ng-show=loadingColumns><i class=\"fa fa-spinner fa-spin fa-2x\"></i><label>loading columns...</label></div><div ng-hide=loadingColumns><ep-editor-control column=columnList value=meta.column></ep-editor-control></div></div><ep-editor-control column=columnBinding value=config.binding></ep-editor-control></div><div class=\"preview tab-pane fade\"><textarea class=\"form-control alert-info\" ng-model=meta.preview style=\"min-height: 400px; min-width: 300px\"></textarea><div><a ng-show=\"isAllDataPreview !== true\" ng-click=showAllData(true) style=\"margin-right: 15px\"><i></i>Show All</a> <a ng-show=\"isAllDataPreview === true\" ng-click=showAllData(false) style=\"margin-right: 15px\"><i></i>Show Current Record</a></div></div></div></div></div><!--<ep-editor-control column=\"viewList\" value=\"meta.view\"></ep-editor-control>\r" +
     "\n" +
     "\r" +
     "\n" +
