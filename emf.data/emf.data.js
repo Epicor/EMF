@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.539 built: 14-02-2017
+ * version:1.0.10-dev.539 built: 15-02-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.539","built":"2017-02-14"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.539","built":"2017-02-15"};
 
 (function() {
     'use strict';
@@ -3126,6 +3126,18 @@ angular.module('ep.binding').
                         ';Action:' + data.action;
                     $log.warn('[EP_BINDING_VIEW_ADDED] ' + info);
                 });
+                logWatches.onViewRowDeleted = $rootScope.$on('EP_BINDING_VIEW_ROW_ADDED', function(event, data) {
+                    var v = epTransactionFactory.current().view(data.viewId);
+                    var info = 'ViewId:' + data.viewId + ';Row:' + v.data.row +
+                        ';Count:' + (v.data() ? v.data().length : 0)
+                    $log.warn('[EP_BINDING_VIEW_ROW_ADDED] ' + info);
+                });
+                logWatches.onViewRowDeleted = $rootScope.$on('EP_BINDING_VIEW_ROW_DELETED', function(event, data) {
+                    var v = epTransactionFactory.current().view(data.viewId);
+                    var info = 'ViewId:' + data.viewId + ';Row:' + v.data.row +
+                        ';Count:' + (v.data() ? v.data().length : 0)
+                    $log.warn('[EP_BINDING_VIEW_ROW_DELETED] ' + info);
+                });
                 logWatches.onViewRowChanged = $rootScope.$on('EP_BINDING_VIEW_ROW_CHANGED', function(event, data) {
                     $log.warn('[EP_BINDING_VIEW_ROW_CHANGED] ViewId:' + data.viewId + ';Row:' + data.view.row() +
                         ';PrevRow:' + data.prevRow);
@@ -3201,6 +3213,7 @@ angular.module('ep.binding').
                 state.deletedRows = [];
                 state.hasModified = false;
                 state.hasAdded = false;
+                state.hasDeleted = false;
                 state.modified = Array(state.data.length);
             }
 
@@ -3293,10 +3306,25 @@ angular.module('ep.binding').
              * @returns {int} removed row index
              */
             function deleteRow(index) {
-                state.deletedRows[state.deletedRows.length] = state.data[index];
+                if (state.addedRows[index] !== undefined) {
+                    //if we are deleting an added row, then it should be removed from both added and deleted
+                    delete state.deletedRows[index];
+                    delete state.addedRows[index];
+                    state.hasAdded = (Object.keys(state.addedRows).length > 0);
+                } else {
+                    state.deletedRows[state.deletedRows.length] = state.data[index];
+                    adjustAddedRowIndexes(index);
+                }
                 state.data.splice(index, 1);
-                adjustAddedRowIndexes(index);
-                state.hasModified = true;
+                state.isDirty = true;
+                state.hasDeleted = (Object.keys(state.deletedRows).length > 0);
+
+                $rootScope.$emit('EP_BINDING_VIEW_ROW_DELETED', {
+                    viewId: state.id,
+                    view: this,
+                    row: index
+                });
+
                 return index;
             }
 
@@ -3352,6 +3380,37 @@ angular.module('ep.binding').
 
             /**
              * @ngdoc method
+             * @name getOriginalIdx
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @private
+             * @description
+             * Get index of original row
+             */
+            function getOriginalIdx(index) {
+                var rowIdx = index === undefined ? state.row : index;
+                if (state.addedRows[rowIdx] !== undefined) {
+                    //This is an added row, so no original
+                    return undefined;
+                }
+
+                //offset by inserted rows
+                angular.forEach(Object.keys(state.addedRows), function(idx) {
+                    if (idx < rowIdx) {
+                        rowIdx++;
+                    }
+                })
+                //offset by inserted rows
+                angular.forEach(Object.keys(state.deletedRows), function(idx) {
+                    if (idx < rowIdx) {
+                        rowIdx--;
+                    }
+                })
+
+                return rowIdx;
+            }
+
+            /**
+             * @ngdoc method
              * @name columnValue
              * @methodOf ep.binding.factory:epDataViewFactory
              * @public
@@ -3362,17 +3421,20 @@ angular.module('ep.binding').
              * @returns {object} column value
              */
             function columnValue(column, value) {
-                var record = state.data[state.row];
+                var rowIdx = state.row;
+                var record = state.data[rowIdx];
                 if (arguments.length > 1) {
                     var oldValue = record[column];
                     if (record[column] !== value) {
                         record[column] = value;
                         state.isDirty = true;
                         var origValue = '';
-                        var rowIdx = state.row; //need to handle deleted or new
-                        if (state.addedRows[rowIdx] === undefined) {
+                        if (state.addedRows[rowIdx] === undefined && state.deletedRows[rowIdx] === undefined) {
                             var mod = state.modified[rowIdx] || { state: 'M', columns: {} };
-                            origValue = state.original[rowIdx][column];
+                            var origIdx = getOriginalIdx(rowIdx);
+                            if (origIdx !== undefined) {
+                                origValue = state.original[origIdx][column];
+                            }
                             if (Object.keys(mod.columns).length > 0 && record[column] === origValue) {
                                 delete mod.columns[column];
                             } else {
@@ -3583,6 +3645,19 @@ angular.module('ep.binding').
 
             /**
              * @ngdoc method
+             * @name hasDeleted
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * returns true if view has deleted rows
+             * @returns {bool} true if there are deleted records
+             */
+            function hasDeleted() {
+                return state.hasDeleted;
+            }
+
+            /**
+             * @ngdoc method
              * @name hasChanges
              * @methodOf ep.binding.factory:epDataViewFactory
              * @public
@@ -3591,7 +3666,7 @@ angular.module('ep.binding').
              * @returns {bool} true if there are added/modified records
              */
             function hasChanges() {
-                return state.hasAdded || state.hasModified;
+                return state.hasAdded || state.hasModified || state.hasDeleted;
             }
 
             /**
@@ -3670,6 +3745,7 @@ angular.module('ep.binding').
                 hasData: hasData,
                 hasModified: hasModified,
                 hasAdded: hasAdded,
+                hasDeleted: hasDeleted,
                 hasChanges: hasChanges,
                 modifiedRows: modifiedRows,
                 addedRows: addedRows,
