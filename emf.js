@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.540 built: 15-02-2017
+ * version:1.0.10-dev.541 built: 15-02-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.540","built":"2017-02-15"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.541","built":"2017-02-15"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -3721,7 +3721,7 @@ angular.module('ep.binding').
             function userData(data, merge) {
                 if (data) {
                     if (merge === true) {
-                        epUtilsService.merge(data, state.userData);
+                        angular.merge(state.userData, data);
                     } else {
                         state.userData = data;
                     }
