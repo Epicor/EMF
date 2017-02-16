@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.542 built: 16-02-2017
+ * version:1.0.10-dev.543 built: 16-02-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.542","built":"2017-02-16"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.543","built":"2017-02-16"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -25490,8 +25490,8 @@ angular.module('ep.signature').directive('epSignature',
 
         function link($scope) {
             $scope.state = epTabbarService.state;
-            $scope.executeButton = function(icon) {
-                icon.action();
+            $scope.executeButton = function(icon, $event) {
+                icon.action($event);
             };
         }
 
@@ -29282,7 +29282,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.tabbar/ep-tabbar.html',
-    "<!--Tab Bar Components --><div class=ep-tabbar><ul id=tabbar class=\"navbar nav-pills navbar-default\" ng-class=\"{'navbar-fixed-bottom':state.tabbarAlignment=='bottom', 'navbar-fixed-top':state.tabbarAlignment!='bottom'}\"><li ng-repeat=\"icon in state.tabs\" class=ep-tabbar-contents ng-class=\"{'ep-tabbar-list':state.iconAlignment=='left'}\"><a ng-click=executeButton(icon) class=ep-tabbar-content-color><i class={{icon.icon}}></i><label id=testing2 class=testLabel ng-hide=\"state.labelAlignment=='top'\" ng-class=\"{'ep-tabbar-label':state.labelText=='left'}\">{{icon.text}}</label><p id=testing1 class=testP ng-hide=\"state.labelAlignment!='top'\">{{icon.text}}</p></a></li></ul></div>"
+    "<!--Tab Bar Components --><div class=ep-tabbar><ul id=tabbar class=\"navbar nav-pills navbar-default\" ng-class=\"{'navbar-fixed-bottom':state.tabbarAlignment=='bottom', 'navbar-fixed-top':state.tabbarAlignment!='bottom'}\"><li ng-repeat=\"icon in state.tabs\" class=ep-tabbar-contents ng-class=\"{'ep-tabbar-list':state.iconAlignment=='left'}\"><a ng-click=\"executeButton(icon, $event)\" class=ep-tabbar-content-color><i class={{icon.icon}}></i><label id=testing2 class=testLabel ng-hide=\"state.labelAlignment=='top'\" ng-class=\"{'ep-tabbar-label':state.labelText=='left'}\">{{icon.text}}</label><p id=testing1 class=testP ng-hide=\"state.labelAlignment!='top'\">{{icon.text}}</p></a></li></ul></div>"
   );
 
 
