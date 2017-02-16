@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.541 built: 15-02-2017
+ * version:1.0.10-dev.542 built: 16-02-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.541","built":"2017-02-15"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.542","built":"2017-02-16"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -3221,6 +3221,7 @@ angular.module('ep.binding').
             }
 
             function resetState() {
+                state.query = {}
                 state.isDirty = false;
                 state.modifiedRows = {};
                 state.addedRows = {};
@@ -3726,7 +3727,23 @@ angular.module('ep.binding').
                         state.userData = data;
                     }
                 }
-                return state.userData;
+                return state.userData || {};
+            }
+
+            /**
+             * @ngdoc method
+             * @name query
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * Get/Set query object. Generally set by data retrieval
+             * @returns {object} query object
+             */
+            function query(queryObject) {
+                if (queryObject) {
+                    state.query = queryObject;
+                }
+                return state.query;
             }
 
             /**
@@ -3769,7 +3786,8 @@ angular.module('ep.binding').
                 findRow: findRow,
                 rollback: rollback,
                 commit: commit,
-                userData: userData
+                userData: userData,
+                query: query
             };
 
         }
@@ -12180,7 +12198,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             });
                         }
                     }
-                    epTransactionFactory.current().add(viewId, baqData);
+                    var dataView = epTransactionFactory.current().add(viewId, baqData);
+                    if (dataView) {
+                        dataView.query({ filter: oQuery ? oQuery.$filter : '' });
+                    }
                 }
                 if (showProgress) {
                     epModalDialogService.hide();
