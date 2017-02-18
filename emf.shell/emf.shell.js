@@ -6529,7 +6529,12 @@ function() {
                 controller: ['$scope', function($scope) {
                     function init() {
                         $scope.platform = epFeatureDetectionService.getFeatures().platform;
-                        $scope.browserName = ($scope.platform.browser.name || '').toLowerCase();
+                        //set browserName - it is used to shell.html to set ep-browser class
+                        var browserName = 'all';
+                        if ($scope.platform && $scope.platform.browser && $scope.platform.browser.name) {
+                            browserName = ($scope.platform.browser.name).toLowerCase();
+                        }
+                        $scope.browserName = browserName;
                         $scope.shellState = epShellService.__state;
                         $scope.sidebarState = epSidebarService.state;
 

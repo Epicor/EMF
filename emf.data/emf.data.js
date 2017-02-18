@@ -2546,22 +2546,6 @@ angular.module('ep.binding').
 
         //TO DO: make keys case insensitive!
 
-        function getEditor(dataType) {
-            //# editor {string} - 'number' | 'text' | 'multiline' | 'date' | 'checkbox'
-            //| 'select' | 'image' | 'custom'
-            var ret = 'auto';
-            var dt = (dataType || '').toLowerCase();
-            if (dt === 'bool' || dt === 'boolean' || dt === 'logical' || dt === 'bit') {
-                ret = 'checkbox';
-            } else if (dt === 'date' || dt === 'datetime' || dt === 'system.datetime') {
-                ret = 'date';
-            } else if (dt === 'byte' || dt === 'int32' || dt === 'integer' || dt === 'decimal' ||
-                dt === 'system.decimal' || dt === 'system.int32') {
-                ret = 'number';
-            }
-            return ret;
-        }
-
         function add(id, kind, columns, metadata) {
             store.meta[id] = {
                 id: id,
@@ -3738,10 +3722,11 @@ angular.module('ep.binding').
              * @methodOf ep.binding.factory:epDataViewFactory
              * @public
              * @description
-             * Re-initialize with new data
+             * Re-initialize with new data.
+             * @param {array} data - (optional) data to load, if missing then view will be empty
              */
             function reload(data) {
-                init(this.id(), data, true);
+                init(this.id(), data || [], true);
             }
 
             init(viewId, viewData);
