@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.548 built: 20-02-2017
+ * version:1.0.10-dev.548 built: 21-02-2017
 */
 .ep-hover-none {
   text-decoration: none !important;
@@ -422,6 +422,9 @@ img.ep-background-img-medium {
 }
 .ep-margin-left-neg-20 {
   margin-left: -20px !important;
+}
+.ep-center-text {
+  text-align: center !important;
 }
 .ep-center-item {
   /* The order of these transform rules is important, proceed with caution */
