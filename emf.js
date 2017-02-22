@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.549 built: 21-02-2017
+ * version:1.0.10-dev.550 built: 21-02-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.549","built":"2017-02-21"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.550","built":"2017-02-21"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -3249,13 +3249,69 @@ angular.module('ep.binding').
              * @public
              * @description
              * returns current data row of the view
+             * @param {int} index - (optional) index of row to be fetched. If ommited the current row is returned.
              * @returns {object} current data row object
              */
-            function dataRow() {
-                if ((state.row < 0) || !state.data || (state.data.length < 1) || (state.row > state.data.length)) {
+            function dataRow(index) {
+                var rIndex = index !== undefined ? index : state.row;
+                if ((rIndex < 0) || !state.data || (state.data.length < 1) || (rIndex > state.data.length)) {
                     return undefined;
                 }
-                return state.data[state.row];
+                return state.data[rIndex];
+            }
+
+            /**
+             * @ngdoc method
+             * @name replaceDataRow
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * replace a data row specified by row number or row object
+             */
+            function replaceDataRow(row, data) {
+                if (!state.data || (state.data.length < 1)) {
+                    return;
+                }
+                if (angular.isObject(row)) {
+                    for (var i = 0; i < state.data.length; i++) {
+                        if (state.data[i] == row) {
+                            state.data[i] = data;
+                        }
+                    }
+                } else if (row > -1 && row < state.data.length) {
+                    state.data[row] = data;
+                }
+            }
+
+            /**
+             * @ngdoc method
+             * @name modifiedState
+             * @methodOf ep.binding.factory:epDataViewFactory
+             * @public
+             * @description
+             * Returns modified state for a given row which can be datarow or index
+             * @param {object} row - if true then return index instead of data row
+             * @returns {object} modified state
+             */
+            function modifiedState(row) {
+                if (!state.data || (state.data.length < 1)) {
+                    return undefined;
+                }
+                var rowIdx = -1;
+                if (angular.isObject(row)) {
+                    for (var i = 0; i < state.data.length; i++) {
+                        if (state.data[i] == row) {
+                            rowIdx = i;
+                        }
+                    }
+                } else {
+                    rowIdx = row;
+                }
+                if (rowIdx > -1 && rowIdx < state.data.length)
+                {
+                    return state.modified[rowIdx];
+                }
+                return undefined;
             }
 
             /**
@@ -3679,17 +3735,26 @@ angular.module('ep.binding').
              * and doesn't traverse the entire list. Row is passed into predicateFunction
              * @param {function} predicateFunction - predicate function that returns true or false
              * @param {bool} setRowCurrent - if true then set found row as current
+             * @param {bool} returnIndex - if true then return index instead of data row
              * @returns {object} dataRow or undefined
              */
-            function findRow(predicateFunction, setRowCurrent) {
-                for (var i = 0; state.data.length; i++) {
-                    var dr = state.data[i];
-                    if (predicateFunction(dr)) {
-                        if (setRowCurrent) {
-                            this.row(i);
+            function findRow(predicateFunction, setRowCurrent, returnIndex) {
+                if (state.data && state.data.length && predicateFunction) {
+                    for (var i = 0; i < state.data.length; i++) {
+                        var dr = state.data[i];
+                        if (predicateFunction(dr)) {
+                            if (setRowCurrent) {
+                                this.row(i);
+                            }
+                            if (returnIndex === true) {
+                                return i;
+                            }
+                            return dr;
                         }
-                        return dr;
                     }
+                }
+                if (returnIndex === true) {
+                    return -1;
                 }
                 return undefined;
             }
@@ -3764,11 +3829,13 @@ angular.module('ep.binding').
                 hasDeleted: hasDeleted,
                 hasChanges: hasChanges,
                 modifiedRows: modifiedRows,
+                modifiedState: modifiedState,
                 addedRows: addedRows,
                 deletedRows: deletedRows,
                 changedRows: changedRows,
                 rowModified: rowModified,
                 findRow: findRow,
+                replaceDataRow: replaceDataRow,
                 rollback: rollback,
                 commit: commit,
                 userData: userData,
@@ -12197,6 +12264,29 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             return deferred.promise;
         }
 
+        /**
+         * @ngdoc method
+         * @name updateBAQ
+         * @methodOf ep.erp.service:epErpBaqService
+         * @public
+         * @description
+         * update data using updatable BAQ.
+         * @param {string} baqId: BAQ ID
+         * @param {object} data: data row object. Eg. { CustID:'TEST', CustNum:20}
+         * @param {object} options OPTIONAL: update options as follows:
+         *      {
+         *          showProgress: true/false to show progress message (default is true) 
+         *          title: progress message title
+         *          message: progress message text
+         *          convertToJsonType: if decimals need to be converted from json to string
+         *          viewId: data view of updated record (used by retrieve)
+         *          retrieve: { -- if we need to retrieve record after an update
+         *              keys: [list of keys by which to retrieve record]
+         *              viewId: data view of updated record (override viewId)
+         *          }
+         *          updatableOnly: true/false send only updatable fields (default is true)
+         *      }
+         */
         function updateBAQ(baqId, data, options) {
             if (!options) {
                 options = {};
@@ -12240,30 +12330,74 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     delete d.$$hashKey;
                 }
 
-                var promise = epErpRestService.patch(url, d);
+                var dataUpdate = d;
+                if (options.updatableOnly !== false) {
+                    var meta = epBindingMetadataService.get(baqId);
+                    if (meta && meta.columns) {
+                        dataUpdate = angular.copy(d);
+
+                        var uColsRemove = _.filter(meta.columns, function(cc) {
+                            return cc.updatable !== true && cc.isKeyField !== true && cc.name !== 'SysRowID' &&
+                             cc.name.indexOf('_') !== -1;
+                        });
+                        angular.forEach(uColsRemove, function(cc) {
+                            delete dataUpdate[cc.name];
+                        });
+                        if (dataUpdate && dataUpdate.length < 1) {
+                            dataUpdate = d;
+                        }
+                    }
+                }
+
+                var promise = epErpRestService.patch(url, dataUpdate);
                 promise.then(function() {
+                    //after we have updated baq we may need to retrieve the updated record...
                     var query;
-                    if (options.retrieve) {
+                    var keys;
+                    var targetViewId = options.viewId;
+                    if (options.retrieve && options.retrieve.viewId) {
+                        targetViewId = options.retrieve.viewId;
+                    }
+                    if (options.retrieve && targetViewId) {
                         if (options.retrieve.keys && options.retrieve.keys.length) {
-                            var query = odataQueryFactory;
-                            angular.forEach(options.retrieve.keys, function(c) {
-                                query = query.setWhere(c, 'eq', d[c]);
-                            });
+                            keys = options.retrieve.keys;
                         } else {
                             var pks = getPK(baqId);
                             if (pks && pks.length > 0) {
-                                angular.forEach(pks, function(c) {
-                                    query = query.setWhere(c, 'eq', d[c]);
-                                });
+                                keys = pks;
                             }
+                        }
+                        if (keys) {
+                            var query = odataQueryFactory;
+                            angular.forEach(keys, function(c) {
+                                query = query.setWhere(c, 'eq', d[c]);
+                            });
                         }
                     }
                     if (query) {
-                        var vId = options.retrieve.viewId || (baqId + '_temp');
-                        getBAQ(baqId, query, vId, undefined).then(function() {
+                        var viewRetrieveId = baqId + '__temp';
+                        getBAQ(baqId, query, viewRetrieveId, undefined).then(function() {
                             fnOnComplete();
-                            var dv = epTransactionFactory.current().view(vId);
-                            deferred.resolve(dv);
+                            var dv = epTransactionFactory.current().view(viewRetrieveId);
+                            var newDataRow = data;
+                            var targetView = epTransactionFactory.current().view(targetViewId);
+                            if (dv.hasData() && targetView) {
+                                newDataRow = dv.dataRow();
+                                var findRow = targetView.findRow(function(dr) {
+                                    var found = true;
+                                    angular.forEach(keys, function(c) {
+                                        if (dr[c] !== data[c]) {
+                                            found = false;
+                                        }
+                                    });
+                                    return found;
+                                }, true);
+                                if (findRow) {
+                                    targetView.replaceDataRow(findRow, dv.dataRow());
+                                }
+                            }                            
+                            epTransactionFactory.current().remove(viewRetrieveId);
+                            deferred.resolve(newDataRow);
                         });
                     } else {
                         fnOnComplete();
