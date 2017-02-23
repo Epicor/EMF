@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.552 built: 22-02-2017
+ * version:1.0.10-dev.553 built: 22-02-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.552","built":"2017-02-22"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.553","built":"2017-02-22"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -2809,7 +2809,7 @@ angular.module('ep.binding').
                 }
 
                 function onViewInit(view) {
-                    if (view && view.hasData()) {
+                    if (view) {
                         bi.view = view;
 
                         if (callbacks.onViewReady) {
@@ -3267,6 +3267,8 @@ angular.module('ep.binding').
              * @public
              * @description
              * replace a data row specified by row number or row object
+             * @param {object} row - row object or index of row to be replaced. 
+             * @param {object} data - data row to replace the row 
              */
             function replaceDataRow(row, data) {
                 if (!state.data || (state.data.length < 1)) {
@@ -3290,7 +3292,7 @@ angular.module('ep.binding').
              * @public
              * @description
              * Returns modified state for a given row which can be datarow or index
-             * @param {object} row - if true then return index instead of data row
+             * @param {object} row - row object or index of row to fetch. 
              * @returns {object} modified state
              */
             function modifiedState(row) {
@@ -3357,29 +3359,31 @@ angular.module('ep.binding').
              * @public
              * @description
              * Deletes a row, keeping track of deleted rows and firing events
-             * @param {int} index - index of row to be deleted
+             * @param {object} row - row object or index of row to be deleted. 
              * @returns {int} removed row index
              */
-            function deleteRow(index) {
-                if (state.addedRows[index] !== undefined) {
-                    //if we are deleting an added row, then it should be removed from both added and deleted
-                    delete state.deletedRows[index];
-                    delete state.addedRows[index];
-                    state.hasAdded = (Object.keys(state.addedRows).length > 0);
-                } else {
-                    state.deletedRows[state.deletedRows.length] = state.data[index];
-                    adjustAddedRowIndexes(index);
+            function deleteRow(row) {
+                var index = getRowIndex(row);
+                if (index !== -1) {
+                    if (state.addedRows[index] !== undefined) {
+                        //if we are deleting an added row, then it should be removed from both added and deleted
+                        delete state.deletedRows[index];
+                        delete state.addedRows[index];
+                        state.hasAdded = (Object.keys(state.addedRows).length > 0);
+                    } else {
+                        state.deletedRows[state.deletedRows.length] = state.data[index];
+                        adjustAddedRowIndexes(index);
+                    }
+                    state.data.splice(index, 1);
+                    state.isDirty = true;
+                    state.hasDeleted = (Object.keys(state.deletedRows).length > 0);
+
+                    $rootScope.$emit('EP_BINDING_VIEW_ROW_DELETED', {
+                        viewId: state.id,
+                        view: this,
+                        row: index
+                    });
                 }
-                state.data.splice(index, 1);
-                state.isDirty = true;
-                state.hasDeleted = (Object.keys(state.deletedRows).length > 0);
-
-                $rootScope.$emit('EP_BINDING_VIEW_ROW_DELETED', {
-                    viewId: state.id,
-                    view: this,
-                    row: index
-                });
-
                 return index;
             }
 
@@ -3806,6 +3810,27 @@ angular.module('ep.binding').
              */
             function reload(data) {
                 init(this.id(), data || [], true);
+            }
+
+
+            function getRowIndex(row) {
+                var rowIdx = -1;
+                if (!state.data || (state.data.length < 1)) {
+                    return rowIdx;
+                }
+                if (angular.isObject(row)) {
+                    for (var i = 0; i < state.data.length; i++) {
+                        if (state.data[i] == row) {
+                            return i;
+                        }
+                    }
+                } else {
+                    rowIdx = row;
+                }
+                if (rowIdx > -1 && rowIdx < state.data.length) {
+                    return rowIdx;
+                }
+                return -1;
             }
 
             init(viewId, viewData);
