@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.557 built: 23-02-2017
+ * version:1.0.10-dev.558 built: 23-02-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.557","built":"2017-02-23"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.558","built":"2017-02-23"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -27435,7 +27435,7 @@ angular.module('ep.signature').directive('epSignature',
             //if demo user skip token access
             if ($scope.settings.username.toLowerCase() === 'demo' &&
                 $scope.settings.password.toLowerCase() === 'demo' &&
-                $scope.settings.serverName.toLowerCase() === 'demo') { //demo user
+                $scope.settings.serverName && $scope.settings.serverName.toLowerCase() === 'demo') { //demo user
                     tokenOptions.debug = true;
                     tokenOptions.timeout = '10000';
             }
