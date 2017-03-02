@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.11 built: 02-03-2017
+ * version:1.0.12 built: 02-03-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.11","built":"2017-03-02"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12","built":"2017-03-02"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -1919,7 +1919,7 @@ angular.module('ep.signature', [
 
                     scope.state.epBinding.view = scope.epBindingInfo.epBinding.view;
                     scope.state.epBinding.column = scope.epBindingInfo.epBinding.column;
-                }
+                };
 
                 scope.setColumn = function() {
                     var col = angular.extend({}, defaultColumn);
@@ -1936,7 +1936,7 @@ angular.module('ep.signature', [
                     if (!angular.equals(scope.state.column, col)) {
                         scope.state.column = col;
                     }
-                }
+                };
 
                 scope.$watch('epBinding', function(newValue, oldValue) {
                     if (newValue !== undefined && newValue !== oldValue) {
@@ -2000,12 +2000,12 @@ angular.module('ep.signature', [
                     if (meta && meta.columns && meta.columns[epb.column]) {
                         scope.state.metaColumn = meta.columns[epb.column] || {};
                     }
-                }
+                };
 
                 scope.setLabel = function() {
                     scope.state.label = scope.state.metaColumn.caption || scope.label ||
                         scope.state.epBinding.column || '';
-                }
+                };
 
                 scope.$watch('epBinding', function(newValue, oldValue) {
                     if (newValue !== undefined && newValue !== oldValue) {
@@ -2172,7 +2172,7 @@ angular.module('ep.binding').
                     if (scope.onInit) {
                         scope.onInit(factory);
                     }
-                }
+                };
 
                 function setOptions() {
                     if (scope.options !== undefined) {
@@ -2380,7 +2380,7 @@ angular.module('ep.binding').
                     scope.meta.preview = JSON.stringify(view.data(), null, '    ');
                 }
             }
-        }
+        };
 
         if (viewsList.length) {
             onViewChange(viewsList[0]);
@@ -2440,7 +2440,7 @@ angular.module('ep.binding').
                     if (scope.onDoubleClickRow) {
                         scope.onDoubleClickRow({ 'row': row });
                     }
-                }
+                };
 
                 function applyCustomization() {
                     //apply custom props
