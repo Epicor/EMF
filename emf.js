@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.583 built: 01-03-2017
+ * version:1.0.10-dev.584 built: 02-03-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.583","built":"2017-03-01"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.584","built":"2017-03-02"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -5538,18 +5538,17 @@ app.directive('epCardTitle',
                         scope.nameList = scope.data;
                     }
                     scope.filterVal = [];
-                    scope.items = { count: 0 };
+                    scope.indexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES;
+                    scope.smallIndexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES_SMALL;
+                    epContactsListService.toggleIndexes();
                 }
-
-                scope.indexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES;
-                scope.smallIndexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES_SMALL;
+                scope.items = { count: 0 };
 
                 scope.setTitles = scope.subTitle.split(' ');
 
                 $(window).resize(function() {
                     epContactsListService.toggleIndexes();
                 });
-                epContactsListService.toggleIndexes();
                 scope.getDetails = function(obj) {
                     return obj;
                 };
@@ -16256,13 +16255,13 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 arrow: '@',
                 statuses: '@',
                 icon: '@',
-                showInRed: '@'
+                showInRed: '@',
+                hideAdd: '@'
             },
             templateUrl: 'src/components/ep.list/ep-list.html',
             link: function(scope) {
                 scope.items = { count: 0 };
-
-                if (scope.groupBy === true) {
+                if (scope.groupBy) {
                     scope.data = epListService.getGroupedList(scope.data, scope.groupBy);
                 }
                 if (scope.subTitle) {
@@ -29307,7 +29306,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.list/ep-list.html',
-    "<div class=ep-list-container><!--Calling filter list component for search option--><ep-filter-list search-by=contactListSearch count=items.count></ep-filter-list><!--Header as optional--><div class=ep-contact-sub-header ng-if=\"subHeader == 'true'\"><label class=ep-contact-sub-header-label ng-click=filter()>Filter</label><label class=ep-contact-sub-header-label ng-click=sort()>Sort</label><span class=pull-right style=padding-right:5% ng-click=add()><i class=\"fa fa-plus-square-o fa-2x\" aria-hidden=true style=color:#129ff4></i></span></div><div class=ep-list ng-class=\"{'ep-list-header-padding':subHeader == 'true'}\"><div class=ep-list-inner ng-if=\"groupBy === true\"><div ng-repeat=\"(key, value) in data\"><div class=ep-group-heading ng-if=\"filterVal.length > 0\">{{key}}</div><ul><li ng-repeat=\"obj in filterVal = (value | filter: contactListSearch)\" ng-click=handler(obj)><div class=\"row mainTitle\"><div class=col-xs-7><label>{{ obj[mainTitle] }}</label></div><div class=\"col-xs-3 text-right\">{{obj[id]}}</div></div><div class=\"pull-right ep-list-arrow\" ng-if=\"arrow == 'true'\" ng-class=\"{'ep-contact-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-contact-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-contact-list-additionalTitle-arrow': additionalTitle}\"><i class=\"fa fa-angle-right fa-2x\"></i></div><div ng-if=subTitle class=subTitle><span ng-show=\"{{isNumber(obj[subTitles[0]]) || obj[subTitles[0]].length>=1}}\">{{isAmount(obj[subTitles[0]]) ? (obj[subTitles[0]] | currency) : obj[subTitles[0]]}}</span> <span ng-show=\"{{obj[subTitles[1]].length>=1}}\"><span ng-show=showCommaSeparator(obj[subTitles[0]])>,&nbsp;</span> {{obj[subTitles[1]]}}</span> <span ng-show=\"{{obj[subTitles[2]].length>=1}}\"><span ng-show=\"showCommaSeparator(obj[subTitles[0]], obj[subTitles[1]])\">,&nbsp;</span> {{obj[subTitles[2]]}}</span></div><div ng-if=additionalTitle class=additionalTitle>{{obj[additionalTitle]}}</div><div ng-if=statuses class=statuses><div class=status-period>{{obj[statusesArr[0]]}}</div><div class=\"status status-text\" ng-class=\"{'text-success': (['Open', 'Shipped', 'Invoiced'].indexOf(obj[statusesArr[1]]) !== -1), 'text-warning': (obj[statusesArr[1]] === 'On Hold'), 'text-danger': (statusesNotDanger.indexOf(obj[statusesArr[1]]) === -1)}\">{{obj[statusesArr[1]]}}</div><div class=\"status-source text-success\">{{obj[statusesArr[2]]}}</div></div></li></ul></div></div><div class=ep-list-inner ng-if=\"groupBy !== true\"><ul><li ng-repeat=\"obj in data | filter: contactListSearch\" ng-click=handler(obj) ng-class=\"{'text-danger': (obj[showInRed] === true)}\"><div class=\"row mainTitle\"><div class=\"col-xs-1 pull-left\" ng-if=obj[icon]><i class=\"fa {{obj[icon]}}\"></i></div><div class=col-xs-7><label>{{ obj[mainTitle] }}</label></div><div class=\"col-xs-3 text-right\">{{obj[id]}}</div></div><div class=\"pull-right ep-list-arrow\" ng-if=\"arrow == 'true'\" ng-class=\"{'ep-contact-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-contact-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-contact-list-additionalTitle-arrow': additionalTitle}\"><i class=\"fa fa-angle-right fa-2x\"></i></div><div ng-if=subTitle class=subTitle><span ng-show=\"{{isNumber(obj[subTitles[0]]) || obj[subTitles[0]].length>=1}}\">{{isAmount(obj[subTitles[0]]) ? (obj[subTitles[0]] | currency) : obj[subTitles[0]]}}</span> <span ng-show=\"{{obj[subTitles[1]].length>=1}}\"><span ng-show=showCommaSeparator(obj[subTitles[0]])>,&nbsp;</span> {{obj[subTitles[1]]}}</span> <span ng-show=\"{{obj[subTitles[2]].length>=1}}\"><span ng-show=\"showCommaSeparator(obj[subTitles[0]], obj[subTitles[1]])\">,&nbsp;</span> {{obj[subTitles[2]]}}</span></div><div class=additionalTitle ng-if=additionalTitle>{{obj[additionalTitle]}}</div><div ng-if=statuses class=statuses><div class=\"status status-period\">{{obj[statusesArr[0]]}}</div><div class=\"status status-text\" ng-class=\"{'text-success': (['Open', 'Shipped', 'Invoiced'].indexOf(obj[statusesArr[1]]) !== -1), 'text-warning': (obj[statusesArr[1]] === 'On Hold'), 'text-danger': (statusesNotDanger.indexOf(obj[statusesArr[1]]) === -1)}\">{{obj[statusesArr[1]]}}</div><div class=\"status status-source text-success\">{{obj[statusesArr[2]]}}</div></div></li></ul></div></div></div>"
+    "<div class=ep-list-container><!--Calling filter list component for search option--><ep-filter-list search-by=contactListSearch count=items.count></ep-filter-list><!--Header as optional--><div class=ep-contact-sub-header ng-if=\"subHeader == 'true'\"><label class=ep-contact-sub-header-label ng-click=filter()>Filter</label><label class=ep-contact-sub-header-label ng-click=sort()>Sort</label><span class=pull-right ng-hide=\"hideAdd == 'true'\" style=padding-right:5% ng-click=add()><i class=\"fa fa-plus-square-o fa-2x\" aria-hidden=true style=color:#129ff4></i></span></div><div class=ep-list ng-class=\"{'ep-list-header-padding':subHeader == 'true'}\"><div class=ep-list-inner ng-if=\"groupBy === true\"><div ng-repeat=\"(key, value) in data\"><div class=ep-group-heading ng-if=\"filterVal.length > 0\">{{key}}</div><ul><li ng-repeat=\"obj in filterVal = (value | filter: contactListSearch)\" ng-click=handler(obj)><div class=\"row mainTitle\"><div class=col-xs-7><label>{{ obj[mainTitle] }}</label></div><div class=\"col-xs-3 text-right\">{{obj[id]}}</div></div><div class=\"pull-right ep-list-arrow\" ng-if=\"arrow == 'true'\" ng-class=\"{'ep-contact-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-contact-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-contact-list-additionalTitle-arrow': additionalTitle}\"><i class=\"fa fa-angle-right fa-2x\"></i></div><div ng-if=subTitle class=subTitle><span ng-show=\"{{isNumber(obj[subTitles[0]]) || obj[subTitles[0]].length>=1}}\">{{isAmount(obj[subTitles[0]]) ? (obj[subTitles[0]] | currency) : obj[subTitles[0]]}}</span> <span ng-show=\"{{obj[subTitles[1]].length>=1}}\"><span ng-show=showCommaSeparator(obj[subTitles[0]])>,&nbsp;</span> {{obj[subTitles[1]]}}</span> <span ng-show=\"{{obj[subTitles[2]].length>=1}}\"><span ng-show=\"showCommaSeparator(obj[subTitles[0]], obj[subTitles[1]])\">,&nbsp;</span> {{obj[subTitles[2]]}}</span></div><div ng-if=additionalTitle class=additionalTitle>{{obj[additionalTitle]}}</div><div ng-if=statuses class=statuses><div class=status-period>{{obj[statusesArr[0]]}}</div><div class=\"status status-text\" ng-class=\"{'text-success': (['Open', 'Shipped', 'Invoiced'].indexOf(obj[statusesArr[1]]) !== -1), 'text-warning': (obj[statusesArr[1]] === 'On Hold'), 'text-danger': (statusesNotDanger.indexOf(obj[statusesArr[1]]) === -1)}\">{{obj[statusesArr[1]]}}</div><div class=\"status-source text-success\">{{obj[statusesArr[2]]}}</div></div></li></ul></div></div><div class=ep-list-inner ng-if=\"groupBy !== true\"><ul><li ng-repeat=\"obj in data | filter: contactListSearch\" ng-click=handler(obj) ng-class=\"{'text-danger': (obj[showInRed] === true)}\"><div class=\"row mainTitle\"><div class=\"col-xs-1 pull-left\" ng-if=obj[icon]><i class=\"fa {{obj[icon]}}\"></i></div><div class=col-xs-7><label>{{ obj[mainTitle] }}</label></div><div class=\"col-xs-3 text-right\">{{obj[id]}}</div></div><div class=\"pull-right ep-list-arrow\" ng-if=\"arrow == 'true'\" ng-class=\"{'ep-contact-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-contact-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-contact-list-additionalTitle-arrow': additionalTitle}\"><i class=\"fa fa-angle-right fa-2x\"></i></div><div ng-if=subTitle class=subTitle><span ng-show=\"{{isNumber(obj[subTitles[0]]) || obj[subTitles[0]].length>=1}}\">{{isAmount(obj[subTitles[0]]) ? (obj[subTitles[0]] | currency) : obj[subTitles[0]]}}</span> <span ng-show=\"{{obj[subTitles[1]].length>=1}}\"><span ng-show=showCommaSeparator(obj[subTitles[0]])>,&nbsp;</span> {{obj[subTitles[1]]}}</span> <span ng-show=\"{{obj[subTitles[2]].length>=1}}\"><span ng-show=\"showCommaSeparator(obj[subTitles[0]], obj[subTitles[1]])\">,&nbsp;</span> {{obj[subTitles[2]]}}</span></div><div class=additionalTitle ng-if=additionalTitle>{{obj[additionalTitle]}}</div><div ng-if=statuses class=statuses><div class=\"status status-period\">{{obj[statusesArr[0]]}}</div><div class=\"status status-text\" ng-class=\"{'text-success': (['Open', 'Shipped', 'Invoiced'].indexOf(obj[statusesArr[1]]) !== -1), 'text-warning': (obj[statusesArr[1]] === 'On Hold'), 'text-danger': (statusesNotDanger.indexOf(obj[statusesArr[1]]) === -1)}\">{{obj[statusesArr[1]]}}</div><div class=\"status status-source text-success\">{{obj[statusesArr[2]]}}</div></div></li></ul></div></div></div>"
   );
 
 

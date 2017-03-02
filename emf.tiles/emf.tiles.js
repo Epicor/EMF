@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.583 built: 01-03-2017
+ * version:1.0.10-dev.584 built: 02-03-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["tiles"] = {"libName":"tiles","version":"1.0.10-dev.583","built":"2017-03-01"};
+__ep_build_info["tiles"] = {"libName":"tiles","version":"1.0.10-dev.584","built":"2017-03-02"};
 
 'use strict';
 /**
@@ -287,18 +287,17 @@ app.directive('epCardTitle',
                         scope.nameList = scope.data;
                     }
                     scope.filterVal = [];
-                    scope.items = { count: 0 };
+                    scope.indexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES;
+                    scope.smallIndexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES_SMALL;
+                    epContactsListService.toggleIndexes();
                 }
-
-                scope.indexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES;
-                scope.smallIndexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES_SMALL;
+                scope.items = { count: 0 };
 
                 scope.setTitles = scope.subTitle.split(' ');
 
                 $(window).resize(function() {
                     epContactsListService.toggleIndexes();
                 });
-                epContactsListService.toggleIndexes();
                 scope.getDetails = function(obj) {
                     return obj;
                 };
