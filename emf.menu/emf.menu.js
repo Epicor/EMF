@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.585 built: 02-03-2017
+ * version:1.0.11 built: 02-03-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.10-dev.585","built":"2017-03-02"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.11","built":"2017-03-02"};
 
 (function() {
     'use strict';
@@ -2241,7 +2241,6 @@ angular.module('ep.menu.builder', [
          * To group the list based on groupBy Value
          */
         function getGroupedList(listData, groupBy) {
-            var listName = [];
             var sortedlist = _.sortBy(listData, groupBy);
             var groupedObj = {};
             var itemGroup = [];

@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.585 built: 02-03-2017
+ * version:1.0.11 built: 02-03-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.585","built":"2017-03-02"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.11","built":"2017-03-02"};
 
 (function() {
     'use strict';
@@ -334,13 +334,13 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
             }).error(function(data, status, headers, config) {
                 var restServer = (config !== undefined && config !== null) ? config.url : '';
                 $scope.hasError = true;
-                $scope.status = (status == 401 ?
+                $scope.status = (status === 401 ?
                     'Please review the user or password.' : 'We couldn\'t connect to the server. Please review it.');
             });
             epModalDialogService.hide();
         };
 
-        $scope.passwordKeyPress = function(keyEvent) {
+        $scope.passwordKeyPress = function(event) {
             $scope.hasError = false;
             $scope.status = '';
             var key = typeof event.which === 'undefined' ? event.keyCode : event.which;
@@ -1863,7 +1863,7 @@ angular.module('ep.token').
                 column: '=',
                 isRow: '='
             },
-            link: function(scope, element, attrs) {
+            link: function(scope) {
                 var bindingFactory;
 
                 //This will be set by eBindingFactory
@@ -1971,7 +1971,7 @@ angular.module('ep.token').
                 required: '=',
                 forCtrl: '@'
             },
-            link: function(scope, element, attrs) {
+            link: function(scope) {
                 scope.state = {
                     epBinding: {},
                     label: scope.label || '',
@@ -2031,7 +2031,7 @@ angular.module('ep.binding').
             scope: {
                 epBinding: '='
             },
-            link: function(scope, element, attrs) {
+            link: function(scope) {
                 scope.state = {};
                 scope.view = null;
                 scope.totalItems = 0;
@@ -2072,7 +2072,7 @@ angular.module('ep.binding').
                     }
                 });
 
-                scope.$watch('epBinding', function(newValue, oldValue) {
+                scope.$watch('epBinding', function(newValue) {
                     if (newValue !== undefined) {
                         scope.state.epBinding = epBindingService.parseBinding(newValue);
                         var view = epTransactionFactory.current().view(scope.state.epBinding.view);
@@ -2197,7 +2197,6 @@ angular.module('ep.binding').
                                         //v.validation = undefined;
                                         epUtilsService.copyProperties(v, col);
                                         if (valid) {
-                                            var xxx;
                                             try {
                                                 var fff;
                                                 eval('fff = function(ctx, ev, value) { ' + valid + '}');
@@ -2216,7 +2215,7 @@ angular.module('ep.binding').
                     }
                 }
 
-                scope.$watch('options', function(newValue, oldValue) {
+                scope.$watch('options', function(newValue) {
                     setOptions();
                 }, true);
             }
@@ -2295,7 +2294,7 @@ angular.module('ep.binding').
             list: undefined,
             sizeClass: 'col-lg-12',
             fnOnChange: function(ev, ctx) {
-                var column = ctx.fnGetCurrentValue();
+                //var column = ctx.fnGetCurrentValue();
                 scope.config.binding = '[' + scope.meta.view + '].[' + scope.meta.column + ']';
             }
         };
@@ -2322,7 +2321,7 @@ angular.module('ep.binding').
                 if (view.hasData()) {
                     var record = view.dataRow();
                     scope.meta.preview = JSON.stringify(record, null, '    ');
-                    if (cols.length == 0) {
+                    if (cols.length === 0) {
                         angular.forEach(record, function(v, n) {
                             cols.push({
                                 label: n,
@@ -2336,13 +2335,13 @@ angular.module('ep.binding').
                 scope.loadingColumns = false;
 
                 //collect some info
-                var info = {
-                    id: view.id(),
-                    rows: view.data().length,
-                    modified: view.modifiedRows().length,
-                    added: view.addedRows().length,
-                    deleted: view.deletedRows().length
-                };
+                //var info = {
+                //    id: view.id(),
+                //    rows: view.data().length,
+                //    modified: view.modifiedRows().length,
+                //    added: view.addedRows().length,
+                //    deleted: view.deletedRows().length
+                //};
             });
         }
 
@@ -2435,19 +2434,17 @@ angular.module('ep.binding').
                         if (c.isCustom) {
                             scope.state.columns.push(c);
                         } else {
-                            if (c.hidden) {
+                            if (c.hidden || c.caption) {
                                 var theColumn = _.find(scope.state.columns, function(cc) {
                                     return cc.name === n;
                                 });
                                 if (theColumn) {
-                                    theColumn.hidden = c.hidden;
-                                }
-                            } else if (c.caption) {
-                                var theColumn = _.find(scope.state.columns, function(cc) {
-                                    return cc.name === n;
-                                });
-                                if (theColumn) {
-                                    theColumn.caption = c.caption;
+                                    if (c.hidden) {
+                                        theColumn.hidden = c.hidden;
+                                    }
+                                    if (c.caption) {
+                                        theColumn.caption = c.caption;
+                                    }
                                 }
                             }
                         }
@@ -2469,7 +2466,7 @@ angular.module('ep.binding').
                     scope.dataColumns = getMetaList(false);
                 }
 
-                scope.$watch('epBinding', function(newValue, oldValue) {
+                scope.$watch('epBinding', function(newValue) {
                     if (newValue !== undefined) {
                         var callbacks = {
                             onViewReady: function(view) {
@@ -2679,7 +2676,7 @@ angular.module('ep.binding').
             compile: function(element, attrs) {
 
                 return {
-                    pre: function(scope, iElement) {
+                    pre: function(scope) {
                         var bindingFactory;
 
                         //This will be set by eBindingFactory
@@ -3190,9 +3187,7 @@ angular.module('ep.binding').
                 userData: {}
             };
 
-            var _view = this;
-
-            function init(_id, _data, isReload) {
+            function init(_id, _data) {
                 state.id = _id;
                 state.data = _data;
                 state.row = state.data && state.data.length ? 0 : -1;
@@ -3201,7 +3196,7 @@ angular.module('ep.binding').
             }
 
             function resetState() {
-                state.query = {}
+                state.query = {};
                 state.isDirty = false;
                 state.modifiedRows = {};
                 state.addedRows = {};
@@ -3272,7 +3267,7 @@ angular.module('ep.binding').
                 }
                 if (angular.isObject(row)) {
                     for (var i = 0; i < state.data.length; i++) {
-                        if (state.data[i] == row) {
+                        if (state.data[i] === row) {
                             state.data[i] = data;
                         }
                     }
@@ -3298,7 +3293,7 @@ angular.module('ep.binding').
                 var rowIdx = -1;
                 if (angular.isObject(row)) {
                     for (var i = 0; i < state.data.length; i++) {
-                        if (state.data[i] == row) {
+                        if (state.data[i] === row) {
                             rowIdx = i;
                         }
                     }
@@ -3633,7 +3628,7 @@ angular.module('ep.binding').
              * @returns {bool} true if row is modified
              */
             function rowModified(index) {
-                var idx = (index == undefined) ? state.row : index;
+                var idx = (index === undefined) ? state.row : index;
                 return (state.modified[idx] !== undefined && state.modified[idx].state === 'M');
             }
 
@@ -3805,7 +3800,7 @@ angular.module('ep.binding').
              * @param {array} data - (optional) data to load, if missing then view will be empty
              */
             function reload(data) {
-                init(this.id(), data || [], true);
+                init(this.id(), data || []);
             }
 
             function getRowIndex(row) {
@@ -3815,7 +3810,7 @@ angular.module('ep.binding').
                 }
                 if (angular.isObject(row)) {
                     for (var i = 0; i < state.data.length; i++) {
-                        if (state.data[i] == row) {
+                        if (state.data[i] === row) {
                             return i;
                         }
                     }
@@ -4766,29 +4761,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.binding/controls/ep-binding-selector.html',
-    "<!--This is a partial for the ep-binding directive --><div class=ep-binding-selector ng-controller=epBindingSelectorCtrl><div class=\"panel panel-default\"><div class=\"panel-heading panel-heading-small\"><ul class=\"nav nav-tabs\"><li class=active><a data-toggle=pill href=.binding>Binding</a></li><li><a data-toggle=pill href=.preview>Data Preview</a></li></ul></div><div class=panel-body><div class=\"tab-content ep-padding-bottom\"><div class=\"binding tab-pane fade in active\"><ep-editor-control column=viewList value=meta.view></ep-editor-control><div ng-if=meta.view><div class=text-center ng-show=loadingColumns><i class=\"fa fa-spinner fa-spin fa-2x\"></i><label>loading columns...</label></div><div ng-hide=loadingColumns><ep-editor-control column=columnList value=meta.column></ep-editor-control></div></div><ep-editor-control column=columnBinding value=config.binding></ep-editor-control></div><div class=\"preview tab-pane fade\"><textarea class=\"form-control alert-info\" ng-model=meta.preview style=\"min-height: 400px; min-width: 300px\"></textarea><div><a ng-show=\"isAllDataPreview !== true\" ng-click=showAllData(true) style=\"margin-right: 15px\"><i></i>Show All</a> <a ng-show=\"isAllDataPreview === true\" ng-click=showAllData(false) style=\"margin-right: 15px\"><i></i>Show Current Record</a></div></div></div></div></div><!--<ep-editor-control column=\"viewList\" value=\"meta.view\"></ep-editor-control>\r" +
-    "\n" +
-    "\r" +
-    "\n" +
-    "                    <div ng-if=\"meta.view\">\r" +
-    "\n" +
-    "                        <div class=\"text-center\" ng-show=\"loadingColumns\">\r" +
-    "\n" +
-    "                            <i class=\"fa fa-spinner fa-spin fa-2x\"></i><label>loading columns...</label>\r" +
-    "\n" +
-    "                        </div>\r" +
-    "\n" +
-    "                        <div ng-hide=\"loadingColumns\">\r" +
-    "\n" +
-    "                            <ep-editor-control column=\"columnList\" value=\"meta.column\"></ep-editor-control>\r" +
-    "\n" +
-    "                        </div>\r" +
-    "\n" +
-    "                    </div>\r" +
-    "\n" +
-    "\r" +
-    "\n" +
-    "                    <ep-editor-control column=\"columnBinding\" value=\"config.binding\"></ep-editor-control>--></div>"
+    "<!--This is a partial for the ep-binding directive --><div class=ep-binding-selector ng-controller=epBindingSelectorCtrl><div class=\"panel panel-default\"><div class=\"panel-heading panel-heading-small\"><ul class=\"nav nav-tabs\"><li class=active><a data-toggle=pill href=.binding>Binding</a></li><li><a data-toggle=pill href=.preview>Data Preview</a></li></ul></div><div class=panel-body><div class=\"tab-content ep-padding-bottom\"><div class=\"binding tab-pane fade in active\"><ep-editor-control column=viewList value=meta.view></ep-editor-control><div ng-if=meta.view><div class=text-center ng-show=loadingColumns><i class=\"fa fa-spinner fa-spin fa-2x\"></i><label>loading columns...</label></div><div ng-hide=loadingColumns><ep-editor-control column=columnList value=meta.column></ep-editor-control></div></div><ep-editor-control column=columnBinding value=config.binding></ep-editor-control></div><div class=\"preview tab-pane fade\"><textarea class=\"form-control alert-info\" ng-model=meta.preview style=\"min-height: 400px; min-width: 300px\"></textarea><div><a ng-show=\"isAllDataPreview !== true\" ng-click=showAllData(true) style=\"margin-right: 15px\"><i></i>Show All</a> <a ng-show=\"isAllDataPreview === true\" ng-click=showAllData(false) style=\"margin-right: 15px\"><i></i>Show Current Record</a></div></div><div class=\"preview tab-pane fade\"><textarea class=\"form-control alert-info\" ng-model=meta.info style=\"min-height: 400px; min-width: 300px\"></textarea></div></div></div></div></div>"
   );
 
 

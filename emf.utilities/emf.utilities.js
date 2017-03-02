@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.585 built: 02-03-2017
+ * version:1.0.11 built: 02-03-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.10-dev.585","built":"2017-03-02"};
+__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.11","built":"2017-03-02"};
 
 (function() {
   'use strict';
@@ -568,7 +568,7 @@ angular.module('ep.signature', [
                         break;
                     case 'filestorage': setSystemToFileStorage(); break;
                     default:
-                        log.warn('Unable to set file storage system to ' + manualSelection + '.');
+                        $log.warn('Unable to set file storage system to ' + manualSelection + '.');
                         setSystemToLocalStorage();
                         break;
                 }
@@ -1362,7 +1362,7 @@ angular.module('ep.signature').directive('epSignature',
         };
         transaction.onerror = function(e) {
             self.$log.warn('Transaction error occurred on ' + self.name + '. ' + e);
-            deferred.reject(e)
+            deferred.reject(e);
         };
 
         var store = transaction.objectStore(self.name);
@@ -1588,7 +1588,7 @@ angular.module('ep.signature').directive('epSignature',
          * @param {string} id - the id of the database to close
          */
         function closeDatabase(id) {
-            delete openDatabaseMap[id]
+            delete openDatabaseMap[id];
         }
 
         /**

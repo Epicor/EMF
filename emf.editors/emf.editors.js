@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.585 built: 02-03-2017
+ * version:1.0.11 built: 02-03-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.585","built":"2017-03-02"};
+__ep_build_info["editors"] = {"libName":"editors","version":"1.0.11","built":"2017-03-02"};
 
 (function() {
     'use strict';
@@ -564,7 +564,7 @@ angular.module('ep.record.editor', [
             },
             compile: function() {
                 return {
-                    pre: function($scope, element) {
+                    pre: function($scope) {
                         var ctx = $scope.ctx;
 
                         $scope.temp = {
@@ -1018,7 +1018,7 @@ angular.module('ep.record.editor', [
                 };
                 scope.editorDirective = '<ep-include options="ctx.templateOptions" user-data="ctx"></ep-include>';
 
-                newScope.$watch('value', function(newValue, oldValue) {
+                newScope.$watch('value', function(newValue) {
                     if (newValue !== undefined && ctx.updatable && ctx.readonly !== true) {
                         scope.value = newValue;
                     }
@@ -1957,7 +1957,7 @@ angular.module('ep.record.editor', [
                     }
                 });
 
-                scope.$watch('sizeClass', function(newValue, oldValue) {
+                scope.$watch('sizeClass', function(newValue) {
                     if (scope.state.controls && newValue !== undefined) {
                         $timeout(function() {
                             angular.forEach(scope.state.controls, function(ctrl) {

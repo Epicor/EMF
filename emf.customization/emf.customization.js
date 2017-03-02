@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.585 built: 02-03-2017
+ * version:1.0.11 built: 02-03-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["customization"] = {"libName":"customization","version":"1.0.10-dev.585","built":"2017-03-02"};
+__ep_build_info["customization"] = {"libName":"customization","version":"1.0.11","built":"2017-03-02"};
 
 'use strict';
 /**
@@ -33,11 +33,11 @@ angular.module('ep.customization', [
     *
     * @example
     */
-    epCustomizableDirective.$inject = ['$log', '$timeout', '$compile', '$location', 'epCustomizationService', 'epBindingService'];
+    epCustomizableDirective.$inject = ['$log', '$timeout', '$compile', '$location', 'epCustomizationService'];
     angular.module('ep.customization').directive('epCustomizable', epCustomizableDirective);
 
     /*@ngInject*/
-    function epCustomizableDirective($log, $timeout, $compile, $location, epCustomizationService, epBindingService) {
+    function epCustomizableDirective($log, $timeout, $compile, $location, epCustomizationService) {
         return {
             restrict: 'A',
             scope: {
@@ -97,11 +97,11 @@ angular.module('ep.customization', [
     *
     * @example
     */
-    epCustomizationContainerDirective.$inject = ['$log', '$timeout', 'epCustomizationService', 'epBindingService'];
+    epCustomizationContainerDirective.$inject = ['$log', '$timeout', 'epCustomizationService'];
     angular.module('ep.customization').directive('epCustomizationContainer', epCustomizationContainerDirective);
 
     /*@ngInject*/
-    function epCustomizationContainerDirective($log, $timeout, epCustomizationService, epBindingService) {
+    function epCustomizationContainerDirective($log, $timeout, epCustomizationService) {
         return {
             replace: true,
             restrict: 'E',
@@ -109,7 +109,7 @@ angular.module('ep.customization', [
             scope: {
                 epCustomizationInfo: '='
             },
-            link: function(scope, element, attrs) {
+            link: function(scope, element) {
                 scope.state = {
                     element: element,
                     style: '',
@@ -144,12 +144,10 @@ angular.module('ep.customization', [
                     var iSeqMax = 0;
                     angular.forEach(cProps, function(v, n) {
                         if (n && n !== '$container') {
-                            var controlType = '';
                             var control = {
                                 id: 'ep-custom_' + v.id,
                                 props: v
                             };
-                            var theScope = scope.state.scope;
                             if (v.controlKind === 'html') {
                                 control.type = 'html';
                                 control.class = 'col-xs-12 col-sm-8 col-md-6 col-lg-3';
@@ -162,9 +160,9 @@ angular.module('ep.customization', [
                                         control.type = 'editor-control';
                                         control.binding = v.binding.replace('$custom-data.',
                                             'epCustomizationInfo.data.');
-                                        control.columnName = v.binding.replace('$custom-data.', '')
+                                        control.columnName = v.binding.replace('$custom-data.', '');
 
-                                        var col = v.binding.replace('$custom-data.', '')
+                                        var col = v.binding.replace('$custom-data.', '');
                                         control.data = scope.epCustomizationInfo.data[col];
                                     }
                                 }
@@ -249,7 +247,7 @@ angular.module('ep.customization', [
                 customizationData: '='
             },
             templateUrl: 'src/components/ep.customization/ep-customization-eptable.html',
-            link: function(scope, element) {
+            link: function(scope) {
                 scope.changes = {};
                 var columns = [];
                 var record;
@@ -257,12 +255,12 @@ angular.module('ep.customization', [
                 scope.customization = null;
                 scope.column = {};
 
-                function getFactory() {
-                    return scope.customization.ctrl.factory;
-                }
-                function getOptions() {
-                    return scope.customization.ctrl.factory.getOptions();
-                }
+                ////function getFactory() {
+                ////    return scope.customization.ctrl.factory;
+                ////}
+                ////function getOptions() {
+                ////    return scope.customization.ctrl.factory.getOptions();
+                ////}
 
                 function onCustomizationChange() {
                     if (scope.customization) {
@@ -410,7 +408,7 @@ angular.module('ep.customization', [
                     scope.curColCtx = null;
                 };
 
-                scope.$watch('customizationData', function(newValue, oldValue) {
+                scope.$watch('customizationData', function(newValue) {
                     if (newValue !== undefined) {
                         onCustomizationChange();
                         scope.customizationData.fnGetChanges = function() {
@@ -449,7 +447,7 @@ angular.module('ep.customization', [
                 customizationData: '='
             },
             templateUrl: 'src/components/ep.customization/ep-customization-freeform.html',
-            link: function(scope, element) {
+            link: function(scope) {
                 scope.changes = {};
                 scope.customization = null;
 
@@ -898,7 +896,7 @@ angular.module('ep.customization', [
                     }
                 };
 
-                scope.$watch('customizationData', function(newValue, oldValue) {
+                scope.$watch('customizationData', function(newValue) {
                     if (newValue !== undefined) {
                         onCustomizationChange();
                         scope.customizationData.fnGetChanges = function() {
@@ -936,7 +934,7 @@ angular.module('ep.customization', [
                 customizationData: '='
             },
             templateUrl: 'src/components/ep.customization/ep-customization-record-editor.html',
-            link: function(scope, element) {
+            link: function(scope) {
                 scope.changes = {};
                 var columns = [];
                 var record;
@@ -1174,7 +1172,7 @@ angular.module('ep.customization', [
                     }
                 };
 
-                scope.$watch('customizationData', function(newValue, oldValue) {
+                scope.$watch('customizationData', function(newValue) {
                     if (newValue !== undefined) {
                         onCustomizationChange();
                         scope.customizationData.fnGetChanges = function() {
@@ -1219,7 +1217,7 @@ angular.module('ep.customization', [
             scope: {
             },
             templateUrl: 'src/components/ep.customization/ep-customization.html',
-            link: function(scope, element) {
+            link: function(scope) {
                 var customizationScopes = {};
 
                 function getScopes(root) {

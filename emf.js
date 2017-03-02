@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.585 built: 02-03-2017
+ * version:1.0.11 built: 02-03-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.585","built":"2017-03-02"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.11","built":"2017-03-02"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -1722,7 +1722,7 @@ angular.module('ep.signature', [
                 config.getEmfLibPath = function(libName) {
                     var ret = './lib/bower/emf';
                     if (config.emfBuildInfo[libName] && libName !== 'emf') {
-                        ret = './lib/bower/emf/emf.' + config.emfBuildInfo[libName].libName
+                        ret = './lib/bower/emf/emf.' + config.emfBuildInfo[libName].libName;
                     }
                     return ret;
                 };
@@ -1878,7 +1878,7 @@ angular.module('ep.signature', [
                 column: '=',
                 isRow: '='
             },
-            link: function(scope, element, attrs) {
+            link: function(scope) {
                 var bindingFactory;
 
                 //This will be set by eBindingFactory
@@ -1986,7 +1986,7 @@ angular.module('ep.signature', [
                 required: '=',
                 forCtrl: '@'
             },
-            link: function(scope, element, attrs) {
+            link: function(scope) {
                 scope.state = {
                     epBinding: {},
                     label: scope.label || '',
@@ -2046,7 +2046,7 @@ angular.module('ep.binding').
             scope: {
                 epBinding: '='
             },
-            link: function(scope, element, attrs) {
+            link: function(scope) {
                 scope.state = {};
                 scope.view = null;
                 scope.totalItems = 0;
@@ -2087,7 +2087,7 @@ angular.module('ep.binding').
                     }
                 });
 
-                scope.$watch('epBinding', function(newValue, oldValue) {
+                scope.$watch('epBinding', function(newValue) {
                     if (newValue !== undefined) {
                         scope.state.epBinding = epBindingService.parseBinding(newValue);
                         var view = epTransactionFactory.current().view(scope.state.epBinding.view);
@@ -2212,7 +2212,6 @@ angular.module('ep.binding').
                                         //v.validation = undefined;
                                         epUtilsService.copyProperties(v, col);
                                         if (valid) {
-                                            var xxx;
                                             try {
                                                 var fff;
                                                 eval('fff = function(ctx, ev, value) { ' + valid + '}');
@@ -2231,7 +2230,7 @@ angular.module('ep.binding').
                     }
                 }
 
-                scope.$watch('options', function(newValue, oldValue) {
+                scope.$watch('options', function(newValue) {
                     setOptions();
                 }, true);
             }
@@ -2310,7 +2309,7 @@ angular.module('ep.binding').
             list: undefined,
             sizeClass: 'col-lg-12',
             fnOnChange: function(ev, ctx) {
-                var column = ctx.fnGetCurrentValue();
+                //var column = ctx.fnGetCurrentValue();
                 scope.config.binding = '[' + scope.meta.view + '].[' + scope.meta.column + ']';
             }
         };
@@ -2337,7 +2336,7 @@ angular.module('ep.binding').
                 if (view.hasData()) {
                     var record = view.dataRow();
                     scope.meta.preview = JSON.stringify(record, null, '    ');
-                    if (cols.length == 0) {
+                    if (cols.length === 0) {
                         angular.forEach(record, function(v, n) {
                             cols.push({
                                 label: n,
@@ -2351,13 +2350,13 @@ angular.module('ep.binding').
                 scope.loadingColumns = false;
 
                 //collect some info
-                var info = {
-                    id: view.id(),
-                    rows: view.data().length,
-                    modified: view.modifiedRows().length,
-                    added: view.addedRows().length,
-                    deleted: view.deletedRows().length
-                };
+                //var info = {
+                //    id: view.id(),
+                //    rows: view.data().length,
+                //    modified: view.modifiedRows().length,
+                //    added: view.addedRows().length,
+                //    deleted: view.deletedRows().length
+                //};
             });
         }
 
@@ -2450,19 +2449,17 @@ angular.module('ep.binding').
                         if (c.isCustom) {
                             scope.state.columns.push(c);
                         } else {
-                            if (c.hidden) {
+                            if (c.hidden || c.caption) {
                                 var theColumn = _.find(scope.state.columns, function(cc) {
                                     return cc.name === n;
                                 });
                                 if (theColumn) {
-                                    theColumn.hidden = c.hidden;
-                                }
-                            } else if (c.caption) {
-                                var theColumn = _.find(scope.state.columns, function(cc) {
-                                    return cc.name === n;
-                                });
-                                if (theColumn) {
-                                    theColumn.caption = c.caption;
+                                    if (c.hidden) {
+                                        theColumn.hidden = c.hidden;
+                                    }
+                                    if (c.caption) {
+                                        theColumn.caption = c.caption;
+                                    }
                                 }
                             }
                         }
@@ -2484,7 +2481,7 @@ angular.module('ep.binding').
                     scope.dataColumns = getMetaList(false);
                 }
 
-                scope.$watch('epBinding', function(newValue, oldValue) {
+                scope.$watch('epBinding', function(newValue) {
                     if (newValue !== undefined) {
                         var callbacks = {
                             onViewReady: function(view) {
@@ -2694,7 +2691,7 @@ angular.module('ep.binding').
             compile: function(element, attrs) {
 
                 return {
-                    pre: function(scope, iElement) {
+                    pre: function(scope) {
                         var bindingFactory;
 
                         //This will be set by eBindingFactory
@@ -3205,9 +3202,7 @@ angular.module('ep.binding').
                 userData: {}
             };
 
-            var _view = this;
-
-            function init(_id, _data, isReload) {
+            function init(_id, _data) {
                 state.id = _id;
                 state.data = _data;
                 state.row = state.data && state.data.length ? 0 : -1;
@@ -3216,7 +3211,7 @@ angular.module('ep.binding').
             }
 
             function resetState() {
-                state.query = {}
+                state.query = {};
                 state.isDirty = false;
                 state.modifiedRows = {};
                 state.addedRows = {};
@@ -3287,7 +3282,7 @@ angular.module('ep.binding').
                 }
                 if (angular.isObject(row)) {
                     for (var i = 0; i < state.data.length; i++) {
-                        if (state.data[i] == row) {
+                        if (state.data[i] === row) {
                             state.data[i] = data;
                         }
                     }
@@ -3313,7 +3308,7 @@ angular.module('ep.binding').
                 var rowIdx = -1;
                 if (angular.isObject(row)) {
                     for (var i = 0; i < state.data.length; i++) {
-                        if (state.data[i] == row) {
+                        if (state.data[i] === row) {
                             rowIdx = i;
                         }
                     }
@@ -3648,7 +3643,7 @@ angular.module('ep.binding').
              * @returns {bool} true if row is modified
              */
             function rowModified(index) {
-                var idx = (index == undefined) ? state.row : index;
+                var idx = (index === undefined) ? state.row : index;
                 return (state.modified[idx] !== undefined && state.modified[idx].state === 'M');
             }
 
@@ -3820,7 +3815,7 @@ angular.module('ep.binding').
              * @param {array} data - (optional) data to load, if missing then view will be empty
              */
             function reload(data) {
-                init(this.id(), data || [], true);
+                init(this.id(), data || []);
             }
 
             function getRowIndex(row) {
@@ -3830,7 +3825,7 @@ angular.module('ep.binding').
                 }
                 if (angular.isObject(row)) {
                     for (var i = 0; i < state.data.length; i++) {
-                        if (state.data[i] == row) {
+                        if (state.data[i] === row) {
                             return i;
                         }
                     }
@@ -4613,10 +4608,10 @@ app.directive('epCardTitle',
             var waitAndDraw = function() {
                 if (!$(scope.state.theElement).is(':visible')) {
                     $timeout(function() {
-                        waitAndDraw(scope)
+                        waitAndDraw(scope);
                     }, 200);
                 } else {
-                    doDrawChart(scope)
+                    doDrawChart(scope);
                 }
             };
 
@@ -5531,7 +5526,7 @@ app.directive('epCardTitle',
             link: function(scope) {
 
                 scope.initData = function() {
-                    if (scope.groupBy == 'true') {
+                    if (scope.groupBy === 'true') {
                         scope.nameList = epContactsListService.getGroupedList(scope.data, scope.mainTitle);
                     } else {
                         scope.nameList = scope.data;
@@ -5557,7 +5552,7 @@ app.directive('epCardTitle',
                     scope.items.count = val.length;
                 });
 
-                scope.$watch('data', function(newValue, oldValue) {
+                scope.$watch('data', function(newValue) {
                     if (newValue) {
                         scope.initData();
                     }
@@ -5632,7 +5627,6 @@ app.directive('epCardTitle',
          * To group the contacts list based on alphabets
          */
         function getGroupedList(listData, mainTitle) {
-            var listName = [];
             var sortedlist = _.sortBy(listData, function(obj) { return obj[mainTitle].toLowerCase(); });
             var groupedObj = {};
             var itemGroup = [];
@@ -5711,11 +5705,11 @@ app.directive('epCardTitle',
     *
     * @example
     */
-    epCustomizableDirective.$inject = ['$log', '$timeout', '$compile', '$location', 'epCustomizationService', 'epBindingService'];
+    epCustomizableDirective.$inject = ['$log', '$timeout', '$compile', '$location', 'epCustomizationService'];
     angular.module('ep.customization').directive('epCustomizable', epCustomizableDirective);
 
     /*@ngInject*/
-    function epCustomizableDirective($log, $timeout, $compile, $location, epCustomizationService, epBindingService) {
+    function epCustomizableDirective($log, $timeout, $compile, $location, epCustomizationService) {
         return {
             restrict: 'A',
             scope: {
@@ -5775,11 +5769,11 @@ app.directive('epCardTitle',
     *
     * @example
     */
-    epCustomizationContainerDirective.$inject = ['$log', '$timeout', 'epCustomizationService', 'epBindingService'];
+    epCustomizationContainerDirective.$inject = ['$log', '$timeout', 'epCustomizationService'];
     angular.module('ep.customization').directive('epCustomizationContainer', epCustomizationContainerDirective);
 
     /*@ngInject*/
-    function epCustomizationContainerDirective($log, $timeout, epCustomizationService, epBindingService) {
+    function epCustomizationContainerDirective($log, $timeout, epCustomizationService) {
         return {
             replace: true,
             restrict: 'E',
@@ -5787,7 +5781,7 @@ app.directive('epCardTitle',
             scope: {
                 epCustomizationInfo: '='
             },
-            link: function(scope, element, attrs) {
+            link: function(scope, element) {
                 scope.state = {
                     element: element,
                     style: '',
@@ -5822,12 +5816,10 @@ app.directive('epCardTitle',
                     var iSeqMax = 0;
                     angular.forEach(cProps, function(v, n) {
                         if (n && n !== '$container') {
-                            var controlType = '';
                             var control = {
                                 id: 'ep-custom_' + v.id,
                                 props: v
                             };
-                            var theScope = scope.state.scope;
                             if (v.controlKind === 'html') {
                                 control.type = 'html';
                                 control.class = 'col-xs-12 col-sm-8 col-md-6 col-lg-3';
@@ -5840,9 +5832,9 @@ app.directive('epCardTitle',
                                         control.type = 'editor-control';
                                         control.binding = v.binding.replace('$custom-data.',
                                             'epCustomizationInfo.data.');
-                                        control.columnName = v.binding.replace('$custom-data.', '')
+                                        control.columnName = v.binding.replace('$custom-data.', '');
 
-                                        var col = v.binding.replace('$custom-data.', '')
+                                        var col = v.binding.replace('$custom-data.', '');
                                         control.data = scope.epCustomizationInfo.data[col];
                                     }
                                 }
@@ -5927,7 +5919,7 @@ app.directive('epCardTitle',
                 customizationData: '='
             },
             templateUrl: 'src/components/ep.customization/ep-customization-eptable.html',
-            link: function(scope, element) {
+            link: function(scope) {
                 scope.changes = {};
                 var columns = [];
                 var record;
@@ -5935,12 +5927,12 @@ app.directive('epCardTitle',
                 scope.customization = null;
                 scope.column = {};
 
-                function getFactory() {
-                    return scope.customization.ctrl.factory;
-                }
-                function getOptions() {
-                    return scope.customization.ctrl.factory.getOptions();
-                }
+                ////function getFactory() {
+                ////    return scope.customization.ctrl.factory;
+                ////}
+                ////function getOptions() {
+                ////    return scope.customization.ctrl.factory.getOptions();
+                ////}
 
                 function onCustomizationChange() {
                     if (scope.customization) {
@@ -6088,7 +6080,7 @@ app.directive('epCardTitle',
                     scope.curColCtx = null;
                 };
 
-                scope.$watch('customizationData', function(newValue, oldValue) {
+                scope.$watch('customizationData', function(newValue) {
                     if (newValue !== undefined) {
                         onCustomizationChange();
                         scope.customizationData.fnGetChanges = function() {
@@ -6127,7 +6119,7 @@ app.directive('epCardTitle',
                 customizationData: '='
             },
             templateUrl: 'src/components/ep.customization/ep-customization-freeform.html',
-            link: function(scope, element) {
+            link: function(scope) {
                 scope.changes = {};
                 scope.customization = null;
 
@@ -6576,7 +6568,7 @@ app.directive('epCardTitle',
                     }
                 };
 
-                scope.$watch('customizationData', function(newValue, oldValue) {
+                scope.$watch('customizationData', function(newValue) {
                     if (newValue !== undefined) {
                         onCustomizationChange();
                         scope.customizationData.fnGetChanges = function() {
@@ -6614,7 +6606,7 @@ app.directive('epCardTitle',
                 customizationData: '='
             },
             templateUrl: 'src/components/ep.customization/ep-customization-record-editor.html',
-            link: function(scope, element) {
+            link: function(scope) {
                 scope.changes = {};
                 var columns = [];
                 var record;
@@ -6852,7 +6844,7 @@ app.directive('epCardTitle',
                     }
                 };
 
-                scope.$watch('customizationData', function(newValue, oldValue) {
+                scope.$watch('customizationData', function(newValue) {
                     if (newValue !== undefined) {
                         onCustomizationChange();
                         scope.customizationData.fnGetChanges = function() {
@@ -6897,7 +6889,7 @@ app.directive('epCardTitle',
             scope: {
             },
             templateUrl: 'src/components/ep.customization/ep-customization.html',
-            link: function(scope, element) {
+            link: function(scope) {
                 var customizationScopes = {};
 
                 function getScopes(root) {
@@ -9953,11 +9945,11 @@ angular.module('ep.datagrid').
                 $scope.panelId = _.uniqueId('dockPanel_');
             }
 
-            function preLink($scope, el, attr) {
+            function preLink() {
             }
 
             function parseAnchors(attrVal) {
-                return attrVal.split(',').map(function(v) { return v.trim().toLowerCase(); })
+                return attrVal.split(',').map(function(v) { return v.trim().toLowerCase(); });
             }
 
             function processFlow(zones) {
@@ -9967,10 +9959,11 @@ angular.module('ep.datagrid').
                         var flowPropValue = $zone.epOrientation + ($zone.epWrap ? ' wrap' : '');
                         $scope[flowPropName] = flowPropValue;
 
-                        var children = $zone.children();
-                        children.each(function() {
-                            var $child = $(this);
-                        })
+                        //commented out because this code is doing nothing but gives warnings. Brent to review.
+                        //var children = $zone.children();
+                        //children.each(function() {
+                        //    var $child = $(this);
+                        //})
                     });
                 })
             }
@@ -10084,18 +10077,18 @@ angular.module('ep.datagrid').
                 if (firstPos === 'top' || firstPos === 'bottom') {
                     topFirst = true;
                     // The top & bottom win
-                    $scope.mainFlow = 'column'
+                    $scope.mainFlow = 'column';
                     //$el.css('flex-flow', 'column');
                     $el.find('.ep-dock-panel-top').appendTo($el);
                     $el.find('.ep-dock-panel-bottom').appendTo($el);
 
-                    $scope.crossFlow = 'row'
+                    $scope.crossFlow = 'row';
                     //$cross.css('flex-flow', 'row');
                     $el.find('.ep-dock-panel-left').appendTo($cross);
                     $el.find('.ep-dock-panel-right').appendTo($cross);
                 } else {
                     // The left & right win
-                    $scope.mainFlow = 'row'
+                    $scope.mainFlow = 'row';
                     //$el.css('flex-flow', 'row');
                     $el.find('.ep-dock-panel-left').appendTo($el);
                     $el.find('.ep-dock-panel-right').appendTo($el);
@@ -10138,7 +10131,7 @@ angular.module('ep.datagrid').
                             ic = (docks.left.hasContent && docks.left.epPanelMode === 'stretch' ? 1 : 0) +
                                 (docks.center.hasContent && docks.center.epPanelMode === 'stretch' ? 1 : 0) +
                                 (docks.right.hasContent && docks.right.epPanelMode === 'stretch' ? 1 : 0);
-                            innerFlex = 100 / ic;
+                            var innerFlex = 100 / ic;
                             if (docks.left.hasContent && docks.left.epPanelMode === 'stretch') {
                                 $scope.leftFlex = '1 1 ' + innerFlex + '%';
                             }
@@ -13733,7 +13726,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         break;
                     case 'filestorage': setSystemToFileStorage(); break;
                     default:
-                        log.warn('Unable to set file storage system to ' + manualSelection + '.');
+                        $log.warn('Unable to set file storage system to ' + manualSelection + '.');
                         setSystemToLocalStorage();
                         break;
                 }
@@ -15896,7 +15889,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         };
         transaction.onerror = function(e) {
             self.$log.warn('Transaction error occurred on ' + self.name + '. ' + e);
-            deferred.reject(e)
+            deferred.reject(e);
         };
 
         var store = transaction.objectStore(self.name);
@@ -16122,7 +16115,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @param {string} id - the id of the database to close
          */
         function closeDatabase(id) {
-            delete openDatabaseMap[id]
+            delete openDatabaseMap[id];
         }
 
         /**
@@ -16325,7 +16318,6 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * To group the list based on groupBy Value
          */
         function getGroupedList(listData, groupBy) {
-            var listName = [];
             var sortedlist = _.sortBy(listData, groupBy);
             var groupedObj = {};
             var itemGroup = [];
@@ -17539,7 +17531,7 @@ angular.module('ep.menu.builder').
                             var headerHeight = $('.ep-modal-header').innerHeight() + 5;
                             var statusBarHeight = $('.ep-dlg-status h4').innerHeight();
 
-                            if ($scope.config.statusBar == true) {
+                            if ($scope.config.statusBar === true) {
                                 var totalFooterHeight = footerHeight + statusBarHeight;
                                 $('.ep-modal-area').css({
                                     paddingBottom: totalFooterHeight + 'px',
@@ -19752,7 +19744,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
             },
             compile: function() {
                 return {
-                    pre: function($scope, element) {
+                    pre: function($scope) {
                         var ctx = $scope.ctx;
 
                         $scope.temp = {
@@ -20206,7 +20198,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                 };
                 scope.editorDirective = '<ep-include options="ctx.templateOptions" user-data="ctx"></ep-include>';
 
-                newScope.$watch('value', function(newValue, oldValue) {
+                newScope.$watch('value', function(newValue) {
                     if (newValue !== undefined && ctx.updatable && ctx.readonly !== true) {
                         scope.value = newValue;
                     }
@@ -21145,7 +21137,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                     }
                 });
 
-                scope.$watch('sizeClass', function(newValue, oldValue) {
+                scope.$watch('sizeClass', function(newValue) {
                     if (scope.state.controls && newValue !== undefined) {
                         $timeout(function() {
                             angular.forEach(scope.state.controls, function(ctrl) {
@@ -25013,7 +25005,6 @@ angular.module('ep.signature').directive('epSignature',
     angular.module('ep.sliding.panel')
     .directive('epPane', epPane);
     /*@ngInject */
-    var counter = {};
     function epPane($timeout) {
         return {
             restrict: 'E',
@@ -25108,7 +25099,7 @@ angular.module('ep.signature').directive('epSignature',
                 this.getState = function() { return $scope.state; };
             }],
             link:function($scope, $el, $attrs) {
-                var paneElements = $el.find('ep-pane').toArray();
+                //var paneElements = $el.find('ep-pane').toArray();
                 var id = $attrs.id || 'epSlidingPanel';
                 $scope.state = {
                     $el: $el,
@@ -25285,7 +25276,7 @@ angular.module('ep.signature').directive('epSignature',
         function next(panelId) {
             panelId = panelId || 'epSlidingPanel';
             var state = getState(panelId);
-            return goToPaneIndex(panelId, state.displayPaneIndex + 1)
+            return goToPaneIndex(panelId, state.displayPaneIndex + 1);
         }
         /**
          * @ngdoc method
@@ -27497,13 +27488,13 @@ angular.module('ep.signature').directive('epSignature',
             }).error(function(data, status, headers, config) {
                 var restServer = (config !== undefined && config !== null) ? config.url : '';
                 $scope.hasError = true;
-                $scope.status = (status == 401 ?
+                $scope.status = (status === 401 ?
                     'Please review the user or password.' : 'We couldn\'t connect to the server. Please review it.');
             });
             epModalDialogService.hide();
         };
 
-        $scope.passwordKeyPress = function(keyEvent) {
+        $scope.passwordKeyPress = function(event) {
             $scope.hasError = false;
             $scope.status = '';
             var key = typeof event.which === 'undefined' ? event.keyCode : event.which;
@@ -29107,29 +29098,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.binding/controls/ep-binding-selector.html',
-    "<!--This is a partial for the ep-binding directive --><div class=ep-binding-selector ng-controller=epBindingSelectorCtrl><div class=\"panel panel-default\"><div class=\"panel-heading panel-heading-small\"><ul class=\"nav nav-tabs\"><li class=active><a data-toggle=pill href=.binding>Binding</a></li><li><a data-toggle=pill href=.preview>Data Preview</a></li></ul></div><div class=panel-body><div class=\"tab-content ep-padding-bottom\"><div class=\"binding tab-pane fade in active\"><ep-editor-control column=viewList value=meta.view></ep-editor-control><div ng-if=meta.view><div class=text-center ng-show=loadingColumns><i class=\"fa fa-spinner fa-spin fa-2x\"></i><label>loading columns...</label></div><div ng-hide=loadingColumns><ep-editor-control column=columnList value=meta.column></ep-editor-control></div></div><ep-editor-control column=columnBinding value=config.binding></ep-editor-control></div><div class=\"preview tab-pane fade\"><textarea class=\"form-control alert-info\" ng-model=meta.preview style=\"min-height: 400px; min-width: 300px\"></textarea><div><a ng-show=\"isAllDataPreview !== true\" ng-click=showAllData(true) style=\"margin-right: 15px\"><i></i>Show All</a> <a ng-show=\"isAllDataPreview === true\" ng-click=showAllData(false) style=\"margin-right: 15px\"><i></i>Show Current Record</a></div></div></div></div></div><!--<ep-editor-control column=\"viewList\" value=\"meta.view\"></ep-editor-control>\r" +
-    "\n" +
-    "\r" +
-    "\n" +
-    "                    <div ng-if=\"meta.view\">\r" +
-    "\n" +
-    "                        <div class=\"text-center\" ng-show=\"loadingColumns\">\r" +
-    "\n" +
-    "                            <i class=\"fa fa-spinner fa-spin fa-2x\"></i><label>loading columns...</label>\r" +
-    "\n" +
-    "                        </div>\r" +
-    "\n" +
-    "                        <div ng-hide=\"loadingColumns\">\r" +
-    "\n" +
-    "                            <ep-editor-control column=\"columnList\" value=\"meta.column\"></ep-editor-control>\r" +
-    "\n" +
-    "                        </div>\r" +
-    "\n" +
-    "                    </div>\r" +
-    "\n" +
-    "\r" +
-    "\n" +
-    "                    <ep-editor-control column=\"columnBinding\" value=\"config.binding\"></ep-editor-control>--></div>"
+    "<!--This is a partial for the ep-binding directive --><div class=ep-binding-selector ng-controller=epBindingSelectorCtrl><div class=\"panel panel-default\"><div class=\"panel-heading panel-heading-small\"><ul class=\"nav nav-tabs\"><li class=active><a data-toggle=pill href=.binding>Binding</a></li><li><a data-toggle=pill href=.preview>Data Preview</a></li></ul></div><div class=panel-body><div class=\"tab-content ep-padding-bottom\"><div class=\"binding tab-pane fade in active\"><ep-editor-control column=viewList value=meta.view></ep-editor-control><div ng-if=meta.view><div class=text-center ng-show=loadingColumns><i class=\"fa fa-spinner fa-spin fa-2x\"></i><label>loading columns...</label></div><div ng-hide=loadingColumns><ep-editor-control column=columnList value=meta.column></ep-editor-control></div></div><ep-editor-control column=columnBinding value=config.binding></ep-editor-control></div><div class=\"preview tab-pane fade\"><textarea class=\"form-control alert-info\" ng-model=meta.preview style=\"min-height: 400px; min-width: 300px\"></textarea><div><a ng-show=\"isAllDataPreview !== true\" ng-click=showAllData(true) style=\"margin-right: 15px\"><i></i>Show All</a> <a ng-show=\"isAllDataPreview === true\" ng-click=showAllData(false) style=\"margin-right: 15px\"><i></i>Show Current Record</a></div></div><div class=\"preview tab-pane fade\"><textarea class=\"form-control alert-info\" ng-model=meta.info style=\"min-height: 400px; min-width: 300px\"></textarea></div></div></div></div></div>"
   );
 
 

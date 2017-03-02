@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.585 built: 02-03-2017
+ * version:1.0.11 built: 02-03-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.585","built":"2017-03-02"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.11","built":"2017-03-02"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -944,7 +944,7 @@ if (!epEmfGlobal) {
                 config.getEmfLibPath = function(libName) {
                     var ret = './lib/bower/emf';
                     if (config.emfBuildInfo[libName] && libName !== 'emf') {
-                        ret = './lib/bower/emf/emf.' + config.emfBuildInfo[libName].libName
+                        ret = './lib/bower/emf/emf.' + config.emfBuildInfo[libName].libName;
                     }
                     return ret;
                 };
@@ -3752,7 +3752,7 @@ function() {
                             var headerHeight = $('.ep-modal-header').innerHeight() + 5;
                             var statusBarHeight = $('.ep-dlg-status h4').innerHeight();
 
-                            if ($scope.config.statusBar == true) {
+                            if ($scope.config.statusBar === true) {
                                 var totalFooterHeight = footerHeight + statusBarHeight;
                                 $('.ep-modal-area').css({
                                     paddingBottom: totalFooterHeight + 'px',
