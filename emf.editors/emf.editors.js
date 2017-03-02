@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.584 built: 02-03-2017
+ * version:1.0.10-dev.585 built: 02-03-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.584","built":"2017-03-02"};
+__ep_build_info["editors"] = {"libName":"editors","version":"1.0.10-dev.585","built":"2017-03-02"};
 
 (function() {
     'use strict';
@@ -1185,7 +1185,7 @@ angular.module('ep.record.editor', [
                         href: btnHref,
                         style: btnStyle,
                         seq: 2,
-                        position: col.bizTypeRight === true ? 'post': 'pre',
+                        position: col.bizTypeRight === true ? 'post' : 'pre',
                     });
                 }
             }
@@ -1475,7 +1475,7 @@ angular.module('ep.record.editor', [
                                     ctx.pattern = '^NEG(\\d+)$';
                                 } else {
                                     ctx.pattern =
-                                        '^NEG(\\d+)([\'.\'](\\d){0,DEC})?$'.replace('DEC', dec.toString());
+                                        '^NEG(\\d+)([\'.\'](\\d) {0,DEC})?$'.replace('DEC', dec.toString());
                                 }
                                 if (fmt.AllowNegative || false) {
                                     ctx.pattern = ctx.pattern.replace('NEG', '([-]?)');
@@ -2436,6 +2436,7 @@ angular.module('ep.record.editor').
     * @description
     * Represents the ep.switch directive
     * This directive draws a simple ON/OFF switch
+    * bootstrap-switch library must be included in the applications that use this control
     *
     * @property {string} ng-model:string
     *  This property sets the binding to a object property.
@@ -2449,7 +2450,6 @@ angular.module('ep.record.editor').
         <ep-switch ng-model="onOff"><ep-switch>
       </doc:source>
     </doc:example>
-    
     */
     epSwitchDirective.$inject = ['$timeout'];
     angular.module('ep.switch').

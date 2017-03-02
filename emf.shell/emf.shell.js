@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.584 built: 02-03-2017
+ * version:1.0.10-dev.585 built: 02-03-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.584","built":"2017-03-02"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.10-dev.585","built":"2017-03-02"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -3635,7 +3635,7 @@ function() {
             if (cfg.windowClass) {
                 winClass += ' ' + cfg.windowClass;
             }
-         
+
             return $uibModal.open({
                 windowClass: winClass,
                 keyboard: false,
@@ -3754,11 +3754,16 @@ function() {
 
                             if ($scope.config.statusBar == true) {
                                 var totalFooterHeight = footerHeight + statusBarHeight;
-                                $('.ep-modal-area').css({ paddingBottom: totalFooterHeight + 'px', paddingTop: headerHeight + 'px' });
+                                $('.ep-modal-area').css({
+                                    paddingBottom: totalFooterHeight + 'px',
+                                    paddingTop: headerHeight + 'px'
+                                });
                                 $('.ep-modal-footer').css({ 'bottom': statusBarHeight + 'px' });
-                            }
-                            else {
-                                $('.ep-modal-area').css({ paddingBottom: footerHeight + 'px', paddingTop: headerHeight + 'px' });
+                            } else {
+                                $('.ep-modal-area').css({
+                                    paddingBottom: footerHeight + 'px',
+                                    paddingTop: headerHeight + 'px'
+                                });
                             }
                         });
                     }]
@@ -4856,8 +4861,14 @@ function() {
              */
             function setCurrentModeFlags(viewScope) {
                 var mode = shellState.viewSettings[shellState.mediaMode];
-                var left = shellState.viewSettings.sidebar.left || { showToggleButton: true, enabled: false, toggleButtonIcon: 'fa-bars' };
-                var right = shellState.viewSettings.sidebar.right || { showToggleButton: true, enabled: false, toggleButtonIcon: 'fa-bars' };
+                var left = shellState.viewSettings.sidebar.left || {
+                    showToggleButton: true, enabled: false,
+                    toggleButtonIcon: 'fa-bars'
+                };
+                var right = shellState.viewSettings.sidebar.right || {
+                    showToggleButton: true, enabled: false,
+                    toggleButtonIcon: 'fa-bars'
+                };
 
                 mode.autoActivateSidebar = mode.autoActivateSidebar !== false;
 
@@ -6517,9 +6528,9 @@ function() {
 (function() {
     'use strict';
 
-    angular.module('ep.shell').directive('epShellSidebar', 
+    angular.module('ep.shell').directive('epShellSidebar',
         /*@ngInject */
-        ['$rootScope', '$routeParams', 'epSidebarService', 'epShellService', 'epShellConstants', 'epFeatureDetectionService', function($rootScope, $routeParams, epSidebarService, epShellService, 
+        ['$rootScope', '$routeParams', 'epSidebarService', 'epShellService', 'epShellConstants', 'epFeatureDetectionService', function($rootScope, $routeParams, epSidebarService, epShellService,
                  epShellConstants, epFeatureDetectionService) {
             return {
                 restrict: 'E',

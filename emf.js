@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.584 built: 02-03-2017
+ * version:1.0.10-dev.585 built: 02-03-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.584","built":"2017-03-02"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.585","built":"2017-03-02"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -570,7 +570,7 @@ angular.module('ep.signature', [
     'ep.sysconfig'
 ]);
 
-(function(){
+(function() {
     'use strict';
     /**
      * @ngdoc overview
@@ -580,6 +580,7 @@ angular.module('ep.signature', [
      */
     angular.module('ep.sliding.panel', ['ngAnimate']);
 })();
+
 /**
  * @ngdoc overview
  * @name ep.switch
@@ -3277,8 +3278,8 @@ angular.module('ep.binding').
              * @public
              * @description
              * replace a data row specified by row number or row object
-             * @param {object} row - row object or index of row to be replaced. 
-             * @param {object} data - data row to replace the row 
+             * @param {object} row - row object or index of row to be replaced.
+             * @param {object} data - data row to replace the row
              */
             function replaceDataRow(row, data) {
                 if (!state.data || (state.data.length < 1)) {
@@ -3302,7 +3303,7 @@ angular.module('ep.binding').
              * @public
              * @description
              * Returns modified state for a given row which can be datarow or index
-             * @param {object} row - row object or index of row to fetch. 
+             * @param {object} row - row object or index of row to fetch.
              * @returns {object} modified state
              */
             function modifiedState(row) {
@@ -3369,7 +3370,7 @@ angular.module('ep.binding').
              * @public
              * @description
              * Deletes a row, keeping track of deleted rows and firing events
-             * @param {object} row - row object or index of row to be deleted. 
+             * @param {object} row - row object or index of row to be deleted.
              * @returns {int} removed row index
              */
             function deleteRow(row) {
@@ -3821,7 +3822,6 @@ angular.module('ep.binding').
             function reload(data) {
                 init(this.id(), data || [], true);
             }
-
 
             function getRowIndex(row) {
                 var rowIdx = -1;
@@ -5533,8 +5533,7 @@ app.directive('epCardTitle',
                 scope.initData = function() {
                     if (scope.groupBy == 'true') {
                         scope.nameList = epContactsListService.getGroupedList(scope.data, scope.mainTitle);
-                    }
-                    else {
+                    } else {
                         scope.nameList = scope.data;
                     }
                     scope.filterVal = [];
@@ -5634,7 +5633,7 @@ app.directive('epCardTitle',
          */
         function getGroupedList(listData, mainTitle) {
             var listName = [];
-            var sortedlist = _.sortBy(listData, function (obj) { return obj[mainTitle].toLowerCase(); });
+            var sortedlist = _.sortBy(listData, function(obj) { return obj[mainTitle].toLowerCase(); });
             var groupedObj = {};
             var itemGroup = [];
             var currAlphabet = '';
@@ -6971,7 +6970,6 @@ app.directive('epCardTitle',
                     if (scope.customization) {
                         scope.customization.api.onCustomizeActivate(false);
                     }
-                    
                     scope.customization = null;
                     $timeout(function() {
                         scope.customization = customizationScopes[id];
@@ -9962,18 +9960,16 @@ angular.module('ep.datagrid').
                 return attrVal.split(',').map(function(v) { return v.trim().toLowerCase(); })
             }
 
-            function processFlow(zones){
-                zoneNames.forEach(function(zoneName){
-                    zones[zoneName].forEach(function($zone){
-                        
+            function processFlow(zones) {
+                zoneNames.forEach(function(zoneName) {
+                    zones[zoneName].forEach(function($zone) {
                         var flowPropName = zoneName + 'Flow';
-                        var flowPropValue = $zone.epOrientation + ($zone.epWrap ? ' wrap': '');
+                        var flowPropValue = $zone.epOrientation + ($zone.epWrap ? ' wrap' : '');
                         $scope[flowPropName] = flowPropValue;
 
                         var children = $zone.children();
-                        children.each(function(){
+                        children.each(function() {
                             var $child = $(this);
-                            
                         })
                     });
                 })
@@ -12316,11 +12312,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @public
          * @description
          * update data using updatable BAQ.
-         * @param {string} baqId: BAQ ID
-         * @param {object} data: data row object. Eg. { CustID:'TEST', CustNum:20}
+         * @param {string} baqId - BAQ ID
+         * @param {object} data - data row object. Eg. { CustID:'TEST', CustNum:20}
          * @param {object} options OPTIONAL: update options as follows:
          *      {
-         *          showProgress: true/false to show progress message (default is true) 
+         *          showProgress: true/false to show progress message (default is true)
          *          title: progress message title
          *          message: progress message text
          *          convertToJsonType: if decimals need to be converted from json to string
@@ -12345,7 +12341,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             }
 
             var deferred = $q.defer();
-            try{
+            try {
                 if (showProgress) {
                     epModalDialogService.showProgress({
                         title: options.title || 'Updating data',
@@ -12440,7 +12436,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                                 if (findRow) {
                                     targetView.replaceDataRow(findRow, dv.dataRow());
                                 }
-                            }                            
+                            }
                             epTransactionFactory.current().remove(viewRetrieveId);
                             deferred.resolve(newDataRow);
                         });
@@ -12650,7 +12646,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             ret.push({ name: c.name, value: row[c.name] });
                         } else {
                             ret.push(c.name);
-                        }                       
+                        }
                     }
                 });
             }
@@ -13271,7 +13267,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  *
  * @example
  */
-(function () {
+(function() {
     'use strict';
     epFileService.$inject = ['$q', '$log', '$window', 'epFeatureDetectionService', 'epFileConstants', 'epIndexedDbService', 'epLocalStorageService'];
     angular.module('ep.file')
@@ -13281,7 +13277,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         })
         .service('epFileService', /*@ngInject*/ epFileService);
 
-    function epFileService($q, $log, $window, epFeatureDetectionService, epFileConstants, epIndexedDbService, epLocalStorageService) {
+    function epFileService($q, $log, $window, epFeatureDetectionService,
+        epFileConstants, epIndexedDbService, epLocalStorageService) {
 
         var storageSystems = {
             'localStorage': 0,
@@ -13333,7 +13330,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         var storageSystem = storageSystems.localStorage;
 
         function failWith(deferred, url) {
-            return function (error) {
+            return function(error) {
                 var errDesc;
                 if (error.name) {
                     errDesc = domErrors[error.name];
@@ -13365,7 +13362,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * the data is stored in localStorage. The path parameter is optional, defaulting to the
          */
         function load(path, filename) {
-            return loadText(path, filename).then(function (text) {
+            return loadText(path, filename).then(function(text) {
                 return angular.fromJson(text);
             });
         }
@@ -13394,13 +13391,13 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         path = $window.cordova.file.dataDirectory;
                     }
                     $window.resolveLocalFileSystemURL(path + filename,
-                        function (fileEntry) {
-                            fileEntry.file(function (file) {
+                        function(fileEntry) {
+                            fileEntry.file(function(file) {
                                 var reader = new FileReader();
                                 // when the object graph is saved, it is enclosed in an array
                                 // to satisfy the Blob interface. When it is read, the function
                                 // returns it as an array with one member.
-                                reader.onloadend = function () {
+                                reader.onloadend = function() {
                                     deferred.resolve(this.result);
                                 };
                                 reader.readAsText(file);
@@ -13412,9 +13409,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         filename = path;
                         path = '';
                     }
-                    epIndexedDbService.openDatabase('ep-file-db', 1).then(function (db) {
+                    epIndexedDbService.openDatabase('ep-file-db', 1).then(function(db) {
                         var store = db.getObjectStore('ep-file');
-                        store.get(filename).then(function (fileEntry) {
+                        store.get(filename).then(function(fileEntry) {
                             if (fileEntry) {
                                 deferred.resolve(fileEntry.value);
                             } else {
@@ -13485,17 +13482,17 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             filename = path;
                             path = $window.cordova.file.dataDirectory;
                         }
-                        $window.resolveLocalFileSystemURL(path, function (directoryEntry) {
-                            directoryEntry.getFile(filename, { create: true }, function (fileEntry) {
-                                fileEntry.createWriter(function (writer) {
+                        $window.resolveLocalFileSystemURL(path, function(directoryEntry) {
+                            directoryEntry.getFile(filename, { create: true }, function(fileEntry) {
+                                fileEntry.createWriter(function(writer) {
 
                                     // onwriteend is only called if the file was sucessfully written
                                     // so the promised is resolved without any return value.
-                                    writer.onwriteend = function () {
+                                    writer.onwriteend = function() {
                                         $log.debug('Successfully wrote file: ' + filename);
                                         deferred.resolve();
                                     };
-                                    writer.onerror = function (err) {
+                                    writer.onerror = function(err) {
                                         fail(deferred, { code: err.toString() });
                                     };
                                     // the blob interface expects the object graph to be inside an array
@@ -13512,8 +13509,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             path = '';
                         }
                         var fileEntry = { filename: filename, value: text };
-                        epIndexedDbService.openDatabase('ep-file-db', 1).then(function (db) {
-                            db.getObjectStore('ep-file').put(fileEntry).then(function () {
+                        epIndexedDbService.openDatabase('ep-file-db', 1).then(function(db) {
+                            db.getObjectStore('ep-file').put(fileEntry).then(function() {
                                 $log.debug('Saved ' + filename + ' to indexedDB');
                                 deferred.resolve();
                             }, failWith(deferred, filename))
@@ -13557,9 +13554,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             path = $window.cordova.file.dataDirectory;
                         }
                         $window.resolveLocalFileSystemURL(path + filename,
-                            function () {
+                            function() {
                                 deferred.resolve(true);
-                            }, function (err) {
+                            }, function(err) {
                                 if (err.code === 1) {
                                     deferred.resolve(false);
                                 } else {
@@ -13572,9 +13569,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             filename = path;
                             path = '';
                         }
-                        epIndexedDbService.openDatabase('ep-file-db', 1).then(function (db) {
+                        epIndexedDbService.openDatabase('ep-file-db', 1).then(function(db) {
                             var store = db.getObjectStore('ep-file');
-                            store.get(filename).then(function (fileEntry) {
+                            store.get(filename).then(function(fileEntry) {
                                 if (fileEntry) {
                                     deferred.resolve(true);
                                 } else {
@@ -13633,17 +13630,17 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 switch (storageSystem) {
                     case storageSystems.fileStorage:
                         $window.resolveLocalFileSystemURL($window.cordova.file.dataDirectory + filename,
-                            function (fileEntry) {
+                            function(fileEntry) {
                                 fileEntry.remove();
                                 deferred.resolve();
-                            }, function (err) {
+                            }, function(err) {
                                 failWith(deferred, filename)(err);
                             });
                         break;
                     case storageSystems.indexedDB:
-                        epIndexedDbService.openDatabase('ep-file-db', 1).then(function (db) {
+                        epIndexedDbService.openDatabase('ep-file-db', 1).then(function(db) {
                             var store = db.getObjectStore('ep-file');
-                            store.delete(filename).then(function () {
+                            store.delete(filename).then(function() {
                                 deferred.resolve();
                             }, failWith(deferred, filename));
                         });
@@ -13665,12 +13662,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @methodOf ep.file:epFileService
          * @public
          * @description
-         * This function sets the system to use when working with files. 
+         * This function sets the system to use when working with files.
          * Valid values are 'localStorage', 'indexedDB', and 'fileStorage'
          * File storage is only available if the current running context is
          * cordova or electron.
          */
-        function setStorageSystem(system){
+        function setStorageSystem(system) {
             initialize(system);
         }
         /**
@@ -13679,12 +13676,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @methodOf ep.file:epFileService
          * @public
          * @description
-         * This function returns the currently selected file system. 
+         * This function returns the currently selected file system.
          * Possible values are 'localStorage', 'indexedDB', and 'fileStorage'.
          */
-        function getStorageSystem(){
+        function getStorageSystem() {
             var sys = '';
-            switch(storageSystem){
+            switch (storageSystem) {
                 case storageSystems.localStorage: sys = 'localStorage'; break;
                 case storageSystems.indexedDB: sys = 'indexedDB'; break;
                 case storageSystems.fileStorage: sys = 'fileStorage'; break;
@@ -13692,27 +13689,27 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             return sys;
         }
 
-        function setSystemToFileStorage(){
+        function setSystemToFileStorage() {
             $log.debug('FileStorage system selected.');
             storageSystem = storageSystems.fileStorage;
         }
 
-        function setSystemToIndexedDb(){
+        function setSystemToIndexedDb() {
             epIndexedDbService.createSchema('ep-file-db')
-                .defineVersion(1, function (db) {
+                .defineVersion(1, function(db) {
                     db.createObjectStore('ep-file', { keyPath: 'filename' });
                 });
             $log.debug('IndexedDB system selected.');
             storageSystem = storageSystems.indexedDB;
         }
 
-        function setSystemToLocalStorage(){
+        function setSystemToLocalStorage() {
             $log.debug('LocalStorage system selected.');
             storageSystem = storageSystems.localStorage;
         }
 
-        function initialize(manualSelection){
-            if(!manualSelection){
+        function initialize(manualSelection) {
+            if (!manualSelection) {
                 if (epFeatureDetectionService.getFeatures().platform.app === 'Cordova') {
                     setSystemToLocalStorage();
                 } else {
@@ -13724,9 +13721,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     }
                 }
             } else {
-                switch(manualSelection.toLowerCase()){
+                switch (manualSelection.toLowerCase()) {
                     case 'localstorage': setSystemToLocalStorage(); break;
-                    case 'indexeddb': 
+                    case 'indexeddb':
                         try {
                             setSystemToIndexedDb();
                         } catch (err) {
@@ -13734,8 +13731,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             setSystemToLocalStorage();
                         }
                         break;
-                    case 'filestorage': setSystemToFileStorage(); break; 
-                    default: 
+                    case 'filestorage': setSystemToFileStorage(); break;
+                    default:
                         log.warn('Unable to set file storage system to ' + manualSelection + '.');
                         setSystemToLocalStorage();
                         break;
@@ -15327,7 +15324,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      <file name="script.js">
      	angular.module('TestApp', ['ep.hybrid'])
      		.controller('networkCtrl',['$scope', '$log', 'epHybridMediaService',
-                function($scope, epHybridNetworkService){
+                function($scope, epHybridNetworkService) {
                     function checkStatus() {
                      var type = epHybridNetworkService.checkConnection();
                      if (type == epNetworkStatus.Unknown || type == epNetworkStatus.None) {
@@ -17425,7 +17422,7 @@ angular.module('ep.menu.builder').
             if (cfg.windowClass) {
                 winClass += ' ' + cfg.windowClass;
             }
-         
+
             return $uibModal.open({
                 windowClass: winClass,
                 keyboard: false,
@@ -17544,11 +17541,16 @@ angular.module('ep.menu.builder').
 
                             if ($scope.config.statusBar == true) {
                                 var totalFooterHeight = footerHeight + statusBarHeight;
-                                $('.ep-modal-area').css({ paddingBottom: totalFooterHeight + 'px', paddingTop: headerHeight + 'px' });
+                                $('.ep-modal-area').css({
+                                    paddingBottom: totalFooterHeight + 'px',
+                                    paddingTop: headerHeight + 'px'
+                                });
                                 $('.ep-modal-footer').css({ 'bottom': statusBarHeight + 'px' });
-                            }
-                            else {
-                                $('.ep-modal-area').css({ paddingBottom: footerHeight + 'px', paddingTop: headerHeight + 'px' });
+                            } else {
+                                $('.ep-modal-area').css({
+                                    paddingBottom: footerHeight + 'px',
+                                    paddingTop: headerHeight + 'px'
+                                });
                             }
                         });
                     }]
@@ -20371,7 +20373,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                         href: btnHref,
                         style: btnStyle,
                         seq: 2,
-                        position: col.bizTypeRight === true ? 'post': 'pre',
+                        position: col.bizTypeRight === true ? 'post' : 'pre',
                     });
                 }
             }
@@ -20661,7 +20663,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                                     ctx.pattern = '^NEG(\\d+)$';
                                 } else {
                                     ctx.pattern =
-                                        '^NEG(\\d+)([\'.\'](\\d){0,DEC})?$'.replace('DEC', dec.toString());
+                                        '^NEG(\\d+)([\'.\'](\\d) {0,DEC})?$'.replace('DEC', dec.toString());
                                 }
                                 if (fmt.AllowNegative || false) {
                                     ctx.pattern = ctx.pattern.replace('NEG', '([-]?)');
@@ -22538,8 +22540,14 @@ angular.module('ep.record.editor').
              */
             function setCurrentModeFlags(viewScope) {
                 var mode = shellState.viewSettings[shellState.mediaMode];
-                var left = shellState.viewSettings.sidebar.left || { showToggleButton: true, enabled: false, toggleButtonIcon: 'fa-bars' };
-                var right = shellState.viewSettings.sidebar.right || { showToggleButton: true, enabled: false, toggleButtonIcon: 'fa-bars' };
+                var left = shellState.viewSettings.sidebar.left || {
+                    showToggleButton: true, enabled: false,
+                    toggleButtonIcon: 'fa-bars'
+                };
+                var right = shellState.viewSettings.sidebar.right || {
+                    showToggleButton: true, enabled: false,
+                    toggleButtonIcon: 'fa-bars'
+                };
 
                 mode.autoActivateSidebar = mode.autoActivateSidebar !== false;
 
@@ -24199,9 +24207,9 @@ angular.module('ep.record.editor').
 (function() {
     'use strict';
 
-    angular.module('ep.shell').directive('epShellSidebar', 
+    angular.module('ep.shell').directive('epShellSidebar',
         /*@ngInject */
-        ['$rootScope', '$routeParams', 'epSidebarService', 'epShellService', 'epShellConstants', 'epFeatureDetectionService', function($rootScope, $routeParams, epSidebarService, epShellService, 
+        ['$rootScope', '$routeParams', 'epSidebarService', 'epShellService', 'epShellConstants', 'epFeatureDetectionService', function($rootScope, $routeParams, epSidebarService, epShellService,
                  epShellConstants, epFeatureDetectionService) {
             return {
                 restrict: 'E',
@@ -24999,14 +25007,14 @@ angular.module('ep.signature').directive('epSignature',
         };
     }]);
 
-(function(){
+(function() {
     'use strict';
     epPane.$inject = ['$timeout'];
     angular.module('ep.sliding.panel')
     .directive('epPane', epPane);
     /*@ngInject */
     var counter = {};
-    function epPane($timeout){
+    function epPane($timeout) {
         return {
             restrict: 'E',
             transclude: true,
@@ -25016,7 +25024,7 @@ angular.module('ep.signature').directive('epSignature',
                 'onEnter': '&',
                 'onLeave': '&'
             },
-            link: function($scope, $element, $attrs){
+            link: function($scope, $element, $attrs) {
                 $scope.state = $element.controller('epSlidingPanel').getState();
                 $scope.pane = {
                     onEnter: $attrs.onEnter && $scope.onEnter,
@@ -25031,14 +25039,15 @@ angular.module('ep.signature').directive('epSignature',
         }
     }
 })();
-(function(){
+
+(function() {
     'use strict';
     /**
     * @ngdoc directive
     * @name ep.sliding.panel.directive:epSlidingPanel
     * @restrict E
     * @description
-    * This component encapsulates a simple wizard-like control with 
+    * This component encapsulates a simple wizard-like control with
     * multiple panes of content that scroll horizontally as the active pane
     * index is changed.
     * @example
@@ -25084,7 +25093,7 @@ angular.module('ep.signature').directive('epSignature',
     angular.module('ep.sliding.panel')
     .directive('epSlidingPanel', epSlidingPanel);
     /*@ngInject */
-    function epSlidingPanel($timeout, epSlidingPanelService){
+    function epSlidingPanel($timeout, epSlidingPanelService) {
         return {
             restrict: 'E',
             transclude: true,
@@ -25095,11 +25104,10 @@ angular.module('ep.signature').directive('epSignature',
                 hideNavBar: '='
             },
             templateUrl: 'src/components/ep.sliding.panel/ep-sliding-panel.html',
-            controller: /*@ngInject*/['$scope', '$element', function($scope, $element){
-                this.getState = function(){ return $scope.state; };
+            controller: /*@ngInject*/['$scope', '$element', function($scope, $element) {
+                this.getState = function() { return $scope.state; };
             }],
-            link:function($scope, $el, $attrs){
-                    
+            link:function($scope, $el, $attrs) {
                 var paneElements = $el.find('ep-pane').toArray();
                 var id = $attrs.id || 'epSlidingPanel';
                 $scope.state = {
@@ -25116,8 +25124,8 @@ angular.module('ep.signature').directive('epSignature',
                     onStart: $attrs.onStart && $scope.onStart,
                     panes: []
                 };
-                if ($scope.state.onStart){
-                    $timeout(function(){
+                if ($scope.state.onStart) {
+                    $timeout(function() {
                         var locals = {$state: $scope.state};
                         $scope.state.onStart(locals);
                     });
@@ -25125,7 +25133,7 @@ angular.module('ep.signature').directive('epSignature',
                 // register/unregister internal state with the service so that it can be controlled from there
                 epSlidingPanelService.register($scope.state);
                 $scope.$on('destroy', epSlidingPanelService.unregister.bind(null, $scope.state.id));
-                
+
                 //when pressing prev, panel should slide to the right
                 $scope.prev = epSlidingPanelService.prev.bind(null, $scope.state.id);
 
@@ -25137,7 +25145,8 @@ angular.module('ep.signature').directive('epSignature',
         }
     }
 })();
-(function(){
+
+(function() {
     'use strict';
     angular.module('ep.sliding.panel')
     /**
@@ -25146,24 +25155,22 @@ angular.module('ep.signature').directive('epSignature',
     * @description
     * Encapsulates the sliding panel with simple wizard-like functionality.
     */
-    .service('epSlidingPanelService', /*ngInject*/['$timeout', '$q', function($timeout, $q){
+    .service('epSlidingPanelService', /*ngInject*/['$timeout', '$q', function($timeout, $q) {
         var panelState = {};
-        function checkStep(owner, stepName, locals){
+        function checkStep(owner, stepName, locals) {
             var deferred = $q.defer();
             // the fired property is used to make sure we don't fire these events recursively (and endlessly)
-            if(owner[stepName] && !owner.fired){
+            if (owner[stepName] && !owner.fired) {
                 owner.fired = true;
                 var result = owner[stepName](locals);
-                if (result && result.then){
-                    result.then(function(val){
+                if (result && result.then) {
+                    result.then(function(val) {
                         deferred.resolve(val);
                     });
                 } else {
                     deferred.resolve(result);
                 }
-                
-            }
-            else {
+            } else {
                 deferred.resolve(true);
             }
             return deferred.promise;
@@ -25183,10 +25190,10 @@ angular.module('ep.signature').directive('epSignature',
             var state = getState(panelId);
             var oldPane = state.panes[state.displayPaneIndex];
 
-            var locals = {$state: state, $oldPane: oldPane};
+            var locals = { $state: state, $oldPane: oldPane };
             return checkStep(oldPane, 'onLeave', locals)
-                .then(function(val){
-                    if(val){
+                .then(function(val) {
+                    if (val) {
                         return checkStep(state, 'onFinish', locals);
                     }
                 });
@@ -25203,14 +25210,14 @@ angular.module('ep.signature').directive('epSignature',
          * @description
          * Changes the currently displayed pane to the pane with the given index
          */
-        function goToPaneIndex(panelId, paneIndex){
-            if(paneIndex === undefined) {
+        function goToPaneIndex(panelId, paneIndex) {
+            if (paneIndex === undefined) {
                 paneIndex = panelId;
                 panelId = 'epSlidingPanel';
             }
             var state = getState(panelId);
             // clamp the pane index to valid values
-            paneIndex = Math.max(0, Math.min(state.panes.length -1, paneIndex));
+            paneIndex = Math.max(0, Math.min(state.panes.length - 1, paneIndex));
             var newPane = state.panes[paneIndex];
             var oldPane = state.panes[state.displayPaneIndex];
 
@@ -25218,21 +25225,23 @@ angular.module('ep.signature').directive('epSignature',
             state.toRight = state.displayPaneIndex < paneIndex;
             state.toLeft = !state.toRight;
 
-            var locals = {$state: state, $oldPane: oldPane, $newPane: newPane, $direction: state.toRight ? 'next' : 'prev'};
-            
+            var locals = {
+                $state: state, $oldPane: oldPane, $newPane: newPane,
+                $direction: state.toRight ? 'next' : 'prev'
+            };
             return checkStep(state, 'onChange', locals)
-                .then(function(doNext){
+                .then(function(doNext) {
                     state.fired = false;
                     return doNext && checkStep(oldPane, 'onLeave', locals);
                 })
-                .then(function(doNext){
+                .then(function(doNext) {
                     oldPane.fired = false;
                     return doNext && checkStep(newPane, 'onEnter', locals);
                 })
-                .then(function(doMove){
-                    $timeout(function(){
+                .then(function(doMove) {
+                    $timeout(function() {
                         newPane.fired = false;
-                        if (doMove){
+                        if (doMove) {
                             state.displayPaneIndex = paneIndex;
                         }
                         return {
@@ -25240,7 +25249,6 @@ angular.module('ep.signature').directive('epSignature',
                             newPane: newPane
                         }
                     })
-                    
                 });
         }
         /**
@@ -25249,18 +25257,18 @@ angular.module('ep.signature').directive('epSignature',
          * @methodOf ep.sliding.panel.service:epSlidingPanelService
          * @public
          * @param {string} panelId The id of the ep-sliding-panel element to control
-         * @param {string} paneid the id of the pane to go to
+         * @param {string} paneId the id of the pane to go to
          * @returns {Promise} a promise that is resolved with an object with oldPane and newPane properties
          * @description
          * Changes the currently displayed pane to the pane with the given id
          */
         function goToPane(panelId, paneId) {
-            if(paneId === undefined) {
+            if (paneId === undefined) {
                 paneId = panelId;
                 panelId = 'epSlidingPanel';
             }
             var state = getState(panelId);
-            var pane = state.panes.find(function(p){ return p.id === paneId; });
+            var pane = state.panes.find(function(p) { return p.id === paneId; });
             var paneIndex = pane ? pane.index : 0;
             return goToPaneIndex(panelId, paneIndex);
         }
@@ -25301,50 +25309,47 @@ angular.module('ep.signature').directive('epSignature',
          * @public
          * @param {string} panelId The id of the ep-sliding-panel element to control
          * @param {boolean} value The value to set the enabled flag to
-         
          * @description
          * Enables or disables the next button
          */
         function enableNext(panelId, value) {
-            if(value === undefined) {
+            if (value === undefined) {
                 value = panelId;
                 panelId = 'epSlidingPanel';
             }
             var state = getState(panelId);
             state.nextButtonEnabled = value;
         }
-                /**
+        /**
          * @ngdoc method
          * @name enablePrev
          * @methodOf ep.sliding.panel.service:epSlidingPanelService
          * @public
          * @param {string} panelId (optional) The id of the ep-sliding-panel element to control
          * @param {boolean} value The value to set the enabled flag to
-         
          * @description
          * Enables or disables the prev button
          */
         function enablePrev(panelId, value) {
-            if(value === undefined) {
+            if (value === undefined) {
                 value = panelId;
                 panelId = 'epSlidingPanel';
             }
             var state = getState(panelId);
             state.prevButtonEnabled = value;
         }
-                /**
+        /**
          * @ngdoc method
          * @name enableFinish
          * @methodOf ep.sliding.panel.service:epSlidingPanelService
          * @public
          * @param {string} panelId (optional)The id of the ep-sliding-panel element to control
          * @param {boolean} value The value to set the enabled flag to
-         
          * @description
          * Enables or disables the finish button
          */
-        function enableFinish(panelId, value) {
-             if(value === undefined) {
+                function enableFinish(panelId, value) {
+            if (value === undefined) {
                 value = panelId;
                 panelId = 'epSlidingPanel';
             }
@@ -25373,7 +25378,7 @@ angular.module('ep.signature').directive('epSignature',
          * @description
          * For internal use only: This is used internally by the ep-sliding-panel directive
          */
-        function register(state){
+        function register(state) {
             panelState[state.id] = state;
         }
         /**
@@ -25384,25 +25389,26 @@ angular.module('ep.signature').directive('epSignature',
          * @description
          * For internal use only: This is used internally by the ep-sliding-panel directive
          */
-        function unregister(panelId){
+        function unregister(panelId) {
             delete panelState[panelId];
         }
 
         return {
             finish: finish,
-            getState:getState,
+            getState: getState,
             goToPane: goToPane,
             goToPaneIndex: goToPaneIndex,
             enableNext: enableNext,
             enablePrev: enablePrev,
             enableFinish: enableFinish,
-            next:next,
-            prev:prev,
-            register:register,
-            unregister:unregister
+            next: next,
+            prev: prev,
+            register: register,
+            unregister: unregister
         }
     }])
 })();
+
 (function() {
     'use strict';
     /**
@@ -25413,6 +25419,7 @@ angular.module('ep.signature').directive('epSignature',
     * @description
     * Represents the ep.switch directive
     * This directive draws a simple ON/OFF switch
+    * bootstrap-switch library must be included in the applications that use this control
     *
     * @property {string} ng-model:string
     *  This property sets the binding to a object property.
@@ -25426,7 +25433,6 @@ angular.module('ep.signature').directive('epSignature',
         <ep-switch ng-model="onOff"><ep-switch>
       </doc:source>
     </doc:example>
-    
     */
     epSwitchDirective.$inject = ['$timeout'];
     angular.module('ep.switch').

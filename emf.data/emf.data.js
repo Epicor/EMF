@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.584 built: 02-03-2017
+ * version:1.0.10-dev.585 built: 02-03-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.584","built":"2017-03-02"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.585","built":"2017-03-02"};
 
 (function() {
     'use strict';
@@ -3263,8 +3263,8 @@ angular.module('ep.binding').
              * @public
              * @description
              * replace a data row specified by row number or row object
-             * @param {object} row - row object or index of row to be replaced. 
-             * @param {object} data - data row to replace the row 
+             * @param {object} row - row object or index of row to be replaced.
+             * @param {object} data - data row to replace the row
              */
             function replaceDataRow(row, data) {
                 if (!state.data || (state.data.length < 1)) {
@@ -3288,7 +3288,7 @@ angular.module('ep.binding').
              * @public
              * @description
              * Returns modified state for a given row which can be datarow or index
-             * @param {object} row - row object or index of row to fetch. 
+             * @param {object} row - row object or index of row to fetch.
              * @returns {object} modified state
              */
             function modifiedState(row) {
@@ -3355,7 +3355,7 @@ angular.module('ep.binding').
              * @public
              * @description
              * Deletes a row, keeping track of deleted rows and firing events
-             * @param {object} row - row object or index of row to be deleted. 
+             * @param {object} row - row object or index of row to be deleted.
              * @returns {int} removed row index
              */
             function deleteRow(row) {
@@ -3808,7 +3808,6 @@ angular.module('ep.binding').
                 init(this.id(), data || [], true);
             }
 
-
             function getRowIndex(row) {
                 var rowIdx = -1;
                 if (!state.data || (state.data.length < 1)) {
@@ -4208,11 +4207,11 @@ angular.module('ep.binding').
          * @public
          * @description
          * update data using updatable BAQ.
-         * @param {string} baqId: BAQ ID
-         * @param {object} data: data row object. Eg. { CustID:'TEST', CustNum:20}
+         * @param {string} baqId - BAQ ID
+         * @param {object} data - data row object. Eg. { CustID:'TEST', CustNum:20}
          * @param {object} options OPTIONAL: update options as follows:
          *      {
-         *          showProgress: true/false to show progress message (default is true) 
+         *          showProgress: true/false to show progress message (default is true)
          *          title: progress message title
          *          message: progress message text
          *          convertToJsonType: if decimals need to be converted from json to string
@@ -4237,7 +4236,7 @@ angular.module('ep.binding').
             }
 
             var deferred = $q.defer();
-            try{
+            try {
                 if (showProgress) {
                     epModalDialogService.showProgress({
                         title: options.title || 'Updating data',
@@ -4332,7 +4331,7 @@ angular.module('ep.binding').
                                 if (findRow) {
                                     targetView.replaceDataRow(findRow, dv.dataRow());
                                 }
-                            }                            
+                            }
                             epTransactionFactory.current().remove(viewRetrieveId);
                             deferred.resolve(newDataRow);
                         });
@@ -4542,7 +4541,7 @@ angular.module('ep.binding').
                             ret.push({ name: c.name, value: row[c.name] });
                         } else {
                             ret.push(c.name);
-                        }                       
+                        }
                     }
                 });
             }
