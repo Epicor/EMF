@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.582 built: 01-03-2017
+ * version:1.0.10-dev.583 built: 01-03-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.582","built":"2017-03-01"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.10-dev.583","built":"2017-03-01"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -2271,7 +2271,8 @@ angular.module('ep.binding').
         $scope.meta = {
             view: '',
             column: '',
-            preview: ''
+            preview: '',
+            info: ''
         };
 
         var viewsList = epTransactionFactory.current().views();
@@ -2347,6 +2348,15 @@ angular.module('ep.binding').
                 scope.columns = cols;
                 scope.columnList.list = scope.columns;
                 scope.loadingColumns = false;
+
+                //collect some info
+                var info = {
+                    id: view.id(),
+                    rows: view.data().length,
+                    modified: view.modifiedRows().length,
+                    added: view.addedRows().length,
+                    deleted: view.deletedRows().length
+                };
             });
         }
 
@@ -5519,19 +5529,23 @@ app.directive('epCardTitle',
             },
             templateUrl: 'src/components/ep.contacts.list/contacts_list.html',
             link: function(scope) {
-                if (scope.groupBy == 'true') {
-                    scope.nameList = epContactsListService.getGroupedList(scope.data, scope.mainTitle);
+
+                scope.initData = function() {
+                    if (scope.groupBy == 'true') {
+                        scope.nameList = epContactsListService.getGroupedList(scope.data, scope.mainTitle);
+                    }
+                    else {
+                        scope.nameList = scope.data;
+                    }
+                    scope.filterVal = [];
+                    scope.items = { count: 0 };
                 }
-                else {
-                    scope.nameList = scope.data;
-                }
-                scope.filterVal = [];
-                scope.items = { count: 0 };
+
                 scope.indexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES;
                 scope.smallIndexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES_SMALL;
 
                 scope.setTitles = scope.subTitle.split(' ');
-               
+
                 $(window).resize(function() {
                     epContactsListService.toggleIndexes();
                 });
@@ -5543,6 +5557,12 @@ app.directive('epCardTitle',
                 scope.$watch('contactListSearch', function(term) {
                     var val = $filter('filter')(scope.data, term);
                     scope.items.count = val.length;
+                });
+
+                scope.$watch('data', function(newValue, oldValue) {
+                    if (newValue) {
+                        scope.initData();
+                    }
                 });
 
                 scope.goToLink = function(key, index) {

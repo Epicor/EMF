@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.582 built: 01-03-2017
+ * version:1.0.10-dev.583 built: 01-03-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.582","built":"2017-03-01"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.10-dev.583","built":"2017-03-01"};
 
 (function() {
     'use strict';
@@ -2257,7 +2257,8 @@ angular.module('ep.binding').
         $scope.meta = {
             view: '',
             column: '',
-            preview: ''
+            preview: '',
+            info: ''
         };
 
         var viewsList = epTransactionFactory.current().views();
@@ -2333,6 +2334,15 @@ angular.module('ep.binding').
                 scope.columns = cols;
                 scope.columnList.list = scope.columns;
                 scope.loadingColumns = false;
+
+                //collect some info
+                var info = {
+                    id: view.id(),
+                    rows: view.data().length,
+                    modified: view.modifiedRows().length,
+                    added: view.addedRows().length,
+                    deleted: view.deletedRows().length
+                };
             });
         }
 

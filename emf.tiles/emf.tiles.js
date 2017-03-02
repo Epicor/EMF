@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.10-dev.582 built: 01-03-2017
+ * version:1.0.10-dev.583 built: 01-03-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["tiles"] = {"libName":"tiles","version":"1.0.10-dev.582","built":"2017-03-01"};
+__ep_build_info["tiles"] = {"libName":"tiles","version":"1.0.10-dev.583","built":"2017-03-01"};
 
 'use strict';
 /**
@@ -278,19 +278,23 @@ app.directive('epCardTitle',
             },
             templateUrl: 'src/components/ep.contacts.list/contacts_list.html',
             link: function(scope) {
-                if (scope.groupBy == 'true') {
-                    scope.nameList = epContactsListService.getGroupedList(scope.data, scope.mainTitle);
+
+                scope.initData = function() {
+                    if (scope.groupBy == 'true') {
+                        scope.nameList = epContactsListService.getGroupedList(scope.data, scope.mainTitle);
+                    }
+                    else {
+                        scope.nameList = scope.data;
+                    }
+                    scope.filterVal = [];
+                    scope.items = { count: 0 };
                 }
-                else {
-                    scope.nameList = scope.data;
-                }
-                scope.filterVal = [];
-                scope.items = { count: 0 };
+
                 scope.indexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES;
                 scope.smallIndexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES_SMALL;
 
                 scope.setTitles = scope.subTitle.split(' ');
-               
+
                 $(window).resize(function() {
                     epContactsListService.toggleIndexes();
                 });
@@ -302,6 +306,12 @@ app.directive('epCardTitle',
                 scope.$watch('contactListSearch', function(term) {
                     var val = $filter('filter')(scope.data, term);
                     scope.items.count = val.length;
+                });
+
+                scope.$watch('data', function(newValue, oldValue) {
+                    if (newValue) {
+                        scope.initData();
+                    }
                 });
 
                 scope.goToLink = function(key, index) {
