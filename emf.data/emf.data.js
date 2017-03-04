@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.5 built: 03-03-2017
+ * version:1.0.12-dev.6 built: 03-03-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.5","built":"2017-03-03"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.6","built":"2017-03-03"};
 
 (function() {
     'use strict';
@@ -2663,12 +2663,12 @@ angular.module('ep.binding').
 (function() {
     'use strict';
 
-    epBindingScopeDirective.$inject = ['$compile', 'epBindingFactory'];
+    epBindingScopeDirective.$inject = ['$rootScope', '$timeout', 'epBindingFactory'];
     angular.module('ep.binding').
     directive('epBindingScope', epBindingScopeDirective);
 
     /*@ngInject*/
-    function epBindingScopeDirective($compile, epBindingFactory) {
+    function epBindingScopeDirective($rootScope, $timeout, epBindingFactory) {
         return {
             restrict: 'E',
             replace: false,
@@ -2677,6 +2677,9 @@ angular.module('ep.binding').
 
                 return {
                     pre: function(scope) {
+                        scope.trackData = [];
+                        scope.eventWatches = {};
+
                         var bindingFactory;
 
                         //This will be set by eBindingFactory
@@ -2703,6 +2706,32 @@ angular.module('ep.binding').
                                 }
                             }
                         });
+
+                        if (attrs['trackData'] === 'true') {
+                            scope.onTrackDataChange = function(id) {
+                                if (id === scope.epb.viewId) {
+                                    scope.trackData = [];
+                                    $timeout(function() {
+                                        scope.trackData = scope.epb.view.data();
+                                    });
+                                }
+                            };
+                            scope.eventWatches.view = $rootScope.$on('EP_BINDING_VIEW_ADDED', function(event, data) {
+                                scope.onTrackDataChange(data.viewId);
+                            });
+                            scope.eventWatches.added = $rootScope.$on('EP_BINDING_VIEW_ROW_DELETED', function(event, data) {
+                                scope.onTrackDataChange(data.viewId);
+                            });
+                            scope.eventWatches.view = $rootScope.$on('EP_BINDING_VIEW_ROW_ADDED', function(event, data) {
+                                scope.onTrackDataChange(data.viewId);
+                            });
+
+                            scope.$on('$destroy', function() {
+                                angular.forEach(scope.eventWatches, function(w) {
+                                    w();
+                                })
+                            });
+                        }
                     }
                 };
             }
@@ -2752,6 +2781,7 @@ angular.module('ep.binding').
                 bi.columnName = state.epBinding.column;
                 bi.viewId = state.epBinding.view;
                 bi.view = undefined;
+                bi.data = [];
                 bi.record = undefined;
                 bi.rec = undefined;
                 bi.value = undefined;
@@ -2804,6 +2834,7 @@ angular.module('ep.binding').
                 function onViewInit(view) {
                     if (view) {
                         bi.view = view;
+                        bi.data = view ? view.data() : [];
 
                         if (callbacks.onViewReady) {
                             callbacks.onViewReady(view);
