@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.16 built: 06-03-2017
+ * version:1.0.12-dev.17 built: 06-03-2017
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -2907,7 +2907,7 @@ SHELL CONTAINER
 PROGRESS INDICATOR
 =================================================================
 */
-.ep-shell .ep-progress-idicator {
+.ep-shell .ep-progress-indicator {
   position: absolute;
   top: 50%;
   left: 50%;
@@ -2921,13 +2921,13 @@ PROGRESS INDICATOR
   padding-left: 0;
 }
 @media (min-width: 800px) {
-  .ep-shell .ep-progress-idicator {
+  .ep-shell .ep-progress-indicator {
     padding-left: 250px;
   }
-  .ep-shell .hide-sidebar .ep-progress-idicator {
+  .ep-shell .hide-sidebar .ep-progress-indicator {
     padding-left: 0;
   }
-  .ep-shell .disable-sidebar #ep-progress-idicator {
+  .ep-shell .disable-sidebar #ep-progress-indicator {
     padding-left: 0;
   }
 }
