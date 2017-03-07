@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.19 built: 07-03-2017
+ * version:1.0.12-dev.20 built: 07-03-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.19","built":"2017-03-07"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.20","built":"2017-03-07"};
 
 (function() {
     'use strict';
@@ -2173,6 +2173,13 @@ angular.module('ep.menu.builder', [
             },
             templateUrl: 'src/components/ep.list/ep-list.html',
             link: function(scope) {
+                scope.initData = function() {
+                    if (scope.groupBy) {
+                        scope.data = epListService.getGroupedList(scope.data, scope.groupBy);
+                    }
+                    scope.items.count = scope.data.length;
+                }
+
                 scope.items = { count: 0 };
                 if (scope.groupBy) {
                     scope.data = epListService.getGroupedList(scope.data, scope.groupBy);
@@ -2198,6 +2205,12 @@ angular.module('ep.menu.builder', [
                         scope.items.count = val.length;
                     } else {
                         scope.items.count = 0;
+                    }
+                });
+                
+                scope.$watch('data', function(newValue) {
+                    if (newValue) {
+                        scope.initData();
                     }
                 });
 
