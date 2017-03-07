@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.20 built: 07-03-2017
+ * version:1.0.12-dev.21 built: 07-03-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.20","built":"2017-03-07"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.21","built":"2017-03-07"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -4211,19 +4211,14 @@ angular.module('ep.binding').
                     getPersistedCacheValue(key).then(function(result) {
                         if (result) {
                             cache[key] = result;
-                            $log.debug('Resolving service call data from persistent cache "' + cacheId +
-                                '" for key "' + key + '".');
                             deferred.resolve(result);
                         } else {
-                            $log.debug('Cached record "' + key + '" not found in persistent cache');
                             resolveServiceCall(deferred, key, cacheId, getDataFromService);
                         }
                     }, function() {
-                        $log.debug('An error occurred while retrieving cached record for key: "' + key + '".');
                         resolveServiceCall(deferred, key, cacheId, getDataFromService);
                     });
                 } else {
-                    $log.debug('Resolving service call data from cache "' + cacheId + '" for key "' + key + '".');
                     deferred.resolve(data);
                 }
             }
@@ -4239,7 +4234,6 @@ angular.module('ep.binding').
                 return result;
             }
 
-            $log.debug('Invoking service call for key "' + key + '".');
             // ...then invoke the service method
             var invocationResult = getDataFromService(key);
             // if the service returned a promise
@@ -4264,6 +4258,8 @@ angular.module('ep.binding').
                 return store.get(key).then(function(cacheEntry) {
                     return cacheEntry && cacheEntry.value;
                 })
+            }, function(err){
+                $log.error(err);
             });
         }
 
@@ -4272,6 +4268,8 @@ angular.module('ep.binding').
             return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
                 var store = db.getObjectStore('ep-cache');
                 return store.put(cacheEntry);
+            }, function(err){
+                $log.error(err);
             })
         }
 
@@ -4303,12 +4301,12 @@ angular.module('ep.binding').
             cacheId = reify(cacheId);
             if (cacheStore[cacheId]) {
                 delete cacheStore[cacheId];
-                $log.debug('Cache "' + cacheId + '" deleted from memory cache.');
             }
             epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
                 db.getObjectStore('ep-cache').deleteByIndex('cacheId', cacheId);
                 $rootScope.$emit(epShellConstants.SHELL_CACHE_DELETED_EVENT, { cacheId: cacheId });
-                $log.debug('Cache "' + cacheId + '" deleted from database cache.');
+            }, function(err){
+                $log.error(err);
             });
         }
 
@@ -4330,7 +4328,6 @@ angular.module('ep.binding').
             }
             epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
                 db.getObjectStore('ep-cache').delete(key);
-                $log.debug('Value with key "' + key + '" deleted from database.');
             });
             $rootScope.$emit(epShellConstants.SHELL_CACHE_DATA_DELETED_EVENT, { cacheId: reify(cacheId), key: key });
         }
@@ -4372,7 +4369,6 @@ angular.module('ep.binding').
                 key = reify(key);
                 cache[key] = data;
                 savePersistedCacheValue(key, cacheId, data).then(function() {
-                    $log.debug('Cached value with key:"' + key + '" in cache: "' + cacheId + '".');
                     $rootScope.$emit(epShellConstants.SHELL_DATA_CACHED_EVENT,
                         { cacheId: reify(cacheId), key: key, data: data });
                 }, function(e) {
@@ -13717,7 +13713,6 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         }
 
         function setSystemToFileStorage() {
-            $log.debug('FileStorage system selected.');
             storageSystem = storageSystems.fileStorage;
         }
 
