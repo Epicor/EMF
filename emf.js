@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.18 built: 06-03-2017
+ * version:1.0.12-dev.19 built: 07-03-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.18","built":"2017-03-06"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.19","built":"2017-03-07"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -5566,6 +5566,7 @@ app.directive('epCardTitle',
                     scope.indexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES;
                     scope.smallIndexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES_SMALL;
                     epContactsListService.toggleIndexes();
+                    scope.items.count = scope.data.length;
                 }
                 scope.items = { count: 0 };
 
