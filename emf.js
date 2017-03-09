@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.28 built: 09-03-2017
+ * version:1.0.12-dev.29 built: 09-03-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.28","built":"2017-03-09"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.29","built":"2017-03-09"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -12512,6 +12512,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     if (!options || options.setCurrentRow === true) {
                         view.row(rowIdx);
                     }
+                    if (baqId !== viewId) {
+                        epBindingMetadataService.addAlias(baqId, viewId);
+                    }
                 }
             }, function(data) {
                 if (showProgress) {
@@ -16310,6 +16313,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 scope.isNumber = angular.isNumber;
 
                 scope.isAmount = function(amount) {
+                    if (amount === undefined) {
+                        return false;
+                    }
                     var decimalCheck = amount.toString().split('.');
                     return !isNaN(amount) && angular.isDefined(decimalCheck[1]);
                 }
@@ -19428,7 +19434,8 @@ angular.module('ep.menu.builder').
         *       day, month, year, second, minute, hour,
         *       math (see math params)
         * @param {object} arg1 The object that repesents the second argument in the where clause
-        * @param {object} params (optional) { or : true } to include 'or' logical operator.
+        * @param {object} params (optional) 
+        * { or : true } to include 'or' logical operator.
         * { not: true} to include negative logical operator.
         * {   mathOperand: number, (mathOperand and the second argument need to both be numbers)
         *     mathFunction: string, (+, -, *, /, %, etc)
@@ -19492,13 +19499,70 @@ angular.module('ep.menu.builder').
                         compareOp = 'eq';
                         break;
                 }
+
+                var expr = notOp + arg0 + ' ' + compareOp + ' ' + tickMark + arg1 + tickMark;
+                if (params && (params.returnExpression === true)) {
+                    //option to return expression only
+                    return expr;
+                }
                 // now lets append all this good stuff onto the current $filter property
-                odataObject.$filter = ((odataObject && odataObject.$filter) ? (odataObject.$filter + logicalOp) : '') +
-                    notOp + arg0 + ' ' + compareOp + ' ' + tickMark + arg1 + tickMark;
+                if (odataObject && odataObject.$filter) {
+                    odataObject.$filter += logicalOp + expr;
+                } else {
+                    odataObject.$filter = expr;
+                }
+                //odataObject.$filter = ((odataObject && odataObject.$filter) ? (odataObject.$filter + logicalOp) : '') +
+                //    expr;
             }
             /*jshint validthis: true */
             return this;    // valid this to allow for method chaining
         }
+
+        /**
+        * @ngdoc method
+        * @name setWhereItems
+        * @methodOf ep.odata.factory:odataQueryFactory
+        * @public
+        * @description
+        * Set a list of where items joined by one logical expression. The whole expression is bracketed.
+        * The result is in format (whereExpr1 and/or whereExpr2 and/or whereExpr3)
+        * example:
+        *    myQuery = myQuery.setWhereItems([
+        *          { column: 'CustomerType', op: 'eq', value: 'SUS' },
+        *          { column: 'CustomerType', op: 'eq', value: 'PRO' }], {itemJoinOr:true});
+        *
+        *
+        * @param {array} whereItemsArray An array of where items in format [whereItem1, whereItem2,...]
+        *       each whereItem is {column, op, value, params}
+        * @param {object} params (optional) 
+        * { itemJoinOr : true } to join each where item by 'or' operator (default is 'and')
+        * { or : true } to join expression to previous by 'or' operator  (default is 'and')
+        * @returns {this} to allow for method chaining
+        */
+        function setWhereItems(whereItemsArray, params) {
+            var prms = params || {};
+            var expr = '(';
+            for (var i = 0; i < whereItemsArray.length; i++) {
+                var item = whereItemsArray[i];
+                var itemPrms = item.params || {};
+                itemPrms.returnExpression = true;
+                var subExpr = setWhere(item.column, item.op, item.value, itemPrms);
+                expr += '(' + subExpr + ')';
+                if (i + 1 < whereItemsArray.length) {
+                    expr += (params.itemJoinOr === true) ? ' or ' : ' and ';
+                }
+            }
+            expr += ')';
+            if (odataObject && odataObject.$filter) {
+                var logicalPre = (params.or === true) ? ' or ' : ' and ';
+                odataObject.$filter += logicalPre + expr;
+            } else {
+                odataObject.$filter = expr;
+            }
+            /*jshint validthis: true */
+            return this;
+        }
+
 
         /**
         * @ngdoc method
@@ -19547,6 +19611,7 @@ angular.module('ep.menu.builder').
             setFilter: setFilter,
             setWhere: setWhere,
             setWhereCustom: setWhereCustom,
+            setWhereItems: setWhereItems,
             compose: compose
         };
     });
