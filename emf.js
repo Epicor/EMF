@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.29 built: 09-03-2017
+ * version:1.0.12-dev.30 built: 09-03-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.29","built":"2017-03-09"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.30","built":"2017-03-09"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -16284,24 +16284,20 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             },
             templateUrl: 'src/components/ep.list/ep-list.html',
             link: function(scope) {
-                scope.initData = function() {
-                    if (scope.groupBy) {
-                        scope.data = epListService.getGroupedList(scope.data, scope.groupBy);
-                    }
-                    scope.items.count = scope.data.length;
-                }
-
                 scope.items = { count: 0 };
                 scope.originalData = scope.data;
 
                 scope.initData = function() {
-                    if (scope.sortBy && scope.sortBy !== '') {
-                        scope.data = _.sortBy(scope.originalData, scope.sortBy).reverse();
+                    if (scope.data && scope.data.length) {
+                        if (scope.sortBy && scope.sortBy !== '') {
+                            scope.data = _.sortBy(scope.originalData, scope.sortBy).reverse();
+                        }
+                        if (scope.groupBy && scope.groupBy !== '' && scope.groupBy.toLowerCase() !== 'false') {
+                            scope.data = epListService.getGroupedList(scope.originalData, scope.groupBy);
+                        }
                     }
-                    if (scope.groupBy && scope.groupBy !== '') {
-                        scope.data = epListService.getGroupedList(scope.originalData, scope.groupBy);
-                    }
-                }
+                };
+
                 if (scope.subTitle) {
                     scope.subTitles = scope.subTitle.split(' ');
                 }
@@ -16318,7 +16314,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     }
                     var decimalCheck = amount.toString().split('.');
                     return !isNaN(amount) && angular.isDefined(decimalCheck[1]);
-                }
+                };
 
                 scope.$watch('contactListSearch', function(term) {
                     if (scope.data && scope.data.length) {
@@ -16354,7 +16350,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     } else {
                         return false;
                     }
-                }
+                };
             }
         };
     }
