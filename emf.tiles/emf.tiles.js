@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.32 built: 10-03-2017
+ * version:1.0.12-dev.33 built: 10-03-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["tiles"] = {"libName":"tiles","version":"1.0.12-dev.32","built":"2017-03-10"};
+__ep_build_info["tiles"] = {"libName":"tiles","version":"1.0.12-dev.33","built":"2017-03-10"};
 
 'use strict';
 /**
@@ -277,7 +277,7 @@ app.directive('epCardTitle',
                 hideAdd: '@'
             },
             templateUrl: 'src/components/ep.contacts.list/contacts_list.html',
-            link: function(scope) {
+            link: function(scope, element) {
 
                 scope.initData = function() {
                     if (scope.groupBy === 'true') {
@@ -288,7 +288,7 @@ app.directive('epCardTitle',
                     scope.filterVal = [];
                     scope.indexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES;
                     scope.smallIndexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES_SMALL;
-                    epContactsListService.toggleIndexes();
+                    epContactsListService.toggleIndexes(element);
                     scope.items.count = scope.data.length;
                 }
                 scope.items = { count: 0 };
@@ -296,7 +296,7 @@ app.directive('epCardTitle',
                 scope.setTitles = scope.subTitle.split(' ');
 
                 $(window).resize(function() {
-                    epContactsListService.toggleIndexes();
+                    epContactsListService.toggleIndexes(element);
                 });
                 scope.getDetails = function(obj) {
                     return obj;
@@ -420,25 +420,25 @@ app.directive('epCardTitle',
          * @description
          * To toggle index list based on the contacts container height
          */
-        function toggleIndexes() {
+        function toggleIndexes(element) {
             $timeout(function() {
-                var mainContainerHeight = $('.ep-contacts-list').height();
+                var mainContainerHeight = element.find('.ep-contacts-list').height();
                 var indexesLength = 0;
                 var indexItemHeight = 0;
                 if (mainContainerHeight < epContactsListConstants.CONTACTS_LIST_INDEXES_HIDDEN_BREAKPOINT) {
-                    $('.ep-index-list').hide();
+                    element.find('.ep-index-list').hide();
                 } else if (mainContainerHeight < epContactsListConstants.CONTACTS_LIST_INDEXES_BREAKPOINT) {
-                    $('.ep-index-list.large-index-list').hide();
-                    $('.ep-index-list.small-index-list').show();
-                    indexesLength = $('.ep-index-list.small-index-list li').length;
+                    element.find('.ep-index-list.large-index-list').hide();
+                    element.find('.ep-index-list.small-index-list').show();
+                    indexesLength = element.find('.ep-index-list.small-index-list li').length;
                 } else {
-                    $('.ep-index-list.small-index-list').hide();
-                    $('.ep-index-list.large-index-list').show();
-                    indexesLength = $('.ep-index-list.large-index-list li').length;
+                    element.find('.ep-index-list.small-index-list').hide();
+                    element.find('.ep-index-list.large-index-list').show();
+                    indexesLength = element.find('.ep-index-list.large-index-list li').length;
                 }
                 //adjust index list height based on the list container height
                 indexItemHeight = parseInt(mainContainerHeight / indexesLength);
-                $('.ep-index-list li').css('line-height', indexItemHeight + 'px');
+                element.find('.ep-index-list li').css('line-height', indexItemHeight + 'px');
             });
         }
 
