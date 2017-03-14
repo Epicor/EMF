@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.46 built: 13-03-2017
+ * version:1.0.12-dev.47 built: 13-03-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.46","built":"2017-03-13"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.47","built":"2017-03-13"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -4029,28 +4029,31 @@ angular.module('ep.binding').
              * @param {string} cloneViewId - cloned view id
              * @param {string} options - by default clone without data
              *    'data' : 'data'/'record'/'none'
+             * @returns {object} return cloned view
              */
             function clone(viewId, cloneViewId, options) {
                 var v = this.view(viewId);
+                var dv;
                 if (v) {
                     if (!options) {
                         options = {};
                     }
                     if (options.data === 'data') {
-                        this.add(cloneViewId, v.data());
+                        dv = this.add(cloneViewId, v.data());
                     } else if (options.data === 'record') {
                         var dr = v.dataRow();
-                        this.add(cloneViewId, dr ? [dr] : []);
+                        dv = this.add(cloneViewId, dr ? [dr] : []);
                     } else if (options.data === 'none') {
-                        this.add(cloneViewId, []);
+                        dv = this.add(cloneViewId, []);
                     } else {
-                        this.add(cloneViewId, []);
+                        dv = this.add(cloneViewId, []);
                     }
                     var meta = epBindingMetadataService.get(viewId);
                     if (meta) {
                         epBindingMetadataService.addAlias(viewId, cloneViewId);
                     }
                 }
+                return dv;
             }
 
             /**
