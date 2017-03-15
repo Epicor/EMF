@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.53 built: 15-03-2017
+ * version:1.0.12-dev.54 built: 15-03-2017
 */
 .ep-hover-none {
   text-decoration: none !important;
@@ -574,6 +574,9 @@ a:focus {
 }
 .ep-viewmodal.ep-viewmodal-hide {
   transform: translateY(-100%);
+}
+.ep-viewmodal-body {
+  overflow-y: auto;
 }
 
 .ep-drop-active.ep-drop-highlight {

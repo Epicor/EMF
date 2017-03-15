@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.53 built: 15-03-2017
+ * version:1.0.12-dev.54 built: 15-03-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.12-dev.53","built":"2017-03-15"};
+__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.12-dev.54","built":"2017-03-15"};
 
 (function() {
   'use strict';
@@ -1287,7 +1287,7 @@ angular.module('ep.signature').directive('epSignature',
      * @example
      *
      */
-    epIndexedDbService.$inject = ['$log', '$q', '$window'];
+    epIndexedDbService.$inject = ['$log', '$q', '$window', '$timeout'];
     angular.module('ep.indexeddb')
         .service('epIndexedDbService', epIndexedDbService);
 
@@ -1554,7 +1554,7 @@ angular.module('ep.signature').directive('epSignature',
     angular.extend(IndexWrapper.prototype, proto);
 
     /*@ngInject*/
-    function epIndexedDbService($log, $q, $window) {
+    function epIndexedDbService($log, $q, $window, $timeout) {
 
         var indexedDB = $window.indexedDB ||
                         $window.mozIndexedDB ||
@@ -1608,10 +1608,16 @@ angular.module('ep.signature').directive('epSignature',
                 deferred.resolve(openDatabaseMap[id]);
             } else {
                 var openRequest = indexedDB.open(id, version);
+                var cancellationToken = $timeout(function() {
+                    $log.warn('Database ' + id + ' v' + version + '  could not be opened.');
+                    $log.warn('This is possibly due to a conflict between two or more open tabs.');
+                    deferred.reject("Timeout reached while waiting for database to open.");
+                }, 1500);
                 openRequest.onsuccess = function() {
                     var db = openRequest.result;
                     var wrapper = new DatabaseWrapper($log, $q, db);
                     openDatabaseMap[id] = wrapper;
+                    $timeout.cancel(cancellationToken);
                     deferred.resolve(wrapper);
                 };
                 openRequest.onerror = function(event) {
@@ -1796,7 +1802,10 @@ angular.module('ep.signature').directive('epSignature',
                     return cacheEntry && cacheEntry.value;
                 })
             }, function(err){
-                $log.error(err);
+                $log.warn("An error occured that prevented data from being retreived from the cache. " +
+                    "This is probably caused by two or more open tabs sending contentious commands to " +
+                    "the underlying database. If this warning occurs frequently, then it could cause " +
+                    "degraded performance of the application.");
             });
         }
 
@@ -1806,8 +1815,11 @@ angular.module('ep.signature').directive('epSignature',
                 var store = db.getObjectStore('ep-cache');
                 return store.put(cacheEntry);
             }, function(err){
-                $log.error(err);
-            })
+                $log.warn("An error occured that prevented data from being stored in the cache. " +
+                    "This is probably caused by two or more open tabs sending contentious commands to " +
+                    "the underlying database. If this warning occurs frequently, then it could cause " +
+                    "degraded performance of the application.");
+            });
         }
 
         /**
@@ -1935,7 +1947,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.signature/ep-signature.html',
-    "<!--This is a partial for the ep-signature directive --><div id=signature_parent style=\"min-height: 100px\"><div id=signature style=\"background-color: #ffffffff\"></div></div><div class=row><div class=col-xs-3><button id=clearButton class=\"btn btn-primary\" ng-disabled=!isEnabled tabindex=-1 ng-click=reset()>Clear</button></div><div class=\"col-xs-6 text-center\"><strong ng-bind=acknowledgeText></strong></div><div class=col-xs-3><button ng-click=accept() tabindex=-1 type=submit id=saveButton ng-disabled=\"!isEnabled || !acceptIsEnabled\" class=\"btn btn-success pull-right\">Accept</button></div></div>"
+    "<!--This is a partial for the ep-signature directive --><div id=signature_parent style=\"min-height: 100px\"><div id=signature style=\"background-color: #ffffff\"></div></div><div class=row><div class=col-xs-3><button id=clearButton class=\"btn btn-primary\" ng-disabled=!isEnabled tabindex=-1 ng-click=reset()>Clear</button></div><div class=\"col-xs-6 text-center\"><strong ng-bind=acknowledgeText></strong></div><div class=col-xs-3><button ng-click=accept() tabindex=-1 type=submit id=saveButton ng-disabled=\"!isEnabled || !acceptIsEnabled\" class=\"btn btn-success pull-right\">Accept</button></div></div>"
   );
 
 
