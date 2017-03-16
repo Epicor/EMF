@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.57 built: 15-03-2017
+ * version:1.0.12-dev.58 built: 16-03-2017
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -1135,18 +1135,18 @@ img.ep-background-img-medium {
   margin-top: 7px;
 }
 .ep-contact-sub-header {
-  background-color: #f0f0f0;
-  height: 40px;
-  padding-top: 10px;
-  padding-left: 8px;
+  background-color: #f3f3f3;
+  height: 35px;
+  padding-top: 7px;
+  padding-left: 20px;
   position: relative;
   z-index: 1;
   width: 100%;
 }
 .ep-contact-sub-header-label {
   width: 60px;
-  font-size: 1.2em;
-  color: #129ff4;
+  font-size: 14px;
+  color: #0379bc;
 }
 .col-xs-4 .col-xs-6 {
   padding-left: 0 !important;
@@ -1634,23 +1634,23 @@ img.ep-background-img-medium {
 .ep-search-list-container {
   position: relative;
   width: 100%;
-  background-color: #CAC9CE;
+  background-color: #d6d6d6;
   z-index: 3;
   height: 50px;
   padding: 8px;
 }
-.ep-search-list-container .fa-search {
+.ep-search-list-container .ep-cicrm-search {
   position: absolute;
   top: 10px;
 }
-.ep-search-list-container .fa-remove {
+.ep-search-list-container .ep-cicrm-delete {
   position: absolute;
-  top: 10px;
-  right: 20px;
+  top: 13px;
+  right: 25px;
+  font-size: 10px;
 }
 .ep-search-list-container input {
   padding: 6px 30px;
-  border-radius: 5px;
 }
 .ep-search-list-container .result-count-container {
   padding-left: 0 !important;

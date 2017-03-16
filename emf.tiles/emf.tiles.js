@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.57 built: 15-03-2017
+ * version:1.0.12-dev.58 built: 16-03-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["tiles"] = {"libName":"tiles","version":"1.0.12-dev.57","built":"2017-03-15"};
+__ep_build_info["tiles"] = {"libName":"tiles","version":"1.0.12-dev.58","built":"2017-03-16"};
 
 'use strict';
 /**
@@ -274,12 +274,30 @@ app.directive('epCardTitle',
                 additionalTitle: '@',
                 groupBy: '@',
                 subHeader: '@',
-                hideAdd: '@'
+                hideAdd: '@',
+                sortBy: '@'
             },
             templateUrl: 'src/components/ep.contacts.list/contacts_list.html',
             link: function(scope, element) {
 
+                scope.originalData = scope.data;
                 scope.initData = function() {
+
+                    scope.listData = scope.data;
+                    if (scope.sortBy && scope.sortBy !== '') {
+                        scope.listData = _.sortBy(scope.listData, scope.sortBy).reverse();
+                    }
+                    if (scope.groupBy && scope.groupBy !== '') {
+                        scope.listData = epContactsListService.getGroupedList(scope.listData, scope.groupBy);
+                    }
+                    scope.filterVal = [];
+                    scope.indexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES;
+                    scope.smallIndexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES_SMALL;
+                    epContactsListService.toggleIndexes();
+                    scope.items.count = scope.data.length;
+                }
+
+                /*scope.initData = function() {
                     if (scope.groupBy === 'true') {
                         scope.nameList = epContactsListService.getGroupedList(scope.data, scope.mainTitle);
                     } else {
@@ -290,7 +308,7 @@ app.directive('epCardTitle',
                     scope.smallIndexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES_SMALL;
                     epContactsListService.toggleIndexes(element);
                     scope.items.count = scope.data.length;
-                }
+                }*/
                 scope.items = { count: 0 };
 
                 scope.setTitles = scope.subTitle.split(' ');
@@ -298,6 +316,7 @@ app.directive('epCardTitle',
                 $(window).resize(function() {
                     epContactsListService.toggleIndexes(element);
                 });
+
                 scope.getDetails = function(obj) {
                     return obj;
                 };
@@ -310,6 +329,18 @@ app.directive('epCardTitle',
                 });
 
                 scope.$watch('data', function(newValue) {
+                    if (newValue) {
+                        scope.initData();
+                    }
+                });
+
+                scope.$watch('groupBy', function(newValue, oldValue) {
+                    if (newValue) {
+                        scope.initData();
+                    }
+                });
+
+                scope.$watch('sortBy', function(newValue, oldValue) {
                     if (newValue) {
                         scope.initData();
                     }
@@ -1271,7 +1302,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.contacts.list/contacts_list.html',
-    "<div class=ep-contacts-list-container><!--Calling filter list component for search option--><ep-filter-list search-by=contactListSearch count=items.count></ep-filter-list><!--Header as optional--><div class=ep-contact-sub-header ng-if=\"subHeader == 'true'\"><label class=ep-contact-sub-header-label ng-click=filter()>Filter</label><label class=ep-contact-sub-header-label ng-click=sort()>Sort</label><span class=pull-right ng-hide=\"hideAdd == 'true'\" style=padding-right:5% ng-click=add()><i class=\"fa fa-plus-square-o fa-2x\" aria-hidden=true style=color:#129ff4></i></span></div><!--List area--><div class=ep-contacts-list ng-class=\"{'ep-list-header-padding':subHeader == 'true'}\"><div class=ep-contacts-list-inner ng-if=\"groupBy=='true'\"><div ng-repeat=\"(key, value) in nameList\"><div class=ep-group-heading ng-if=\"filterVal.length > 0\" id=\"list-group-{{key == '#' ? 1 : (key | uppercase)}}\">{{key | uppercase}}</div><ul><li ng-repeat=\"obj in filterVal = (value | filter: contactListSearch)\" ng-click=handler(obj)><div class=\"row mainTitle\"><div class=col-xs-7><label>{{ obj[mainTitle] }}</label></div><div class=\"col-xs-3 text-right\">{{obj[id]}}</div></div><div class=\"pull-right ep-contact-list-arrow\" ng-class=\"{'ep-contact-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-contact-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-contact-list-additionalTitle-arrow': additionalTitle}\"><i class=\"fa fa-angle-right fa-2x\"></i></div><div ng-if=subTitle class=subTitle><span ng-show=\"{{obj[setTitles[0]].length>=1}}\">{{obj[setTitles[0]]}}</span><span ng-show=\"{{obj[setTitles[1]].length>=1}}\"><span ng-show=\"{{obj[setTitles[0]].length>=1}}\">,&nbsp</span>{{obj[setTitles[1]]}}</span><span ng-show=\"{{obj[setTitles[2]].length>=1}}\"><span ng-show=\"{{obj[setTitles[0]].length>=1}} || {{obj[setTitles[1]].length>=1}}\">,&nbsp</span>{{obj[setTitles[2]]}}</span></div><div class=additionalTitle ng-if=additionalTitle>{{obj[additionalTitle]}}</div></li></ul></div></div><div class=ep-contacts-list-inner ng-if=\"groupBy!=='true'\"><ul><li ng-repeat=\"obj in nameList | filter: contactListSearch\" ng-click=handler(obj)><div class=\"row mainTitle\"><div class=col-xs-7><label>{{ obj[mainTitle] }}</label></div><div class=\"col-xs-3 text-right\">{{obj[id]}}</div></div><div class=\"pull-right ep-contact-list-arrow\" ng-class=\"{'ep-contact-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-contact-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-contact-list-additionalTitle-arrow': additionalTitle}\"><i class=\"fa fa-angle-right fa-2x\"></i></div><div ng-if=subTitle class=subTitle><span ng-show=\"{{obj[setTitles[0]].length>=1}}\">{{obj[setTitles[0]]}}</span><span ng-show=\"{{obj[setTitles[1]].length>=1}}\"><span ng-show=\"{{obj[setTitles[0]].length>=1}}\">,&nbsp</span>{{obj[setTitles[1]]}}</span><span ng-show=\"{{obj[setTitles[2]].length>=1}}\"><span ng-show=\"{{obj[setTitles[0]].length>=1}} || {{obj[setTitles[1]].length>=1}}\">,&nbsp</span>{{obj[setTitles[2]]}}</span></div><div class=additionalTitle ng-if=additionalTitle>{{obj[additionalTitle]}}</div></li></ul></div></div><!--Index--><ul ng-if=\"groupBy=='true'\" class=\"ep-index-list large-index-list\" ng-hide=contactListSearch><li ng-repeat=\"(key, value) in nameList\" ng-click=goToLink(key)>{{key}}</li></ul><!--Index for smaller device screen--><ul ng-if=\"groupBy=='true'\" class=\"ep-index-list small-index-list\" ng-hide=contactListSearch><li ng-repeat=\"key in smallIndexKeys track by $index\" ng-click=\"goToLink(key, $index)\"><span ng-if=\"key == '.'\" class=\"fa fa-circle\"></span> <span ng-if=\"key !='.'\">{{key}}</span></li></ul></div>"
+    "<div class=ep-contacts-list-container><!--Calling filter list component for search option--><ep-filter-list search-by=contactListSearch count=items.count></ep-filter-list><!--Header as optional--><div class=ep-contact-sub-header ng-if=\"subHeader == 'true'\"><label class=ep-contact-sub-header-label ng-click=filter()>Filter</label><label class=ep-contact-sub-header-label ng-click=sort()>Sort</label><span class=\"pull-right ep-pad-right-20 text-primary\" ng-hide=\"hideAdd == 'true'\" ng-click=add()><i class=ep-cicrm-add aria-hidden=true></i></span></div><!--List area--><div class=ep-contacts-list ng-class=\"{'ep-list-header-padding':subHeader == 'true'}\"><div class=ep-contacts-list-inner ng-if=\"groupBy && groupBy!== ''\"><div ng-repeat=\"(key, value) in listData\"><div class=ep-group-heading ng-if=\"filterVal.length > 0\" id=\"list-group-{{key == '#' ? 1 : (key | uppercase)}}\">{{key | uppercase}}</div><ul><li ng-repeat=\"obj in filterVal = (value | filter: contactListSearch)\" ng-click=handler(obj)><div class=\"row mainTitle\"><div class=col-xs-7><label><strong>{{ obj[mainTitle] }}</strong></label></div><div class=\"col-xs-3 text-right\">{{obj[id]}}</div></div><div class=\"pull-right ep-contact-list-arrow\" ng-class=\"{'ep-contact-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-contact-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-contact-list-additionalTitle-arrow': additionalTitle}\"><i class=ep-cicrm-right-chevron></i></div><div ng-if=subTitle class=subTitle><span ng-show=\"{{obj[setTitles[0]].length>=1}}\">{{obj[setTitles[0]]}}</span><span ng-show=\"{{obj[setTitles[1]].length>=1}}\"><span ng-show=\"{{obj[setTitles[0]].length>=1}}\">,&nbsp</span>{{obj[setTitles[1]]}}</span><span ng-show=\"{{obj[setTitles[2]].length>=1}}\"><span ng-show=\"{{obj[setTitles[0]].length>=1}} || {{obj[setTitles[1]].length>=1}}\">,&nbsp</span>{{obj[setTitles[2]]}}</span></div><div class=additionalTitle ng-if=additionalTitle>{{obj[additionalTitle]}}</div></li></ul></div></div><div class=ep-contacts-list-inner ng-if=\"!groupBy || groupBy ===''\"><ul><li ng-repeat=\"obj in listData | filter: contactListSearch\" ng-click=handler(obj)><div class=\"row mainTitle\"><div class=col-xs-7><label>{{ obj[mainTitle] }}</label></div><div class=\"col-xs-3 text-right\">{{obj[id]}}</div></div><div class=\"pull-right ep-contact-list-arrow\" ng-class=\"{'ep-contact-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-contact-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-contact-list-additionalTitle-arrow': additionalTitle}\"><i class=ep-cicrm-right-chevron></i></div><div ng-if=subTitle class=subTitle><span ng-show=\"{{obj[setTitles[0]].length>=1}}\">{{obj[setTitles[0]]}}</span><span ng-show=\"{{obj[setTitles[1]].length>=1}}\"><span ng-show=\"{{obj[setTitles[0]].length>=1}}\">,&nbsp</span>{{obj[setTitles[1]]}}</span><span ng-show=\"{{obj[setTitles[2]].length>=1}}\"><span ng-show=\"{{obj[setTitles[0]].length>=1}} || {{obj[setTitles[1]].length>=1}}\">,&nbsp</span>{{obj[setTitles[2]]}}</span></div><div class=additionalTitle ng-if=additionalTitle>{{obj[additionalTitle]}}</div></li></ul></div></div><!--Index--><ul ng-if=\"groupBy && groupBy!== ''\" class=\"ep-index-list large-index-list\" ng-hide=contactListSearch><li ng-repeat=\"(key, value) in listData\" ng-click=goToLink(key)>{{key}}</li></ul><!--Index for smaller device screen--><ul ng-if=\"groupBy && groupBy!== ''\" class=\"ep-index-list small-index-list\" ng-hide=contactListSearch><li ng-repeat=\"key in smallIndexKeys track by $index\" ng-click=\"goToLink(key, $index)\"><span ng-if=\"key == '.'\" class=\"fa fa-circle\"></span> <span ng-if=\"key !='.'\">{{key}}</span></li></ul></div>"
   );
 
 

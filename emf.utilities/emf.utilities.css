@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.57 built: 15-03-2017
+ * version:1.0.12-dev.58 built: 16-03-2017
 */
 .ng-gallery {
   width: 100%;
@@ -284,23 +284,23 @@ uiload > div {
 .ep-search-list-container {
   position: relative;
   width: 100%;
-  background-color: #CAC9CE;
+  background-color: #d6d6d6;
   z-index: 3;
   height: 50px;
   padding: 8px;
 }
-.ep-search-list-container .fa-search {
+.ep-search-list-container .ep-cicrm-search {
   position: absolute;
   top: 10px;
 }
-.ep-search-list-container .fa-remove {
+.ep-search-list-container .ep-cicrm-delete {
   position: absolute;
-  top: 10px;
-  right: 20px;
+  top: 13px;
+  right: 25px;
+  font-size: 10px;
 }
 .ep-search-list-container input {
   padding: 6px 30px;
-  border-radius: 5px;
 }
 .ep-search-list-container .result-count-container {
   padding-left: 0 !important;

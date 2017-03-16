@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.57 built: 15-03-2017
+ * version:1.0.12-dev.58 built: 16-03-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.12-dev.57","built":"2017-03-15"};
+__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.12-dev.58","built":"2017-03-16"};
 
 (function() {
   'use strict';
@@ -1958,7 +1958,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.filter.list/filter_list.html',
-    "<div class=ep-search-list-container><div class=row><div class=col-xs-10><span class=\"fa fa-search ep-pad-left-10\"></span> <input id=searchinput class=\"search-query form-control\" ng-focus=\"showRemove=true\" ng-model=searchBy placeholder=Search ng-change=\"changeHandler(searchBy)\"> <span class=\"fa fa-remove text-danger\" ng-if=showRemove ng-click=clearSearch()></span></div><div class=\"col-xs-2 result-count-container text-center\"><div>{{count}}</div><div>Results</div></div></div></div>"
+    "<div class=ep-search-list-container><div class=row><div class=col-xs-10><span class=\"ep-cicrm-search ep-pad-left-10\"></span> <input id=searchinput class=\"search-query form-control\" ng-focus=\"showRemove=true\" ng-model=searchBy placeholder=Search ng-change=\"changeHandler(searchBy)\"> <span class=\"ep-cicrm-delete text-danger\" ng-if=showRemove ng-click=clearSearch()></span></div><div class=\"col-xs-2 result-count-container text-center\"><div>{{count}}</div><div>Results</div></div></div></div>"
   );
 
 }]);
