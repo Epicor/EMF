@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.55 built: 15-03-2017
+ * version:1.0.12-dev.56 built: 15-03-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.12-dev.55","built":"2017-03-15"};
+__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.12-dev.56","built":"2017-03-15"};
 
 (function() {
   'use strict';
@@ -1314,10 +1314,15 @@ angular.module('ep.signature').directive('epSignature',
         this.$log = $log;
         this.$q = $q;
         this.db = db;
+        this.db.onerror = this.logError;
     }
     DatabaseWrapper.prototype.getObjectStore = function(objectStoreName) {
         return new ObjectStoreWrapper(this.$log, this.$q, this.db, objectStoreName);
     };
+
+    DatabaseWrapper.prototype.logError = function(e){
+        this.$log.error('An IndexedDB error has occured: ' + e);
+    }
 
     var proto = {
         get: function(key) {
@@ -1609,9 +1614,10 @@ angular.module('ep.signature').directive('epSignature',
             } else {
                 var openRequest = indexedDB.open(id, version);
                 var cancellationToken = $timeout(function() {
-                    $log.warn('Database ' + id + ' v' + version + '  could not be opened.');
-                    $log.warn('This is possibly due to a conflict between two or more open tabs.');
-                    deferred.reject("Timeout reached while waiting for database to open.");
+                    $log.warn('Database ' + id + ' v' + version + ' could not be opened. ' +
+                        'This is possibly due to a conflict between two or more open tabs.');
+                    openRequest.cancel();
+                    deferred.reject('Timeout reached while waiting for database ' + id +' to open.');
                 }, 1500);
                 openRequest.onsuccess = function() {
                     var db = openRequest.result;
@@ -1786,7 +1792,7 @@ angular.module('ep.signature').directive('epSignature',
                     // and store the result in the cache (by calling finalize)
                     deferred.resolve(finalize(result));
                 }, function(err) {
-                    $log.warn('An error occurred while invoking service call with key "' + key + '". ' + err);
+                    $log.warn('An error occurred while invoking service call with key ' + key + '. ' + err);
                     deferred.reject(err);
                 });
             } else {
@@ -1802,10 +1808,10 @@ angular.module('ep.signature').directive('epSignature',
                     return cacheEntry && cacheEntry.value;
                 })
             }, function(err){
-                $log.warn("An error occured that prevented data from being retreived from the cache. " +
-                    "This is probably caused by two or more open tabs sending contentious commands to " +
-                    "the underlying database. If this warning occurs frequently, then it could cause " +
-                    "degraded performance of the application.");
+                $log.warn('An error occured that prevented data from being retreived from the cache. ' +
+                    'This is probably caused by two or more open tabs sending contending commands to ' +
+                    'the underlying database. If this warning occurs frequently, then it could temporarily ' +
+                    'degrade performance of the application.');
             });
         }
 
@@ -1815,10 +1821,10 @@ angular.module('ep.signature').directive('epSignature',
                 var store = db.getObjectStore('ep-cache');
                 return store.put(cacheEntry);
             }, function(err){
-                $log.warn("An error occured that prevented data from being stored in the cache. " +
-                    "This is probably caused by two or more open tabs sending contentious commands to " +
-                    "the underlying database. If this warning occurs frequently, then it could cause " +
-                    "degraded performance of the application.");
+                $log.warn('An error occured that prevented data from being stored in the cache. ' +
+                    'This is probably caused by two or more open tabs sending contending commands to ' +
+                    'the underlying database. If this warning occurs frequently, then it could temporarily ' +
+                    'degrade performance of the application.');
             });
         }
 
