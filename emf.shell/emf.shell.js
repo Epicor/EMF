@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.64 built: 17-03-2017
+ * version:1.0.12-dev.65 built: 17-03-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.12-dev.64","built":"2017-03-17"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.12-dev.65","built":"2017-03-17"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -4865,10 +4865,16 @@ function() {
                     showToggleButton: true, enabled: false,
                     toggleButtonIcon: 'fa-bars'
                 };
+                if(left.enabled === undefined){
+                    left.enabled = mode.enableLeftSidebar;
+                }
                 var right = shellState.viewSettings.sidebar.right || {
                     showToggleButton: true, enabled: false,
                     toggleButtonIcon: 'fa-bars'
                 };
+                if(right.enabled === undefined){
+                    right.enabled = mode.enableRightSidebar;
+                }
 
                 mode.autoActivateSidebar = mode.autoActivateSidebar !== false;
 
