@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.59 built: 16-03-2017
+ * version:1.0.12-dev.60 built: 16-03-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.59","built":"2017-03-16"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.60","built":"2017-03-16"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -12341,18 +12341,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     if (options.convertToJsonType !== false) {
                         //identify decimal data type and convert to float
                         var meta = epBindingMetadataService.get(baqId);
-                        if (meta && meta.columns) {
-                            angular.forEach(meta.columns, function(col) {
-                                if (col && col.dataType === 'decimal') {
-                                    for (var r = 0; r < baqData.length; r++) {
-                                        var v = baqData[r][col.name];
-                                        if (angular.isString(v) && v.length) {
-                                            baqData[r][col.name] = parseFloat(v);
-                                        }
-                                    }
-                                }
-                            });
-                        }
+                        convertToJSonTypes(meta, baqData);
                     }
                     var dataView = epTransactionFactory.current().add(viewId, baqData);
                     if (dataView) {
@@ -12384,9 +12373,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          *          message: progress message text
          *          convertToJsonType: if decimals need to be converted from json to string
          *          viewId: data view of updated record (used by retrieve)
-         *          retrieve: { -- if we need to retrieve record after an update
-         *              keys: [list of keys by which to retrieve record]
-         *              viewId: data view of updated record (override viewId)
+         *          target: { -- what to do with updated record
+         *              viewId: target data view of updated record (override viewId)
+         *              row: which row (dataRow or index) to replace (default is current row)
          *          }
          *          updatableOnly: true/false send only updatable fields (default is true)
          *      }
@@ -12418,16 +12407,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 var d = angular.copy(data);
                 if (options.convertToJsonType !== false) {
                     var meta = epBindingMetadataService.get(baqId);
-                    if (meta && meta.columns) {
-                        angular.forEach(Object.keys(d), function(key) {
-                            var col = meta.columns[key];
-                            if (col && col.dataType === 'decimal' && !angular.isString(d[key])) {
-                                //decimals must be sent as strings at least in oData v3
-                                var v = '' + d[key] + '';
-                                d[key] = v;
-                            }
-                        });
-                    }
+                    convertFromJSonTypes(meta, d);
                 }
 
                 if (d.hasOwnProperty('$$hashKey')) {
@@ -12454,57 +12434,28 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 }
 
                 var promise = epErpRestService.patch(url, dataUpdate);
-                promise.then(function() {
-                    //after we have updated baq we may need to retrieve the updated record...
-                    var query;
-                    var keys;
-                    var targetViewId = options.viewId;
-                    if (options.retrieve && options.retrieve.viewId) {
-                        targetViewId = options.retrieve.viewId;
-                    }
-                    if (options.retrieve && targetViewId) {
-                        if (options.retrieve.keys && options.retrieve.keys.length) {
-                            keys = options.retrieve.keys;
-                        } else {
-                            var pks = getPK(baqId);
-                            if (pks && pks.length > 0) {
-                                keys = pks;
+                promise.then(function(response) {
+                    //after we have updated baq we need to apply returned record
+                    if (response && response.data && response.data.value && response.data.value.length > 0) {
+                        var updatedRow = response.data.value[0];
+
+                        if (options.convertToJsonType !== false) {
+                            //identify decimal data type and convert to float
+                            var meta = epBindingMetadataService.get(baqId);
+                            convertToJSonTypes(meta, updatedRow);
+                        }
+
+                        var target = options.target || {};
+                        var targetViewId = target.viewId || options.viewId;
+                        var targetView = epTransactionFactory.current().view(targetViewId);
+                        if (targetView) {
+                            var drToReplace = (target.row !== undefined) ? target.row : targetView.dataRow();
+                            if (drToReplace !== undefined) {
+                                targetView.replaceDataRow(drToReplace, updatedRow);
                             }
                         }
-                        if (keys) {
-                            var query = odataQueryFactory;
-                            angular.forEach(keys, function(c) {
-                                query = query.setWhere(c, 'eq', d[c]);
-                            });
-                        }
-                    }
-                    if (query) {
-                        var viewRetrieveId = baqId + '__temp';
-                        getBAQ(baqId, query, viewRetrieveId, undefined).then(function() {
-                            fnOnComplete();
-                            var dv = epTransactionFactory.current().view(viewRetrieveId);
-                            var newDataRow = data;
-                            var targetView = epTransactionFactory.current().view(targetViewId);
-                            if (dv.hasData() && targetView) {
-                                newDataRow = dv.dataRow();
-                                var findRow = targetView.findRow(function(dr) {
-                                    var found = true;
-                                    angular.forEach(keys, function(c) {
-                                        if (dr[c] !== data[c]) {
-                                            found = false;
-                                        }
-                                    });
-                                    return found;
-                                }, true);
-                                if (findRow) {
-                                    targetView.replaceDataRow(findRow, dv.dataRow());
-                                }
-                            }
-                            epTransactionFactory.current().remove(viewRetrieveId);
-                            deferred.resolve(newDataRow);
-                        });
+                        deferred.resolve(updatedRow);
                     } else {
-                        fnOnComplete();
                         deferred.resolve(data);
                     }
                 });
@@ -12717,6 +12668,51 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 });
             }
             return ret;
+        }
+
+        /**
+         * @ngdoc method
+         * @name convertToJSonTypes
+         * @methodOf ep.erp.service:epErpBaqService
+         * @private
+         * @description
+         * replace in dataRow values from string to JSON format, by metadata
+         */
+        function convertToJSonTypes(meta, dataRow) {
+            if (meta && meta.columns) {
+                angular.forEach(meta.columns, function(col) {
+                    if (col && col.dataType === 'decimal') {
+                        for (var r = 0; r < dataRow.length; r++) {
+                            var v = dataRow[r][col.name];
+                            if (angular.isString(v) && v.length) {
+                                dataRow[r][col.name] = parseFloat(v);
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
+        /**
+         * @ngdoc method
+         * @name convertFromJSonTypes
+         * @methodOf ep.erp.service:epErpBaqService
+         * @private
+         * @description
+         * replace in dataRow values from JSON to string format, by metadata
+         */
+        function convertFromJSonTypes(meta, dataRow) {
+            //identify decimal data type and convert to string
+            if (meta && meta.columns) {
+                angular.forEach(Object.keys(dataRow), function(key) {
+                    var col = meta.columns[key];
+                    if (col && col.dataType === 'decimal' && !angular.isString(dataRow[key])) {
+                        //decimals must be sent as strings at least in oData v3
+                        var v = '' + dataRow[key] + '';
+                        dataRow[key] = v;
+                    }
+                });
+            }
         }
 
         return {
