@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.62 built: 17-03-2017
+ * version:1.0.12-dev.63 built: 17-03-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.62","built":"2017-03-17"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.63","built":"2017-03-17"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -5734,7 +5734,7 @@ app.directive('epCardTitle',
         /**
          * @ngdoc method
          * @name getDateGroupedList
-         * @methodOf ep.contactList:epContactListService
+         * @methodOf ep.contacts.list:epContactsListService
          * @public
          * @param {Array} listData - list of items to display
          * @param {String} groupBy - date field by which the list has to be grouped
