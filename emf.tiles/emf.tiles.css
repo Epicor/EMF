@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.61 built: 16-03-2017
+ * version:1.0.12-dev.62 built: 17-03-2017
 */
 .card {
   position: relative;
@@ -164,7 +164,7 @@
   padding-top: 5px !important;
 }
 .ep-contact-list-subtitle-arrow {
-  margin-top: -25px !important;
+  margin-top: -15px !important;
 }
 .ep-contact-list-maintitle-arrow {
   margin-top: -40px;
@@ -178,8 +178,8 @@
 }
 .ep-contact-sub-header {
   background-color: #f3f3f3;
-  height: 35px;
-  padding-top: 7px;
+  height: 40px;
+  padding-top: 10px;
   padding-left: 20px;
   position: relative;
   z-index: 1;

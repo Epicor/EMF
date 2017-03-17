@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.61 built: 16-03-2017
+ * version:1.0.12-dev.62 built: 17-03-2017
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -315,7 +315,7 @@
 }
 
 div.ep-binding-label {
-  padding-left: 5px;
+  /*padding-left: 5px;*/
 }
 .ep-binding-label label {
   text-align: left;
@@ -1122,7 +1122,7 @@ img.ep-background-img-medium {
   padding-top: 5px !important;
 }
 .ep-contact-list-subtitle-arrow {
-  margin-top: -25px !important;
+  margin-top: -15px !important;
 }
 .ep-contact-list-maintitle-arrow {
   margin-top: -40px;
@@ -1136,8 +1136,8 @@ img.ep-background-img-medium {
 }
 .ep-contact-sub-header {
   background-color: #f3f3f3;
-  height: 35px;
-  padding-top: 7px;
+  height: 40px;
+  padding-top: 10px;
   padding-left: 20px;
   position: relative;
   z-index: 1;
@@ -1723,6 +1723,8 @@ img.ep-background-img-medium {
   box-shadow: -60px 0 0 #fafafa;
   line-height: 28px;
   height: 28px;
+  border-left: solid 3px #d8d8d8;
+  padding-left: 6px;
 }
 .ep-list ul {
   padding: 0;

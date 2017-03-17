@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.61 built: 16-03-2017
+ * version:1.0.12-dev.62 built: 17-03-2017
 */
 .ep-mlm-container {
   position: relative;
@@ -544,6 +544,8 @@
   box-shadow: -60px 0 0 #fafafa;
   line-height: 28px;
   height: 28px;
+  border-left: solid 3px #d8d8d8;
+  padding-left: 6px;
 }
 .ep-list ul {
   padding: 0;
