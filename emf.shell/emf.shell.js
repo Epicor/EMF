@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.80 built: 21-03-2017
+ * version:1.0.12-dev.81 built: 21-03-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.12-dev.80","built":"2017-03-21"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.12-dev.81","built":"2017-03-21"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -7167,6 +7167,11 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
   $templateCache.put('src/components/ep.modaldialog/modals/modaldialog-error.html',
     "<!--Custom Dialog Error Template--><div id=modal-error class=\"ep-modaldialog-error ep-error-dialog\" ng-controller=epModalDialogErrorCtrl><section ng-if=config.callFnHideModalError ng-hide=config.fnHideModalError()></section><div class=\"alert clearfix ep-dialog-alert\" ng-class=config.statusClass><table class=ep-dlg-bodytable><tr><td><span ng-if=config.showSpinner class=\"ep-dlg-icon fa-stack fa-2x\"><i class=\"ep-dlg-spinner-icon fa fa-spin fa-stack-2x\" ng-class=config.spinnerIconClass></i> <i ng-if=config.showTimer class=\"ep-dlg-spinner-text fa fa-stack-1x {{config.spinnerTextClass}}\" ng-class=config.spinnerTextClass>{{config.countDown}}</i></span> <span ng-if=!config.showSpinner class=ep-dlg-icon><i class=\"fa fa-3x\" ng-class=config.statusIcon></i></span></td><td><span class=ep-dlg-message ng-class=config.messageClass ng-bind=config.fnGetMessage()></span></td></tr></table></div><div class=ep-message-details ng-show=config.messageDetails><a href=\"\" ng-click=\"config.showDetails = !config.showDetails;\">{{config.showDetails ? 'Hide details': 'Show details'}}</a><div ng-show=config.showDetails><textarea ng-model=config.messageDetails ng-readonly=true disabled></textarea></div></div></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.modaldialog/modals/modaldialog-loading.html',
+    "<div class=\"ep-modaldialog ep-modaldialog-pane ep-ease-animation ep-hide-fade\" ng-hide=!dialogState.isVisible><div class=\"ep-dlg-container ep-loading-dialog\"><div class=\"ep-dlg-center clearfix\"><span class=ep-dlg-title>Loading...</span> <span class=ep-dlg-icon><i class=\"fa fa-spinner fa-pulse fa-fw\"></i></span><!-- Optional text message if needed <span class=\"ep-dlg-message\">Please wait, retrieving records from the server.</span>--></div></div></div>"
   );
 
 
