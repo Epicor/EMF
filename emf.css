@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.79 built: 20-03-2017
+ * version:1.0.12-dev.80 built: 21-03-2017
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -1082,13 +1082,6 @@ img.ep-background-img-medium {
 .ep-index-list .fa-circle {
   font-size: 8px;
 }
-.ep-group-heading {
-  font-weight: bold;
-  background: #fafafa;
-  box-shadow: -60px 0 0 #fafafa;
-  line-height: 28px;
-  height: 28px;
-}
 .ep-contacts-list ul {
   padding: 0;
   margin: 0;
@@ -1142,6 +1135,7 @@ img.ep-background-img-medium {
   position: relative;
   z-index: 1;
   width: 100%;
+  box-shadow: 0px 0px 4px 2px rgba(0, 0, 0, 0.1);
 }
 .ep-contact-sub-header-label {
   width: 60px;
@@ -1719,12 +1713,12 @@ img.ep-background-img-medium {
 }
 .ep-group-heading {
   font-weight: bold;
-  background: #fafafa;
-  box-shadow: -60px 0 0 #fafafa;
-  line-height: 28px;
-  height: 28px;
-  border-left: solid 3px #d8d8d8;
+  background: #eee;
+  line-height: 32px;
+  height: 33px;
+  border-left: solid 3px #bcbcbc;
   padding-left: 6px;
+  margin-left: -8px;
 }
 .ep-list ul {
   padding: 0;
@@ -1771,15 +1765,6 @@ img.ep-background-img-medium {
 ep-list-subtitle {
   margin-top: 15px;
 }
-.ep-list-inner .main-title,
-.ep-list-inner .sub-title,
-.ep-list-inner .additional-title {
-  height: 35px;
-  white-space: nowrap;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  padding-top: 8px;
-}
 .ep-list-header-padding {
   padding-top: 90px !important;
 }
@@ -1789,8 +1774,6 @@ ep-list-subtitle {
   text-overflow: ellipsis;
   white-space: nowrap;
   overflow: hidden;
-  height: 35px;
-  padding-top: 8px;
 }
 .ep-list-header-padding {
   padding-top: 90px;
