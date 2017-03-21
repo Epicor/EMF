@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.77 built: 20-03-2017
+ * version:1.0.12-dev.78 built: 20-03-2017
 */
 .ep-color-selector-container .btn {
   background-color: #F5F5F5;
@@ -269,6 +269,21 @@ ep-editor-control .ep-record-editor-container.ep-is-row-editor {
   position: absolute;
   /*transform: translateX(10%);*/
   text-align: left;
+}
+.ep-editor-control .ep-date-editor .ep-time-picker {
+  padding: 0px;
+  padding-left: 2px;
+  width: 100px;
+  top: 0px;
+  border: 0px;
+  background-color: transparent;
+}
+.ep-editor-control .ep-date-editor .ep-time-picker.ep-time-meridian {
+  width: 140px;
+}
+/* workaround for now beacuse with meridian the time cells are not aligned */
+.ep-editor-control .ep-date-editor .form-control.editor.ep-time-meridian {
+  margin-top: 1px;
 }
 
 /* This is a workaround opera issue with the ep-switch wrapping */
