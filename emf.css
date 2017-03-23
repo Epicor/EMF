@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.87 built: 22-03-2017
+ * version:1.0.12-dev.88 built: 23-03-2017
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -1780,7 +1780,7 @@ ep-list-subtitle {
 }
 .ep-list-inner .statuses {
   position: absolute;
-  top: 30px;
+  top: 10px;
   right: 35px;
 }
 .ep-list-inner .statuses .status {
