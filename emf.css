@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.88 built: 23-03-2017
+ * version:1.0.12-dev.89 built: 23-03-2017
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -11,6 +11,17 @@
   border-radius: 0 !important;
   cursor: pointer;
   padding: 10px;
+}
+.ep-accordion-menu .ep-mlm-search {
+  position: relative;
+}
+.ep-accordion-menu .ep-mlm-search-cancel {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px;
+  opacity: .5;
+  cursor: pointer;
 }
 .ep-accordion-menu .list-group-item {
   border-radius: 0 !important;
@@ -1749,7 +1760,7 @@ img.ep-background-img-medium {
   margin-right: 12%;
 }
 .ep-list-arrow {
-  padding-right: 15px !important;
+  padding-right: 10px !important;
   padding-top: 5px !important;
   padding-top: 8px;
 }
@@ -2167,6 +2178,15 @@ ep-list-subtitle {
 /* MLM Search */
 .ep-mlm-container .ep-mlm-search {
   margin: 8px;
+  position: relative;
+}
+.ep-mlm-container .ep-mlm-search-cancel {
+  position: absolute;
+  top: 8px;
+  right: 8px;
+  padding: 4px;
+  opacity: .5;
+  cursor: pointer;
 }
 .ep-mlm-container .ep-mlm-search-input {
   border-radius: 8px !important;
