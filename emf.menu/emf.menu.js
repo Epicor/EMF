@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.104 built: 27-03-2017
+ * version:1.0.12-dev.105 built: 27-03-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.104","built":"2017-03-27"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.105","built":"2017-03-27"};
 
 (function() {
     'use strict';
@@ -2161,12 +2161,24 @@ angular.module('ep.menu.builder', [
                 filter: '&',
                 sort: '&',
                 add: '&',
+                init: '&',
+
                 subTitle: '@',
+                formatSubtitle: '=',
+
                 additionalTitle: '@',
+                formatAdditionalTitle: '=',
+
+                statuses: '@',
+                formatStatusPeriod: '=',
+                getStatusClass: '=',
+                formatStatusText: '=',
+                formatStatusSource: '=',
+                
                 groupBy: '@',
                 subHeader: '@',
                 arrow: '@',
-                statuses: '@',
+                
                 icon: '@',
                 showInRed: '@',
                 hideAdd: '@',
@@ -2190,25 +2202,10 @@ angular.module('ep.menu.builder', [
                     }
 
                     scope.items.count = scope.data.length;
-                }
-
-                if (scope.subTitle) {
-                    scope.subTitles = scope.subTitle.split(' ');
-                }
-                if (scope.statuses) {
-                    scope.statusesArr = scope.statuses.split(' ');
-                    scope.statusesNotDanger = ['OPEN', 'SHIPPED', 'INVOICED', 'ON HOLD'];
-                }
-
-                scope.isNumber = angular.isNumber;
-
-                scope.isAmount = function(amount) {
-                    if (amount === undefined) {
-                        return false;
+                    if(scope.init){
+                        scope.init(scope);
                     }
-                    var decimalCheck = amount.toString().split('.');
-                    return !isNaN(amount) && angular.isDefined(decimalCheck[1]);
-                };
+                }
 
                 scope.$watch('contactListSearch', function(term) {
                     if (scope.data && scope.data.length) {
@@ -2237,14 +2234,6 @@ angular.module('ep.menu.builder', [
                     }
                 });
 
-                scope.showCommaSeparator = function(value1, value2) {
-                    if ((value1 && value1.length > 0 && !scope.isAmount(value1)) ||
-                        (value2 && value2.length > 0 && !scope.isAmount(value2))) {
-                        return true;
-                    } else {
-                        return false;
-                    }
-                };
             }
         };
     }
@@ -2690,7 +2679,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.list/ep-list.html',
-    "<div class=ep-list-container><!--Calling filter list component for search option--><ep-filter-list search-by=contactListSearch count=items.count></ep-filter-list><!--Header as optional--><div class=ep-contact-sub-header ng-if=\"subHeader == 'true'\"><label class=ep-contact-sub-header-label ng-click=filter()>Filter</label><label class=ep-contact-sub-header-label ng-click=sort()>Sort</label><span class=\"pull-right ep-pad-right-20 text-primary\" ng-hide=\"hideAdd == 'true'\" ng-click=add()><i class=ep-cicrm-add aria-hidden=true></i></span></div><div class=ep-list ng-class=\"{'ep-list-header-padding':subHeader == 'true'}\"><div class=ep-list-inner ng-if=\"groupBy && groupBy!== ''\"><div ng-repeat=\"(key, value) in listData\"><div class=ep-group-heading ng-if=\"filterVal.length > 0\">{{key}}</div><ul class=ep-margin-left-neg-10><li ng-repeat=\"obj in filterVal = (value | filter: contactListSearch)\" ng-click=handler(obj) class=\"ep-pad-vert-10 ep-pad-left-10\"><div class=\"row mainTitle\"><div class=\"col-xs-7 col-sm-8 ep-crm-text-ellipsis\"><label class=\"list-details-title text-capitalize\"><strong>{{ obj[mainTitle] }}</strong></label></div><div class=\"col-xs-3 text-right ep-crm-text-ellipsis\">{{obj[id]}}</div></div><div class=\"pull-right ep-list-arrow\" ng-if=\"arrow == 'true'\" ng-class=\"{'ep-contact-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-contact-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-contact-list-additionalTitle-arrow': additionalTitle}\"><i class=ep-cicrm-right-chevron></i></div><div ng-if=subTitle class=\"subTitle ep-crm-text-ellipsis\"><span ng-show=\"{{isNumber(obj[subTitles[0]]) || obj[subTitles[0]].length>=1}}\">{{isAmount(obj[subTitles[0]]) ? (obj[subTitles[0]] | currency) : obj[subTitles[0]]}}</span> <span ng-show=\"{{obj[subTitles[1]].length>=1}}\"><span ng-show=showCommaSeparator(obj[subTitles[0]])>,&nbsp;</span> {{obj[subTitles[1]]}}</span> <span ng-show=\"{{obj[subTitles[2]].length>=1}}\"><span ng-show=\"showCommaSeparator(obj[subTitles[0]], obj[subTitles[1]])\">,&nbsp;</span> {{obj[subTitles[2]]}}</span></div><div ng-if=additionalTitle class=\"additionalTitle ep-crm-text-ellipsis\">{{obj[additionalTitle]}}</div><div ng-if=statuses class=statuses><div class=\"status-period ep-crm-text-ellipsis\">{{obj[statusesArr[0]]}}</div><div class=\"status status-text ep-crm-text-ellipsis\" ng-class=\"{'text-success': (['OPEN', 'SHIPPED', 'INVOICED'].indexOf((obj[statusesArr[1]] | uppercase)) !== -1), 'text-warning': ((obj[statusesArr[1]] | uppercase) === 'ON HOLD'), 'text-danger': (statusesNotDanger.indexOf((obj[statusesArr[1]] | uppercase)) === -1)}\">{{obj[statusesArr[1]]}}</div><div class=\"status-source text-success ep-crm-text-ellipsis\">{{obj[statusesArr[2]]}}</div></div></li></ul></div></div><div class=ep-list-inner ng-if=\"!groupBy || groupBy ===''\"><ul><li ng-repeat=\"obj in listData | filter: contactListSearch\" ng-click=handler(obj) ng-class=\"{'text-danger': (obj[showInRed] === true)}\" class=ep-pad-vert-10><div class=\"row mainTitle\"><div class=\"col-xs-1 pull-left\" ng-if=obj[icon]><i class=\"fa {{obj[icon]}}\"></i></div><div class=\"col-xs-7 col-sm-8 ep-crm-text-ellipsis\"><label><strong>{{ obj[mainTitle] }}</strong></label></div><div class=\"col-xs-3 text-right ep-crm-text-ellipsis\">{{obj[id]}}</div></div><div class=\"pull-right ep-list-arrow\" ng-if=\"arrow == 'true'\" ng-class=\"{'ep-contact-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-contact-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-contact-list-additionalTitle-arrow': additionalTitle}\"><i class=ep-cicrm-right-chevron></i></div><div ng-if=subTitle class=\"subTitle ep-crm-text-ellipsis\"><span ng-show=\"{{isNumber(obj[subTitles[0]]) || obj[subTitles[0]].length>=1}}\">{{isAmount(obj[subTitles[0]]) ? (obj[subTitles[0]] | currency) : obj[subTitles[0]]}}</span> <span ng-show=\"{{obj[subTitles[1]].length>=1}}\"><span ng-show=showCommaSeparator(obj[subTitles[0]])>,&nbsp;</span> {{obj[subTitles[1]]}}</span> <span ng-show=\"{{obj[subTitles[2]].length>=1}}\"><span ng-show=\"showCommaSeparator(obj[subTitles[0]], obj[subTitles[1]])\">,&nbsp;</span> {{obj[subTitles[2]]}}</span></div><div class=\"additionalTitle ep-crm-text-ellipsis\" ng-if=additionalTitle>{{obj[additionalTitle]}}</div><div ng-if=statuses class=statuses><div class=\"status status-period ep-crm-text-ellipsis\">{{obj[statusesArr[0]]}}</div><div class=\"status status-text ep-crm-text-ellipsis\" ng-class=\"{'text-success': (['OPEN', 'SHIPPED', 'INVOICED'].indexOf((obj[statusesArr[1]] | uppercase)) !== -1), 'text-warning': ((obj[statusesArr[1]] | uppercase) === 'ON HOLD'), 'text-danger': (statusesNotDanger.indexOf((obj[statusesArr[1]] | uppercase)) === -1)}\">{{obj[statusesArr[1]]}}</div><div class=\"status status-source text-success ep-crm-text-ellipsis\">{{obj[statusesArr[2]]}}</div></div></li></ul></div></div></div>"
+    "<div class=ep-list-container><!--Calling filter list component for search option--><ep-filter-list search-by=contactListSearch count=items.count></ep-filter-list><!--Header as optional--><div class=ep-contact-sub-header ng-if=\"subHeader == 'true'\"><label class=ep-contact-sub-header-label ng-click=filter()>Filter</label><label class=ep-contact-sub-header-label ng-click=sort()>Sort</label><span class=\"pull-right ep-pad-right-20 text-primary\" ng-hide=\"hideAdd == 'true'\" ng-click=add()><i class=ep-cicrm-add aria-hidden=true></i></span></div><div class=ep-list ng-class=\"{'ep-list-header-padding':subHeader == 'true'}\"><div class=ep-list-inner ng-if=\"groupBy && groupBy!== ''\"><div ng-repeat=\"(key, value) in listData\"><div class=ep-group-heading ng-if=\"filterVal.length > 0\">{{key}}</div><ul class=ep-margin-left-neg-10><li ng-repeat=\"obj in filterVal = (value | filter: contactListSearch)\" ng-click=handler(obj) class=\"ep-pad-vert-10 ep-pad-left-10\"><div class=\"row mainTitle\"><div class=\"col-xs-7 col-sm-8 ep-crm-text-ellipsis\"><label class=\"list-details-title text-capitalize\"><strong>{{ obj[mainTitle] }}</strong></label></div><div class=\"col-xs-3 text-right ep-crm-text-ellipsis\">{{obj[id]}}</div></div><div class=\"pull-right ep-list-arrow\" ng-if=\"arrow == 'true'\" ng-class=\"{'ep-contact-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-contact-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-contact-list-additionalTitle-arrow': additionalTitle}\"><i class=ep-cicrm-right-chevron></i></div><div ng-if=subTitle class=\"subTitle ep-crm-text-ellipsis\"><span>{{formatSubtitle(subTitle, obj)}}</span></div><div ng-if=additionalTitle class=\"additionalTitle ep-crm-text-ellipsis\">{{formatAdditionalTitle(additionalTitle, obj)}}</div><div ng-if=statuses class=statuses><div class=\"status-period ep-crm-text-ellipsis\">{{formatStatusPeriod(statuses, obj)}}</div><div class=\"status status-text ep-crm-text-ellipsis {{getStatusTextClass(statuses, obj)}}\">{{formatStatusText(statuses, obj)}}</div><div class=\"status-source text-success ep-crm-text-ellipsis\">{{formatStatusSource(statuses, obj)}}</div></div></li></ul></div></div><div class=ep-list-inner ng-if=\"!groupBy || groupBy ===''\"><ul><li ng-repeat=\"obj in listData | filter: contactListSearch\" ng-click=handler(obj) ng-class=\"{'text-danger': (obj[showInRed] === true)}\" class=ep-pad-vert-10><div class=\"row mainTitle\"><div class=\"col-xs-1 pull-left\" ng-if=obj[icon]><i class=\"fa {{obj[icon]}}\"></i></div><div class=\"col-xs-7 col-sm-8\"><label><strong>{{ obj[mainTitle] }}</strong></label></div><div class=\"col-xs-3 text-right\">{{obj[id]}}</div></div><div class=\"pull-right ep-list-arrow\" ng-if=\"arrow == 'true'\" ng-class=\"{'ep-contact-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-contact-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-contact-list-additionalTitle-arrow': additionalTitle}\"><i class=ep-cicrm-right-chevron></i></div><div ng-if=subTitle class=\"subTitle ep-crm-text-ellipsis\"><span>{{formatSubtitle(subTitle, obj)}}</span></div><div ng-if=additionalTitle class=\"additionalTitle ep-crm-text-ellipsis\">{{formatAdditionalTitle(additionalTitle, obj)}}</div><div ng-if=statuses class=statuses><div class=\"status-period ep-crm-text-ellipsis\">{{formatStatusPeriod(statuses, obj)}}</div><div class=\"status status-text ep-crm-text-ellipsis {{getStatusTextClass(statuses, obj)}}\">{{formatStatusText(statuses, obj)}}</div><div class=\"status-source text-success ep-crm-text-ellipsis\">{{formatStatusSource(statuses, obj)}}</div></div></li></ul></div></div></div>"
   );
 
 
