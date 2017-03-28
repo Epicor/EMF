@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.105 built: 27-03-2017
+ * version:1.0.12-dev.106 built: 27-03-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.105","built":"2017-03-27"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.106","built":"2017-03-27"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -5553,10 +5553,10 @@ app.directive('epCardTitle',
                 sort: '&',
                 add: '&',
                 init: '&',
-                subTitle: '@',
+                subTitle: '=',
                 formatSubtitle: '=',
 
-                additionalTitle: '@',
+                additionalTitle: '=',
                 formatAdditionalTitle: '=',
                 groupBy: '@',
                 subHeader: '@',
@@ -16368,15 +16368,15 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 filter: '&',
                 sort: '&',
                 add: '&',
-                init: '&',
+                init: '=',
 
-                subTitle: '@',
+                subTitle: '=',
                 formatSubtitle: '=',
 
-                additionalTitle: '@',
+                additionalTitle: '=',
                 formatAdditionalTitle: '=',
 
-                statuses: '@',
+                statuses: '=',
                 formatStatusPeriod: '=',
                 getStatusClass: '=',
                 formatStatusText: '=',

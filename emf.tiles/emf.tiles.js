@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.105 built: 27-03-2017
+ * version:1.0.12-dev.106 built: 27-03-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["tiles"] = {"libName":"tiles","version":"1.0.12-dev.105","built":"2017-03-27"};
+__ep_build_info["tiles"] = {"libName":"tiles","version":"1.0.12-dev.106","built":"2017-03-27"};
 
 'use strict';
 /**
@@ -271,10 +271,10 @@ app.directive('epCardTitle',
                 sort: '&',
                 add: '&',
                 init: '&',
-                subTitle: '@',
+                subTitle: '=',
                 formatSubtitle: '=',
 
-                additionalTitle: '@',
+                additionalTitle: '=',
                 formatAdditionalTitle: '=',
                 groupBy: '@',
                 subHeader: '@',
