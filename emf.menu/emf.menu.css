@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.115 built: 29-03-2017
+ * version:1.0.12-dev.116 built: 30-03-2017
 */
 .ep-mlm-container {
   position: relative;
@@ -597,8 +597,6 @@
 }
 .ep-list-arrow {
   padding-right: 10px !important;
-  padding-top: 5px !important;
-  padding-top: 8px;
 }
 .ep-list-subtitle-arrow {
   margin-top: -25px !important;
@@ -607,7 +605,7 @@
   margin-top: -40px;
 }
 .ep-list-additionalTitle-arrow {
-  margin-top: -5px !important;
+  margin-top: 10px !important;
 }
 ep-list-subtitle {
   margin-top: 15px;
@@ -628,7 +626,7 @@ ep-list-subtitle {
 .ep-list-inner .statuses {
   position: absolute;
   top: 10px;
-  right: 35px;
+  right: 40px;
 }
 .ep-list-inner .statuses .status {
   height: 20px;
