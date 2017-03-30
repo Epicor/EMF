@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.117 built: 30-03-2017
+ * version:1.0.12-dev.118 built: 30-03-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.117","built":"2017-03-30"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.118","built":"2017-03-30"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -5505,7 +5505,7 @@ app.directive('epCardTitle',
     'use strict';
 
     angular.module('ep.contacts.list').constant('epContactsListConstants', {
-        CONTACTS_LIST_INDEXES: '#ABCDEFGHIJKLMNOPQRSTUVWXYZ',
+        CONTACTS_LIST_INDEXES: '#ABCDEFGHIJKLMNOPQRSTUVWXYZ@',
         CONTACTS_LIST_INDEXES_SMALL: '#A.E.H.L.O.S.V.Z',
         CONTACTS_LIST_INDEXES_BREAKPOINT: 430,
         CONTACTS_LIST_INDEXES_HIDDEN_BREAKPOINT: 180
@@ -5569,8 +5569,9 @@ app.directive('epCardTitle',
 
                 scope.originalData = scope.data;
                 scope.initData = function() {
-
+                    scope.sortedData = $filter('orderBy')(scope.data, scope.groupBy);
                     scope.listData = scope.data;
+                    
                     if (scope.sortBy && scope.sortBy !== '') {
                         scope.listData = _.sortBy(scope.listData, scope.sortBy).reverse();
                     }
@@ -5579,7 +5580,7 @@ app.directive('epCardTitle',
                             scope.listData = epContactsListService.getDateGroupedList(scope.listData, scope.groupBy, scope.type);
                         }
                         else {
-                            scope.listData = epContactsListService.getGroupedList(scope.listData, scope.groupBy);
+                            scope.directory = epContactsListService.getDirectory(scope.listData, scope.groupBy);
                         }
                     }
                     scope.filterVal = [];
@@ -5627,43 +5628,13 @@ app.directive('epCardTitle',
                     }
                 });
 
-                scope.goToLink = function(key, index) {
-                    var container = $('.ep-contacts-list');
-                    var scrollTopOffset = 50; //default
-                    if (scope.subHeader === 'true') {
-                        scrollTopOffset = 90;
-                    }
-                    //on smaller devices, go to next available list group on clicking the dots.
-                    if (key === '.') { //only on smaller devices
-                        var prevKey = scope.smallIndexKeys[index - 1];
-                        var nextKey = scope.smallIndexKeys[index + 1];
-                        //get the keys in between prevkey and nextkey
-                        var betweenKeys = scope.indexKeys.substring(scope.indexKeys.indexOf(prevKey) + 1,
-                            scope.indexKeys.indexOf(nextKey));
-                        for (var i = 0; i < betweenKeys.length; i++) {
-                            var scrollToElem = $('#list-group-' + betweenKeys[i]);
-                            if (scrollToElem.length) {
-                                container.animate({
-                                    scrollTop: scrollToElem.offset().top - container.offset().top +
-                                        container.scrollTop() - scrollTopOffset
-                                });
-                                break;
-                            }
-                        }
-                        return;
-                    }
-
-                    //hash index will scroll to numbers list
-                    key = (key === '#') ? '1' : key;
-                    var scrollToElem = $('#list-group-' + key);
-                    if (scrollToElem.length) {
-                        container.animate({
-                            scrollTop: scrollToElem.offset().top - container.offset().top +
-                                container.scrollTop() - scrollTopOffset
-                        });
-                    }
+                scope.goToLink = function(menu) {
+                    var old = $location.hash();
+                    $location.hash('list-group-' + menu.letter);
+                    $anchorScroll();
+                    //reset to old to keep any additional routing logic from kicking in
+                    $location.hash(old);
                 };
-
             }
         };
     }
@@ -5696,34 +5667,32 @@ app.directive('epCardTitle',
          * To group the contacts list based on alphabets
          */
         function getGroupedList(listData, mainTitle) {
-            var sortedlist = _.sortBy(listData, function(obj) { return obj[mainTitle].toLowerCase(); });
-            var groupedObj = {};
-            var itemGroup = [];
-            var currAlphabet = '';
-            var prevAlphabet = '';
-            for (var i = 0; i < sortedlist.length; i++) {
-                currAlphabet = sortedlist[i][mainTitle].substring(0, 1).toUpperCase();
-
-                //if a number, make group name as #
-                if (!isNaN(currAlphabet)) {
-                    currAlphabet = '#';
-                }
-                if (currAlphabet !== prevAlphabet && prevAlphabet !== '') {
-                    groupedObj[prevAlphabet] = itemGroup;
-                    itemGroup = [];
-                }
-                itemGroup.push(sortedlist[i]);
-
-                if (i === (sortedlist.length - 1)) {
-                    groupedObj[currAlphabet] = itemGroup;
-                    itemGroup = [];
-                }
-                prevAlphabet = currAlphabet;
-
-            }
-            return groupedObj;
+            var sortedList = _.sortBy(listData, function(obj) { return obj[mainTitle].toLowerCase(); });
+            return _.groupBy(sortedList, function(row){ 
+                var datum = row[0];
+                return (!isNaN(datum)) ? '#' : datum.toUpperCase();
+            });
         }
-
+        function getDirectory(listData, groupBy){
+            var sorted = $filter('orderBy')(listData, groupBy);
+            var keys = {};
+            var dir = {};
+            for (var i = 0; i < sorted.length; i++) {
+                var ch = (sorted[i][groupBy] || '').substr(0, 1).toUpperCase();
+                if (ch) {
+                    if (ch < 'A') {
+                        ch = '#';
+                    } else if (ch > 'Z') {
+                        ch = '@';
+                    }
+                    if (!keys[ch]) {
+                        keys[ch] = true;
+                        dir[i] = { key: ch, letter: ch };
+                    }
+                }
+            }
+            return dir;
+        }
         /**
          * @ngdoc method
          * @name getDateGroupedList
@@ -5806,6 +5775,7 @@ app.directive('epCardTitle',
 
         return {
             getGroupedList: getGroupedList,
+            getDirectory: getDirectory,
             getDateGroupedList: getDateGroupedList,
             toggleIndexes: toggleIndexes
         };
@@ -29412,7 +29382,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.contacts.list/contacts_list.html',
-    "<div class=ep-contacts-list-container><!--Calling filter list component for search option--><ep-filter-list search-by=contactListSearch count=items.count></ep-filter-list><!--Header as optional--><div class=ep-contact-sub-header ng-if=\"subHeader == 'true'\"><label class=ep-contact-sub-header-label ng-click=filter()>Filter</label><label class=ep-contact-sub-header-label ng-click=sort()>Sort</label><span class=\"pull-right ep-pad-right-20 text-primary\" ng-hide=\"hideAdd == 'true'\" ng-click=add()><i class=ep-cicrm-add aria-hidden=true></i></span></div><!--List area--><div class=ep-contacts-list ng-class=\"{'ep-list-header-padding':subHeader == 'true'}\"><div class=ep-contacts-list-inner ng-if=\"groupBy && groupBy!== ''\"><div ng-repeat=\"(key, value) in listData\"><div class=ep-group-heading ng-if=\"filterVal.length > 0 && (!type || type === '')\" id=\"list-group-{{key == '#' ? 1 : (key | uppercase)}}\">{{key | uppercase}}</div><div class=ep-group-heading ng-if=\"filterVal.length > 0 && type && type !== ''\">{{key}}</div><ul><li ng-repeat=\"obj in filterVal = (value | filter: contactListSearch)\" ng-click=handler(obj) class=\"ep-pad-top-10 ep-pad-bottom-15\"><div class=\"pull-right ep-contact-list-arrow\" ng-class=\"{'ep-contact-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-contact-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-contact-list-additionalTitle-arrow': additionalTitle}\"><i class=ep-cicrm-right-chevron></i></div><div class=\"row mainTitle\"><div class=\"col-xs-7 col-sm-8 ep-crm-text-ellipsis\"><label><strong>{{ obj[mainTitle] }}</strong></label></div><div class=\"col-xs-5 col-sm-4 text-right ep-crm-text-ellipsis\">{{obj[id]}}</div></div><div ng-if=subTitle class=subTitle><span>{{formatSubtitle(subTitle, obj)}}</span></div><div ng-if=additionalTitle class=additionalTitle>{{formatAdditionalTitle(additionalTitle, obj)}}</div></li></ul></div></div><div class=ep-contacts-list-inner ng-if=\"!groupBy || groupBy ===''\"><ul><li ng-repeat=\"obj in listData | filter: contactListSearch\" ng-click=handler(obj) class=\"ep-pad-top-10 ep-pad-bottom-15\"><div class=\"pull-right ep-contact-list-arrow\" ng-class=\"{'ep-contact-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-contact-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-contact-list-additionalTitle-arrow': additionalTitle}\"><i class=ep-cicrm-right-chevron></i></div><div class=\"row mainTitle\"><div class=\"col-xs-7 col-sm-8 ep-crm-text-ellipsis\"><label><strong>{{ obj[mainTitle] }}</strong></label></div><div class=\"col-xs-5 col-sm-4 text-right ep-crm-text-ellipsis\">{{obj[id]}}</div></div><div ng-if=subTitle class=subTitle><span>{{formatSubtitle(subTitle, obj)}}</span></div><div ng-if=additionalTitle class=additionalTitle>{{formatAdditionalTitle(additionalTitle, obj)}}</div></li></ul></div></div><!--Index--><ul ng-if=\"groupBy && groupBy!== '' && (!type || type == '')\" class=\"ep-index-list large-index-list\" ng-hide=contactListSearch><li ng-repeat=\"(key, value) in listData\" ng-click=goToLink(key)>{{key}}</li></ul><!--Index for smaller device screen--><ul ng-if=\"groupBy && groupBy!== '' && (!type || type == '')\" class=\"ep-index-list small-index-list\" ng-hide=contactListSearch><li ng-repeat=\"key in smallIndexKeys track by $index\" ng-click=\"goToLink(key, $index)\"><span ng-if=\"key == '.'\" class=\"fa fa-circle\"></span> <span ng-if=\"key !='.'\">{{key}}</span></li></ul></div>"
+    "<div class=ep-contacts-list-container><!--Calling filter list component for search option--><ep-filter-list search-by=contactListSearch count=items.count></ep-filter-list><!--Header as optional--><div class=ep-contact-sub-header ng-if=\"subHeader == 'true'\"><label class=ep-contact-sub-header-label ng-click=filter()>Filter</label><label class=ep-contact-sub-header-label ng-click=sort()>Sort</label><span class=\"pull-right ep-pad-right-20 text-primary\" ng-hide=\"hideAdd == 'true'\" ng-click=add()><i class=ep-cicrm-add aria-hidden=true></i></span></div><!--List area--><div class=ep-contacts-list ng-class=\"{'ep-list-header-padding':subHeader == 'true'}\"><div class=ep-contacts-list-inner ng-if=\"groupBy && groupBy!== ''\"><ul class=ep-dir-row ng-repeat=\"obj in sortedData | limitTo:5000 | filter:contactListSearch track by $index\" ng-click=handler(obj)><li ng-if=directory[$index] class=ep-dir-divider id=list-group-{{directory[$index].letter}}><b>{{directory[$index].letter}}</b></li><li class=ep-pad-vert-10><div class=mainTitle><strong class=ep-crm-text-ellipsis>{{obj[mainTitle]}}</strong> <span class=\"text-right ep-crm-text-ellipsis\">{{obj[id]}}</span></div><div class=\"pull-right ep-contact-list-arrow ep-contact-list-subtitle-arrow\"><i class=ep-cicrm-right-chevron></i></div><div class=subTitle><span>{{formatSubtitle(subTitle, obj)}}</span></div><div class=additionalTitle>{{formatAdditionalTitle(additionalTitle, obj)}}</div></li></ul></div><div class=ep-contacts-list-inner ng-if=\"!groupBy || groupBy ===''\"><ul><li ng-repeat=\"obj in sortedData | limitTo:5000 | filter:contactListSearch track by $index\" ng-click=handler(obj) class=ep-pad-vert-10><div class=mainTitle><strong class=ep-crm-text-ellipsis>{{obj[mainTitle]}}</strong> <span class=\"text-right ep-crm-text-ellipsis\">{{obj[id]}}</span></div><div class=\"pull-right ep-contact-list-arrow ep-contact-list-subtitle-arrow\"><i class=ep-cicrm-right-chevron></i></div><div class=subTitle><span>{{formatSubtitle(subTitle, obj)}}</span></div><div class=additionalTitle>{{formatAdditionalTitle(additionalTitle, obj)}}</div></li></ul></div></div><!--Index--><ul ng-if=\"groupBy && groupBy!== '' && (!type || type == '')\" class=\"ep-index-list large-index-list\" ng-hide=contactListSearch><li ng-repeat=\"(id,row) in directory | limitTo:40\"><a ng-click=goToLink(row)>{{row.letter}}</a></li></ul><!--Index for smaller device screen--><ul ng-if=\"groupBy && groupBy!== '' && (!type || type == '')\" class=\"ep-index-list small-index-list\" ng-hide=contactListSearch><li ng-repeat=\"key in smallIndexKeys track by $index\" ng-click=goToLink(key)><span ng-if=\"key == '.'\" class=\"fa fa-circle\"></span> <span ng-if=\"key !='.'\">{{key}}</span></li></ul></div>"
   );
 
 
