@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.121 built: 31-03-2017
+ * version:1.0.12-dev.122 built: 31-03-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.12-dev.121","built":"2017-03-31"};
+__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.12-dev.122","built":"2017-03-31"};
 
 (function() {
   'use strict';
@@ -1616,7 +1616,7 @@ angular.module('ep.signature').directive('epSignature',
                 var cancellationToken = $timeout(function() {
                     $log.warn('Database ' + id + ' v' + version + ' could not be opened. ' +
                         'This is possibly due to a conflict between two or more open tabs.');
-                    openRequest.cancel();
+                    
                     deferred.reject('Timeout reached while waiting for database ' + id +' to open.');
                 }, 1500);
                 openRequest.onsuccess = function() {
