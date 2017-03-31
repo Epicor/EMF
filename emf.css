@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.120 built: 30-03-2017
+ * version:1.0.12-dev.121 built: 31-03-2017
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -1132,7 +1132,7 @@ img.ep-background-img-medium {
   margin-top: -40px;
 }
 .ep-contact-list-additionalTitle-arrow {
-  margin-top: 10px !important;
+  margin-top: 25px !important;
 }
 .ep-contact-search {
   margin-left: -25px;
