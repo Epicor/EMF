@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.147 built: 07-04-2017
+ * version:1.0.12-dev.148 built: 07-04-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.147","built":"2017-04-07"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.148","built":"2017-04-07"};
 
 (function() {
     'use strict';
@@ -2182,28 +2182,34 @@ angular.module('ep.menu.builder', [
                 
                 groupBy: '@',
                 subHeader: '@',
-                arrow: '@',
+                showArrow: '=',
                 
                 icon: '@',
                 showInRed: '@',
                 hideAdd: '@',
-                sortBy: '@'
+                sortBy: '@',
                 
+                useVirtualScrolling: '=',
+                showDirectory: '=',
+                renderBufferSize: '@'
             },
             templateUrl: 'src/components/ep.list/ep-list.html',
             link: function(scope) {
-
+                scope.localId = _.uniqueId('epList');
                 scope.items = { count: 0 };
                 scope.originalData = scope.data;
-
+                scope.renderBufferSize = (scope.renderBufferSize && JSON.parse(scope.renderBufferSize)) || 50;
+                scope.arrow = (scope.showArrow !== false);
                 scope.initData = function() {
 
-                    scope.listData = scope.data;
+                    scope.listData = $filter('orderBy')(scope.data, scope.groupBy);
+                    scope.origSortedData = $filter('orderBy')(scope.data, scope.groupBy);
                     if (scope.sortBy && scope.sortBy !== '') {
                         scope.listData = _.sortBy(scope.listData, scope.sortBy).reverse();
                     }
+
                     if (scope.groupBy && scope.groupBy !== '') {
-                        scope.listData = epListService.getGroupedList(scope.listData, scope.groupBy);
+                        scope.directory = epListService.getDirectory(scope.listData, scope.groupBy);
                     }
 
                     scope.items.count = scope.data.length;
@@ -2211,13 +2217,58 @@ angular.module('ep.menu.builder', [
                         scope.init(scope);
                     }
                 }
+                scope.initData();
 
-                scope.$watch('contactListSearch', function(term) {
-                    if (scope.data && scope.data.length) {
-                        var val = $filter('filter')(scope.data, term);
-                        scope.items.count = val.length;
-                    } else {
-                        scope.items.count = 0;
+                scope.filterByName = function(obj) {
+                    if (scope.searchFilter) {
+                        return (obj[scope.groupBy] || '').indexOf(scope.searchFilter) === 0;
+                    }
+                    return true;
+                }
+
+                function increaseDisplayData() {
+                    $timeout(function() {
+                        scope.sortedData = scope.sortedData.concat(scope.origSortedData.slice(scope.sortedData.length + 1, scope.sortedData.length + 1001));
+                        if (scope.sortedData.length < scope.origSortedData.length) {
+                            increaseDisplayData();
+                        }
+                    }, 500);
+                }
+
+                function applySearchFilter(searchValue) {
+                    if (searchValue) {
+                        scope.prevSearchFilter = searchValue;
+                        if (searchValue.length === 1) {
+                            var firstLetter = searchValue[0].toUpperCase();
+                            var menu = _.find(scope.directory, function(m) {
+                                return m.letter === firstLetter;
+                            });
+                            if (menu) {
+                                scope.filteredData = scope.origSortedData.slice(menu.index, menu.nextIndex);
+                                scope.filtered = true;
+                                scope.$broadcast('vsRepeatTrigger');
+
+                            }
+                        } else {
+                            scope.searchFilter = searchValue;
+                        }
+                    } else if (scope.prevSearchFilter) {
+                        if (scope.origSortedData.length > 500) {
+                            scope.sortedData = scope.origSortedData.slice(0, 100);
+                            scope.filtered = false;
+                            scope.$broadcast('vsRepeatTrigger');
+                            increaseDisplayData();
+                        } else {
+                            scope.filtered = false;
+                            scope.$broadcast('vsRepeatTrigger');
+                        }
+                    }
+                }
+
+                var throttleSearch = _.throttle(applySearchFilter, 200);
+                scope.$watch('listSearch', function(newValue, oldValue) {
+                    if (newValue !== undefined && newValue !== oldValue) {
+                        throttleSearch(newValue);
                     }
                 });
                 
@@ -2239,6 +2290,19 @@ angular.module('ep.menu.builder', [
                     }
                 });
 
+                scope.goToDirectory = function(directoryEntry) {
+                    scope.filteredData = scope.origSortedData.slice(directoryEntry.index, directoryEntry.nextIndex);
+                    scope.selectedDirectoryEntry = directoryEntry;
+                    scope.filtered = true;
+                    scope.$broadcast('vsRepeatTrigger');
+                };
+
+                scope.$on('$destroy', function() {
+                    if (scope.shellSizeChangeEvent) {
+                        scope.shellSizeChangeEvent();
+                    }
+                });
+
             }
         };
     }
@@ -2256,9 +2320,11 @@ angular.module('ep.menu.builder', [
 (function() {
     'use strict';
 
+    epListService.$inject = ['$filter', '$timeout'];
     angular.module('ep.list').factory('epListService', epListService);
 
-    function epListService() {
+    /*@ngInject*/
+    function epListService($filter, $timeout) {
 
         /**
          * @ngdoc method
@@ -2271,46 +2337,58 @@ angular.module('ep.menu.builder', [
          * To group the list based on groupBy Value
          */
         function getGroupedList(listData, groupBy) {
-            var listName = [];
-            //we need to find some better solution if date is null. But at this moment it will do
-            var sortedlist = _.sortBy(listData, function(d) {
-                if (d[groupBy] == null) {
-                    d[groupBy] = '1910-01-01T00:00:00';
-                }
-                return d[groupBy];
-            }).reverse();
-            var groupedObj = {};
-            var itemGroup = [];
-            var currAlphabet = '';
-            var prevAlphabet = '';
-            for (var i = 0; i < sortedlist.length; i++) {
-                if (sortedlist[i][groupBy] === '1910-01-01T00:00:00') {
-                    currAlphabet = 'No Date';
-                }
-                else {
-                    var fetchDate = sortedlist[i][groupBy].split('-', 2);
-                    var concatDate = fetchDate[1] + '-' + fetchDate[0];
-
-                    currAlphabet = concatDate;
-                }
-                if (currAlphabet !== prevAlphabet && prevAlphabet !== '') {
-                    groupedObj[prevAlphabet] = itemGroup;
-                    itemGroup = [];
-                }
-                itemGroup.push(sortedlist[i]);
-
-                if (i === (sortedlist.length - 1)) {
-                    groupedObj[currAlphabet] = itemGroup;
-                    itemGroup = [];
-                }
-                prevAlphabet = currAlphabet;
-
-            }
-            return groupedObj;
+            return _.groupBy(listData, function(row){ 
+                var datum = row[0];
+                return (!isNaN(datum)) ? '#' : datum.toUpperCase();
+            });
         }
+        
+        /**
+         * @ngdoc method
+         * @name getDirectory
+         * @methodOf ep.list:epListService
+         * @public
+         * @param {Array} listData - list of items to display
+         * @param {String} groupBy - field name by which the list has to be grouped
+         * @description
+         * To group the list based on groupBy Value
+         */
+        function getDirectory(listData, groupBy){
+            var allKey = '__all__';
+            var keys = {};
+            var dir = {};
+            var prevItem;
+            var totalItems = listData.length;
 
+            dir[allKey] = { isAll: true, letter: '*', key: allKey, index: 0, prevIndex: 0, nextIndex: totalItems, hidden: true };
+            for (var i = 0; i < totalItems; i++) {
+                var key = listData[i][groupBy];
+                var ch = (key || '').substr(0, 1).toUpperCase();
+                if (ch) {
+                    if (ch < 'A') {
+                        ch = '#';
+                    } else if (ch > 'Z') {
+                        ch = '@';
+                    }
+                    if (!keys[ch]) {
+                        keys[ch] = true;
+                        var prevIndex = prevItem ? prevItem.index : 0;
+                        if (prevItem) {
+                            prevItem.nextIndex = i;
+                        }
+                        var curItem = { letter: ch, key: key, index: i, prevIndex: prevIndex, nextIndex: totalItems, previous: prevItem, next: undefined };
+                        dir[key] = prevItem = curItem;
+                        if (prevItem) {
+                            prevItem.next = curItem;
+                        }
+                    }
+                }
+            }
+            return dir;
+        }
         return {
-            getGroupedList: getGroupedList
+            getGroupedList: getGroupedList,
+            getDirectory: getDirectory
         };
     }
 })();
@@ -2684,7 +2762,35 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.list/ep-list.html',
-    "<div class=ep-list-container><!--Calling filter list component for search option--><ep-filter-list search-by=contactListSearch count=items.count></ep-filter-list><!--Header as optional--><div class=ep-contact-sub-header ng-if=\"subHeader == 'true'\"><label class=ep-contact-sub-header-label ng-click=filter()>Filter</label><label class=ep-contact-sub-header-label ng-click=sort()>Sort</label><span class=\"pull-right ep-pad-right-20 text-primary\" ng-hide=\"hideAdd == 'true'\" ng-click=add()><i class=ep-cicrm-add aria-hidden=true></i></span></div><div class=ep-list ng-class=\"{'ep-list-header-padding':subHeader == 'true'}\"><div class=ep-list-inner ng-if=\"groupBy && groupBy!== ''\"><div ng-repeat=\"(key, value) in listData\"><div class=ep-group-heading ng-if=\"filterVal.length > 0\">{{key}}</div><ul class=ep-margin-left-neg-10><li ng-repeat=\"obj in filterVal = (value | filter: contactListSearch)\" ng-click=handler(obj) class=\"ep-pad-top-10 ep-pad-bottom-15 ep-pad-left-10\"><div class=\"pull-right ep-list-arrow\" ng-if=\"arrow == 'true'\" ng-class=\"{'ep-contact-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-contact-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-contact-list-additionalTitle-arrow': additionalTitle}\"><i class=ep-cicrm-right-chevron></i></div><div class=\"pull-right ep-margin-right-15 text-primary\" ng-if=\"selectMarkField && obj[selectMarkField] == selectMarkFieldValue\" ng-class=\"{'ep-margin-top-10':subTitle && !additionalTitle, 'ep-margin-top-15': additionalTitle}\"><i class=\"fa fa-check\"></i></div><div class=\"row mainTitle\"><div class=\"col-xs-7 col-sm-8 ep-crm-text-ellipsis\"><label class=\"list-details-title text-capitalize\"><strong>{{ obj[mainTitle] }}</strong></label></div><div class=\"col-xs-3 text-right ep-crm-text-ellipsis\">{{obj[id]}}</div></div><div ng-if=subTitle class=\"subTitle ep-crm-text-ellipsis\"><span>{{formatSubtitle(subTitle, obj)}}</span></div><div ng-if=additionalTitle class=\"additionalTitle ep-crm-text-ellipsis\">{{formatAdditionalTitle(additionalTitle, obj)}}</div><div ng-if=statuses class=statuses><div class=\"status-period ep-crm-text-ellipsis\">{{formatStatusPeriod(statuses, obj)}}</div><div class=\"status status-text ep-crm-text-ellipsis {{getStatusTextClass(statuses, obj)}}\">{{formatStatusText(statuses, obj)}}</div><div class=\"status-source text-success ep-crm-text-ellipsis\">{{formatStatusSource(statuses, obj)}}</div></div></li></ul></div></div><div class=ep-list-inner ng-if=\"!groupBy || groupBy ===''\"><ul><li ng-repeat=\"obj in listData | filter: contactListSearch\" ng-click=handler(obj) ng-class=\"{'text-danger': (obj[showInRed] === true)}\" class=\"ep-pad-top-10 ep-pad-bottom-15\"><div class=\"pull-right ep-list-arrow\" ng-if=\"arrow == 'true'\" ng-class=\"{'ep-contact-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-contact-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-contact-list-additionalTitle-arrow': additionalTitle}\"><i class=ep-cicrm-right-chevron></i></div><div class=\"pull-right ep-margin-right-15 text-primary\" ng-if=\"selectMarkField && obj[selectMarkField] == selectMarkFieldValue\" ng-class=\"{'ep-margin-top-10':subTitle && !additionalTitle, 'ep-margin-top-15': additionalTitle}\"><i class=\"fa fa-check\"></i></div><div class=\"row mainTitle\"><div class=\"col-xs-1 pull-left\" ng-if=obj[icon]><i class=\"fa {{obj[icon]}}\"></i></div><div class=\"col-xs-7 col-sm-8\"><label><strong>{{ obj[mainTitle] }}</strong></label></div><div class=\"col-xs-3 text-right\">{{obj[id]}}</div></div><div ng-if=subTitle class=\"subTitle ep-crm-text-ellipsis\"><span>{{formatSubtitle(subTitle, obj)}}</span></div><div ng-if=additionalTitle class=\"additionalTitle ep-crm-text-ellipsis\">{{formatAdditionalTitle(additionalTitle, obj)}}</div><div ng-if=statuses class=statuses><div class=\"status-period ep-crm-text-ellipsis\">{{formatStatusPeriod(statuses, obj)}}</div><div class=\"status status-text ep-crm-text-ellipsis {{getStatusTextClass(statuses, obj)}}\">{{formatStatusText(statuses, obj)}}</div><div class=\"status-source text-success ep-crm-text-ellipsis\">{{formatStatusSource(statuses, obj)}}</div></div></li></ul></div></div></div>"
+    "<div class=ep-list-container><script id=listItemTemplate type=text/ng-template><div ng-if=\"directory[obj[groupBy]]\" class=\"ep-dir-divider ep-group-heading\" id=\"list-group-{{directory[obj[groupBy]].letter}}\"><b>{{directory[obj[groupBy]].letter}}</b></div>\r" +
+    "\n" +
+    "        <div class=\"pull-right ep-list-arrow\" ng-if=\"arrow\" ng-class=\"{'ep-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-list-additionalTitle-arrow': additionalTitle}\"><i class=\"ep-cicrm-right-chevron\"></i></div>\r" +
+    "\n" +
+    "        <div class=\"pull-right ep-margin-right-15 text-primary\" ng-if=\"selectMarkField && obj[selectMarkField] == selectMarkFieldValue\"\r" +
+    "\n" +
+    "            ng-class=\"{'ep-margin-top-10':subTitle && !additionalTitle, 'ep-margin-top-15': additionalTitle}\"><i class=\"fa fa-check\"></i></div>\r" +
+    "\n" +
+    "        <div class=\"row mainTitle\">\r" +
+    "\n" +
+    "            <div class=\"col-xs-7 col-sm-8 ep-crm-text-ellipsis\"><label class=\"list-details-title text-capitalize\"><strong>{{ obj[mainTitle] }}</strong></label></div>\r" +
+    "\n" +
+    "            <div class=\"col-xs-3 text-right ep-crm-text-ellipsis\">{{obj[id]}}</div>\r" +
+    "\n" +
+    "        </div>\r" +
+    "\n" +
+    "        <div ng-if=\"subTitle\" class=\"subTitle ep-crm-text-ellipsis\"><span>{{formatSubtitle(subTitle, obj)}}</span></div>\r" +
+    "\n" +
+    "        <div ng-if=\"additionalTitle\" class=\"additionalTitle ep-crm-text-ellipsis\">{{formatAdditionalTitle(additionalTitle, obj)}}</div>\r" +
+    "\n" +
+    "        <div ng-if=\"statuses\" class=\"statuses\">\r" +
+    "\n" +
+    "            <div class=\"status-period ep-crm-text-ellipsis\">{{formatStatusPeriod(statuses, obj)}}</div>\r" +
+    "\n" +
+    "            <div class=\"status status-text ep-crm-text-ellipsis {{getStatusTextClass(statuses, obj)}}\">{{formatStatusText(statuses, obj)}}</div>\r" +
+    "\n" +
+    "            <div class=\"status-source text-success ep-crm-text-ellipsis\">{{formatStatusSource(statuses, obj)}}</div>\r" +
+    "\n" +
+    "        </div></script><!--Calling filter list component for search option--><ep-filter-list search-by=listSearch count=items.count></ep-filter-list><!--Header as optional--><div class=ep-list-sub-header ng-if=\"subHeader == 'true'\"><label ng-click=filter()>Filter</label><label ng-click=sort()>Sort</label><span class=\"pull-right ep-pad-right-20 text-primary\" ng-hide=\"hideAdd == 'true'\" ng-click=add()><i class=ep-cicrm-add aria-hidden=true></i></span></div><!-- Alphabet Selector --><div class=ep-list-directory ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=showDirectory><div class=ep-list-directory-item ng-class=\"{ active: selectedDirectoryEntry.letter === dir.letter }\" ng-repeat=\"(id,dir) in directory | limitTo:40\"><a ng-click=goToDirectory(dir)>{{dir.letter}}</a></div></div><div ng-if=useVirtualScrolling><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=!filtered id={{localId}} vs-repeat vs-excess={{renderBufferSize}} vs-options=\"{ latch: true }\"><li ng-repeat=\"obj in listData track by $index\" ng-click=handler(obj) class=\"ep-list-item ep-pad-top-10 ep-pad-bottom-15 ep-pad-left-10\"><ng-include src=\"'listItemTemplate'\"></ng-include></li></ul><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=filtered id={{localId}} vs-repeat vs-excess={{renderBufferSize}} vs-options=\"{ latch: true }\"><li ng-repeat=\"obj in filteredData track by $index\" ng-click=handler(obj) class=\"ep-list-item ep-pad-top-10 ep-pad-bottom-15 ep-pad-left-10\"><ng-include src=\"'listItemTemplate'\"></ng-include></li></ul></div><div ng-if=!useVirtualScrolling><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=!filtered id={{localId}}><li ng-repeat=\"obj in listData track by $index\" ng-click=handler(obj) class=\"ep-list-item ep-pad-top-10 ep-pad-bottom-15 ep-pad-left-10\"><ng-include src=\"'listItemTemplate'\"></ng-include></li></ul><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=filtered id={{localId}}><li ng-repeat=\"obj in filteredData track by $index\" ng-click=handler(obj) class=\"ep-list-item ep-pad-top-10 ep-pad-bottom-15 ep-pad-left-10\"><ng-include src=\"'listItemTemplate'\"></ng-include></li></ul></div></div>"
   );
 
 
