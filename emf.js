@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.149 built: 07-04-2017
+ * version:1.0.12-dev.150 built: 07-04-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.149","built":"2017-04-07"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.150","built":"2017-04-07"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -2699,9 +2699,9 @@ angular.module('ep.binding').
 
                         //This will be set by eBindingFactory
                         scope.epBindingInfo = {};
-                        var viewAlias = attrs['aliasView'];
+                        var viewAlias = attrs.aliasView;
 
-                        scope.$watch(attrs['epBinding'], function(newValue) {
+                        scope.$watch(attrs.epBinding, function(newValue) {
                             if (newValue !== undefined) {
                                 if (bindingFactory) {
                                     bindingFactory.changeBinding(newValue);
@@ -2722,7 +2722,7 @@ angular.module('ep.binding').
                             }
                         });
 
-                        if (attrs['trackData'] === 'true') {
+                        if (attrs.trackData === 'true') {
                             scope.onTrackDataChange = function(id) {
                                 if (id === scope.epb.viewId) {
                                     scope.trackData = [];
@@ -2731,20 +2731,23 @@ angular.module('ep.binding').
                                     });
                                 }
                             };
-                            scope.eventWatches.view = $rootScope.$on('EP_BINDING_VIEW_ADDED', function(event, data) {
-                                scope.onTrackDataChange(data.viewId);
-                            });
-                            scope.eventWatches.added = $rootScope.$on('EP_BINDING_VIEW_ROW_DELETED', function(event, data) {
-                                scope.onTrackDataChange(data.viewId);
-                            });
-                            scope.eventWatches.view = $rootScope.$on('EP_BINDING_VIEW_ROW_ADDED', function(event, data) {
-                                scope.onTrackDataChange(data.viewId);
-                            });
+                            scope.eventWatches.view = $rootScope.$on('EP_BINDING_VIEW_ADDED',
+                                function(event, data) {
+                                    scope.onTrackDataChange(data.viewId);
+                                });
+                            scope.eventWatches.added = $rootScope.$on('EP_BINDING_VIEW_ROW_DELETED',
+                                function(event, data) {
+                                    scope.onTrackDataChange(data.viewId);
+                                });
+                            scope.eventWatches.view = $rootScope.$on('EP_BINDING_VIEW_ROW_ADDED',
+                                function(event, data) {
+                                    scope.onTrackDataChange(data.viewId);
+                                });
 
                             scope.$on('$destroy', function() {
                                 angular.forEach(scope.eventWatches, function(w) {
                                     w();
-                                })
+                                });
                             });
                         }
                     }
@@ -3134,7 +3137,7 @@ angular.module('ep.binding').
                     }
                 }
             } else {
-                ret = binding
+                ret = binding;
             }
             return ret;
         }
@@ -3166,13 +3169,13 @@ angular.module('ep.binding').
                 logWatches.onViewRowDeleted = $rootScope.$on('EP_BINDING_VIEW_ROW_ADDED', function(event, data) {
                     var v = epTransactionFactory.current().view(data.viewId);
                     var info = 'ViewId:' + data.viewId + ';Row:' + v.data.row +
-                        ';Count:' + (v.data() ? v.data().length : 0)
+                        ';Count:' + (v.data() ? v.data().length : 0);
                     $log.warn('[EP_BINDING_VIEW_ROW_ADDED] ' + info);
                 });
                 logWatches.onViewRowDeleted = $rootScope.$on('EP_BINDING_VIEW_ROW_DELETED', function(event, data) {
                     var v = epTransactionFactory.current().view(data.viewId);
                     var info = 'ViewId:' + data.viewId + ';Row:' + v.data.row +
-                        ';Count:' + (v.data() ? v.data().length : 0)
+                        ';Count:' + (v.data() ? v.data().length : 0);
                     $log.warn('[EP_BINDING_VIEW_ROW_DELETED] ' + info);
                 });
                 logWatches.onViewRowChanged = $rootScope.$on('EP_BINDING_VIEW_ROW_CHANGED', function(event, data) {
@@ -3380,9 +3383,11 @@ angular.module('ep.binding').
                 if (index !== undefined) {
                     var oldRow = state.row;
                     state.row = index;
+                    /*jshint validthis: true */
+                    var self = this;
                     $rootScope.$emit('EP_BINDING_VIEW_ROW_CHANGED', {
                         viewId: state.id,
-                        view: this,
+                        view: self,
                         prevRow: oldRow
                     });
                 }
@@ -3415,9 +3420,11 @@ angular.module('ep.binding').
                     state.isDirty = true;
                     state.hasDeleted = (Object.keys(state.deletedRows).length > 0);
 
+                    /*jshint validthis: true */
+                    var self = this;
                     $rootScope.$emit('EP_BINDING_VIEW_ROW_DELETED', {
                         viewId: state.id,
-                        view: this,
+                        view: self,
                         row: index
                     });
                 }
@@ -3440,7 +3447,7 @@ angular.module('ep.binding').
                         state.addedRows[idx - 1] = state.addedRows[idx - 1];
                         delete state.addedRows[idx];
                     }
-                })
+                });
             }
 
             /**
@@ -3463,13 +3470,16 @@ angular.module('ep.binding').
                 state.addedRows[rowIdx] = rowIdx;
                 state.hasAdded = true;
 
+                /*jshint validthis: true */
+                var self = this;
+
                 $rootScope.$emit('EP_BINDING_VIEW_ROW_ADDED', {
                     viewId: state.id,
-                    view: this,
+                    view: self,
                     row: rowIdx
                 });
                 if (setCurrentRow === true) {
-                    this.row(rowIdx);
+                    self.row(rowIdx);
                 }
                 return rowIdx;
             }
@@ -3494,13 +3504,13 @@ angular.module('ep.binding').
                     if (idx < rowIdx) {
                         rowIdx++;
                     }
-                })
+                });
                 //offset by inserted rows
                 angular.forEach(Object.keys(state.deletedRows), function(idx) {
                     if (idx < rowIdx) {
                         rowIdx--;
                     }
-                })
+                });
 
                 return rowIdx;
             }
@@ -3570,6 +3580,7 @@ angular.module('ep.binding').
              * @returns {object} column value
              */
             function set(column, value) {
+                /*jshint validthis: true */
                 this.columnValue(column, value);
             }
 
@@ -3585,6 +3596,7 @@ angular.module('ep.binding').
              * @returns {object} column value
              */
             function get(column) {
+                /*jshint validthis: true */
                 return this.columnValue(column);
             }
 
@@ -3659,7 +3671,7 @@ angular.module('ep.binding').
                 var ret = [];
                 angular.forEach(Object.keys(state.modifiedRows), function(idx) {
                     ret.push(state.data[idx]);
-                })
+                });
                 return ret;
             }
 
@@ -3691,7 +3703,7 @@ angular.module('ep.binding').
                 var ret = [];
                 angular.forEach(Object.keys(state.addedRows), function(idx) {
                     ret.push(state.data[idx]);
-                })
+                });
                 return ret;
             }
 
@@ -3722,7 +3734,7 @@ angular.module('ep.binding').
                 var ret = [];
                 angular.forEach(state.deletedRows, function(rowObj) {
                     ret.push(rowObj);
-                })
+                });
                 return ret;
             }
 
@@ -3785,6 +3797,7 @@ angular.module('ep.binding').
                         var dr = state.data[i];
                         if (predicateFunction(dr)) {
                             if (setRowCurrent) {
+                                /*jshint validthis: true */
                                 this.row(i);
                             }
                             if (returnIndex === true) {
@@ -3846,6 +3859,7 @@ angular.module('ep.binding').
              * @param {array} data - (optional) data to load, if missing then view will be empty
              */
             function reload(data) {
+                /*jshint validthis: true */
                 init(this.id(), data || []);
             }
 
@@ -3902,8 +3916,7 @@ angular.module('ep.binding').
                 userData: userData,
                 query: query
             };
-
-        }
+        };
         return factoryInstance;
     }
 
@@ -3951,9 +3964,10 @@ angular.module('ep.binding').
              * add a view to the transaction
              */
             function add(id, data) {
-                //To do check if exists already
+                /*jshint validthis: true */
+                var self = this;
                 var action = 'CREATE';
-                var v = this.view(id);
+                var v = self.view(id);
                 if (v) {
                     v.reload(data);
                     action = 'RELOAD';
@@ -4032,21 +4046,23 @@ angular.module('ep.binding').
              * @returns {object} return cloned view
              */
             function clone(viewId, cloneViewId, options) {
-                var v = this.view(viewId);
+                /*jshint validthis: true */
+                var self = this;
+                var v = self.view(viewId);
                 var dv;
                 if (v) {
                     if (!options) {
                         options = {};
                     }
                     if (options.data === 'data') {
-                        dv = this.add(cloneViewId, v.data());
+                        dv = self.add(cloneViewId, v.data());
                     } else if (options.data === 'record') {
                         var dr = v.dataRow();
-                        dv = this.add(cloneViewId, dr ? [dr] : []);
+                        dv = self.add(cloneViewId, dr ? [dr] : []);
                     } else if (options.data === 'none') {
-                        dv = this.add(cloneViewId, []);
+                        dv = self.add(cloneViewId, []);
                     } else {
-                        dv = this.add(cloneViewId, []);
+                        dv = self.add(cloneViewId, []);
                     }
                     var meta = epBindingMetadataService.get(viewId);
                     if (meta) {
@@ -4065,6 +4081,7 @@ angular.module('ep.binding').
              * remove a view by id
              */
             function remove(id) {
+                /*jshint validthis: true */
                 if (this.view(id)) {
                     delete _views[id];
                 }
@@ -12336,7 +12353,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             }
 
             var url = 'BaqSvc/' + baqId;
-            var promise = epErpRestService.get(url, oQuery).$promise;
+            var promise = epErpRestService.get(url, oQuery, options.callSettings).$promise;
             promise.then(function(data) {
                 //if (data.value) {
                 //    epTransactionFactory.current().add(viewId, data.value);
@@ -12372,7 +12389,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     epModalDialogService.hide();
                 }
                 deferred.resolve(results[0]);
-            })
+            });
 
             return deferred.promise;
         }
@@ -12453,7 +12470,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     }
                 }
 
-                var promise = epErpRestService.patch(url, dataUpdate);
+                var promise = epErpRestService.patch(url, dataUpdate, options.callSettings);
                 promise.then(function(response) {
                     //after we have updated baq we need to apply returned record
                     if (response && response.data && response.data.value && response.data.value.length > 0) {
@@ -12461,8 +12478,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
                         if (options.convertToJsonType !== false) {
                             //identify decimal data type and convert to float
-                            var meta = epBindingMetadataService.get(baqId);
-                            convertToJSonTypes(meta, updatedRow);
+                            var meta1 = epBindingMetadataService.get(baqId);
+                            convertToJSonTypes(meta1, updatedRow);
                         }
 
                         var target = options.target || {};
@@ -12507,7 +12524,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             }
 
             var url = 'BaqSvc/' + baqId + '/GetNew';
-            var promise = epErpRestService.get(url, '').$promise;
+            var promise = epErpRestService.get(url, '', options.callSettings).$promise;
             promise.then(function(data) {
                 if (showProgress) {
                     epModalDialogService.hide();
@@ -12591,9 +12608,17 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             if (!msg && response.message) {
                 msg = response.message;
             }
+            if (!msg && response.data && angular.isString(response.data)) {
+                msg = response.data;
+            }
+            var maskedResponse = angular.extend({}, response);
+            if (maskedResponse.config && maskedResponse.config.headers &&
+                maskedResponse.config.headers.Authorization) {
+                maskedResponse.config.headers.Authorization = '***';
+            }
             epModalDialogService.showException({
                 title: 'Info', message: msg || '',
-                messageDetails: angular.toJson(response, 2)
+                messageDetails: angular.toJson(maskedResponse, 2)
             });
             return msg;
         }
@@ -12771,7 +12796,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
             var deferred = $q.defer();
 
-            var promise = epErpRestService.get(svc, myQuery).$promise;
+            var promise = epErpRestService.get(svc, myQuery, options.callSettings).$promise;
             promise.then(function(data) {
                 //if (data.value) {
                 //    epTransactionFactory.current().add(viewId, data.value);
@@ -12832,7 +12857,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     epModalDialogService.hide();
                 }
                 deferred.resolve(results[0]);
-            })
+            });
 
             return deferred.promise;
         }
@@ -12870,7 +12895,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             }
 
             var url = svc;
-            var promise = epErpRestService.post(url, d);
+            var promise = epErpRestService.post(url, d, options.callSettings);
             promise.then(function() {
                 if (showProgress) {
                     epModalDialogService.hide();
@@ -12894,9 +12919,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             if (!msg && response.statusText) {
                 msg = response.statusText;
             }
+            var maskedResponse = angular.extend({}, response);
+            if (maskedResponse.config && maskedResponse.config.headers &&
+                maskedResponse.config.headers.Authorization) {
+                maskedResponse.config.headers.Authorization = '***';
+            }
             epModalDialogService.showException({
                 title: 'Info', message: msg || '',
-                messageDetails: angular.toJson(response, 2)
+                messageDetails: angular.toJson(maskedResponse, 2)
             });
         }
 
@@ -25467,9 +25497,13 @@ angular.module('ep.signature').directive('epSignature',
                 if (result && result.then) {
                     result.then(function(val) {
                         deferred.resolve(val);
+                        owner.fired = false;
+                    }, function(){
+                        owner.fired = false;
                     });
                 } else {
                     deferred.resolve(result);
+                    owner.fired = false;
                 }
             } else {
                 deferred.resolve(true);
@@ -25649,7 +25683,7 @@ angular.module('ep.signature').directive('epSignature',
          * @description
          * Enables or disables the finish button
          */
-                function enableFinish(panelId, value) {
+        function enableFinish(panelId, value) {
             if (value === undefined) {
                 value = panelId;
                 panelId = 'epSlidingPanel';
@@ -27560,7 +27594,7 @@ angular.module('ep.signature').directive('epSignature',
         .service('epErpRestService', ['$http', '$resource', 'epTokenService', function($http, $resource, epTokenService) {
             var serverUrl = '';
 
-            function call(method, path, query) {
+            function call(method, path, query, callSettings) {
                 var tkn = epTokenService.getToken();
                 if (!tkn) {
                     return;
@@ -27577,17 +27611,20 @@ angular.module('ep.signature').directive('epSignature',
                     }
                 }
 
+                var sCallSettings = JSON.stringify(callSettings || {});
+
                 return $resource(url, query, {
                     get: {
                         method: 'GET', headers: {
                             'Authorization': 'Bearer ' + tkn.token.AccessToken,
-                            'Content-Type': 'application/json'
+                            'Content-Type': 'application/json',
+                            'CallSettings': sCallSettings
                         }
                     }
                 });
             }
 
-            function postCall(method, svc, data) {
+            function postCall(method, svc, data, callSettings) {
                 var tkn = epTokenService.getToken();
                 if (!tkn) {
                     return;
@@ -27598,6 +27635,8 @@ angular.module('ep.signature').directive('epSignature',
                     d = JSON.stringify(data);
                 }
 
+                var sCallSettings = JSON.stringify(callSettings || {});
+
                 return $http({
                     method: 'POST',
                     dataType: 'json',
@@ -27605,17 +27644,20 @@ angular.module('ep.signature').directive('epSignature',
                     headers: {
                         'Authorization': 'Bearer ' + tkn.token.AccessToken,
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'CallSettings': sCallSettings
                     },
                     url: serverUrl + svc,
                 });
             }
 
-            function deleteCall(path) {
+            function deleteCall(path, callSettings) {
                 var tkn = epTokenService.getToken();
                 if (!tkn) {
                     return;
                 }
+
+                var sCallSettings = JSON.stringify(callSettings || {});
 
                 return $http({
                     method: 'DELETE',
@@ -27623,13 +27665,14 @@ angular.module('ep.signature').directive('epSignature',
                     headers: {
                         'Authorization': 'Bearer ' + tkn.token.AccessToken,
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'CallSettings': sCallSettings
                     },
                     url: serverUrl + path,
                 });
             }
 
-            function patch(svc, data) {
+            function patch(svc, data, callSettings) {
                 var tkn = epTokenService.getToken();
                 if (!tkn || !serverUrl) {
                     return;
@@ -27640,6 +27683,9 @@ angular.module('ep.signature').directive('epSignature',
                     d = JSON.stringify(d);
                     //data = data.replace(/,(?=[^,]*$)/, '');
                 }
+
+                var sCallSettings = JSON.stringify(callSettings || {});
+
                 return $http({
                     method: 'PATCH',
                     dataType: 'json',
@@ -27647,7 +27693,8 @@ angular.module('ep.signature').directive('epSignature',
                     headers: {
                         'Authorization': 'Bearer ' + tkn.token.AccessToken,
                         'Content-Type': 'application/json',
-                        'Accept': 'application/json'
+                        'Accept': 'application/json',
+                        'CallSettings': sCallSettings
                     },
                     url: serverUrl + svc,
                 }).success(function(response) {
@@ -27679,14 +27726,14 @@ angular.module('ep.signature').directive('epSignature',
                 setUrl: function(url) {
                     serverUrl = url;
                 },
-                get: function(path, query) {
-                    return call('GET', path, query).get();
+                get: function(path, query, callSettings) {
+                    return call('GET', path, query, callSettings).get();
                 },
-                post: function(path, data) {
-                    return postCall('POST', path, data);
+                post: function(path, data, callSettings) {
+                    return postCall('POST', path, data, callSettings);
                 },
-                remove: function(path) {
-                    return deleteCall(path);
+                remove: function(path, callSettings) {
+                    return deleteCall(path, callSettings);
                 },
                 patch: patch,
                 getXML: getXML
