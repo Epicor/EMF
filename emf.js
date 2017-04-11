@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.155 built: 11-04-2017
+ * version:1.0.12-dev.156 built: 11-04-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.155","built":"2017-04-11"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.156","built":"2017-04-11"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -19630,6 +19630,7 @@ angular.module('ep.menu.builder').
         *       math (see math params)
         * @param {object} arg1 The object that repesents the second argument in the where clause
         * @param {object} params (optional) 
+        * { guid : true } to indicate that arg1 is a guid (special filter syntax is applied)
         * { or : true } to include 'or' logical operator.
         * { not: true} to include negative logical operator.
         * {   mathOperand: number, (mathOperand and the second argument need to both be numbers)
@@ -19650,7 +19651,7 @@ angular.module('ep.menu.builder').
             // init the logical operators (and, or, not)
             var notOp = '';
             var logicalOp = (params && 'or' in params && params.or) ? ' or ' : ' and ';
-            // init the tickmark seperator t
+            // init the tickmark seperator
             var tickMark = (angular.isString(arg1) || isNaN(arg1)) ? '\'' : '';
             if (arg0 !== null && arg0 !== undefined && arg1 !== null && arg1 !== undefined) {
                 switch (compareOp) {
@@ -19695,7 +19696,9 @@ angular.module('ep.menu.builder').
                         break;
                 }
 
-                var expr = notOp + arg0 + ' ' + compareOp + ' ' + tickMark + arg1 + tickMark;
+                var prefix = (tickMark && params && (params.guid === true)) ? 'guid' : '';
+
+                var expr = notOp + arg0 + ' ' + compareOp + ' ' + prefix + tickMark + arg1 + tickMark;
                 if (params && (params.returnExpression === true)) {
                     //option to return expression only
                     return expr;
@@ -19706,8 +19709,6 @@ angular.module('ep.menu.builder').
                 } else {
                     odataObject.$filter = expr;
                 }
-                //odataObject.$filter = ((odataObject && odataObject.$filter) ? (odataObject.$filter + logicalOp) : '') +
-                //    expr;
             }
             /*jshint validthis: true */
             return this;    // valid this to allow for method chaining
