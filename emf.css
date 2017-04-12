@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.157 built: 11-04-2017
+ * version:1.0.12-dev.158 built: 11-04-2017
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -1714,6 +1714,26 @@ img.ep-background-img-medium {
 .ep-list li {
   border-bottom: 1px solid #eee;
 }
+.ep-list-directory-item.active {
+  background: #fff;
+}
+.ep-list-item-content {
+  display: flex;
+  flex-flow: row nowrap;
+  justify-content: space-between;
+}
+.ep-list-item-content .ep-list-item-text {
+  flex: 5 0 auto;
+  width: 180px;
+}
+.ep-list-item-content .ep-list-item-details {
+  flex: 2 0 auto;
+  width: 120px;
+}
+.ep-list-item-content .ep-list-item-decorator {
+  flex: 0 0 auto;
+  margin: auto 0 auto 0;
+}
 .ep-list.ep-header-visible {
   margin-top: 90px;
   height: calc(100vh - 160px);
@@ -1726,6 +1746,7 @@ img.ep-background-img-medium {
   border-left: solid 3px #bcbcbc;
   padding-left: 6px;
   margin-left: -8px;
+  margin-bottom: 8px;
 }
 .ep-list-directory {
   position: absolute;
@@ -1792,6 +1813,7 @@ img.ep-background-img-medium {
   margin-right: 12%;
 }
 .ep-list-arrow {
+  padding-top: 5px;
   padding-right: 10px !important;
   margin-right: 30px;
 }

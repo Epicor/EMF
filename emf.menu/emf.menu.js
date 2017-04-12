@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.157 built: 11-04-2017
+ * version:1.0.12-dev.158 built: 11-04-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.157","built":"2017-04-11"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.158","built":"2017-04-11"};
 
 (function() {
     'use strict';
@@ -2134,13 +2134,18 @@ angular.module('ep.menu.builder', [
  * - additionalTitle: additional title to display on list just below sub title.
  * - id: value to be displayed on right side of the list.
  * - groupBy: groupBy field name by which the list has to be grouped.
+ * - groupByType: 'sdate' - string date format like '1910-01-01T00:00:00' (otherwise string)
  * - subHeader: (true/false) shows sub header with filter/sort/add buttons just below the search component.
  * - arrow: (true/false) whether to show arrow on right side of list or not.
  * - statuses: additional list fields that needs to be displayed on right side of the list.
  * - filter: handler function on click of filter button in sub header section of the list
  * - sort: handler function on click of sort button in sub header section of the list.
  * - add: handler function on click of add button in sub header section of the list.
- *
+ * - useVirtualScrolling: (true/false) uses 
+ * - showDirectory
+ * - vsRenderBufferSize
+ * - vsRowLineCount
+ * - vsLatch
  * @example
  *  <pre>
  *      <ep-list data="['Bname', 'Cname', 'Aname'"></ep-list>
@@ -2181,9 +2186,9 @@ angular.module('ep.menu.builder', [
                 formatStatusSource: '=',
                 
                 groupBy: '@',
+                groupByType: '@',
                 subHeader: '@',
                 showArrow: '=',
-                groupByType: '@',
                 
                 icon: '@',
                 showInRed: '@',
@@ -2191,28 +2196,47 @@ angular.module('ep.menu.builder', [
                 sortBy: '@',
                 
                 useVirtualScrolling: '=',
+                
                 showDirectory: '=',
-                renderBufferSize: '@'
+                vsRenderBufferSize: '@',
+                vsRowLineCount: '@',
+                vsLatch: '@'
             },
             templateUrl: 'src/components/ep.list/ep-list.html',
             link: function(scope) {
                 scope.localId = _.uniqueId('epList');
                 scope.items = { count: 0 };
                 scope.originalData = scope.data;
-                scope.renderBufferSize = (scope.renderBufferSize && JSON.parse(scope.renderBufferSize)) || 50;
+                scope.vsRenderBufferSize = (scope.vsRenderBufferSize && JSON.parse(scope.vsRenderBufferSize)) || 50;
+                scope.vsRowLineCount = (scope.vsRowLineCount && JSON.parse(scope.vsRowLineCount)) || 2;
+                scope.vsItemSize = scope.vsRowLineCount * 30;
+                scope.vsLatch = angular.isString(scope.vsLatch) ? (scope.vsLatch.toLowerCase() === 'true') : false;
                 scope.arrow = (scope.showArrow !== false);
+                scope.searchType = 'text';
+                scope.searchPrompt = '';
+
                 scope.initData = function() {
 
                     scope.listData = $filter('orderBy')(scope.data, scope.groupBy);
-                    scope.origSortedData = $filter('orderBy')(scope.data, scope.groupBy);
                     if (scope.sortBy && scope.sortBy !== '') {
                         scope.listData = _.sortBy(scope.listData, scope.sortBy).reverse();
                     }
 
                     if (scope.groupBy && scope.groupBy !== '') {
-                        scope.directory = epListService.getDirectory(scope.listData, scope.groupBy);
+                        if (scope.groupByType && scope.groupByType === 'sdate') {
+                            scope.searchPrompt = 'Search by year or month-year...';
+                            scope.searchType = 'sdate';
+                            scope.listData = _.sortBy(scope.listData, function(d) {
+                                return d[scope.groupBy] || '';
+                            }).reverse();
+                            scope.showDirectory = false;
+                            scope.directory = epListService.getDirectoryByDate(scope.listData, scope.groupBy);
+                        } else {
+                            scope.directory = epListService.getDirectory(scope.listData, scope.groupBy);
+                        }
                     }
 
+                    scope.origListData = angular.extend([], scope.listData);
                     scope.items.count = scope.data.length;
                     if(scope.init){
                         scope.init(scope);
@@ -2227,7 +2251,7 @@ angular.module('ep.menu.builder', [
                     return true;
                 }
 
-                function applySearchFilter(searchValue) {
+                function applyTextSearchFilter(searchValue) {
                     if (searchValue) {
                         var firstLetter = searchValue[0].toUpperCase();
                         if (firstLetter !== scope.prevFirstLetter) {
@@ -2242,7 +2266,7 @@ angular.module('ep.menu.builder', [
                                 //need more logic if first letter is not available at all!!!!
                             }
                             if (menu) {
-                                scope.filteredData = scope.origSortedData.slice(menu.index, menu.nextIndex);
+                                scope.filteredData = scope.origListData.slice(menu.index, menu.nextIndex);
                                 scope.filtered = true;
                             } else {
                                 //if there is no associated menu then show nothing
@@ -2270,6 +2294,64 @@ angular.module('ep.menu.builder', [
                     }
                 }
 
+                function applyStrDateSearchFilter(searchValue) {
+                    var filtered = false;
+                    if (searchValue) {
+                        var year = NaN;
+                        if (searchValue.length === 4) {
+                            //search by year
+                            year = parseInt(searchValue);
+                        }
+                        if (!isNaN(year)) {
+                            //search by year - find all groups in this year
+                            var groups = _.filter(scope.directory, function(m) {
+                                return m.year === searchValue;
+                            });
+                            if (groups.length) {
+                                var filteredData = [];
+                                angular.forEach(groups, function(group) {
+                                    filteredData = filteredData.concat(scope.origListData.slice(group.index, group.nextIndex));
+                                });
+                                filtered = true;
+                                scope.filteredData = filteredData;
+                                scope.filtered = true;
+                                $timeout(function() {
+                                    scope.$broadcast('vsRepeatTrigger');
+                                });
+                            }
+                        } else {
+                            var menu = _.find(scope.directory, function(m) {
+                                return m.groupDisplay.indexOf(searchValue) === 0;
+                            });
+                            if (menu) {
+                                filtered = true;
+                                scope.filteredData = scope.origListData.slice(menu.index, menu.nextIndex);
+                                scope.filtered = true;
+                                $timeout(function() {
+                                    scope.$broadcast('vsRepeatTrigger');
+                                });
+                            }
+                        }
+                    }
+                    if (!filtered)
+                    {
+                        //if search is blank - we are not in filtering mode
+                        scope.filtered = false;
+                        scope.searchFilter = '';
+                        $timeout(function() {
+                            scope.$broadcast('vsRepeatTrigger');
+                        });
+                    }
+                }
+
+                function applySearchFilter(searchValue) {
+                    if (scope.searchType === 'sdate') {
+                        applyStrDateSearchFilter(searchValue);
+                    } else {
+                        applyTextSearchFilter(searchValue);
+                    }
+                }
+
                 var throttleSearch = _.throttle(applySearchFilter, 200);
                 scope.$watch('listSearch', function(newValue, oldValue) {
                     if (newValue !== undefined && newValue !== oldValue && !scope.goingToDirectory) {
@@ -2284,7 +2366,7 @@ angular.module('ep.menu.builder', [
                         scope.goingToDirectory = true;
                         scope.listSearch = '';
                     }
-                    scope.filteredData = scope.origSortedData.slice(directoryEntry.index, directoryEntry.nextIndex);
+                    scope.filteredData = scope.origListData.slice(directoryEntry.index, directoryEntry.nextIndex);
                     scope.selectedDirectoryEntry = directoryEntry;
                     scope.filtered = true;
                     scope.searchFilter = '';
@@ -2372,29 +2454,46 @@ angular.module('ep.menu.builder', [
          */
         function getDirectory(listData, groupBy){
             var allKey = '__all__';
+            //keys - group keys that have been processed
             var keys = {};
+            var groupKey;
+            var groupDisplay;
+            //directory that is returned
             var dir = {};
+            var dirKey;
+
             var prevItem;
             var totalItems = listData.length;
 
-            dir[allKey] = { isAll: true, letter: '*', key: allKey, index: 0, prevIndex: 0, nextIndex: totalItems, hidden: true };
+            dir[allKey] = {
+                isAll: true, letter: '*', key: allKey, index: 0,
+                prevIndex: 0, nextIndex: totalItems, hidden: true
+            };
             for (var i = 0; i < totalItems; i++) {
-                var key = listData[i][groupBy];
-                var ch = (key || '').substr(0, 1).toUpperCase();
-                if (ch) {
-                    if (ch < 'A') {
-                        ch = '#';
-                    } else if (ch > 'Z') {
-                        ch = '@';
+                dirKey = listData[i][groupBy];
+                groupKey = (dirKey || '').substr(0, 1).toUpperCase();
+                if (groupKey) {
+                    groupDisplay = groupKey;
+                    if (groupKey < 'A') {
+                        groupKey = '#';
+                    } else if (groupKey > 'Z') {
+                        groupKey = '@';
+                        groupDisplay = '@';
                     }
-                    if (!keys[ch]) {
-                        keys[ch] = true;
+                    if (!keys[groupKey]) {
+                        keys[groupKey] = true;
                         var prevIndex = prevItem ? prevItem.index : 0;
                         if (prevItem) {
                             prevItem.nextIndex = i;
                         }
-                        var curItem = { letter: ch, key: key, index: i, prevIndex: prevIndex, nextIndex: totalItems, previous: prevItem, next: undefined };
-                        dir[key] = prevItem = curItem;
+                        var curItem = {
+                            letter: groupKey, groupDisplay: groupDisplay,
+                            dirKey: dirKey, index: i,
+                            prevIndex: prevIndex, nextIndex: totalItems,
+                            previous: prevItem, next: undefined,
+                            data: listData[i]
+                        };
+                        dir[dirKey] = prevItem = curItem;
                         if (prevItem) {
                             prevItem.next = curItem;
                         }
@@ -2403,9 +2502,63 @@ angular.module('ep.menu.builder', [
             }
             return dir;
         }
+
+        function getDirectoryByDate(listData, groupBy) {
+            //keys - group keys that have been processed
+            var keys = {};
+            var groupKey;
+            var groupDisplay;
+            //directory that is returned
+            var dir = {};
+            var dirKey;
+            var prevItem;
+
+            var totalItems = listData.length;
+
+            for (var i = 0; i < totalItems; i++) {
+                dirKey = listData[i][groupBy];
+                groupKey = (dirKey || '').substr(0, 7);
+                groupDisplay = groupKey;
+                if (groupKey.length === 0) {
+                    groupKey = '@';
+                }
+                if (!keys[groupKey]) {
+                    keys[groupKey] = true;
+                    var prevIndex = prevItem ? prevItem.index : 0;
+                    if (prevItem) {
+                        prevItem.nextIndex = i;
+                    }
+                    var year = '';
+                    var month = '';
+                    if (groupKey === '@') {
+                        groupDisplay = 'No Date';
+                        year = '0000';
+                        month = '00';
+                    } else {
+                        var fetchDate = groupKey.split('-');
+                        groupDisplay = fetchDate[1] + '-' + fetchDate[0];
+                        year = fetchDate[0];
+                        month = fetchDate[1];
+                    }
+                    var curItem = {
+                        letter: groupKey, groupDisplay: groupDisplay, dirKey: dirKey,
+                        year: year, month: month,
+                        index: i, prevIndex: prevIndex, nextIndex: totalItems,
+                        previous: prevItem, next: undefined, data: listData[i]
+                    };
+                    dir[dirKey] = prevItem = curItem;
+                    if (prevItem) {
+                        prevItem.next = curItem;
+                    }
+                }
+            }
+            return dir;
+        }
+
         return {
             getGroupedList: getGroupedList,
-            getDirectory: getDirectory
+            getDirectory: getDirectory,
+            getDirectoryByDate: getDirectoryByDate
         };
     }
 })();
@@ -2779,35 +2932,47 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.list/ep-list.html',
-    "<div class=ep-list-container><script id=listItemTemplate type=text/ng-template><div ng-if=\"directory[obj[groupBy]]\" class=\"ep-dir-divider ep-group-heading\"><b>{{directory[obj[groupBy]].letter}}</b></div>\r" +
+    "<div class=ep-list-container><script id=listItemTemplate type=text/ng-template><div ng-if=\"directory[obj[groupBy]] && directory[obj[groupBy]].data === obj\" class=\"ep-dir-divider ep-group-heading\"><b>{{directory[obj[groupBy]].groupDisplay}}</b></div>\r" +
     "\n" +
-    "        <div class=\"pull-right ep-list-arrow\" ng-if=\"arrow\" ng-class=\"{'ep-list-subtitle-arrow':subTitle && !additionalTitle, 'ep-list-maintitle-arrow': !subTitle && !additionalTitle, 'ep-list-additionalTitle-arrow': additionalTitle}\"><i class=\"ep-cicrm-right-chevron\"></i></div>\r" +
+    "        <div class=\"ep-list-item-content\">\r" +
     "\n" +
-    "        <div class=\"pull-right ep-margin-right-15 text-primary\" ng-if=\"selectMarkField && obj[selectMarkField] == selectMarkFieldValue\"\r" +
+    "            <div class=\"ep-list-item-text\">\r" +
     "\n" +
-    "            ng-class=\"{'ep-margin-top-10':subTitle && !additionalTitle, 'ep-margin-top-15': additionalTitle}\"><i class=\"fa fa-check\"></i></div>\r" +
+    "                <div class=\"ep-list-item-title\"> <strong class=\"ep-crm-text-ellipsis text-capitalize\">{{ obj[mainTitle] }}</strong></div>\r" +
     "\n" +
-    "        <div class=\"row mainTitle\">\r" +
+    "                <div ng-if=\"subTitle\" class=\"ep-list-item-sub-title\">{{formatSubtitle(subTitle, obj)}}</div>\r" +
     "\n" +
-    "            <div class=\"col-xs-7 col-sm-8 ep-crm-text-ellipsis\"><label class=\"list-details-title text-capitalize\"><strong>{{ obj[mainTitle] }}</strong></label></div>\r" +
+    "                <div ng-if=\"additionalTitle\" class=\"ep-list-item-additional-title\">{{formatAdditionalTitle(additionalTitle, obj)}}</div>\r" +
     "\n" +
-    "            <div class=\"col-xs-3 text-right ep-crm-text-ellipsis\">{{obj[id]}}</div>\r" +
+    "                <div ng-if=\"statuses\" class=\"ep-list-item-status\">\r" +
     "\n" +
-    "        </div>\r" +
+    "                    <div class=\"status-period ep-crm-text-ellipsis\">{{formatStatusPeriod(statuses, obj)}}</div>\r" +
     "\n" +
-    "        <div ng-if=\"subTitle\" class=\"subTitle ep-crm-text-ellipsis\"><span>{{formatSubtitle(subTitle, obj)}}</span></div>\r" +
+    "                    <div class=\"status status-text ep-crm-text-ellipsis{{getStatusTextClass(statuses, obj)}}\">{{formatStatusText(statuses, obj)}}</div>\r" +
     "\n" +
-    "        <div ng-if=\"additionalTitle\" class=\"additionalTitle ep-crm-text-ellipsis\">{{formatAdditionalTitle(additionalTitle, obj)}}</div>\r" +
+    "                    <div class=\"status-source text-success ep-crm-text-ellipsis\">{{formatStatusSource(statuses, obj)}}</div>\r" +
     "\n" +
-    "        <div ng-if=\"statuses\" class=\"statuses\">\r" +
+    "                </div>\r" +
     "\n" +
-    "            <div class=\"status-period ep-crm-text-ellipsis\">{{formatStatusPeriod(statuses, obj)}}</div>\r" +
+    "            </div>\r" +
     "\n" +
-    "            <div class=\"status status-text ep-crm-text-ellipsis {{getStatusTextClass(statuses, obj)}}\">{{formatStatusText(statuses, obj)}}</div>\r" +
+    "            <div class=\"ep-list-item-details\">\r" +
     "\n" +
-    "            <div class=\"status-source text-success ep-crm-text-ellipsis\">{{formatStatusSource(statuses, obj)}}</div>\r" +
+    "                <span class=\"ep-crm-text-ellipsis\">{{obj[id]}}</span>\r" +
     "\n" +
-    "        </div></script><!--Calling filter list component for search option--><ep-filter-list search-by=listSearch count=items.count></ep-filter-list><!--Header as optional--><div class=ep-list-sub-header ng-if=\"subHeader == 'true'\"><label ng-click=filter()>Filter</label><label ng-click=sort()>Sort</label><span class=\"pull-right ep-pad-right-20 text-primary\" ng-hide=\"hideAdd == 'true'\" ng-click=add()><i class=ep-cicrm-add aria-hidden=true></i></span></div><!-- Alphabet Selector --><div class=ep-list-directory ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=showDirectory><div class=ep-list-directory-item ng-class=\"{ active: selectedDirectoryEntry.letter === dir.letter }\" ng-repeat=\"(id,dir) in directory | limitTo:40\"><a ng-click=goToDirectory(dir)>{{dir.letter}}</a></div></div><div ng-if=useVirtualScrolling><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=!filtered id={{localId}} vs-repeat vs-excess={{renderBufferSize}} vs-options=\"{ latch: true }\"><li ng-repeat=\"obj in listData track by $index\" ng-click=handler(obj) class=\"ep-list-item ep-pad-top-10 ep-pad-bottom-15 ep-pad-left-10\"><ng-include src=\"'listItemTemplate'\"></ng-include></li></ul><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=filtered id={{localId}} vs-repeat vs-excess={{renderBufferSize}} vs-options=\"{ latch: true }\"><li ng-repeat=\"obj in (filterResult = (filteredData | filter:filterByName))\" ng-click=handler(obj) class=\"ep-list-item ep-pad-top-10 ep-pad-bottom-15 ep-pad-left-10\"><ng-include src=\"'listItemTemplate'\"></ng-include></li></ul></div><div ng-if=!useVirtualScrolling><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=!filtered id={{localId}}><li ng-repeat=\"obj in listData track by $index\" ng-click=handler(obj) class=\"ep-list-item ep-pad-top-10 ep-pad-bottom-15 ep-pad-left-10\"><ng-include src=\"'listItemTemplate'\"></ng-include></li></ul><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=filtered id={{localId}}><li ng-repeat=\"obj in filteredData | filter:filterByName as filtered\" ng-click=handler(obj) class=\"ep-list-item ep-pad-top-10 ep-pad-bottom-15 ep-pad-left-10\"><ng-include src=\"'listItemTemplate'\"></ng-include></li></ul></div></div>"
+    "            </div>\r" +
+    "\n" +
+    "            <div class=\"ep-list-item-decorator\">\r" +
+    "\n" +
+    "                <div class=\"ep-list-arrow\" ng-if=\"arrow\"><i class=\"ep-cicrm-right-chevron\"></i></div>\r" +
+    "\n" +
+    "                <div class=\"ep-margin-right-15 text-primary\" ng-if=\"selectMarkField && obj[selectMarkField] == selectMarkFieldValue\"\r" +
+    "\n" +
+    "                    ng-class=\"{'ep-margin-top-10':subTitle && !additionalTitle, 'ep-margin-top-15': additionalTitle}\"><i class=\"fa fa-check\"></i></div>\r" +
+    "\n" +
+    "            </div>\r" +
+    "\n" +
+    "        </div></script><!--Calling filter list component for search option--><ep-filter-list search-by=listSearch count=items.count search-prompt=searchPrompt></ep-filter-list><!--Header as optional--><div class=ep-list-sub-header ng-if=\"subHeader == 'true'\"><label ng-click=filter()>Filter</label><label ng-click=sort()>Sort</label><span class=\"pull-right ep-pad-right-20 text-primary\" ng-hide=\"hideAdd == 'true'\" ng-click=add()><i class=ep-cicrm-add aria-hidden=true></i></span></div><!-- Alphabet Selector --><div class=ep-list-directory ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=showDirectory><div class=ep-list-directory-item ng-class=\"{ active: selectedDirectoryEntry.letter === dir.letter }\" ng-repeat=\"(id,dir) in directory | limitTo:40\"><a ng-click=goToDirectory(dir)>{{dir.letter}}</a></div></div><div ng-if=useVirtualScrolling><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=!filtered id={{localId}} vs-repeat={{vsItemSize}} vs-excess={{vsRenderBufferSize}} vs-options=\"{ latch: {{vsLatch}} }\"><li ng-repeat=\"obj in listData track by $index\" ng-click=handler(obj) class=\"ep-list-item ep-pad-top-10 ep-pad-bottom-10 ep-pad-left-10\" ng-include=\"'listItemTemplate'\"></li></ul><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=filtered id={{localId}} vs-repeat={{vsItemSize}} vs-excess={{vsRenderBufferSize}} vs-options=\"{ latch: {{vsLatch}} }\"><li ng-repeat=\"obj in (filterResult = (filteredData | filter:filterByName))\" ng-click=handler(obj) class=\"ep-list-item ep-pad-top-10 ep-pad-bottom-10 ep-pad-left-10\" ng-include=\"'listItemTemplate'\"></li></ul></div><div ng-if=!useVirtualScrolling><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=!filtered id={{localId}}><li ng-repeat=\"obj in listData track by $index\" ng-click=handler(obj) class=\"ep-list-item ep-pad-top-10 ep-pad-bottom-10 ep-pad-left-10\" ng-include=\"'listItemTemplate'\"></li></ul><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=filtered id={{localId}}><li ng-repeat=\"obj in filteredData | filter:filterByName as filtered\" ng-click=handler(obj) class=\"ep-list-item ep-pad-top-10 ep-pad-bottom-10 ep-pad-left-10\" ng-include=\"'listItemTemplate'\"></li></ul></div></div>"
   );
 
 
