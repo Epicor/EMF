@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.161 built: 12-04-2017
+ * version:1.0.12-dev.162 built: 12-04-2017
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -1813,18 +1813,8 @@ img.ep-background-img-medium {
   margin-right: 12%;
 }
 .ep-list-arrow {
-  padding-top: 5px;
-  padding-right: 10px !important;
+  padding: 5px 10px 0 0;
   margin-right: 30px;
-}
-.ep-list-subtitle-arrow {
-  margin-top: -25px !important;
-}
-.ep-list-maintitle-arrow {
-  margin-top: -40px;
-}
-.ep-list-additionalTitle-arrow {
-  margin-top: 10px !important;
 }
 .ep-list-subtitle {
   margin-top: 15px;
