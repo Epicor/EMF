@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.164 built: 13-04-2017
+ * version:1.0.12-dev.165 built: 13-04-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.164","built":"2017-04-13"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.165","built":"2017-04-13"};
 
 (function() {
     'use strict';
@@ -274,6 +274,9 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
         epUtilsService.copyProperties($scope.options, $scope.settings);
 
         $scope.loginUser = function() {
+            $scope.status = '';
+            $scope.hasError = false;
+
             if ($scope.options.fnOnLogin) {
                 var result = $scope.options.fnOnLogin($scope.settings);
                 if (result && result.hasError) {
@@ -347,8 +350,17 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
             }).error(function(data, status, headers, config) {
                 var restServer = (config !== undefined && config !== null) ? config.url : '';
                 $scope.hasError = true;
-                $scope.status = (status === 401 ?
-                    'Please review the user or password.' : 'We couldn\'t connect to the server. Please review it.');
+                switch (status) {
+                    case 401:
+                        $scope.status = 'Please review the user or password.';
+                        break;
+                    case 400:
+                        $scope.status = 'Possibly token authentication is not enabled on the E10 server. ' +
+                            'Refer to the Epicor Administration Console.';
+                        break;
+                    default:
+                        $scope.status = 'We couldn\'t connect to the server. Please review it.';
+                }
             });
             epModalDialogService.hide();
         };
@@ -4254,7 +4266,9 @@ angular.module('ep.binding').
                 epModalDialogService.showProgress({
                     title: options.title || 'Retrieving BAQ data',
                     message: options.message || 'retrieving data from server...',
-                    showProgress: true
+                    showProgress: true,
+                    showLoading: options.showLoading || false,
+                    containerClass: options.containerClass || ''
                 });
             }
 
@@ -4349,7 +4363,9 @@ angular.module('ep.binding').
                     epModalDialogService.showProgress({
                         title: options.title || 'Updating data',
                         message: options.message || 'sending data to server...',
-                        showProgress: true
+                        showProgress: true,
+                        showLoading: options.showLoading || false,
+                        containerClass: options.containerClass || ''
                     });
                 }
 
@@ -4433,7 +4449,9 @@ angular.module('ep.binding').
                 epModalDialogService.showProgress({
                     title: 'Retrieving BAQ data',
                     message: 'getting new record from server...',
-                    showProgress: true
+                    showProgress: true,
+                    showLoading: options.showLoading || false,
+                    containerClass: options.containerClass || ''
                 });
             }
 

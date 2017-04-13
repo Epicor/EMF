@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.164 built: 13-04-2017
+ * version:1.0.12-dev.165 built: 13-04-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.164","built":"2017-04-13"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.165","built":"2017-04-13"};
 
 (function() {
     'use strict';
@@ -2457,14 +2457,29 @@ angular.module('ep.menu.builder', [
          * To group the list based on groupBy Value
          */
         function getDirectory(listData, groupBy){
+
+            // A comparison function to tell us if we're still iterating through the same section of the data
+            var compare = function(directoryLetter, itemFirstLetter){
+                if(directoryLetter === '#'){
+                    return itemFirstLetter < 'A';
+                }
+                if (directoryLetter === '@'){
+                    return true;
+                } 
+                return directoryLetter === itemFirstLetter;
+            }
+
+            var alphabet = [ '#', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+                             'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '@'];
+
             var allKey = '__all__';
             //keys - group keys that have been processed
+
             var keys = {};
             var groupKey;
             var groupDisplay;
             //directory that is returned
             var dir = {};
-            var dirKey;
 
             var prevItem;
             var totalItems = listData.length;
@@ -2473,37 +2488,43 @@ angular.module('ep.menu.builder', [
                 isAll: true, letter: '*', key: allKey, index: 0,
                 prevIndex: 0, nextIndex: totalItems, hidden: true
             };
-            for (var i = 0; i < totalItems; i++) {
-                dirKey = listData[i][groupBy];
-                groupKey = (dirKey || '').substr(0, 1).toUpperCase();
-                if (groupKey) {
-                    groupDisplay = groupKey;
-                    if (groupKey < 'A') {
-                        groupKey = '#';
-                    } else if (groupKey > 'Z') {
-                        groupKey = '@';
-                        groupDisplay = '@';
-                    }
-                    if (!keys[groupKey]) {
-                        keys[groupKey] = true;
-                        var prevIndex = prevItem ? prevItem.index : 0;
-                        if (prevItem) {
-                            prevItem.nextIndex = i;
-                        }
-                        var curItem = {
-                            letter: groupKey, groupDisplay: groupDisplay,
-                            dirKey: dirKey, index: i,
-                            prevIndex: prevIndex, nextIndex: totalItems,
-                            previous: prevItem, next: undefined,
-                            data: listData[i]
-                        };
-                        dir[dirKey] = prevItem = curItem;
-                        if (prevItem) {
-                            prevItem.next = curItem;
+            
+            var itemIndex = 0;
+            var previousItem;
+            alphabet.forEach(function(letter){
+                var startIndex = itemIndex;
+                var data = listData[itemIndex];
+
+                // create an item for each letter in the directory
+                var currentItem = {
+                    letter: letter,
+                    index: startIndex,
+                    prevIndex: startIndex,
+                    previous: previousItem,
+                }
+
+                if(previousItem){
+                    //Set up double link
+                    currentItem.prevIndex = previousItem.index;
+                    previousItem.next = currentItem;
+                }
+                // If we've run out of data, we need to skip the item iteration portion
+                if(data){
+                    var title = data[groupBy];
+                    // Iterate through records until we no longer match first letters
+                    while(itemIndex < listData.length && compare(letter, title[0].toUpperCase())){
+                        currentItem.data = currentItem.data || data;
+                        itemIndex++;
+                        if(itemIndex < listData.length){
+                            data = listData[itemIndex];
+                            title = data[groupBy];
                         }
                     }
                 }
-            }
+                currentItem.nextIndex = itemIndex;
+                dir[letter] = previousItem = currentItem;
+            });
+    
             return dir;
         }
 
