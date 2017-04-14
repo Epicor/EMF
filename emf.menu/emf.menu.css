@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.165 built: 13-04-2017
+ * version:1.0.12-dev.166 built: 13-04-2017
 */
 .ep-mlm-container {
   position: relative;
@@ -602,12 +602,20 @@
   height: calc(100vh - 80px);
   z-index: 10;
 }
+@media (max-height: 680px) {
+  .ep-list-directory {
+    font-size: 10px;
+  }
+}
 .ep-list-directory.ep-header-visible {
   top: 90px;
   height: calc(100vh - 160px);
 }
 .ep-list-directory-item {
   flex: 1 100%;
+}
+.ep-list-directory-item .ep-list-directory-item-enabled {
+  cursor: pointer;
 }
 .ep-list-directory a {
   text-decoration: none !important;
