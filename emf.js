@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.168 built: 14-04-2017
+ * version:1.0.12-dev.169 built: 14-04-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.168","built":"2017-04-14"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.169","built":"2017-04-14"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -18622,12 +18622,17 @@ angular.module('ep.menu.builder').
             var features = epFeatureDetectionService.getFeatures();
             // init the scope properties
             $scope.state = {
-                cancelIconEnabled: (features.platform.browser.name !== 'Microsoft Internet Explorer') &&
-                                   (features.platform.browser.name !== 'Netscape'),
+                cancelIconEnabled: true,
                 searchTerm: '',
                 searchType: 'item',
                 lastSearchTerm: ''
             };
+            // If the app is running in FF or IE, then we need to hide the search cancel icon
+            if(features.platform.browser && 
+                (features.platform.browser.name === 'Microsoft Internet Explorer' ||
+                 features.platform.browser.name === 'Netscape')) {
+                $scope.state.cancelIconEnabled = false;
+            }
             $scope.searchResults = [];  //Current search results
             $scope.currentItems = [];   //Current items to display (can be menu or search results)
             $scope.multiLevelMenuHelper = null;
