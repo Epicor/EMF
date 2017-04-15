@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.170 built: 14-04-2017
+ * version:1.0.12-dev.171 built: 14-04-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.170","built":"2017-04-14"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.171","built":"2017-04-14"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -3153,10 +3153,10 @@ angular.module('ep.binding').
         function logBindingEvents(onOff) {
             if (onOff && !logWatches.onViewRowChanged) {
                 logWatches.onViewRowChanged = $rootScope.$on('EP_BINDING_COMMIT', function(event, data) {
-                    $log.warn('[EP_BINDING_COMMIT] ViewId:' + data.viewId);
+                    $log.debug('[EP_BINDING_COMMIT] ViewId:' + data.viewId);
                 });
                 logWatches.onViewRowChanged = $rootScope.$on('EP_BINDING_ROLLBACK', function(event, data) {
-                    $log.warn('[EP_BINDING_ROLLBACK] ViewId:' + data.viewId);
+                    $log.debug('[EP_BINDING_ROLLBACK] ViewId:' + data.viewId);
                 });
 
                 logWatches.onViewRowChanged = $rootScope.$on('EP_BINDING_VIEW_ADDED', function(event, data) {
@@ -3164,22 +3164,22 @@ angular.module('ep.binding').
                     var info = 'ViewId:' + data.viewId + ';Row:' + v.row() +
                         ';Count:' + (v.data() ? v.data().length : 0) +
                         ';Action:' + data.action;
-                    $log.warn('[EP_BINDING_VIEW_ADDED] ' + info);
+                    $log.debug('[EP_BINDING_VIEW_ADDED] ' + info);
                 });
                 logWatches.onViewRowDeleted = $rootScope.$on('EP_BINDING_VIEW_ROW_ADDED', function(event, data) {
                     var v = epTransactionFactory.current().view(data.viewId);
                     var info = 'ViewId:' + data.viewId + ';Row:' + v.data.row +
                         ';Count:' + (v.data() ? v.data().length : 0);
-                    $log.warn('[EP_BINDING_VIEW_ROW_ADDED] ' + info);
+                    $log.debug('[EP_BINDING_VIEW_ROW_ADDED] ' + info);
                 });
                 logWatches.onViewRowDeleted = $rootScope.$on('EP_BINDING_VIEW_ROW_DELETED', function(event, data) {
                     var v = epTransactionFactory.current().view(data.viewId);
                     var info = 'ViewId:' + data.viewId + ';Row:' + v.data.row +
                         ';Count:' + (v.data() ? v.data().length : 0);
-                    $log.warn('[EP_BINDING_VIEW_ROW_DELETED] ' + info);
+                    $log.debug('[EP_BINDING_VIEW_ROW_DELETED] ' + info);
                 });
                 logWatches.onViewRowChanged = $rootScope.$on('EP_BINDING_VIEW_ROW_CHANGED', function(event, data) {
-                    $log.warn('[EP_BINDING_VIEW_ROW_CHANGED] ViewId:' + data.viewId + ';Row:' + data.view.row() +
+                    $log.debug('[EP_BINDING_VIEW_ROW_CHANGED] ViewId:' + data.viewId + ';Row:' + data.view.row() +
                         ';PrevRow:' + data.prevRow);
                 });
                 logWatches.onViewRowChanged = $rootScope.$on('EP_BINDING_COLUMN_VALUE_CHANGED', function(event, data) {
@@ -3191,9 +3191,9 @@ angular.module('ep.binding').
                         ';New value:' + data.newValue +
                         ';isDirty:' + v.isDirty() + ';hasModified:' + v.hasModified() +
                         ';Modified rows:' + Object.keys(vstate.modifiedRows).length;
-                    $log.warn('[EP_BINDING_COLUMN_VALUE_CHANGED] ' + info);
+                    $log.debug('[EP_BINDING_COLUMN_VALUE_CHANGED] ' + info);
                     angular.forEach(vstate.modifiedRows, function(idx) {
-                        $log.info('  row:' + idx + ';state:' + vstate.modified[idx].state +
+                        $log.debug('  row:' + idx + ';state:' + vstate.modified[idx].state +
                             ';columns:' + JSON.stringify(vstate.modified[idx].columns));
                     })
                 });
@@ -5296,12 +5296,12 @@ app.directive('epCardTitle',
 (function() {
     'use strict';
 
-    epConsoleService.$inject = ['$log', 'epUtilsService'];
+    epConsoleService.$inject = ['$log', 'epUtilsService', 'epConsoleConfig'];
     angular.module('ep.console').
     service('epConsoleService', epConsoleService);
 
     /*@ngInject*/
-    function epConsoleService($log, epUtilsService) {
+    function epConsoleService($log, epUtilsService, epConsoleConfig) {
 
         /**
          * @private
@@ -5309,6 +5309,14 @@ app.directive('epCardTitle',
          * the array for storing all log messages
          */
         var logMessages = [];
+
+
+        /**
+         * @private
+         * @description
+         * max messages to store
+         */
+        var maxCount = epConsoleConfig.maxCount || 1000;
 
         /**
          * @ngdoc method
@@ -5351,6 +5359,11 @@ app.directive('epCardTitle',
                 var modifiedArguments = [].slice.call(arguments);
                 var timestamp = moment().format();
                 loggingFunc.apply(null, modifiedArguments);
+                
+                if (logMessages.length > maxCount + 100) {
+                    //prevent excess messages
+                    logMessages.splice(0, 100);
+                }
                 logMessages.push({message: modifiedArguments[0], type: type, timestamp: timestamp, context: context});
             };
         }
@@ -27805,29 +27818,91 @@ angular.module('ep.signature').directive('epSignature',
 'use strict';
 (function() {
     angular.module('ep.token')
-        .service('epErpRestService', ['$http', '$resource', 'epTokenService', function($http, $resource, epTokenService) {
+        .service('epErpRestService', ['$log', '$http', '$resource', 'epTokenService', function($log, $http, $resource, epTokenService) {
             var serverUrl = '';
+            var isLogOn = true;
+
+            function createLogEntry(message, source, url, query, callSettings) {
+                var logEntry = {
+                    message: message,
+                    kind: 'rest',
+                    details: {
+                        source: source,
+                        start: new Date(),
+                        url: url,
+                        query: query,
+                        callSettings: callSettings
+                    }
+                };
+                return logEntry;
+            }
+
+            function submitLogEntry(logEntry, merge, response) {
+                if (!isLogOn || !logEntry) {
+                    return;
+                }
+                var timeEnd = new Date();
+                var dif = timeEnd.getTime() - logEntry.details.start.getTime();
+                logEntry.details.time = Number((dif / 1000).toFixed(2));
+                logEntry.details = angular.merge(logEntry.details, merge);
+                $log.debug(logEntry);
+            }
+
+            function submitLogError(logEntry, merge, response) {
+                var msg = getErrorMsg(response);
+                if (msg) {
+                    logEntry.message = msg;
+                }
+                var timeEnd = new Date();
+                var dif = timeEnd.getTime() - logEntry.details.start.getTime();
+                logEntry.details.time = Number((dif / 1000).toFixed(2));
+                if (merge) {
+                    logEntry.details = angular.merge(logEntry.details, merge);
+                }
+                $log.error(logEntry);
+            }
+
+            function getErrorMsg(response) {
+                var msg = response.ErrorMessage || '';
+                if (!msg && response['odata.error']) {
+                    msg = response['odata.error'].message.value;
+                }
+                if (!msg && response.statusText) {
+                    msg = response.statusText;
+                }
+                if (!msg && response.message) {
+                    msg = response.message;
+                }
+                if (!msg && response.data && angular.isString(response.data)) {
+                    msg = response.data;
+                }
+                return msg;
+            }
 
             function call(method, path, query, callSettings) {
                 var tkn = epTokenService.getToken();
                 if (!tkn) {
                     return;
                 }
-                var url = serverUrl + (path ? path : '');
+
+                var sPath = (path ? path : '');
+                var url = serverUrl + sPath;
                 if (path) {
-                    var p = path.toLowerCase();
+                    var p = sPath.toLowerCase();
                     if (p.indexOf('http') === 0) {
                         //ability to override entire url
-                        url = path;
+                        url = sPath;
                     } else if (p.indexOf('/api/swagger') === 0) {
                         //fetch swagger metada
-                        url = tkn.user.serverUrl + path;
+                        url = tkn.user.serverUrl + sPath;
                     }
                 }
 
                 var sCallSettings = JSON.stringify(callSettings || {});
 
-                return $resource(url, query, {
+                var logEntry = createLogEntry('REST CALL: ' + sPath, 'ep-rest-service (get)', url, query, callSettings);
+
+                var ret = $resource(url, query, {
                     get: {
                         method: 'GET', headers: {
                             'Authorization': 'Bearer ' + tkn.token.AccessToken,
@@ -27836,6 +27911,16 @@ angular.module('ep.signature').directive('epSignature',
                         }
                     }
                 });
+
+                var promise = ret.get().$promise;
+                promise.then(function(data) {
+                    submitLogEntry(logEntry, {
+                        numRecords: (data && data.value) ? data.value.length : 'unknown'
+                    });
+                }, function(response) {
+                    submitLogError(logEntry, null, response);
+                });
+                return ret;
             }
 
             function postCall(method, svc, data, callSettings) {
@@ -27849,9 +27934,13 @@ angular.module('ep.signature').directive('epSignature',
                     d = JSON.stringify(data);
                 }
 
+                var url = serverUrl + svc;
+
                 var sCallSettings = JSON.stringify(callSettings || {});
 
-                return $http({
+                var logEntry = createLogEntry('REST CALL: ' + svc, 'ep-rest-service (post)', url, d, callSettings);
+
+                var promise = $http({
                     method: 'POST',
                     dataType: 'json',
                     data: d,
@@ -27861,8 +27950,18 @@ angular.module('ep.signature').directive('epSignature',
                         'Accept': 'application/json',
                         'CallSettings': sCallSettings
                     },
-                    url: serverUrl + svc,
+                    url: url,
                 });
+
+                promise.then(function(data) {
+                    submitLogEntry(logEntry, {
+                        numRecords: (data && data.value) ? data.value.length : 'unknown'
+                    });
+                }, function(response) {
+                    submitLogError(logEntry, null, response);
+                });
+
+                return promise;
             }
 
             function deleteCall(path, callSettings) {
@@ -27870,10 +27969,13 @@ angular.module('ep.signature').directive('epSignature',
                 if (!tkn) {
                     return;
                 }
+                var url = serverUrl + path;
 
                 var sCallSettings = JSON.stringify(callSettings || {});
 
-                return $http({
+                var logEntry = createLogEntry('REST CALL: ' + path, 'ep-rest-service (delete)', url, data, callSettings);
+
+                var promise = $http({
                     method: 'DELETE',
                     dataType: 'json',
                     headers: {
@@ -27882,8 +27984,18 @@ angular.module('ep.signature').directive('epSignature',
                         'Accept': 'application/json',
                         'CallSettings': sCallSettings
                     },
-                    url: serverUrl + path,
+                    url: url,
                 });
+
+                promise.then(function(data) {
+                    submitLogEntry(logEntry, {
+                        numRecords: (data && data.value) ? data.value.length : 'unknown'
+                    });
+                }, function(response) {
+                    submitLogError(logEntry, null, response);
+                });
+
+                return promise;
             }
 
             function patch(svc, data, callSettings) {
@@ -27898,9 +28010,13 @@ angular.module('ep.signature').directive('epSignature',
                     //data = data.replace(/,(?=[^,]*$)/, '');
                 }
 
+                var url = serverUrl + svc;
+
                 var sCallSettings = JSON.stringify(callSettings || {});
 
-                return $http({
+                var logEntry = createLogEntry('REST CALL: ' + svc, 'ep-rest-service (patch)', url, d, callSettings);
+
+                var promise = $http({
                     method: 'PATCH',
                     dataType: 'json',
                     data: d,
@@ -27910,35 +28026,60 @@ angular.module('ep.signature').directive('epSignature',
                         'Accept': 'application/json',
                         'CallSettings': sCallSettings
                     },
-                    url: serverUrl + svc,
-                }).success(function(response) {
-                    console.log('updated ' + svc + ' ' + response);
-                }).error(function(response) {
-                    console.log(response);
+                    url: url,
+                });
+
+                promise.then(function(data) {
+                    submitLogEntry(logEntry, {
+                        numRecords: (data && data.value) ? data.value.length : 'unknown'
+                    });
+                }, function(response) {
+                    submitLogError(logEntry, null, response);
                     return false;
                 });
+                return promise;
             }
 
-            function getXML(svc) {
+            function getXML(svc, callSettings) {
                 var tkn = epTokenService.getToken();
                 if (!tkn) {
                     return;
                 }
+                var url = serverUrl + svc;
 
-                return $http({
+                var sCallSettings = JSON.stringify(callSettings || {});
+
+                var logEntry = createLogEntry('REST CALL: ' + svc, 'ep-rest-service (get-xml)', url, {}, callSettings);
+
+                var promise = $http({
                     method: 'GET',
                     headers: {
                         'Authorization': 'Bearer ' + tkn.token.AccessToken,
                         'Content-Type': 'application/xml; charset=utf-8',
-                        'Accept': 'application/xml'
+                        'Accept': 'application/xml',
+                        'CallSettings': sCallSettings
                     },
-                    url: serverUrl + svc,
+                    url: url,
                 });
+
+                promise.then(function(data) {
+                    submitLogEntry(logEntry, {
+                        numRecords: (data && data.value) ? data.value.length : 'unknown'
+                    });
+                }, function(response) {
+                    submitLogError(logEntry, null, response);
+                    return false;
+                });
+                return promise;
+
             }
 
             return {
                 setUrl: function(url) {
                     serverUrl = url;
+                },
+                enableLogs: function(onOff) {
+                    isLogOn = onOff;
                 },
                 get: function(path, query, callSettings) {
                     return call('GET', path, query, callSettings).get();

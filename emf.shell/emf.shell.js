@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.170 built: 14-04-2017
+ * version:1.0.12-dev.171 built: 14-04-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.12-dev.170","built":"2017-04-14"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.12-dev.171","built":"2017-04-14"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -2952,12 +2952,12 @@ function() {
 (function() {
     'use strict';
 
-    epConsoleService.$inject = ['$log', 'epUtilsService'];
+    epConsoleService.$inject = ['$log', 'epUtilsService', 'epConsoleConfig'];
     angular.module('ep.console').
     service('epConsoleService', epConsoleService);
 
     /*@ngInject*/
-    function epConsoleService($log, epUtilsService) {
+    function epConsoleService($log, epUtilsService, epConsoleConfig) {
 
         /**
          * @private
@@ -2965,6 +2965,14 @@ function() {
          * the array for storing all log messages
          */
         var logMessages = [];
+
+
+        /**
+         * @private
+         * @description
+         * max messages to store
+         */
+        var maxCount = epConsoleConfig.maxCount || 1000;
 
         /**
          * @ngdoc method
@@ -3007,6 +3015,11 @@ function() {
                 var modifiedArguments = [].slice.call(arguments);
                 var timestamp = moment().format();
                 loggingFunc.apply(null, modifiedArguments);
+                
+                if (logMessages.length > maxCount + 100) {
+                    //prevent excess messages
+                    logMessages.splice(0, 100);
+                }
                 logMessages.push({message: modifiedArguments[0], type: type, timestamp: timestamp, context: context});
             };
         }
