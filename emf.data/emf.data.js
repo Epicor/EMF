@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.180 built: 16-04-2017
+ * version:1.0.12-dev.181 built: 17-04-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.180","built":"2017-04-16"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.181","built":"2017-04-17"};
 
 (function() {
     'use strict';
@@ -4396,7 +4396,7 @@ angular.module('ep.binding').
                     message: options.message || 'retrieving data from server...',
                     showProgress: true,
                     showLoading: options.showLoading || false,
-                    containerClass: options.containerClass || ''
+                    containerClass: options.containerClass || 'bg-primary'
                 });
             }
 
@@ -4493,7 +4493,7 @@ angular.module('ep.binding').
                         message: options.message || 'sending data to server...',
                         showProgress: true,
                         showLoading: options.showLoading || false,
-                        containerClass: options.containerClass || ''
+                        containerClass: options.containerClass || 'bg-primary'
                     });
                 }
 
@@ -4579,7 +4579,7 @@ angular.module('ep.binding').
                     message: 'getting new record from server...',
                     showProgress: true,
                     showLoading: options.showLoading || false,
-                    containerClass: options.containerClass || ''
+                    containerClass: options.containerClass || 'bg-primary'
                 });
             }
 
