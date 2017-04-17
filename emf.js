@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.181 built: 17-04-2017
+ * version:1.0.12-dev.182 built: 17-04-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.181","built":"2017-04-17"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.182","built":"2017-04-17"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -30013,6 +30013,12 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
     "\n" +
     "            <div ng-if=\"additionalTitle\" class=\"ep-list-item-additional-title\">{{formatAdditionalTitle(additionalTitle, obj)}}</div>\r" +
     "\n" +
+    "        </div>\r" +
+    "\n" +
+    "        <div class=\"ep-list-item-details\">\r" +
+    "\n" +
+    "            <span class=\"ep-crm-text-ellipsis\">{{obj[id]}}</span>\r" +
+    "\n" +
     "            <div ng-if=\"statuses\" class=\"ep-list-item-status\">\r" +
     "\n" +
     "                <div class=\"status-period ep-crm-text-ellipsis\">{{formatStatusPeriod(statuses, obj)}}</div>\r" +
@@ -30022,12 +30028,6 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
     "                <div class=\"status-source text-success ep-crm-text-ellipsis\">{{formatStatusSource(statuses, obj)}}</div>\r" +
     "\n" +
     "            </div>\r" +
-    "\n" +
-    "        </div>\r" +
-    "\n" +
-    "        <div class=\"ep-list-item-details\">\r" +
-    "\n" +
-    "            <span class=\"ep-crm-text-ellipsis\">{{obj[id]}}</span>\r" +
     "\n" +
     "        </div>\r" +
     "\n" +

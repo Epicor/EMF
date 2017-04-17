@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.181 built: 17-04-2017
+ * version:1.0.12-dev.182 built: 17-04-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.181","built":"2017-04-17"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.182","built":"2017-04-17"};
 
 (function() {
     'use strict';
@@ -2976,6 +2976,12 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
     "\n" +
     "            <div ng-if=\"additionalTitle\" class=\"ep-list-item-additional-title\">{{formatAdditionalTitle(additionalTitle, obj)}}</div>\r" +
     "\n" +
+    "        </div>\r" +
+    "\n" +
+    "        <div class=\"ep-list-item-details\">\r" +
+    "\n" +
+    "            <span class=\"ep-crm-text-ellipsis\">{{obj[id]}}</span>\r" +
+    "\n" +
     "            <div ng-if=\"statuses\" class=\"ep-list-item-status\">\r" +
     "\n" +
     "                <div class=\"status-period ep-crm-text-ellipsis\">{{formatStatusPeriod(statuses, obj)}}</div>\r" +
@@ -2985,12 +2991,6 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
     "                <div class=\"status-source text-success ep-crm-text-ellipsis\">{{formatStatusSource(statuses, obj)}}</div>\r" +
     "\n" +
     "            </div>\r" +
-    "\n" +
-    "        </div>\r" +
-    "\n" +
-    "        <div class=\"ep-list-item-details\">\r" +
-    "\n" +
-    "            <span class=\"ep-crm-text-ellipsis\">{{obj[id]}}</span>\r" +
     "\n" +
     "        </div>\r" +
     "\n" +
