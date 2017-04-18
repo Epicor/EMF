@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.182 built: 17-04-2017
+ * version:1.0.12-dev.183 built: 17-04-2017
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -335,6 +335,10 @@ div.ep-binding-label {
 }
 .ep-binding-label.ep-label-editor {
   padding-top: 8px;
+}
+/* the scroll up in a dialog had issues when z-index was set to 2*/
+.ep-binding .pagination > .active > a {
+  z-index: 0;
 }
 
 .card {

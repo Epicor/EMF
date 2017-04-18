@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.182 built: 17-04-2017
+ * version:1.0.12-dev.183 built: 17-04-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.182","built":"2017-04-17"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.183","built":"2017-04-17"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -2044,7 +2044,8 @@ angular.module('ep.binding').
             restrict: 'E',
             templateUrl: 'src/components/ep.binding/controls/ep-binding-pagination.html',
             scope: {
-                epBinding: '='
+                epBinding: '=',
+                maxSize: '='
             },
             link: function(scope) {
                 scope.state = {};
@@ -2058,7 +2059,7 @@ angular.module('ep.binding').
                         scope.record = view.dataRow();
                         scope.totalItems = view.data().length;
                         scope.currentPage = view.row() + 1;
-                        scope.maxSize = 10;
+                        scope.maxSize = scope.maxSize || 10;
                     } else {
                         scope.view = null;
                         scope.totalItems = 0;
