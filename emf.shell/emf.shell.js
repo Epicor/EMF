@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.185 built: 18-04-2017
+ * version:1.0.12-dev.186 built: 18-04-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.12-dev.185","built":"2017-04-18"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.12-dev.186","built":"2017-04-18"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -5274,14 +5274,22 @@ function() {
              * @param {object} viewScope - (optional) The scope to use when compiling the html as a template
              */
             function setBrandHTML(html, viewScope) {
-
-                shellState.brandHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;
-                shellState.viewSettings[shellState.mediaMode].brandHTML = shellState.brandHTML;
-
                 if (viewScope) {
                     $timeout(function() {
-                        $compile(angular.element('#apptitle').contents())(viewScope);
+                        var el = angular.element('#apptitle');
+                        if(shellState.titleScope){
+                            shellState.titleScope.$destroy();
+                            shellState.titleScope = null;
+                        }
+
+                        shellState.titleScope = viewScope.$new();
+                        var content = $compile(html)(shellState.titleScope);
+                        el.empty();
+                        el.append(angular.element(content));
                     });
+                } else {
+                    shellState.brandHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;
+                    shellState.viewSettings[shellState.mediaMode].brandHTML = shellState.brandHTML;
                 }
             }
 
@@ -5351,13 +5359,22 @@ function() {
              * @param {object} viewScope - (optional) The scope to use when compiling the html as a template
              */
             function setFooterHTML(html, viewScope) {
-                shellState.footerHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;
-                shellState.viewSettings[shellState.mediaMode].footerHTML = shellState.footerHTML;
-
                 if (viewScope) {
-                    $timeout(function() {
-                        $compile(angular.element('#footerElement').contents())(viewScope);
+                    $timeout(function(){
+                        var el = angular.element('#footerElement');
+                        if(shellState.footerScope){
+                            shellState.footerScope.$destroy();
+                            shellState.footerScope = null;
+                        }
+
+                        shellState.footerScope = viewScope.$new();
+                        var content = $compile(html)(shellState.footerScope);
+                        el.empty();
+                        el.append(angular.element(content));
                     });
+                } else {
+                    shellState.footerHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;
+                    shellState.viewSettings[shellState.mediaMode].footerHTML = shellState.footerHTML;
                 }
             }
 
