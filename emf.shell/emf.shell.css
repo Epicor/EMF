@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.184 built: 17-04-2017
+ * version:1.0.12-dev.185 built: 18-04-2017
 */
 .ep-hover-none {
   text-decoration: none !important;
@@ -892,7 +892,7 @@ a:focus {
   background: #fff;
 }
 .ep-modaldialog.ep-modaldialog-pane .ep-loading-dialog .ep-dlg-title {
-  font-size: 16px;
+  font-size: 18px;
   font-weight: bold;
   display: block;
   text-align: center;
@@ -900,12 +900,9 @@ a:focus {
   margin: 0 0 5px!important;
 }
 .ep-modaldialog.ep-modaldialog-pane .ep-loading-dialog .ep-dlg-icon {
-  font-size: 22px;
-  font-weight: bold;
-  display: block;
   text-align: center;
   color: #2b8aca;
-  margin: 0;
+  width: 100%;
 }
 .ep-modaldialog.ep-modaldialog-pane .ep-loading-dialog .ep-dlg-message {
   font-size: 14px;
