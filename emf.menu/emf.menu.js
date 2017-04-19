@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.192 built: 19-04-2017
+ * version:1.0.12-dev.193 built: 19-04-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.192","built":"2017-04-19"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.193","built":"2017-04-19"};
 
 (function() {
     'use strict';
@@ -2256,7 +2256,7 @@ angular.module('ep.menu.builder', [
 
                 scope.filterByName = function(obj) {
                     if (scope.searchFilter) {
-                        return (obj[scope.groupBy] || '').indexOf(scope.searchFilter) === 0;
+                        return (obj[scope.groupBy].toLowerCase() || '').indexOf(scope.searchFilter.toLowerCase()) === 0;
                     }
                     return true;
                 }
