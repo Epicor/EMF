@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.190 built: 19-04-2017
+ * version:1.0.12-dev.191 built: 19-04-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.190","built":"2017-04-19"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.191","built":"2017-04-19"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -16483,7 +16483,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
                 function applyTextSearchFilter(searchValue) {
                     if (searchValue) {
-                        var firstLetter = searchValue[0].toUpperCase();
+                        var firstLetter = epListService.getDirectoryKey(searchValue);
                         if (firstLetter !== scope.prevFirstLetter) {
                             scope.selectedDirectoryEntry = _.find(scope.directory, function(m) {
                                 return m.letter === firstLetter && m.disabled === false;
@@ -16650,6 +16650,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
     /*@ngInject*/
     function epListService($filter, $timeout) {
+        var alphabet = ['#', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
+                        'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '@'];
 
         /**
          * @ngdoc method
@@ -16668,6 +16670,22 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             });
         }
         
+        /**
+         * @ngdoc method
+         * @name getDirectoryKey
+         * @methodOf ep.list:epListService
+         * @public
+         * @param {String} value - value to use when getting the directory key
+         * @description
+         * Returns the directory key for a given string value.
+         */
+        function getDirectoryKey(value){
+            var key = value ? value.substr(0, 1).toUpperCase() : '';
+            if(key < 'A') { key = alphabet[0]; }
+            if(key > 'Z') { key = alphabet[alphabet.length -1]; }
+            return key;
+        }
+
         /**
          * @ngdoc method
          * @name getDirectory
@@ -16691,8 +16709,6 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 return directoryLetter === itemFirstLetter;
             }
 
-            var alphabet = [ '#', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
-                             'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '@'];
 
             var allKey = '__all__';
             //keys - group keys that have been processed
@@ -16731,14 +16747,13 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             });
 
             var previousItem;
-            var currentLetter = '#';
+            var currentLetter = '';
             var previousLetter = '';
 
             for (var itemIndex = 0; itemIndex < totalItems; itemIndex++) {
                 var data = listData[itemIndex];
                 var groupValue = data[groupBy] || '';
-                currentLetter = groupValue.substr(0, 1).toUpperCase();
-
+                currentLetter = getDirectoryKey(groupValue);
                 if (!compare(previousLetter, currentLetter)) {
                     //we come here whenever the data group value goes to the next letter
                     previousLetter = currentLetter;
@@ -16814,6 +16829,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         return {
             getGroupedList: getGroupedList,
             getDirectory: getDirectory,
+            getDirectoryKey: getDirectoryKey,
             getDirectoryByDate: getDirectoryByDate
         };
     }
@@ -23494,6 +23510,7 @@ angular.module('ep.record.editor').
              * @param {object} viewScope - (optional) The scope to use when compiling the html as a template
              */
             function setBrandHTML(html, viewScope) {
+                shellState.brandHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;
                 if (viewScope) {
                     $timeout(function() {
                         var el = angular.element('#apptitle');
@@ -23504,11 +23521,14 @@ angular.module('ep.record.editor').
 
                         shellState.titleScope = viewScope.$new();
                         var content = $compile(html)(shellState.titleScope);
-                        el.empty();
-                        el.append(angular.element(content));
+                        if(content.length){
+                            el.empty();
+                            el.append(angular.element(content));
+                        } else {
+                            shellState.viewSettings[shellState.mediaMode].brandHTML = shellState.brandHTML;
+                        }
                     });
                 } else {
-                    shellState.brandHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;
                     shellState.viewSettings[shellState.mediaMode].brandHTML = shellState.brandHTML;
                 }
             }
@@ -23589,8 +23609,13 @@ angular.module('ep.record.editor').
 
                         shellState.footerScope = viewScope.$new();
                         var content = $compile(html)(shellState.footerScope);
-                        el.empty();
-                        el.append(angular.element(content));
+                        if(content.length) {
+                            el.empty();
+                            el.append(angular.element(content));
+                        } else {
+                            shellState.footerHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;
+                            shellState.viewSettings[shellState.mediaMode].footerHTML = shellState.footerHTML;
+                        }
                     });
                 } else {
                     shellState.footerHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;

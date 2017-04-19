@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.190 built: 19-04-2017
+ * version:1.0.12-dev.191 built: 19-04-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.12-dev.190","built":"2017-04-19"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.12-dev.191","built":"2017-04-19"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -5274,6 +5274,7 @@ function() {
              * @param {object} viewScope - (optional) The scope to use when compiling the html as a template
              */
             function setBrandHTML(html, viewScope) {
+                shellState.brandHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;
                 if (viewScope) {
                     $timeout(function() {
                         var el = angular.element('#apptitle');
@@ -5284,11 +5285,14 @@ function() {
 
                         shellState.titleScope = viewScope.$new();
                         var content = $compile(html)(shellState.titleScope);
-                        el.empty();
-                        el.append(angular.element(content));
+                        if(content.length){
+                            el.empty();
+                            el.append(angular.element(content));
+                        } else {
+                            shellState.viewSettings[shellState.mediaMode].brandHTML = shellState.brandHTML;
+                        }
                     });
                 } else {
-                    shellState.brandHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;
                     shellState.viewSettings[shellState.mediaMode].brandHTML = shellState.brandHTML;
                 }
             }
@@ -5369,8 +5373,13 @@ function() {
 
                         shellState.footerScope = viewScope.$new();
                         var content = $compile(html)(shellState.footerScope);
-                        el.empty();
-                        el.append(angular.element(content));
+                        if(content.length) {
+                            el.empty();
+                            el.append(angular.element(content));
+                        } else {
+                            shellState.footerHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;
+                            shellState.viewSettings[shellState.mediaMode].footerHTML = shellState.footerHTML;
+                        }
                     });
                 } else {
                     shellState.footerHTML = angular.isString(html) ? $sce.trustAsHtml(html) : html;
