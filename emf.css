@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.195 built: 19-04-2017
+ * version:1.0.12-dev.196 built: 20-04-2017
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -1711,7 +1711,7 @@ img.ep-background-img-medium {
   height: calc(100vh - 80px);
   position: absolute;
   width: 100%;
-  padding-left: 8px;
+  padding-left: 0px;
   margin-top: 50px;
   top: 0;
 }
@@ -1726,13 +1726,16 @@ img.ep-background-img-medium {
   flex-flow: row nowrap;
   justify-content: space-between;
 }
+.ep-list-item-title {
+  font-weight: bold;
+}
 .ep-list-item-content .ep-list-item-text {
   flex: 5 0 auto;
-  width: 180px;
+  width: 60%;
 }
 .ep-list-item-content .ep-list-item-details {
   flex: 2 0 auto;
-  width: 120px;
+  width: 30%;
 }
 .ep-list-item-content .ep-list-item-decorator {
   flex: 0 0 auto;
@@ -1749,8 +1752,8 @@ img.ep-background-img-medium {
   height: 33px;
   border-left: solid 3px #bcbcbc;
   padding-left: 6px;
-  margin-left: -8px;
-  margin-bottom: 8px;
+  margin-left: 0px;
+  margin-bottom: 0px;
 }
 .ep-list-directory {
   position: absolute;
@@ -1786,6 +1789,7 @@ img.ep-background-img-medium {
 .ep-list-directory a {
   text-decoration: none !important;
   font-weight: bold;
+  color: #008ddd;
 }
 .ep-list-directory li {
   color: #129ff4;
