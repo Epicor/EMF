@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.198 built: 20-04-2017
+ * version:1.0.12-dev.199 built: 20-04-2017
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -24,7 +24,7 @@
   cursor: pointer;
 }
 /* Hide the buggy cancel icon on the search input in IE because we show our own*/
-.ep-accordion-menu .ep-mlm-search-cancel::-ms-clear {
+.ep-accordion-menu .ep-mlm-search-input::-ms-clear {
   display: none;
 }
 .ep-accordion-menu .list-group-item {
@@ -2258,7 +2258,7 @@ img.ep-background-img-medium {
   cursor: pointer;
 }
 /* Hide the buggy cancel icon on the search input in IE because we show our own*/
-.ep-mlm-container .ep-mlm-search-cancel::-ms-clear {
+.ep-mlm-container .ep-mlm-search-input::-ms-clear {
   display: none;
 }
 .ep-mlm-container .ep-mlm-search-input {
