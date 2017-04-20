@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.196 built: 20-04-2017
+ * version:1.0.12-dev.197 built: 20-04-2017
 */
 .ep-mlm-container {
   position: relative;
@@ -23,6 +23,10 @@
   padding: 4px;
   opacity: .5;
   cursor: pointer;
+}
+/* Hide the buggy cancel icon on the search input in IE because we show our own*/
+.ep-mlm-container .ep-mlm-search-cancel::-ms-clear {
+  display: none;
 }
 .ep-mlm-container .ep-mlm-search-input {
   border-radius: 8px !important;
@@ -224,6 +228,10 @@
   padding: 4px;
   opacity: .5;
   cursor: pointer;
+}
+/* Hide the buggy cancel icon on the search input in IE because we show our own*/
+.ep-accordion-menu .ep-mlm-search-cancel::-ms-clear {
+  display: none;
 }
 .ep-accordion-menu .list-group-item {
   border-radius: 0 !important;
