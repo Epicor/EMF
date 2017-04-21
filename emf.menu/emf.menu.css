@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.202 built: 21-04-2017
+ * version:1.0.12-dev.203 built: 21-04-2017
 */
 .ep-mlm-container {
   position: relative;
@@ -567,6 +567,7 @@
   display: flex;
   flex-flow: row nowrap;
   justify-content: space-between;
+  padding: 10px 0;
 }
 .ep-list-item-title {
   font-weight: bold;
@@ -574,14 +575,23 @@
 .ep-list-item-content .ep-list-item-text {
   flex: 5 0 auto;
   width: 60%;
+  padding-left: 10px;
 }
 .ep-list-item-content .ep-list-item-details {
   flex: 2 0 auto;
   width: 30%;
+  font-size: 13px;
+  text-align: right;
+  padding-right: 10px;
+}
+@media (min-width: 768px) {
+  .ep-list-item-details {
+    padding-right: 20px !important;
+  }
 }
 .ep-list-item-content .ep-list-item-decorator {
   flex: 0 0 auto;
-  margin: auto 0 auto 0;
+  margin: auto 0;
 }
 .ep-list.ep-header-visible {
   margin-top: 90px;
@@ -671,7 +681,7 @@
   margin-right: 12%;
 }
 .ep-list-arrow {
-  padding: 5px 10px 0 0;
+  padding-top: 2px;
   margin-right: 30px;
 }
 .ep-list-subtitle {
