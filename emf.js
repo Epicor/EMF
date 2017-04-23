@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.207 built: 22-04-2017
+ * version:1.0.12-dev.207 built: 23-04-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.207","built":"2017-04-22"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.207","built":"2017-04-23"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -2545,6 +2545,72 @@ angular.module('ep.binding').
     }
 }());
 
+/**
+* @ngdoc directive
+* @name ep.binding.directive:epBindingIfViewDirective
+* @restrict A
+*
+* @description
+* A directive attribute check if view data is available
+*
+* @example
+* <div ep-binding-if-view="customers"></div>
+*/
+(function() {
+    'use strict';
+
+    epBindingIfViewDirective.$inject = ['$rootScope', '$timeout', 'epBindingFactory'];
+    angular.module('ep.binding').
+    directive('epBindingIfView', epBindingIfViewDirective);
+
+    /*@ngInject*/
+    function epBindingIfViewDirective($rootScope, $timeout, epBindingFactory) {
+        return {
+            restrict: 'A',
+            replace: true,
+            scope: true,
+            template: function (element, attr) {
+                var value = 'epb.view && epb.view.hasData()';
+                //Make sure to combine with existing ngIf!
+                if (attr.ngIf) {
+                    value += ' && ' + attr.ngIf;
+                }
+                var inner = element.get(0);
+                //we have to clear all the values because angular
+                //is going to merge the attrs collection 
+                //back into the element after this function finishes
+                angular.forEach(inner.attributes, function(attr, key){
+                    attr.value = '';
+                });
+                attr.$set('ng-if', value);
+                return inner.outerHTML;            
+            },
+            compile: function(element, attrs) {
+                return {
+                    pre: function(scope) {
+                        var bindingFactory;
+                        //This will be set by eBindingFactory
+                        scope.epb = scope.epBindingInfo = {};
+
+                        scope.$watch(attrs.epBindingIfView, function(newValue) {
+                            if (newValue !== undefined) {
+                                if (bindingFactory) {
+                                    bindingFactory.changeBinding(newValue);
+                                } else {
+                                    bindingFactory = new epBindingFactory(scope, newValue, scope.epBindingInfo, true,
+                                        {}, false);
+                                }
+                            }
+                        });
+                    }
+                };
+            }
+        };
+    }
+
+})();
+
+
 (function() {
     'use strict';
     /**
@@ -2892,23 +2958,6 @@ angular.module('ep.binding').
                 if (view) {
                     onViewInit(view);
                 }
-
-                //if (!view) {
-                //    watches.main = $rootScope.$on('EP_BINDING_VIEW_ADDED', function(event, data) {
-                //        if (data.viewId === state.epBinding.view) {
-                //            if (data.action === 'RELOAD') {
-                //                freeze();
-                //                $timeout(function() {
-                //                    init(state.binding);
-                //                });
-                //            } else {
-                //                onViewInit(epTransactionFactory.current().view(state.epBinding.view));
-                //            }
-                //        }
-                //    });
-                //} else {
-                //    onViewInit(view);
-                //}
 
                 watches.onViewRowChanged = $rootScope.$on('EP_BINDING_VIEW_ROW_CHANGED', function(event, data) {
                     if (data.viewId === state.epBinding.view) {
