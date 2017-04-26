@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.219 built: 25-04-2017
+ * version:1.0.12-dev.220 built: 26-04-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.219","built":"2017-04-25"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.220","built":"2017-04-26"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -12418,6 +12418,20 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             }
 
             var url = 'BaqSvc/' + baqId;
+            if (options.parameters) {
+                var params = '';
+                angular.forEach(options.parameters, function(value, key) {
+                    if (params) {
+                        params += '&';
+                    }
+                    params += key + '=' + value;
+                });
+                if (params) {
+                    var paramJoiner = (url.indexOf('?') < 0) ? '?' : '&';
+                    url += paramJoiner + params;
+                }
+            }
+
             var promise = epErpRestService.get(url, oQuery, options.callSettings).$promise;
             promise.then(function(data) {
                 //if (data.value) {
@@ -12428,8 +12442,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 deferred.reject(msg, data);
             });
 
+            if (baqId !== viewId && !epBindingMetadataService.get(viewId)) {
+                epBindingMetadataService.addAlias(baqId, viewId);
+            }
+
             var promiseMeta;
-            if (!epBindingMetadataService.get(viewId)) {
+            if (!epBindingMetadataService.get(viewId) && options.retrieveMetaData !== false) {
                 promiseMeta = getBAQDesigner(baqId);
                 promiseMeta.then(function(result) {
                     var columns = getMetaColumns(result.data.returnObj);
@@ -27965,7 +27983,7 @@ angular.module('ep.signature').directive('epSignature',
                 return msg;
             }
 
-            function call(method, path, query, callSettings) {
+            function call(method, path, query, callSettings, logData) {
                 var tkn = epTokenService.getToken();
                 if (!tkn) {
                     return;
@@ -27986,9 +28004,9 @@ angular.module('ep.signature').directive('epSignature',
 
                 var sCallSettings = JSON.stringify(callSettings || {});
 
-                var logEntry = createLogEntry('REST CALL: ' + sPath, 'ep-rest-service (get)', url, query, callSettings);
+                logData.logEntry = createLogEntry('REST CALL: ' + sPath, 'ep-rest-service (get)', url, query, callSettings);
 
-                var ret = $resource(url, query, {
+                return $resource(url, query, {
                     get: {
                         method: 'GET', headers: {
                             'Authorization': 'Bearer ' + tkn.token.AccessToken,
@@ -27997,16 +28015,6 @@ angular.module('ep.signature').directive('epSignature',
                         }
                     }
                 });
-
-                var promise = ret.get().$promise;
-                promise.then(function(data) {
-                    submitLogEntry(logEntry, {
-                        numRecords: (data && data.value) ? data.value.length : 'unknown'
-                    });
-                }, function(response) {
-                    submitLogError(logEntry, null, response);
-                });
-                return ret;
             }
 
             function postCall(method, svc, data, callSettings) {
@@ -28157,7 +28165,6 @@ angular.module('ep.signature').directive('epSignature',
                     return false;
                 });
                 return promise;
-
             }
 
             return {
@@ -28168,7 +28175,20 @@ angular.module('ep.signature').directive('epSignature',
                     isLogOn = onOff;
                 },
                 get: function(path, query, callSettings) {
-                    return call('GET', path, query, callSettings).get();
+                    var logData = {};
+
+                    var ret = call('GET', path, query, callSettings, logData).get();
+
+                    var promise = ret.$promise;
+                    promise.then(function(data) {
+                        submitLogEntry(logData.logEntry, {
+                            numRecords: (data && data.value) ? data.value.length : 'unknown'
+                        });
+                    }, function(response) {
+                        submitLogError(logData.logEntry, null, response);
+                    });
+
+                    return ret;
                 },
                 post: function(path, data, callSettings) {
                     return postCall('POST', path, data, callSettings);
