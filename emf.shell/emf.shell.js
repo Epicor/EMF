@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.225 built: 27-04-2017
+ * version:1.0.12-dev.226 built: 27-04-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.12-dev.225","built":"2017-04-27"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.12-dev.226","built":"2017-04-27"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -6860,7 +6860,7 @@ angular.module('ep.shell').service('epSidebarService', [
                     } else {
                         try {
                             var propertyExpr = def[property];
-                            if (!angular.isBoolean(propertyExpr)) {
+                            if (propertyExpr !== true && propertyExpr !== false) {
                                 var expr = $parse(propertyExpr);
                                 def[property] = expr(scope);
                                 scope.$watch(propertyExpr, function(newVal) {

@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.225 built: 27-04-2017
+ * version:1.0.12-dev.226 built: 27-04-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.225","built":"2017-04-27"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.226","built":"2017-04-27"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -16735,11 +16735,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 (function() {
     'use strict';
 
-    epListService.$inject = ['$filter', '$timeout'];
+    epListService.$inject = ['epModalDialogService'];
     angular.module('ep.list').factory('epListService', epListService);
 
     /*@ngInject*/
-    function epListService($filter, $timeout) {
+    function epListService(epModalDialogService) {
         var alphabet = ['#', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
                         'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '@'];
 
@@ -16916,11 +16916,31 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             return dir;
         }
 
+
+        /**
+         * @ngdoc method
+         * @name showListModalForm
+         * @methodOf ep.list:epListService
+         * @public
+         * @param {object} dialogOptions - dialog options
+         * @description
+         * Special modal dialog to host the ep-list control
+         */
+        function showListModalForm(dialogOptions) {
+            if (dialogOptions) {
+                var winClass = dialogOptions.windowClass || '';
+                if (winClass) winClass += ' ';
+                dialogOptions.windowClass = winClass + 'ep-list-modal-dialog';
+            }
+            return epModalDialogService.showModalForm(dialogOptions);
+        }
+
         return {
             getGroupedList: getGroupedList,
             getDirectory: getDirectory,
             getDirectoryKey: getDirectoryKey,
-            getDirectoryByDate: getDirectoryByDate
+            getDirectoryByDate: getDirectoryByDate,
+            showListModalForm: showListModalForm
         };
     }
 })();
@@ -25180,7 +25200,7 @@ angular.module('ep.shell').service('epSidebarService', [
                     } else {
                         try {
                             var propertyExpr = def[property];
-                            if (!angular.isBoolean(propertyExpr)) {
+                            if (propertyExpr !== true && propertyExpr !== false) {
                                 var expr = $parse(propertyExpr);
                                 def[property] = expr(scope);
                                 scope.$watch(propertyExpr, function(newVal) {

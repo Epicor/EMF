@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.225 built: 27-04-2017
+ * version:1.0.12-dev.226 built: 27-04-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.225","built":"2017-04-27"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.226","built":"2017-04-27"};
 
 (function() {
     'use strict';
@@ -2442,11 +2442,11 @@ angular.module('ep.menu.builder', [
 (function() {
     'use strict';
 
-    epListService.$inject = ['$filter', '$timeout'];
+    epListService.$inject = ['epModalDialogService'];
     angular.module('ep.list').factory('epListService', epListService);
 
     /*@ngInject*/
-    function epListService($filter, $timeout) {
+    function epListService(epModalDialogService) {
         var alphabet = ['#', 'A', 'B', 'C', 'D', 'E', 'F', 'G', 'H', 'I', 'J', 'K', 'L', 'M',
                         'N', 'O', 'P', 'Q', 'R', 'S', 'T', 'U', 'V', 'W', 'X', 'Y', 'Z', '@'];
 
@@ -2623,11 +2623,31 @@ angular.module('ep.menu.builder', [
             return dir;
         }
 
+
+        /**
+         * @ngdoc method
+         * @name showListModalForm
+         * @methodOf ep.list:epListService
+         * @public
+         * @param {object} dialogOptions - dialog options
+         * @description
+         * Special modal dialog to host the ep-list control
+         */
+        function showListModalForm(dialogOptions) {
+            if (dialogOptions) {
+                var winClass = dialogOptions.windowClass || '';
+                if (winClass) winClass += ' ';
+                dialogOptions.windowClass = winClass + 'ep-list-modal-dialog';
+            }
+            return epModalDialogService.showModalForm(dialogOptions);
+        }
+
         return {
             getGroupedList: getGroupedList,
             getDirectory: getDirectory,
             getDirectoryKey: getDirectoryKey,
-            getDirectoryByDate: getDirectoryByDate
+            getDirectoryByDate: getDirectoryByDate,
+            showListModalForm: showListModalForm
         };
     }
 })();
