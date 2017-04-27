@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.223 built: 26-04-2017
+ * version:1.0.12-dev.224 built: 26-04-2017
 */
 .ng-gallery {
   width: 100%;
@@ -289,7 +289,7 @@ uiload > div {
   height: 50px;
   padding: 8px;
 }
-.ep-search-list-container .ep-cicrm-search {
+.ep-search-list-container .fa-search {
   position: absolute;
   top: 10px;
 }
