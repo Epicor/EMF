@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.224 built: 26-04-2017
+ * version:1.0.12-dev.225 built: 27-04-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.224","built":"2017-04-26"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.225","built":"2017-04-27"};
 
 (function() {
     'use strict';
@@ -2203,7 +2203,8 @@ angular.module('ep.menu.builder', [
                 vsRenderBufferSize: '@',
                 vsRowLineCount: '@',
                 vsLatch: '@',
-                options: '='
+                options: '=',
+                searchFields: '='
             },
             templateUrl: 'src/components/ep.list/ep-list.html',
             link: function(scope) {
@@ -2240,6 +2241,10 @@ angular.module('ep.menu.builder', [
                         } else {
                             scope.directory = epListService.getDirectory(scope.listData, scope.groupBy);
                         }
+                    } else {
+                        //If no grouping the control is in straight filtering mode
+                        scope.filteredData = scope.listData;
+                        scope.filtered = true;
                     }
 
                     scope.origListData = angular.extend([], scope.listData);
@@ -2251,10 +2256,21 @@ angular.module('ep.menu.builder', [
                 //scope.initData();
 
                 scope.filterByName = function(obj) {
+                    var ret = true;
                     if (scope.searchFilter) {
-                        return (obj[scope.groupBy].toLowerCase() || '').indexOf(scope.searchFilter.toLowerCase()) === 0;
+                        //searchFields
+                        if (scope.groupBy) {
+                            ret = (obj[scope.groupBy].toLowerCase() || '').indexOf(scope.searchFilter.toLowerCase()) === 0;
+                        } else if (scope.searchFields) {
+                            var field = _.find(scope.searchFields, function(fld) {
+                                return (obj[fld].toLowerCase() || '').indexOf(scope.searchFilter.toLowerCase()) === 0;
+                            });
+                            if (!field) {
+                                ret = false;
+                            }
+                        }
                     }
-                    return true;
+                    return ret;
                 }
 
                 function applyTextSearchFilter(searchValue) {
@@ -2350,17 +2366,23 @@ angular.module('ep.menu.builder', [
                 function applySearchFilter(searchValue) {
                     if (scope.searchType === 'sdate') {
                         applyStrDateSearchFilter(searchValue);
-                    } else {
+                    } else if (scope.directory) {
                         applyTextSearchFilter(searchValue);
+                    } else {
+                        scope.searchFilter = searchValue;
                     }
                 }
 
                 var throttleSearch = _.throttle(applySearchFilter, 200);
                 scope.$watch('listSearch', function(newValue, oldValue) {
-                    if (newValue !== undefined && newValue !== oldValue && !scope.goingToDirectory) {
-                        throttleSearch(newValue);
+                    if (!scope.groupBy || scope.groupBy === '') {
+                        applySearchFilter(newValue);
+                    } else {
+                        if (newValue !== undefined && newValue !== oldValue && !scope.goingToDirectory) {
+                            throttleSearch(newValue);
+                        }
+                        scope.goingToDirectory = false;
                     }
-                    scope.goingToDirectory = false;
                 });
                 
                 scope.goToDirectory = function(directoryEntry) {
@@ -2403,7 +2425,6 @@ angular.module('ep.menu.builder', [
                         scope.shellSizeChangeEvent();
                     }
                 });
-
             }
         };
     }

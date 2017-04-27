@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.224 built: 26-04-2017
+ * version:1.0.12-dev.225 built: 27-04-2017
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -2097,6 +2097,9 @@ img.ep-background-img-medium {
   padding-right: 10px;
   position: fixed;
   width: 100%;
+}
+.modal-dialog.modal-sm .ep-modal-area {
+  position: relative;
 }
 .ep-modaldialog.ep-modaldialog-custom .ep-modal-footer {
   position: absolute;
