@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.227 built: 27-04-2017
+ * version:1.0.12-dev.228 built: 28-04-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.227","built":"2017-04-27"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.228","built":"2017-04-28"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -16429,6 +16429,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * - id: value to be displayed on right side of the list.
  * - groupBy: groupBy field name by which the list has to be grouped.
  * - groupByType: 'sdate' - string date format like '1910-01-01T00:00:00' (otherwise string)
+ * - sortBy: sortBy field name by which the list has to be sorted.
+ * - sortByDesc: true if sort is to be reversed (descending). By default sdates are descending sorts
  * - subHeader: (true/false) shows sub header with filter/sort/add buttons just below the search component.
  * - arrow: (true/false) whether to show arrow on right side of list or not.
  * - statuses: additional list fields that needs to be displayed on right side of the list.
@@ -16488,6 +16490,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 showInRed: '@',
                 hideAdd: '@',
                 sortBy: '@',
+                sortByDesc: '=',
                 
                 useVirtualScrolling: '=',
                 
@@ -16517,13 +16520,24 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 
                 scope.initData = function() {
 
+                    var isGroupByDate = !!(scope.groupByType && scope.groupByType === 'sdate');
+
                     scope.listData = $filter('orderBy')(scope.data, scope.groupBy);
                     if (scope.sortBy && scope.sortBy !== '') {
-                        scope.listData = _.sortBy(scope.listData, scope.sortBy).reverse();
+                        //By default sort is descending only for group by dates
+                        scope.isSortDesc = isGroupByDate;
+                        //But user can override that
+                        if (scope.sortByDesc === true) {
+                            scope.isSortDesc = true;
+                        }
+                        scope.listData = _.sortBy(scope.listData, scope.sortBy);
+                        if (scope.isSortDesc) {
+                            scope.listData = scope.listData.reverse();
+                        }
                     }
 
                     if (scope.groupBy && scope.groupBy !== '') {
-                        if (scope.groupByType && scope.groupByType === 'sdate') {
+                        if (isGroupByDate) {
                             scope.searchPrompt = 'Search by year or month-year...';
                             scope.searchType = 'sdate';
                             scope.listData = _.sortBy(scope.listData, function(d) {
@@ -16556,7 +16570,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             ret = (obj[scope.groupBy].toLowerCase() || '').indexOf(scope.searchFilter.toLowerCase()) === 0;
                         } else if (scope.searchFields) {
                             var field = _.find(scope.searchFields, function(fld) {
-                                return (obj[fld].toLowerCase() || '').indexOf(scope.searchFilter.toLowerCase()) === 0;
+                                return ((obj[fld] + '').toLowerCase() || '').indexOf(scope.searchFilter.toLowerCase()) === 0;
                             });
                             if (!field) {
                                 ret = false;
