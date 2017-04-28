@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.228 built: 28-04-2017
+ * version:1.0.12-dev.229 built: 28-04-2017
 */
 .ep-mlm-container {
   position: relative;
@@ -556,6 +556,8 @@
   padding-left: 0px;
   margin-top: 50px;
   top: 0;
+  border-left: solid 1px #eee;
+  border-right: solid 1px #eee;
 }
 .ep-list li {
   border-bottom: 1px solid #eee;
@@ -716,6 +718,77 @@
 }
 .ep-list-inner .statuses .status {
   height: 20px;
+}
+/* workaround for modal dialogs ep-list are overflowing */
+.ep-modal-window .ep-modaldialog-custom .dialog-area {
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+  position: fixed !important;
+  overflow: hidden !important;
+}
+.ep-list-modal-dialog .ep-modal-header {
+  padding: 10px 10px 0 10px;
+  border: none;
+}
+.ep-list-modal-dialog .ep-list-container,
+.ep-list-modal-dialog .ep-contacts-list-container {
+  height: calc(20%);
+  width: calc 90%;
+  position: relative !important;
+}
+.ep-list-modal-dialog .ep-modal-area {
+  padding-left: 10px !important;
+  padding-right: 10px !important;
+  /*position:fixed !important;*/
+  overflow: hidden !important;
+}
+.ep-list-modal-dialog .ep-list {
+  padding-bottom: 97px;
+}
+.ep-list-modal-dialog .ep-list-directory {
+  padding-bottom: 100px;
+}
+@media (max-width: 350px) {
+  .ep-list-modal-dialog .ep-list-directory {
+    padding-bottom: 100px;
+    font-size: 9px;
+  }
+  .ep-list-modal-dialog .ep-list-item-text {
+    width: 50%;
+  }
+  .ep-list-modal-dialog .ep-list-item-details {
+    width: 25%;
+  }
+  .ep-list-modal-dialog .ep-list-item-details {
+    width: 10%;
+  }
+  .ep-list-item-text {
+    width: 50%;
+  }
+  .ep-list-item-details {
+    width: 25%;
+  }
+  .ep-list-item-details {
+    width: 10%;
+  }
+}
+@media (min-height: 300px) and (max-height: 567px) {
+  .ep-list-modal-dialog .ep-list-directory {
+    display: none;
+  }
+  .ep-list-directory {
+    display: none;
+  }
+}
+.ep-list-modal-dialog .ep-index-list {
+  padding-top: 50px;
+}
+.ep-list-modal-dialog .ep-modal-list-arrow {
+  padding-top: 3px;
+}
+.ep-list-modal-dialog .ep-modal-footer {
+  z-index: 14;
+  position: fixed;
 }
 
 .ep-context-menu {

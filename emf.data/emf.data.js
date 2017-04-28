@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.228 built: 28-04-2017
+ * version:1.0.12-dev.229 built: 28-04-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.228","built":"2017-04-28"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.229","built":"2017-04-28"};
 
 (function() {
     'use strict';
@@ -2179,6 +2179,7 @@ angular.module('ep.token').
         return {
             restrict: 'E',
             templateUrl: 'src/components/ep.binding/controls/ep-binding-label.html',
+            require: '?^form', //may be used outside a form
             scope: {
                 epBinding: '=',
                 label: '@',
@@ -2186,12 +2187,13 @@ angular.module('ep.token').
                 required: '=',
                 forCtrl: '@'
             },
-            link: function(scope) {
+            link: function(scope, element, iAttrs, formCtrl) {
                 scope.state = {
                     epBinding: {},
                     label: scope.label || '',
                     requiredFlag: false,
-                    metaColumn: {}
+                    metaColumn: {},
+                    isInFormControl: (formCtrl === null || formCtrl === undefined)
                 };
 
                 scope.setBinding = function(binding) {
@@ -2207,6 +2209,14 @@ angular.module('ep.token').
                         scope.state.epBinding.column || '';
                 };
 
+                scope.setRequired = function() {
+                    if (scope.state.isInFormControl && scope.required !== true) {
+                        scope.state.requiredFlag = false;
+                    } else {
+                        scope.state.requiredFlag = scope.state.metaColumn.required && scope.state.metaColumn.requiredFlag;
+                    }
+                };
+
                 scope.$watch('epBinding', function(newValue, oldValue) {
                     if (newValue !== undefined && newValue !== oldValue) {
                         scope.setBinding(newValue);
@@ -2217,6 +2227,7 @@ angular.module('ep.token').
                     scope.setBinding(scope.epBinding);
                 }
                 scope.setLabel();
+                scope.setRequired();
             }
         }
     }

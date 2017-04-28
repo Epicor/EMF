@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.228 built: 28-04-2017
+ * version:1.0.12-dev.229 built: 28-04-2017
 */
 .ep-login-background {
   width: 100%;
@@ -78,4 +78,7 @@ div.ep-binding-label {
 /* the scroll up in a dialog had issues when z-index was set to 2*/
 .ep-binding .pagination > .active > a {
   z-index: 0;
+}
+.ep-binding-label .ep-required-indicator {
+  padding-left: 5px;
 }
