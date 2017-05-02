@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.243 built: 01-05-2017
+ * version:1.0.12-dev.244 built: 02-05-2017
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -345,7 +345,10 @@ div.ep-binding-label {
   z-index: 0;
 }
 .ep-binding-label .ep-required-indicator {
-  padding-left: 5px;
+  padding-left: 3px;
+  font-size: 6px;
+  vertical-align: super;
+  position: relative;
 }
 
 .card {
