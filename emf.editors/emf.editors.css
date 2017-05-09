@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.263 built: 08-05-2017
+ * version:1.0.12-dev.264 built: 08-05-2017
 */
 .ep-color-selector-container .btn {
   background-color: #F5F5F5;
@@ -248,7 +248,7 @@
   padding-right: 2px;
 }
 .ep-editor-control.ep-editor-mode-mini input {
-  border: none;
+  /*border: none; if you set border none then we cannot highlight the error */
   outline: none;
 }
 .ep-editor-control.ep-editor-mode-mini .ep-record-editor-container {
@@ -287,6 +287,10 @@ ep-editor-control .ep-record-editor-container.ep-is-row-editor {
 /* workaround for now beacuse with meridian the time cells are not aligned */
 .ep-editor-control .ep-date-editor .form-control.editor.ep-time-meridian {
   margin-top: 1px;
+}
+/* workaround has-error making text invisible on control buttons */
+.ep-editor-control .has-error .input-group-addon {
+  color: initial;
 }
 
 /* This is a workaround opera issue with the ep-switch wrapping */

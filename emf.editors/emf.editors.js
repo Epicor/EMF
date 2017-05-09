@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.263 built: 08-05-2017
+ * version:1.0.12-dev.264 built: 08-05-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["editors"] = {"libName":"editors","version":"1.0.12-dev.263","built":"2017-05-08"};
+__ep_build_info["editors"] = {"libName":"editors","version":"1.0.12-dev.264","built":"2017-05-08"};
 
 (function() {
     'use strict';
@@ -1144,7 +1144,7 @@ angular.module('ep.record.editor', [
                 ctx.invalidFlag = false;
                 if (ctx.displayInvalid && ctx.editorContainer) {
                     var state = scope.ctx.recordEditorState;
-                    var showAllInvalidFields = (state && state.showAllInvalidFields);
+                    var showAllInvalidFields = (state && state.showAllInvalidFields) || (ctx.showInvalidFields === true);
                     var editor = angular.element(ctx.editorContainer).find('.form-control.editor');
                     if (editor.length) {
                         //TO DO: check in angular if we can remove the 'ng-invalid-remove'/'ng-dirty-add' check
@@ -1272,9 +1272,11 @@ angular.module('ep.record.editor', [
             restrict: 'E,A',
             templateUrl: 'src/components/ep.record.editor/editors/ep-editor-control.html',
             replace: true,
-            link: function(scope, element) {
+            require: '?^form', //may be used outside a form
+            link: function(scope, element, iAttrs, formCtrl) {
                 scope.state = {
-                    iElement: element
+                    iElement: element,
+                    formCtrl: formCtrl
                 };
 
                 scope.$watch('column', function(newValue) {
@@ -1354,6 +1356,22 @@ angular.module('ep.record.editor', [
                 //};
                 //scope.overHandler = function(drop) {
                 //};
+
+                scope.$on('EP-VALIDATE-EDITOR-CONTROLS', function(event) {
+                    scope.ctx.displayInvalid = true;
+                    scope.ctx.showInvalidFields = true;
+                    scope.ctx.fnDoValidations();
+
+                    if (scope.state.formCtrl.$error.required) {
+                        var rq = _.find(scope.state.formCtrl.$error.required, function(req) {
+                            return scope.ctx.name === req.$name;
+                        });
+                        if (rq) {
+                            rq.epEditorCtx = scope.ctx;
+                        }
+                    }
+                });
+
             },
             scope: {
                 column: '=',
@@ -2556,7 +2574,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-editor-control.html',
-    "<div class=\"ep-editor-control {{ctx.sizeClass}} ep-editor-mode-{{ctx.mode}}\" ng-hide=ctx.hidden ep-drop-area drop-enabled=\"isDropEnabled === true\" drop-handler=handleDrop drop-item-types=typeEditorCtrl ng-style=ctx.style><!--display caption above editor or just editor (mini mode)--><fieldset ng-if=\"isRow !== true\" class=\"form-group ep-record-editor-container\" ng-class=\"{'has-error': ctx.invalidFlag}\" ep-draggable drag-enabled=\"isDragEnabled === true\" drag-item=ctx drag-item-type=\"'typeEditorCtrl'\"><div class=\"ep-div-editor-label {{ctx.col.classLabel}}\"><label class=ep-editor-label for={{ctx.name}} ng-if=\"ctx.mode !== 'mini'\">{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label></div><div class={{ctx.col.classEditor}}><section id=xtemplate></section></div></fieldset><!--display caption and editor in a bootstarp grid system in horizontal row--><div ng-if=\"isRow === true\" class=\"ep-record-editor-container ep-is-row-editor row\"><div class=\"ep-div-editor-label {{ctx.col.classLabel || 'col-xs-4'}}\"><label class=ep-editor-label for={{ctx.name}}>{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label></div><div class=\"{{ctx.col.classEditor || 'col-xs-8'}}\"><section id=xtemplate></section></div></div></div>"
+    "<div class=\"ep-editor-control {{ctx.sizeClass}} ep-editor-mode-{{ctx.mode}}\" ng-hide=ctx.hidden ep-drop-area drop-enabled=\"isDropEnabled === true\" drop-handler=handleDrop drop-item-types=typeEditorCtrl ng-style=ctx.style><!--display caption above editor or just editor (mini mode)--><fieldset ng-if=\"isRow !== true\" class=\"form-group ep-record-editor-container\" ng-class=\"{'has-error': ctx.invalidFlag}\" ep-draggable drag-enabled=\"isDragEnabled === true\" drag-item=ctx drag-item-type=\"'typeEditorCtrl'\"><div class=\"ep-div-editor-label {{ctx.col.classLabel}}\"><label class=ep-editor-label for={{ctx.name}} ng-if=\"ctx.mode !== 'mini'\">{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label></div><div class={{ctx.col.classEditor}}><section id=xtemplate></section></div></fieldset><!--display caption and editor in a bootstrap grid system in horizontal row--><div ng-if=\"isRow === true\" class=\"ep-record-editor-container ep-is-row-editor row\"><div class=\"ep-div-editor-label {{ctx.col.classLabel || 'col-xs-4'}}\"><label class=ep-editor-label for={{ctx.name}}>{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label></div><div class=\"{{ctx.col.classEditor || 'col-xs-8'}}\"><section id=xtemplate></section></div></div></div>"
   );
 
 

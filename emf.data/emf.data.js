@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.263 built: 08-05-2017
+ * version:1.0.12-dev.264 built: 08-05-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.263","built":"2017-05-08"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.264","built":"2017-05-08"};
 
 (function() {
     'use strict';
@@ -4653,6 +4653,8 @@ angular.module('ep.binding').
                 options = {};
             }
 
+            var deferred = $q.defer();
+
             var showProgress = (options.showProgress !== false);
             if (showProgress) {
                 epModalDialogService.showProgress({
@@ -4664,19 +4666,17 @@ angular.module('ep.binding').
                 });
             }
 
-            var url = 'BaqSvc/' + baqId + '/GetNew';
-            var promise = epErpRestService.get(url, '', options.callSettings).$promise;
-            promise.then(function(data) {
+            function onRetrieved(data) {
                 if (showProgress) {
                     epModalDialogService.hide();
                 }
-                if (data.value) {
+                if (data) {
                     var rowIdx = 0;
                     var view = epTransactionFactory.current().view(viewId);
                     if (!view) {
-                        view = epTransactionFactory.current().add(viewId, data.value);
+                        view = epTransactionFactory.current().add(viewId, data);
                     } else {
-                        rowIdx = view.addRow(data.value[0]);
+                        rowIdx = view.addRow(data[0]);
                     }
                     if (!options || options.setCurrentRow === true) {
                         view.row(rowIdx);
@@ -4685,34 +4685,53 @@ angular.module('ep.binding').
                         epBindingMetadataService.addAlias(baqId, viewId);
                     }
                 }
-            }, function(data) {
-                if (showProgress) {
-                    epModalDialogService.hide();
-                }
-                showException(data);
-            });
-            return promise;
+            }
+
+            if (options.data) {
+                onRetrieved(options.data);
+                deferred.resolve(options.data);
+            } else {
+                var url = 'BaqSvc/' + baqId + '/GetNew';
+                var promise = epErpRestService.get(url, '', options.callSettings).$promise;
+                promise.then(function(result) {
+                    onRetrieved(result.value);
+                    deferred.resolve(result.value);
+                }, function(data) {
+                    if (showProgress) {
+                        epModalDialogService.hide();
+                    }
+                    showException(data);
+                    deferred.resolve([]);
+                });
+            }
+
+            return deferred.promise;
         }
 
         function getBAQDesigner(baqId, metaDataKey) {
+            var deferred = $q.defer();
+
             var url = 'Ice.BO.BAQDesignerSvc/GetByID';
             var data = {
                 queryID: baqId
             };
             var promise = epErpRestService.post(url, data);
-            promise.then(function(result) {
-                if (metaDataKey) {
+            $q.when(promise).then(function(result) {
+                if (metaDataKey && result.data) {
                     var columns = getMetaColumns(result.data.returnObj);
                     epBindingMetadataService.add(metaDataKey, 'baq', columns);
                     if (baqId !== metaDataKey) {
                         epBindingMetadataService.addAlias(metaDataKey, baqId);
                     }
                 }
+                deferred.resolve(true);
             });
             promise.error(function(response) {
                 showException(response);
+                deferred.resolve(false);
             });
-            return promise;
+
+            return deferred.promise;
         }
 
         function getBAQMetadata(baqId) {
