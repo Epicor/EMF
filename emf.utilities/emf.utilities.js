@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.264 built: 08-05-2017
+ * version:1.0.12-dev.265 built: 12-05-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.12-dev.264","built":"2017-05-08"};
+__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.12-dev.265","built":"2017-05-12"};
 
 (function() {
   'use strict';
@@ -1758,7 +1758,7 @@ angular.module('ep.signature').directive('epSignature',
             } else {
                 var data = cache[key];
                 if (!data) {
-                    getPersistedCacheValue(key).then(function(result) {
+                    loadPersistedCacheValue(key).then(function(result) {
                         if (result) {
                             cache[key] = result;
                             deferred.resolve(result);
@@ -1800,33 +1800,6 @@ angular.module('ep.signature').directive('epSignature',
                 // otherwise it's just a regular value and it can be cached & returned immediately
                 deferred.resolve(finalize(invocationResult));
             }
-        }
-
-        function getPersistedCacheValue(key) {
-            return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
-                var store = db.getObjectStore('ep-cache');
-                return store.get(key).then(function(cacheEntry) {
-                    return cacheEntry && cacheEntry.value;
-                })
-            }, function(err){
-                $log.warn('An error occured that prevented data from being retreived from the cache. ' +
-                    'This is probably caused by two or more open tabs sending contending commands to ' +
-                    'the underlying database. If this warning occurs frequently, then it could temporarily ' +
-                    'degrade performance of the application.');
-            });
-        }
-
-        function savePersistedCacheValue(key, cacheId, value) {
-            var cacheEntry = { key: key, cacheId: cacheId, value: value };
-            return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
-                var store = db.getObjectStore('ep-cache');
-                return store.put(cacheEntry);
-            }, function(err){
-                $log.warn('An error occured that prevented data from being stored in the cache. ' +
-                    'This is probably caused by two or more open tabs sending contending commands to ' +
-                    'the underlying database. If this warning occurs frequently, then it could temporarily ' +
-                    'degrade performance of the application.');
-            });
         }
 
         /**
@@ -1893,6 +1866,7 @@ angular.module('ep.signature').directive('epSignature',
          * @name getCachedData
          * @methodOf ep.cache.service:epCacheService
          * @public
+         * @deprecated
          * @description
          * Returns the data with the given key from the cache with the given id
          * @param {string|Function} cacheId - the id of the cache where the data is stored or a function returning the same
@@ -1908,11 +1882,48 @@ angular.module('ep.signature').directive('epSignature',
             return data;
         }
 
+        function savePersistedCacheValue(cacheId, key, value) {
+            var cacheEntry = { key: key, cacheId: cacheId, value: value, cacheTimestamp: new Date() };
+            return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
+                var store = db.getObjectStore('ep-cache');
+                return store.put(cacheEntry);
+            }, function(err){
+                $log.warn('An error occured that prevented data from being stored in the cache. ' +
+                    'This is probably caused by two or more open tabs sending contending commands to ' +
+                    'the underlying database. If this warning occurs frequently, then it could temporarily ' +
+                    'degrade performance of the application.');
+            });
+        }
+
+        /**
+         * @ngdoc method
+         * @name loadPersistedCacheValue
+         * @methodOf ep.cache.service:epCacheService
+         * @public
+         * @description
+         * Returns the data with the given key from the cache with the given id
+         * @param {string|Function} key - the key to the data that will be returned from the cache
+         */
+        function loadPersistedCacheValue(cacheKey, key) {
+            return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
+                var store = db.getObjectStore('ep-cache');
+                return store.get(key).then(function(cacheEntry) {
+                    return cacheEntry;
+                })
+            }, function(err){
+                $log.warn('An error occured that prevented data from being retreived from the cache. ' +
+                    'This is probably caused by two or more open tabs sending contending commands to ' +
+                    'the underlying database. If this warning occurs frequently, then it could temporarily ' +
+                    'degrade performance of the application.');
+            });
+        }
+
         /**
          * @ngdoc method
          * @name cacheData
          * @methodOf ep.cache.service:epCacheService
          * @public
+         * @deprecated
          * @description
          * Stores the data with the given key in the cache with the given id
          * @param {string|Function} cacheId - the id of the cache where the data will be stored or a function returning the same
@@ -1924,7 +1935,7 @@ angular.module('ep.signature').directive('epSignature',
                 var cache = getCache(cacheId);
                 key = reify(key);
                 cache[key] = data;
-                savePersistedCacheValue(key, cacheId, data).then(function() {
+                savePersistedCacheValue(cacheId, key, data).then(function() {
                     $rootScope.$emit(epShellConstants.SHELL_DATA_CACHED_EVENT,
                         { cacheId: reify(cacheId), key: key, data: data });
                 }, function(e) {
@@ -1933,11 +1944,37 @@ angular.module('ep.signature').directive('epSignature',
             }
         }
 
+        function deleteKey(key){
+            deleteCacheKey()
+        }
+
         return {
             cacheServiceCall: cacheServiceCall,
             deleteAllCaches: deleteAllCaches,
             deleteCache: deleteCache,
             deleteCacheKey: deleteCacheKey,
+            deleteKey: deleteKey,
+            // The "save" and "load" overloads are the preferred methods that represent
+            // saving and loading directly from the persistent indexedDB-based storage
+            save: savePersistedCacheValue,
+            load: loadPersistedCacheValue,
+
+            // These are the deprecated overloads for saving/loading from persistant
+            // storage
+            savePersistedCacheValue: savePersistedCacheValue,
+            loadPersistedCacheValue: loadPersistedCacheValue,
+
+            // This are the accessor functions for getting/setting  data from the memory 
+            // cache with a fallback to the indexeddb based cache
+            //getPersistedCacheValue: getPersistedCacheValue,
+            //setPersistedCacheValue: setPersistedCacheValue,
+
+            // The get and set methods are the preferred overloads for getting a value 
+            // from the memory cache syncronously
+            get: getCachedData,
+            set: cacheData,
+
+            // These are the deprecated overloads for accessing memory cached data syncronously
             getCachedData: getCachedData,
             cacheData: cacheData
         }

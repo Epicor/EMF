@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.264 built: 08-05-2017
+ * version:1.0.12-dev.265 built: 12-05-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.264","built":"2017-05-08"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.265","built":"2017-05-12"};
 
 (function() {
     'use strict';
@@ -137,7 +137,7 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                 $log.error(logEntry);
             }
 
-            function getErrorMsg(response) {
+            function getErrorMsg(response, defaultMsg) {
                 var msg = response.ErrorMessage || '';
                 if (!msg && response['odata.error']) {
                     msg = response['odata.error'].message.value;
@@ -150,6 +150,13 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                 }
                 if (!msg && response.data && angular.isString(response.data)) {
                     msg = response.data;
+                }
+                if (!msg && response.data && response.data.ErrorMessage &&
+                    angular.isString(response.data.ErrorMessage)) {
+                    msg = response.data.ErrorMessage;
+                }
+                if (!msg) {
+                    msg = defaultMsg || 'Unkown error in erpRestService';
                 }
                 return msg;
             }
@@ -368,7 +375,8 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                     return deleteCall(path, callSettings);
                 },
                 patch: patch,
-                getXML: getXML
+                getXML: getXML,
+                getErrorMsg: getErrorMsg
             }
         }])
 })();
@@ -4360,6 +4368,76 @@ angular.module('ep.binding').
                 _views = {};
             }
 
+            /**
+             * @ngdoc method
+             * @name get
+             * @methodOf ep.binding.factory:epTransactionFactory
+             * @public
+             * @description
+             * get transaction for storage
+             * @param {array} ignoreList - List if view id's to ignore
+             * @param {array} includeList - List if view id's to include
+             */
+            function get(ignoreList, includeList) {
+                var trx = [];
+
+                angular.forEach(_views, function(v) {
+                    if (isIncluded(v.id(), ignoreList, includeList)) {
+                        trx.push({
+                            id: v.id(),
+                            data: v.data(),
+                            userData: v.userData(),
+                            row: v.row()
+                        });
+                    }
+                });
+                return trx;
+            }
+
+            /**
+             * @ngdoc method
+             * @name set
+             * @methodOf ep.binding.factory:epTransactionFactory
+             * @public
+             * @description
+             * set transaction from storage
+             * @param {array} ignoreList - List if view id's to ignore
+             * @param {array} includeList - List if view id's to include
+             */
+            function set(trx, ignoreList, includeList) {
+                if (trx && angular.isArray(trx)) {
+
+                    /*jshint validthis: true */
+                    var self = this;
+                    angular.forEach(trx, function(v) {
+                        if (isIncluded(v.id, ignoreList, includeList)) {
+                            var vw = self.add(v.id, v.data);
+                            vw.userData(v.userData, false);
+                            if (v.row) {
+                                vw.row(v.row);
+                            }
+                        }
+                    });
+                }
+            }
+
+            /**
+             * @private
+             * @description
+             * is the specified view included based on ignore/include lists
+             * @param {array} ignoreList - List if view id's to ignore
+             * @param {array} includeList - List if view id's to include
+             */
+            function isIncluded(viewId, ignoreList, includeList) {
+                if (ignoreList && ignoreList.indexOf(viewId) >= 0) {
+                    return false;
+                }
+                if (includeList) {
+                    return (includeList.indexOf(viewId) >= 0);
+                }
+                return true;
+            }
+
             return {
                 id: id,
                 add: add,
@@ -4368,7 +4446,9 @@ angular.module('ep.binding').
                 clear: clear,
                 view: view,
                 views: views,
-                rollback: rollback
+                rollback: rollback,
+                get: get,
+                set: set
             };
         }
 
@@ -4455,7 +4535,7 @@ angular.module('ep.binding').
             var showProgress = (options.showProgress !== false);
             if (showProgress) {
                 epModalDialogService.showProgress({
-                    title: options.title || 'Retrieving BAQ data',
+                    title: options.title || 'Retrieving data...',
                     message: options.message || 'retrieving data from server...',
                     showProgress: true,
                     showLoading: options.showLoading || false,
@@ -4504,8 +4584,10 @@ angular.module('ep.binding').
             if (!epBindingMetadataService.get(viewId) && options.retrieveMetaData !== false) {
                 promiseMeta = getBAQDesigner(baqId);
                 promiseMeta.then(function(result) {
-                    var columns = getMetaColumns(result.data.returnObj);
-                    epBindingMetadataService.add(viewId, 'baq', columns);
+                    if (result.data) {
+                        var columns = getMetaColumns(result.data.returnObj);
+                        epBindingMetadataService.add(viewId, 'baq', columns);
+                    }
                 }, function(data) { });
             }
 
@@ -4658,7 +4740,7 @@ angular.module('ep.binding').
             var showProgress = (options.showProgress !== false);
             if (showProgress) {
                 epModalDialogService.showProgress({
-                    title: 'Retrieving BAQ data',
+                    title: 'Retrieving data...',
                     message: 'getting new record from server...',
                     showProgress: true,
                     showLoading: options.showLoading || false,
@@ -4758,23 +4840,14 @@ angular.module('ep.binding').
 
         //private functions --->
         function showException(response) {
-            var msg = response.ErrorMessage || '';
-            if (!msg && response['odata.error']) {
-                msg = response['odata.error'].message.value;
-            }
-            if (!msg && response.statusText) {
-                msg = response.statusText;
-            }
-            if (!msg && response.message) {
-                msg = response.message;
-            }
-            if (!msg && response.data && angular.isString(response.data)) {
-                msg = response.data;
-            }
-            var maskedResponse = angular.extend({}, response);
-            if (maskedResponse.config && maskedResponse.config.headers &&
-                maskedResponse.config.headers.Authorization) {
-                maskedResponse.config.headers.Authorization = '***';
+            var msg = epErpRestService.getErrorMsg(response, 'Unknown exception in erpBaqService');
+            var maskedResponse = {};
+            if (response) {
+                maskedResponse = angular.extend({}, response);
+                if (maskedResponse.config && maskedResponse.config.headers &&
+                    maskedResponse.config.headers.Authorization) {
+                    maskedResponse.config.headers.Authorization = '***';
+                }
             }
             epModalDialogService.showException({
                 title: 'Info', message: msg || '',
