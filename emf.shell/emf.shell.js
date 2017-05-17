@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.281 built: 16-05-2017
+ * version:1.0.12-dev.282 built: 17-05-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.12-dev.281","built":"2017-05-16"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.12-dev.282","built":"2017-05-17"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -3233,6 +3233,9 @@ function() {
  *  # Show progress message
  *      epModalDialogService.showProgress({ message: 'hello world!', title: 'title', icon: 'fa fa-clock-o fa-4x', autoClose: 2000, fnDefaultAction: function() {alert('progess completed');} });
  *
+ *  # Show loading message
+ *      epModalDialogService.showLoading({ message: 'hello world!', title: 'title', autoClose: 2000, fnDefaultAction: function() {alert('loading completed');} });
+ *
  *  # Show exception
  *      try { throw new Error('Test Exception'); } catch (ex) { epModalDialogService.showException({}, ex); }
  *
@@ -3340,6 +3343,7 @@ function() {
         function showMessage(options) {
             var cfg = {
                 showProgress: false,
+                dialogTypeClass: 'ep-message-pane',
                 icon: 'fa fa-info-circle fa-4x'
             };
 
@@ -3373,6 +3377,7 @@ function() {
         function showConfirm(options) {
             var cfg = {
                 showProgress: false,
+                dialogTypeClass: 'ep-confirm-dialog',
                 icon: 'fa  fa-question-circle fa-4x',
                 buttons: [{
                     text: 'Yes', isDefault: true,
@@ -3413,6 +3418,40 @@ function() {
         function showProgress(options) {
             var cfg = {
                 showProgress: true,
+                dialogTypeClass: 'ep-progress-dialog',
+                icon: 'fa fa-clock-o fa-4x',
+                buttons: []
+            };
+            copyProperties(options, cfg);
+
+            show(cfg);
+        }
+
+        /**
+         * @ngdoc method
+         * @name showLoading
+         * @methodOf ep.modaldialog.factory:epModalDialogService
+         * @public
+         * @description
+         * Shows the standard loading dialog with the message text.
+         * @param {object} options - optional settings as follows:
+         * <pre>
+         *      message - the message to display
+         *      title - title (header)
+         *      icon - font awesome icon class
+         *      status - warning\error\information
+         *      buttons - list of buttons (refer to buttons description at service documentation)
+         *      fnDefaultAction - function applied to default button if buttons are not supplied
+         *      fnCancelAction - function to be fired on Cancel button if button has isCancel = true
+         *      autoClose - time in seconds to autoclose
+         *      titleClass, iconClass, contentClass - optional classes applied to respective areas
+         * </pre>
+         */
+        function showLoading(options) {
+            var cfg = {
+                showLoading: true,
+                showProgress: true,
+                dialogTypeClass: 'ep-loading-dialog',
                 icon: 'fa fa-clock-o fa-4x',
                 buttons: []
             };
@@ -3822,7 +3861,8 @@ function() {
             } else if (md === 'current') {
                 closeCurrentDialog();
             } else if (md === 'non-stackable') {
-                if (currentDialog && !currentDialog.isModal && !currentDialog.cfg.stackable) {
+                //close only if the current dialog is non-stackable
+                if (currentDialog && (currentDialog.cfg.stackable !== true)) {
                     closeCurrentDialog();
                 }
             } else {
@@ -4161,6 +4201,7 @@ function() {
             showModalForm: showModalForm,
             showMessage: showMessage,
             showConfirm: showConfirm,
+            showLoading: showLoading,
             showProgress: showProgress,
             showException: showException,
             showMessageBox: showMessageBox,
@@ -7209,13 +7250,8 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   );
 
 
-  $templateCache.put('src/components/ep.modaldialog/modals/modaldialog-loading.html',
-    "<div class=\"ep-modaldialog ep-modaldialog-pane ep-ease-animation ep-hide-fade\" ng-hide=!dialogState.isVisible><div class=\"ep-dlg-container ep-loading-dialog\"><div class=\"ep-dlg-center clearfix\"><span class=ep-dlg-title>Loading...</span> <span class=ep-dlg-icon><i class=\"fa fa-spinner fa-pulse fa-fw\"></i></span><!-- Optional text message if needed <span class=\"ep-dlg-message\">Please wait, retrieving records from the server.</span>--></div></div></div>"
-  );
-
-
   $templateCache.put('src/components/ep.modaldialog/modals/modaldialog-pane.html',
-    "<div class=\"ep-modaldialog ep-modaldialog-pane ep-ease-animation ep-hide-fade\" ng-hide=!dialogState.isVisible><div class=ep-dlg-container ng-class=config.containerClass><div class=\"ep-dlg-center clearfix\"><span ng-if=!config.showLoading class=\"ep-dlg-icon pull-left\" ng-class=config.iconClass style=\"margin-right: 10px; margin-top: 5px\"><span ng-if=config.showSpinner class=\"ep-dlg-icon fa-stack fa-2x\"><i class=\"ep-dlg-spinner-icon fa fa-spin fa-stack-2x\" ng-class=config.spinnerIconClass></i> <i ng-if=config.showTimer class=\"ep-dlg-spinner-text fa fa-stack-1x\" ng-class=config.spinnerTextClass>{{config.countDown}}</i></span> <i ng-if=!config.showSpinner ng-class=config.icon></i></span><div ng-class=\"{'pull-left': !config.showLoading}\"><span class=ep-dlg-title ng-class=config.titleClass ng-bind=config.fnGetTitle()></span> <span class=\"ep-dlg-icon fa-stack fa-2x\" ng-if=config.showLoading><i class=\"ep-dlg-spinner-icon fa fa-spin fa-stack-2x fa-spinner fa-pulse\"></i></span><p class=ep-dlg-message ng-class=config.messageClass ng-bind=config.fnGetMessage()></p><div class=\"ep-dlg-rememberMe form-group\" ng-show=config.rememberMe><div class=checkbox><input tabindex=1 id=cbxRemember type=checkbox ng-model=config.rememberMeValue><label>Do not show this message again</label></div></div><!--<div class=\"ep-dlg-progress-indicator\" ng-show=\"config.showProgress\"><span class=\"fa fa-pulse fa-spinner fa-5x\" ng-class=\"config.progressClass\"></span></div>--><!--<div class=\"ep-dlg-progress-indicator\" ng-show=\"config.showProgress && config.showTimer\"><span ng-class=\"config.timerClass\">{{config.countDown}}</span></div>--><div class=ep-dlg-buttons ng-if=!config.showLoading><button ng-repeat=\"btn in config.buttons\" id=btn.id tabindex=\"$index + 100\" data-dismiss=modal ng-hide=btn.hidden class=\"btn btn-{{btn.type}} btn-sm\" ng-click=btnclick(btn)><i ng-if=btn.icon ng-class=btn.icon></i> &nbsp;{{btn.text}}</button></div></div></div></div></div>"
+    "<div class=\"ep-modaldialog ep-modaldialog-pane ep-ease-animation ep-hide-fade\" ng-hide=!dialogState.isVisible><div class=\"ep-dlg-container {{config.dialogTypeClass}}\" ng-class=config.containerClass><div class=\"ep-dlg-center clearfix\"><span ng-if=!config.showLoading class=\"ep-dlg-icon pull-left\" ng-class=config.iconClass style=\"margin-right: 10px; margin-top: 5px\"><span ng-if=config.showSpinner class=\"ep-dlg-icon fa-stack fa-2x\"><i class=\"ep-dlg-spinner-icon fa fa-spin fa-stack-2x\" ng-class=config.spinnerIconClass></i> <i ng-if=config.showTimer class=\"ep-dlg-spinner-text fa fa-stack-1x\" ng-class=config.spinnerTextClass>{{config.countDown}}</i></span> <i ng-if=!config.showSpinner ng-class=config.icon></i></span><div ng-class=\"{'pull-left': !config.showLoading}\"><span class=ep-dlg-title ng-class=config.titleClass ng-bind=config.fnGetTitle()></span> <span class=\"ep-dlg-icon fa-stack fa-2x\" ng-if=config.showLoading><i class=\"ep-dlg-spinner-icon fa fa-spin fa-stack-2x fa-spinner fa-pulse\"></i></span><p class=ep-dlg-message ng-class=config.messageClass ng-bind=config.fnGetMessage()></p><div class=\"ep-dlg-rememberMe form-group\" ng-show=config.rememberMe><div class=checkbox><input tabindex=1 id=cbxRemember type=checkbox ng-model=config.rememberMeValue><label>Do not show this message again</label></div></div><!--<div class=\"ep-dlg-progress-indicator\" ng-show=\"config.showProgress\"><span class=\"fa fa-pulse fa-spinner fa-5x\" ng-class=\"config.progressClass\"></span></div>--><!--<div class=\"ep-dlg-progress-indicator\" ng-show=\"config.showProgress && config.showTimer\"><span ng-class=\"config.timerClass\">{{config.countDown}}</span></div>--><div class=ep-dlg-buttons ng-if=\"config.buttons && config.buttons.length > 0\"><button ng-repeat=\"btn in config.buttons\" id=btn.id tabindex=\"$index + 100\" data-dismiss=modal ng-hide=btn.hidden class=\"btn btn-{{btn.type}} btn-sm\" ng-click=btnclick(btn)><i ng-if=btn.icon ng-class=btn.icon></i> &nbsp;{{btn.text}}</button></div></div></div></div></div>"
   );
 
 

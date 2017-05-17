@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.281 built: 16-05-2017
+ * version:1.0.12-dev.282 built: 17-05-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.281","built":"2017-05-16"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.282","built":"2017-05-17"};
 
 (function() {
     'use strict';
@@ -4534,12 +4534,9 @@ angular.module('ep.binding').
             }
             var showProgress = (options.showProgress !== false);
             if (showProgress) {
-                epModalDialogService.showProgress({
+                epModalDialogService.showLoading({
                     title: options.title || 'Retrieving data...',
-                    message: options.message || 'retrieving data from server...',
-                    showProgress: true,
-                    showLoading: options.showLoading || false,
-                    containerClass: options.containerClass || 'bg-primary'
+                    message: options.message || 'retrieving data from server...'
                 });
             }
 
@@ -4572,7 +4569,7 @@ angular.module('ep.binding').
                 //    epTransactionFactory.current().add(viewId, data.value);
                 //}
             }, function(data) {
-                var msg = showException(data);
+                var msg = showException(data, (options.showError !== false));
                 deferred.reject(msg, data);
             });
 
@@ -4582,7 +4579,7 @@ angular.module('ep.binding').
 
             var promiseMeta;
             if (!epBindingMetadataService.get(viewId) && options.retrieveMetaData !== false) {
-                promiseMeta = getBAQDesigner(baqId);
+                promiseMeta = getBAQDesigner(baqId, (options.showError !== false));
                 promiseMeta.then(function(result) {
                     if (result.data) {
                         var columns = getMetaColumns(result.data.returnObj);
@@ -4651,12 +4648,9 @@ angular.module('ep.binding').
             var deferred = $q.defer();
             try {
                 if (showProgress) {
-                    epModalDialogService.showProgress({
+                    epModalDialogService.showLoading({
                         title: options.title || 'Updating data',
-                        message: options.message || 'sending data to server...',
-                        showProgress: true,
-                        showLoading: options.showLoading || false,
-                        containerClass: options.containerClass || 'bg-primary'
+                        message: options.message || 'sending data to server...'
                     });
                 }
 
@@ -4719,11 +4713,11 @@ angular.module('ep.binding').
                 });
                 promise.error(function(response) {
                     fnOnComplete();
-                    showException(response);
+                    showException(response, (options.showError !== false));
                     deferred.reject(response);
                 });
             } catch (err) {
-                showException(response);
+                showException(response, (options.showError !== false));
                 fnOnComplete();
             }
 
@@ -4739,12 +4733,9 @@ angular.module('ep.binding').
 
             var showProgress = (options.showProgress !== false);
             if (showProgress) {
-                epModalDialogService.showProgress({
+                epModalDialogService.showLoading({
                     title: 'Retrieving data...',
-                    message: 'getting new record from server...',
-                    showProgress: true,
-                    showLoading: options.showLoading || false,
-                    containerClass: options.containerClass || 'bg-primary'
+                    message: 'getting new record from server...'
                 });
             }
 
@@ -4782,7 +4773,7 @@ angular.module('ep.binding').
                     if (showProgress) {
                         epModalDialogService.hide();
                     }
-                    showException(data);
+                    showException(data, (options.showError !== false));
                     deferred.resolve([]);
                 });
             }
@@ -4790,7 +4781,7 @@ angular.module('ep.binding').
             return deferred.promise;
         }
 
-        function getBAQDesigner(baqId, metaDataKey) {
+        function getBAQDesigner(baqId, metaDataKey, showError) {
             var deferred = $q.defer();
 
             var url = 'Ice.BO.BAQDesignerSvc/GetByID';
@@ -4809,7 +4800,7 @@ angular.module('ep.binding').
                 deferred.resolve(true);
             });
             promise.error(function(response) {
-                showException(response);
+                showException(response, showError);
                 deferred.resolve(false);
             });
 
@@ -4833,13 +4824,13 @@ angular.module('ep.binding').
                     }
                 }
             }, function(data) {
-                var msg = showException(data);
+                var msg = showException(data, false);
                 deferred.reject(msg, data);
             });
         }
 
         //private functions --->
-        function showException(response) {
+        function showException(response, showError) {
             var msg = epErpRestService.getErrorMsg(response, 'Unknown exception in erpBaqService');
             var maskedResponse = {};
             if (response) {
@@ -4849,10 +4840,12 @@ angular.module('ep.binding').
                     maskedResponse.config.headers.Authorization = '***';
                 }
             }
-            epModalDialogService.showException({
-                title: 'Info', message: msg || '',
-                messageDetails: angular.toJson(maskedResponse, 2)
-            });
+            if (showError) {
+                epModalDialogService.showException({
+                    title: 'Info', message: msg || '',
+                    messageDetails: angular.toJson(maskedResponse, 2)
+                });
+            }
             return msg;
         }
 
@@ -5020,10 +5013,9 @@ angular.module('ep.binding').
             }
             var showProgress = (options.showProgress !== false);
             if (showProgress) {
-                epModalDialogService.showProgress({
+                epModalDialogService.showLoading({
                     title: 'Retrieving data',
-                    message: 'retrieving data from server...',
-                    showProgress: true
+                    message: 'retrieving data from server...'
                 });
             }
 
@@ -5102,10 +5094,9 @@ angular.module('ep.binding').
 
             var showProgress = (options.showProgress !== false);
             if (showProgress) {
-                epModalDialogService.showProgress({
+                epModalDialogService.showLoading({
                     title: options.title || 'Updating data',
-                    message: options.message || 'sending data to server...',
-                    showProgress: true
+                    message: options.message || 'sending data to server...'
                 });
             }
 
