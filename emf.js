@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.294 built: 20-05-2017
+ * version:1.0.12-dev.295 built: 31-05-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.294","built":"2017-05-20"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.295","built":"2017-05-31"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -17779,6 +17779,7 @@ angular.module('ep.menu.builder').
          * default settings for confirmation (pane dialog)
          */
         var defaultConfig = {
+            dialogTypeClass: 'ep-message-dialog',
             containerClass: 'bg-primary',
             title: 'Title',
             titleClass: 'text-warning',
@@ -17802,7 +17803,6 @@ angular.module('ep.menu.builder').
             isModal: false,
             paneScope: null
         };
-        angular.copy(defaultConfig, dialogState.config);
 
         // @private
         // list of open dialogs
@@ -18450,16 +18450,8 @@ angular.module('ep.menu.builder').
             dialogState.isVisible = true;
             dialogState.isModal = false;
 
-            if (!angular.element('body .ep-modaldialog.ep-modaldialog-pane').length) {
-                dialogState.paneScope = $rootScope.$new();
-                dialogState.paneScope.dialogState = dialogState;
-                dialogState.paneScope.btnclick = function(btn) {
-                    hide('panel');
-                    onButtonClick(dialogState.config, btn);
-                };
-                angular.element(document.body).append($compile('<epmodaldialog></epmodaldialog>')(
-                    dialogState.paneScope));
-            }
+            //Just in case - make sure panel is created
+            checkCreatePaneElement();
 
             cfg._isModalDialog = false;
             setCommonOptions(cfg);
@@ -18692,6 +18684,39 @@ angular.module('ep.menu.builder').
             dialogs.pop();
             currentDialog = (dialogs.length) ? dialogs[dialogs.length - 1] : undefined;
         }
+
+        /**
+         * @name checkCreatePaneElement
+         * @private
+         * @description
+         * Check if panel element has been created in the DOM, if not creates it
+         */
+        function checkCreatePaneElement() {
+            if (!angular.element('body .ep-modaldialog.ep-modaldialog-pane').length) {
+                dialogState.paneScope = $rootScope.$new();
+                dialogState.paneScope.dialogState = dialogState;
+                dialogState.paneScope.btnclick = function(btn) {
+                    hide('panel');
+                    onButtonClick(dialogState.config, btn);
+                };
+                angular.element(document.body).append($compile('<epmodaldialog></epmodaldialog>')(
+                    dialogState.paneScope));
+            }
+        }
+
+        /**
+         * @name init
+         * @private
+         * @description
+         * Called on service start-up
+         */
+        function init() {
+            angular.copy(defaultConfig, dialogState.config);
+            checkCreatePaneElement();
+        }
+
+        //initialize the service
+        init();
 
         return {
             showModalForm: showModalForm,
@@ -30419,7 +30444,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.modaldialog/modals/modaldialog-pane.html',
-    "<div class=\"ep-modaldialog ep-modaldialog-pane ep-ease-animation ep-hide-fade\" ng-hide=!dialogState.isVisible><div class=\"ep-dlg-container {{config.dialogTypeClass}}\" ng-class=config.containerClass><div class=\"ep-dlg-center clearfix\"><span ng-if=!config.showLoading class=\"ep-dlg-icon pull-left\" ng-class=config.iconClass style=\"margin-right: 10px; margin-top: 5px\"><span ng-if=config.showSpinner class=\"ep-dlg-icon fa-stack fa-2x\"><i class=\"ep-dlg-spinner-icon fa fa-spin fa-stack-2x\" ng-class=config.spinnerIconClass></i> <i ng-if=config.showTimer class=\"ep-dlg-spinner-text fa fa-stack-1x\" ng-class=config.spinnerTextClass>{{config.countDown}}</i></span> <i ng-if=!config.showSpinner ng-class=config.icon></i></span><div ng-class=\"{'pull-left': !config.showLoading}\"><span class=ep-dlg-title ng-class=config.titleClass ng-bind=config.fnGetTitle()></span> <span class=\"ep-dlg-icon fa-stack fa-2x\" ng-if=config.showLoading><i class=\"ep-dlg-spinner-icon fa fa-spin fa-stack-2x fa-spinner fa-pulse\"></i></span><p class=ep-dlg-message ng-class=config.messageClass ng-bind=config.fnGetMessage()></p><div class=\"ep-dlg-rememberMe form-group\" ng-show=config.rememberMe><div class=checkbox><input tabindex=1 id=cbxRemember type=checkbox ng-model=config.rememberMeValue><label>Do not show this message again</label></div></div><!--<div class=\"ep-dlg-progress-indicator\" ng-show=\"config.showProgress\"><span class=\"fa fa-pulse fa-spinner fa-5x\" ng-class=\"config.progressClass\"></span></div>--><!--<div class=\"ep-dlg-progress-indicator\" ng-show=\"config.showProgress && config.showTimer\"><span ng-class=\"config.timerClass\">{{config.countDown}}</span></div>--><div class=ep-dlg-buttons ng-if=\"config.buttons && config.buttons.length > 0\"><button ng-repeat=\"btn in config.buttons\" id=btn.id tabindex=\"$index + 100\" data-dismiss=modal ng-hide=btn.hidden class=\"btn btn-{{btn.type}} btn-sm\" ng-click=btnclick(btn)><i ng-if=btn.icon ng-class=btn.icon></i> &nbsp;{{btn.text}}</button></div></div></div></div></div>"
+    "<div class=\"ep-modaldialog ep-modaldialog-pane ep-ease-animation ep-hide-fade\" ng-hide=!dialogState.isVisible><div class=ep-dlg-container ng-class=\"[config.dialogTypeClass, config.containerClass]\"><div class=\"ep-dlg-center clearfix\"><span ng-if=!config.showLoading class=\"ep-dlg-icon pull-left\" ng-class=config.iconClass style=\"margin-right: 10px; margin-top: 5px\"><span ng-if=config.showSpinner class=\"ep-dlg-icon fa-stack fa-2x\"><i class=\"ep-dlg-spinner-icon fa fa-spin fa-stack-2x\" ng-class=config.spinnerIconClass></i> <i ng-if=config.showTimer class=\"ep-dlg-spinner-text fa fa-stack-1x\" ng-class=config.spinnerTextClass>{{config.countDown}}</i></span> <i ng-if=!config.showSpinner ng-class=config.icon></i></span><div ng-class=\"{'pull-left': !config.showLoading}\"><span class=ep-dlg-title ng-class=config.titleClass ng-bind=config.fnGetTitle()></span> <span class=\"ep-dlg-icon fa-stack fa-2x\" ng-if=config.showLoading><i class=\"ep-dlg-spinner-icon fa fa-spin fa-stack-2x fa-spinner fa-pulse\"></i></span><p class=ep-dlg-message ng-class=config.messageClass ng-bind=config.fnGetMessage()></p><div class=\"ep-dlg-rememberMe form-group\" ng-show=config.rememberMe><div class=checkbox><input tabindex=1 id=cbxRemember type=checkbox ng-model=config.rememberMeValue><label>Do not show this message again</label></div></div><!--<div class=\"ep-dlg-progress-indicator\" ng-show=\"config.showProgress\"><span class=\"fa fa-pulse fa-spinner fa-5x\" ng-class=\"config.progressClass\"></span></div>--><!--<div class=\"ep-dlg-progress-indicator\" ng-show=\"config.showProgress && config.showTimer\"><span ng-class=\"config.timerClass\">{{config.countDown}}</span></div>--><div class=ep-dlg-buttons ng-if=\"config.buttons && config.buttons.length > 0\"><button ng-repeat=\"btn in config.buttons\" id=btn.id tabindex=\"$index + 100\" data-dismiss=modal ng-hide=btn.hidden class=\"btn btn-{{btn.type}} btn-sm\" ng-click=btnclick(btn)><i ng-if=btn.icon ng-class=btn.icon></i> &nbsp;{{btn.text}}</button></div></div></div></div></div>"
   );
 
 
