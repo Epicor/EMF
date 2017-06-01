@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.296 built: 31-05-2017
+ * version:1.0.12-dev.297 built: 31-05-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.296","built":"2017-05-31"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.297","built":"2017-05-31"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -12567,7 +12567,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
             var promiseMeta;
             if (!epBindingMetadataService.get(viewId) && options.retrieveMetaData !== false) {
-                promiseMeta = getBAQDesigner(baqId, (options.showError !== false));
+                promiseMeta = getBAQDesigner(baqId, viewId, (options.showError !== false));
                 promiseMeta.then(function(result) {
                     if (result.data) {
                         var columns = getMetaColumns(result.data.returnObj);

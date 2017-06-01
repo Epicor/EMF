@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.296 built: 31-05-2017
+ * version:1.0.12-dev.297 built: 31-05-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.296","built":"2017-05-31"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.297","built":"2017-05-31"};
 
 (function() {
     'use strict';
@@ -4579,7 +4579,7 @@ angular.module('ep.binding').
 
             var promiseMeta;
             if (!epBindingMetadataService.get(viewId) && options.retrieveMetaData !== false) {
-                promiseMeta = getBAQDesigner(baqId, (options.showError !== false));
+                promiseMeta = getBAQDesigner(baqId, viewId, (options.showError !== false));
                 promiseMeta.then(function(result) {
                     if (result.data) {
                         var columns = getMetaColumns(result.data.returnObj);
