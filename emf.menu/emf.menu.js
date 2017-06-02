@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.304 built: 02-06-2017
+ * version:1.0.12-dev.305 built: 02-06-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.304","built":"2017-06-02"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.305","built":"2017-06-02"};
 
 (function() {
     'use strict';
@@ -311,7 +311,8 @@ angular.module('ep.menu.builder', [
             $scope.state = {
                 searchTerm: '',
                 searchType: 'item',
-                lastSearchTerm: ''
+                lastSearchTerm: '',
+                searchIndex:{}
             };
 
             $scope.searchResults = [];  //Current search results
@@ -338,6 +339,23 @@ angular.module('ep.menu.builder', [
                 }
             }
 
+            // private build the index for faster searching
+            function buildIndex(menuItems){
+                // menuItems is an array of objects, and each object potentially has a subarray of menuitems making a tree structure.
+                //  we want to flatten the tree into a hashable object.
+                menuItems.forEach(function(menuItem){
+                    // for the purposes of searching, we only care about leaf nodes
+                    if(menuItem._type === 'item'){
+                        var key = menuItem.caption.substr(0, 1).toLowerCase();
+                        $scope.state.searchIndex[key] = $scope.state.searchIndex[key] || [];
+                        $scope.state.searchIndex[key].push(menuItem);
+                    }
+                    else{
+                        buildIndex(menuItem.menuitems);
+                    }
+                })
+            }
+
             /**
              * @ngdoc method
              * @name search
@@ -361,18 +379,22 @@ angular.module('ep.menu.builder', [
                     setCurrentItems();
                     return;
                 }
+                var term = $scope.state.searchTerm.toLowerCase();
+                var type = $scope.state.searchType ? $scope.state.searchType.toLowerCase() : '';
+                if(term && term.length === 1){
+                    $scope.searchResults = $scope.state.searchIndex[term];
+                    setCurrentItems();
+                    $scope.state.lastSearchTerm = term;
+                    return;
+                }
 
                 searchTimeout = $timeout(function() {
                     var results = [];
-
-                    var term = $scope.state.searchTerm.toLowerCase();
-                    var type = $scope.state.searchType ? $scope.state.searchType.toLowerCase() : '';
-
                     if ($scope.state.lastSearchTerm && term.indexOf($scope.state.lastSearchTerm) === 0) {
                         //search in our prior result set
-                        searchKids($scope.searchResults, term, type, false, results);
+                        searchChildren($scope.searchResults, term, type, false, results);
                     } else {
-                        searchKids($scope.menu.menuitems, term, type, true, results);
+                        searchChildren($scope.menu.menuitems, term, type, true, results);
                     }
                     $scope.searchResults = results;
                     setCurrentItems();
@@ -381,16 +403,21 @@ angular.module('ep.menu.builder', [
             }
 
             // private enum to search kids for local searchTerm
-            function searchKids(menuitems, term, type, recursive, results) {
-                angular.forEach(menuitems, function(kid) {
-                    if (kid && kid.caption.toLowerCase().indexOf(term) !== -1) {
+            function searchChildren(menuitems, term, type, recursive, results) {
+                angular.forEach(menuitems, function (kid) {
+                    // build a regex to take the current search term and split it up in to a word-boundary search
+                    // for example, "ca rec cus" should match all captions that start with each word, for example "CAsh RECeipts by CUStomer"
+                    var regex = new RegExp(term.replace(/(\S+)/g, function (s) { return "\\b" + s + ".*" }).replace(/\s+/g, ''), "gi");
+        
+                    // check the caption to see if it passes the regex
+                    if (kid && regex.exec(kid.caption)) {
                         // if we are type checking, also check the system-set _type
                         if (type === '' || kid.type === type || kid._type === type) {
                             results.push(kid);
                         }
                     }
                     if (recursive && kid.menuitems) {
-                        searchKids(kid.menuitems, term, type, recursive, results);
+                        searchChildren(kid.menuitems, term, type, recursive, results);
                     }
                 });
             }
@@ -496,6 +523,11 @@ angular.module('ep.menu.builder', [
                 // now we set the data (with _parent and _depth properties) on scope and set the 'next' panel
                 $scope.data = $scope.multiLevelMenuHelper.data;
                 $scope.data.next = $scope.multiLevelMenuHelper.data.menu;
+                // now we build a simple index for searching quickly
+                if($scope.menu){
+                    buildIndex($scope.menu.menuitems);
+                }
+
                 // when we invoke navigate, this will add the animation class setting the initial
                 // animation into effect
                 $scope.navigate($scope.data.next);
@@ -512,6 +544,9 @@ angular.module('ep.menu.builder', [
                         $scope.multiLevelMenuHelper.populate($scope.menu, true);
                         $scope.data = $scope.multiLevelMenuHelper.data;
                         $scope.data.next = $scope.multiLevelMenuHelper.data.menu;
+                        if($scope.menu){
+                            buildIndex($scope.menu.menuitems);
+                        }
                         setCurrentItems();
                         emitMenuEvent(epMultiLevelMenuConstants.MLM_MENU_DATA_CHANGED);
                     }
