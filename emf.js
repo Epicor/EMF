@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.321 built: 06-06-2017
+ * version:1.0.12-dev.322 built: 06-06-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.321","built":"2017-06-06"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.322","built":"2017-06-06"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -18968,7 +18968,7 @@ angular.module('ep.menu.builder').
                 searchTerm: '',
                 searchType: 'item',
                 lastSearchTerm: '',
-                searchIndex:{}
+                searchIndex:[]
             };
 
             $scope.searchResults = [];  //Current search results
@@ -19001,10 +19001,8 @@ angular.module('ep.menu.builder').
                 //  we want to flatten the tree into a hashable object.
                 menuItems.forEach(function(menuItem){
                     // for the purposes of searching, we only care about leaf nodes
-                    if(menuItem._type === 'item'){
-                        var key = menuItem.caption.substr(0, 1).toLowerCase();
-                        $scope.state.searchIndex[key] = $scope.state.searchIndex[key] || [];
-                        $scope.state.searchIndex[key].push(menuItem);
+                    if(menuItem._type === 'item') {
+                        $scope.state.searchIndex.push(menuItem);
                     }
                     else{
                         buildIndex(menuItem.menuitems);
@@ -19037,11 +19035,8 @@ angular.module('ep.menu.builder').
                 }
                 var term = $scope.state.searchTerm.toLowerCase();
                 var type = $scope.state.searchType ? $scope.state.searchType.toLowerCase() : '';
-                if(term && term.length === 1){
-                    $scope.searchResults = $scope.state.searchIndex[term];
-                    setCurrentItems();
-                    $scope.state.lastSearchTerm = term;
-                    return;
+                if(term && term.length === 1) {
+                    $scope.searchResults = $scope.state.searchIndex;
                 }
 
                 searchTimeout = $timeout(function() {
