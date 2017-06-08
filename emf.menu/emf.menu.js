@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.329 built: 08-06-2017
+ * version:1.0.12-dev.330 built: 08-06-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.329","built":"2017-06-08"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.330","built":"2017-06-08"};
 
 (function() {
     'use strict';
@@ -339,19 +339,25 @@ angular.module('ep.menu.builder', [
                 }
             }
 
-            // private build the index for faster searching
             function buildIndex(menuItems){
+                traverseTree(menuItems);
+                $scope.state.searchIndex.sort(function(a, b){ return a.caption > b.caption ? 1 : 0});
+            }
+
+            // private build the index for faster searching
+            function traverseTree(menuItems){
                 // menuItems is an array of objects, and each object potentially has a subarray of menuitems making a tree structure.
                 //  we want to flatten the tree into a hashable object.
                 menuItems.forEach(function(menuItem){
                     // for the purposes of searching, we only care about leaf nodes
                     if(menuItem._type === 'item') {
+                        menuItem.searchTerm = menuItem.caption.toLowerCase();
                         $scope.state.searchIndex.push(menuItem);
                     }
                     else{
-                        buildIndex(menuItem.menuitems);
+                        traverseTree(menuItem.menuitems);
                     }
-                })
+                });
             }
 
             /**
@@ -379,18 +385,10 @@ angular.module('ep.menu.builder', [
                 }
                 var term = $scope.state.searchTerm.toLowerCase();
                 var type = $scope.state.searchType ? $scope.state.searchType.toLowerCase() : '';
-                if(term && term.length === 1) {
-                    $scope.searchResults = $scope.state.searchIndex;
-                }
 
                 searchTimeout = $timeout(function() {
                     var results = [];
-                    if ($scope.state.lastSearchTerm && term.indexOf($scope.state.lastSearchTerm) === 0) {
-                        //search in our prior result set
-                        searchChildren($scope.searchResults, term, type, false, results);
-                    } else {
-                        searchChildren($scope.menu.menuitems, term, type, true, results);
-                    }
+                    searchChildren(term, type, results);
                     $scope.searchResults = results;
                     setCurrentItems();
                     $scope.state.lastSearchTerm = term;
@@ -398,24 +396,29 @@ angular.module('ep.menu.builder', [
             }
 
             // private enum to search kids for local searchTerm
-            function searchChildren(menuitems, term, type, recursive, results) {
-                angular.forEach(menuitems, function (kid) {
-                    // build a regex to take the current search term and split it up in to a word-boundary search
-                    // for example, "ca rec cus" should match all captions that start with each word, for example "CAsh RECeipts by CUStomer"
-                    var regex = new RegExp(term.replace(/(\S+)/g, function (s) { return "\\b" + s + ".*" }).replace(/\s+/g, ''), "gi");
-        
-                    // check the caption to see if it passes the regex
-                    if (kid && regex.exec(kid.caption)) {
-                        // if we are type checking, also check the system-set _type
-                        if (type === '' || kid.type === type || kid._type === type) {
-                            results.push(kid);
+            function searchChildren(searchTerm, type, results) {
+                // This is some pretty hot code here, so be careful
+                // about making changes that could affect performance
+                angular.forEach($scope.state.searchIndex, function (child) {
+                    var terms = searchTerm.split(/(\S+)/g);
+                    var added = false;
+                    child.hitCount = 10;
+                    terms.forEach(function(phrase){
+                        var term = phrase.trim();
+                        if(term && term.length && child && child.searchTerm.indexOf(term) !== -1){
+                           // if we are type checking, also check the system-set _type
+                            if (type === '' || child.type === type || child._type === type) {
+                                child.hitCount--;
+                                if(!added){
+                                    results.push(child);
+                                }
+                                added = true;
+                            }
                         }
-                    }
-                    if (recursive && kid.menuitems) {
-                        searchChildren(kid.menuitems, term, type, recursive, results);
-                    }
+                    });
                 });
             }
+
             /**
              * @ngdoc method
              * @name navigateAlternate
@@ -553,7 +556,7 @@ angular.module('ep.menu.builder', [
 
             function doOrderByMenu(menu) {
                 var sortFnValue = $scope.fnSort ? $scope.fnSort(menu) : undefined;
-                return sortFnValue || menu.sort || menu.caption;
+                return sortFnValue || menu.sort || menu.hitCount || menu.caption;
             }
 
             $scope.$watch('sortDisabled', function(newValue, oldValue) {
