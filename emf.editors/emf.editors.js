@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.325 built: 07-06-2017
+ * version:1.0.12-dev.326 built: 07-06-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["editors"] = {"libName":"editors","version":"1.0.12-dev.325","built":"2017-06-07"};
+__ep_build_info["editors"] = {"libName":"editors","version":"1.0.12-dev.326","built":"2017-06-07"};
 
 (function() {
     'use strict';
@@ -1079,7 +1079,11 @@ angular.module('ep.record.editor', [
             ctx.fnSetFocus = function() {
                 var edt = ctx.fnGetEditorElement();
                 if (edt) {
-                    angular.element(edt).focus();
+                    //only focus the field if we are on a non touch device because it causes the keyboard to popup
+                    //on touch devices which can be an annoying user experience.
+                    if (!epFeatureDetectionService.hasTouchEvents()) {
+                        angular.element(edt).focus();
+                    }
                 }
             };
 
@@ -1697,12 +1701,12 @@ angular.module('ep.record.editor', [
     *        dropEnabled: false,     //drop allowed
     *    };
     */
-    epRecordEditorDirective.$inject = ['$timeout', '$q', 'epRecordEditorFactory', 'epUtilsService'];
+    epRecordEditorDirective.$inject = ['$timeout', '$q', 'epRecordEditorFactory', 'epUtilsService', 'epFeatureDetectionService'];
     angular.module('ep.record.editor').
         directive('epRecordEditor', epRecordEditorDirective);
 
     /*@ngInject*/
-    function epRecordEditorDirective($timeout, $q, epRecordEditorFactory, epUtilsService) {
+    function epRecordEditorDirective($timeout, $q, epRecordEditorFactory, epUtilsService, epFeatureDetectionService) {
         // Private methods ------------------>
 
         function getNewState() {
@@ -1728,9 +1732,13 @@ angular.module('ep.record.editor', [
                 return !$(el).attr('disabled');
             });
 
-            if (controls.length) {
-                var first = $(controls[0]);
-                first.focus();
+            //only focus the field if we are on a non touch device because it causes the keyboard to popup
+            //on touch devices which can be an annoying user experience.
+            if (!epFeatureDetectionService.hasTouchEvents()) {
+                if (controls.length) {
+                    var first = $(controls[0]);
+                    first.focus();
+                }
             }
         }
 
@@ -1751,7 +1759,13 @@ angular.module('ep.record.editor', [
         function selectFocusedControl(scope) {
             if (scope.state.lastFocused && scope.state.lastFocused.Event.originalEvent &&
                 scope.state.lastFocused.Event.originalEvent.target) {
-                scope.state.lastFocused.Event.originalEvent.target.focus();
+
+                //only focus the field if we are on a non touch device because it causes the keyboard to popup
+                //on touch devices which can be an annoying user experience.
+                if (!epFeatureDetectionService.hasTouchEvents()) {
+                    scope.state.lastFocused.Event.originalEvent.target.focus();
+                }
+
                 return true;
             }
             return false;

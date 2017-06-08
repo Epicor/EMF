@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.325 built: 07-06-2017
+ * version:1.0.12-dev.326 built: 07-06-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["datagrid"] = {"libName":"datagrid","version":"1.0.12-dev.325","built":"2017-06-07"};
+__ep_build_info["datagrid"] = {"libName":"datagrid","version":"1.0.12-dev.326","built":"2017-06-07"};
 
 'use strict';
 /**
@@ -1594,8 +1594,12 @@ angular.module('ep.datagrid').directive('epDataGrid', [
             scope.state.$table.removeClass('table-hover');
 
             if (scope.state.allowSearchInput) {
-                $timeout(function() {
-                    scope.findElement('.ep-dg-search-input').focus();
+                $timeout(function () {
+                    //only focus the field if we are on a non touch device because it causes the keyboard to popup
+                    //on touch devices which can be an annoying user experience.
+                    if (!epFeatureDetectionService.hasTouchEvents()) {
+                        scope.findElement('.ep-dg-search-input').focus();
+                    }
                 });
             }
 
