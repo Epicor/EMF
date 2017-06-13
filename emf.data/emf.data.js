@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.334 built: 09-06-2017
+ * version:1.0.12-dev.335 built: 13-06-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.334","built":"2017-06-09"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.335","built":"2017-06-13"};
 
 (function() {
     'use strict';
@@ -138,22 +138,25 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
             }
 
             function getErrorMsg(response, defaultMsg) {
-                var msg = response.ErrorMessage || '';
-                if (!msg && response['odata.error']) {
-                    msg = response['odata.error'].message.value;
-                }
-                if (!msg && response.statusText) {
-                    msg = response.statusText;
-                }
-                if (!msg && response.message) {
-                    msg = response.message;
-                }
-                if (!msg && response.data && angular.isString(response.data)) {
-                    msg = response.data;
-                }
-                if (!msg && response.data && response.data.ErrorMessage &&
-                    angular.isString(response.data.ErrorMessage)) {
-                    msg = response.data.ErrorMessage;
+                var msg = '';
+                if (response) {
+                    var msg = response.ErrorMessage || '';
+                    if (!msg && response['odata.error']) {
+                        msg = response['odata.error'].message.value;
+                    }
+                    if (!msg && response.statusText) {
+                        msg = response.statusText;
+                    }
+                    if (!msg && response.message) {
+                        msg = response.message;
+                    }
+                    if (!msg && response.data && angular.isString(response.data)) {
+                        msg = response.data;
+                    }
+                    if (!msg && response.data && response.data.ErrorMessage &&
+                        angular.isString(response.data.ErrorMessage)) {
+                        msg = response.data.ErrorMessage;
+                    }
                 }
                 if (!msg) {
                     msg = defaultMsg || 'Unkown error in erpRestService';
@@ -2221,7 +2224,11 @@ angular.module('ep.token').
                     if (scope.state.isInFormControl && scope.required !== true) {
                         scope.state.requiredFlag = false;
                     } else {
-                        scope.state.requiredFlag = scope.state.metaColumn.required && scope.state.metaColumn.requiredFlag;
+                        if (scope.state.epBinding.column) {
+                            scope.state.requiredFlag = scope.state.metaColumn.required && scope.state.metaColumn.requiredFlag;
+                        } else {
+                            scope.state.requiredFlag = (scope.required === true);
+                        }
                     }
                 };
 
@@ -4671,10 +4678,11 @@ angular.module('ep.binding').
                     var meta = epBindingMetadataService.get(baqId);
                     if (meta && meta.columns) {
                         dataUpdate = angular.copy(d);
-
+                        //remove non-updatable fields and non-key fields and if not SysRowID 
+                        //also remove if field does not have underscore or starts with underscore
                         var uColsRemove = _.filter(meta.columns, function(cc) {
                             return cc.updatable !== true && cc.isKeyField !== true && cc.name !== 'SysRowID' &&
-                             cc.name.indexOf('_') !== -1;
+                             (cc.name.indexOf('_') !== -1 || cc.name.indexOf('_') === 0);
                         });
                         angular.forEach(uColsRemove, function(cc) {
                             delete dataUpdate[cc.name];
