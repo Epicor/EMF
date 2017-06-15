@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.343 built: 14-06-2017
+ * version:1.0.12-dev.344 built: 15-06-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.343","built":"2017-06-14"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.344","built":"2017-06-15"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -21003,12 +21003,12 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
     *   };
     *   $scope.valueText = 'My Text';
     */
-    epEditorControlDirective.$inject = ['$log', '$timeout', '$window', '$compile', '$q', 'epUtilsService'];
+    epEditorControlDirective.$inject = ['$log', '$timeout', '$window', '$compile', '$q', 'epUtilsService', 'epFeatureDetectionService'];
     angular.module('ep.record.editor').
         directive('epEditorControl', epEditorControlDirective);
 
     /*@ngInject*/
-    function epEditorControlDirective($log, $timeout, $window, $compile, $q, epUtilsService) {
+    function epEditorControlDirective($log, $timeout, $window, $compile, $q, epUtilsService, epFeatureDetectionService) {
 
         var defaultSizeClass = 'col-xs-12 col-sm-8 col-md-6 col-lg-3';
 
