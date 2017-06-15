@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.341 built: 14-06-2017
+ * version:1.0.12-dev.342 built: 14-06-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.341","built":"2017-06-14"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.342","built":"2017-06-14"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -12627,6 +12627,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          *              row: which row (dataRow or index) to replace (default is current row)
          *          }
          *          updatableOnly: true/false send only updatable fields (default is true)
+         *          mergeAfterUpdate: merge the result returned with original (non-updatables) (default is false)
          *      }
          */
         function updateBAQ(baqId, data, options) {
@@ -12662,6 +12663,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     delete d.$$hashKey;
                 }
 
+                var uColsRemove;
                 var dataUpdate = d;
                 if (options.updatableOnly !== false) {
                     var meta = epBindingMetadataService.get(baqId);
@@ -12669,7 +12671,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         dataUpdate = angular.copy(d);
                         //remove non-updatable fields and non-key fields and if not SysRowID 
                         //also remove if field does not have underscore or starts with underscore
-                        var uColsRemove = _.filter(meta.columns, function(cc) {
+                        uColsRemove = _.filter(meta.columns, function(cc) {
                             return cc.updatable !== true && cc.isKeyField !== true && cc.name !== 'SysRowID' &&
                              (cc.name.indexOf('_') !== -1 || cc.name.indexOf('_') === 0);
                         });
@@ -12692,6 +12694,16 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             //identify decimal data type and convert to float
                             var meta1 = epBindingMetadataService.get(baqId);
                             convertToJSonTypes(meta1, updatedRow);
+                        }
+
+                        if (options.updatableOnly !== false && options.mergeAfterUpdate && uColsRemove) {
+                            //This may be needed until REST api fixes that all values are returned, not only the updatables
+                            //we are merging back previous non-updatable values to updatedRow
+                            angular.forEach(uColsRemove, function(cc) {
+                                if (!updatedRow[cc.name] && data[cc.name]) {
+                                    updatedRow[cc.name] = data[cc.name];
+                                }
+                            });
                         }
 
                         var target = options.target || {};
@@ -12867,7 +12879,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     dataType: cc.DataType,
                     editor: getBaqEditor(cc),
                     hasUpdateMapping: hasUpdMap,
-                    isKeyField: isKeyField
+                    isKeyField: isKeyField,
+                    seq: cc.Seq
                 };
 
                 if (cc.FieldFormat) {
@@ -12886,7 +12899,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 ret = 'checkbox';
             } else if (dt === 'date' || dt === 'datetime' || dt === 'system.datetime') {
                 ret = 'date';
-            } else if (dt === 'byte' || dt === 'int32' || dt === 'integer' || dt === 'decimal' ||
+            } else if (dt === 'byte' || dt === 'int32' || dt === 'integer' || dt === 'int' || dt === 'decimal' ||
                 dt === 'system.decimal' || dt === 'system.int32') {
                 ret = 'number';
             } else if (dt === 'nvarchar') {
