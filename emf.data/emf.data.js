@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.349 built: 16-06-2017
+ * version:1.0.12-dev.350 built: 16-06-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.349","built":"2017-06-16"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.350","built":"2017-06-16"};
 
 (function() {
     'use strict';
@@ -4674,10 +4674,10 @@ angular.module('ep.binding').
                     delete d.$$hashKey;
                 }
 
+                var meta = epBindingMetadataService.get(baqId);
                 var uColsRemove;
                 var dataUpdate = d;
                 if (options.updatableOnly !== false) {
-                    var meta = epBindingMetadataService.get(baqId);
                     if (meta && meta.columns) {
                         dataUpdate = angular.copy(d);
                         //remove non-updatable fields and non-key fields and if not SysRowID 
@@ -4693,6 +4693,25 @@ angular.module('ep.binding').
                             dataUpdate = d;
                         }
                     }
+                } else {
+                    //send all fields that are defined in meta data
+                    if (meta && meta.columns) {
+                        dataUpdate = angular.copy(d);
+                        //remove fields that are not in meta
+                        var list = [];
+                        var sysFields = ['RowMod','RowIdent','SysRowID']
+                        angular.forEach(Object.keys(dataUpdate), function(key) {
+                            if (!meta.columns[key] && sysFields.indexOf(key) === -1) {
+                                list.push(key);
+                            }
+                        });
+                        angular.forEach(list, function(cc) {
+                            delete list[cc];
+                        });
+                        if (dataUpdate && dataUpdate.length < 1) {
+                            dataUpdate = d;
+                        }
+                    }
                 }
 
                 var promise = epErpRestService.patch(url, dataUpdate, options.callSettings);
@@ -4703,8 +4722,8 @@ angular.module('ep.binding').
 
                         if (options.convertToJsonType !== false) {
                             //identify decimal data type and convert to float
-                            var meta1 = epBindingMetadataService.get(baqId);
-                            convertToJSonTypes(meta1, updatedRow);
+                            //var meta1 = epBindingMetadataService.get(baqId);
+                            convertToJSonTypes(meta, updatedRow);
                         }
 
                         if (options.updatableOnly !== false && options.mergeAfterUpdate && uColsRemove) {

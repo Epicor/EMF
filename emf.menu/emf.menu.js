@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.349 built: 16-06-2017
+ * version:1.0.12-dev.350 built: 16-06-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.349","built":"2017-06-16"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.350","built":"2017-06-16"};
 
 (function() {
     'use strict';
@@ -2371,18 +2371,19 @@ angular.module('ep.menu.builder', [
                             var groups = _.filter(scope.directory, function(m) {
                                 return m.year === searchValue;
                             });
+                            var filteredData = [];
                             if (groups.length) {
-                                var filteredData = [];
+                                //we found some groups, lets get filtered data
                                 angular.forEach(groups, function(group) {
                                     filteredData = filteredData.concat(scope.origListData.slice(group.index, group.nextIndex));
                                 });
-                                filtered = true;
-                                scope.filteredData = filteredData;
-                                scope.filtered = true;
-                                $timeout(function() {
-                                    scope.$broadcast('vsRepeatTrigger');
-                                });
                             }
+                            filtered = true;
+                            scope.filteredData = filteredData;
+                            scope.filtered = true;
+                            $timeout(function() {
+                                scope.$broadcast('vsRepeatTrigger');
+                            });
                         } else {
                             var directoryEntry = _.find(scope.directory, function(m) {
                                 return m.groupDisplay.indexOf(searchValue) === 0;
