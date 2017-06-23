@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.367 built: 21-06-2017
+ * version:1.0.12-dev.368 built: 23-06-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.367","built":"2017-06-21"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.368","built":"2017-06-23"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -16641,7 +16641,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
                 statuses: '=',
                 formatStatusPeriod: '=',
-                getStatusClass: '=',
+                getStatusTextClass: '=',
                 formatStatusText: '=',
                 formatStatusSource: '=',
                 
@@ -30493,7 +30493,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
     "\n" +
     "                <div class=\"status-period ep-crm-text-ellipsis\">{{formatStatusPeriod(statuses, obj)}}</div>\r" +
     "\n" +
-    "                <div class=\"status status-text ep-crm-text-ellipsis{{getStatusTextClass(statuses, obj)}}\">{{formatStatusText(statuses, obj)}}</div>\r" +
+    "                <div class=\"status status-text ep-crm-text-ellipsis {{getStatusTextClass(statuses, obj)}}\">{{formatStatusText(statuses, obj)}}</div>\r" +
     "\n" +
     "                <div class=\"status-source text-success ep-crm-text-ellipsis\">{{formatStatusSource(statuses, obj)}}</div>\r" +
     "\n" +
