@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.370 built: 26-06-2017
+ * version:1.0.12-dev.371 built: 26-06-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.370","built":"2017-06-26"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.371","built":"2017-06-26"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -4420,10 +4420,20 @@ angular.module('ep.binding').
          * Clears all cached data
          */
         function deleteAllCaches() {
-            Object.keys(cacheStore).forEach(function(cacheId) {
-                deleteCache(cacheId);
-            });
-            epIndexedDbService.deleteDatabase('ep-cache-db');
+            var properties = Object.keys(cacheStore);
+            if (properties.length) {
+                var cacheToDelete = properties[0];
+                // Delete one cache and wait for the promise before deleting next cache
+                deleteCache(cacheToDelete).then(function () {
+                    // Run function recursively when this cache is deleted
+                    deleteAllCaches();
+                });
+            }
+            else {
+                epIndexedDbService.deleteDatabase('ep-cache-db').then(function () {
+                    epIndexedDbService.closeDatabase('ep-cache-db');
+                });
+            }
         }
 
         /**
@@ -4440,10 +4450,12 @@ angular.module('ep.binding').
             if (cacheStore[cacheId]) {
                 delete cacheStore[cacheId];
             }
-            epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
-                db.getObjectStore('ep-cache').deleteByIndex('cacheId', cacheId);
-                $rootScope.$emit(epShellConstants.SHELL_CACHE_DELETED_EVENT, { cacheId: cacheId });
-            }, function(err){
+            return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function (db) {
+                return db.getObjectStore('ep-cache').deleteByIndex('cacheId', cacheId).then(function (result) {
+                    $rootScope.$emit(epShellConstants.SHELL_CACHE_DELETED_EVENT, { cacheId: cacheId });
+                    return result;
+                });
+            }, function (err) {
                 $log.error(err);
             });
         }
@@ -13936,13 +13948,17 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         }
                         epIndexedDbService.openDatabase('ep-file-db', 1).then(function(db) {
                             var store = db.getObjectStore('ep-file');
-                            store.get(filename).then(function(fileEntry) {
+                            store.get(filename).then(function (fileEntry) {
                                 if (fileEntry) {
                                     deferred.resolve(true);
                                 } else {
                                     deferred.resolve(false);
                                 }
-                            })
+                            }, function () {
+                                deferred.resolve(false);
+                            });
+                        }, function () {
+                            deferred.resolve(false);
                         });
                         break;
                     case storageSystems.localStorage:
@@ -16215,6 +16231,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         this.$q = $q;
         this.db = db;
         this.db.onerror = this.logError;
+        this.db.onversionchange = function (event) {
+            // Empty version implies that the database is being deleted,
+            // so we need to close the connection first
+            // Otherwise, we will get a blocked state when deleting the db
+            if (!event.version) {
+                db.close();
+            }
+        };
     }
     DatabaseWrapper.prototype.getObjectStore = function(objectStoreName) {
         return new ObjectStoreWrapper(this.$log, this.$q, this.db, objectStoreName);
@@ -16564,6 +16588,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 deferred.resolve(true);
             };
             deleteRequest.onerror = function(event) {
+                deferred.reject(event);
+            };
+            deleteRequest.onblocked = function (event) {
+                deferred.reject(event);
+            };
+            deleteRequest.onupgradeneeded = function (event) {
                 deferred.reject(event);
             };
             return deferred.promise;
