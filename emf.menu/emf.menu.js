@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.376 built: 27-06-2017
+ * version:1.0.12-dev.377 built: 27-06-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.376","built":"2017-06-27"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.377","built":"2017-06-27"};
 
 (function() {
     'use strict';
@@ -2169,6 +2169,7 @@ angular.module('ep.menu.builder', [
  * - id: value to be displayed on right side of the list.
  * - groupBy: groupBy field name by which the list has to be grouped.
  * - groupByType: 'sdate' - string date format like '1910-01-01T00:00:00' (otherwise string)
+ *      'sfield' - string field (whole field opposed to first letter)
  * - sortBy: sortBy field name by which the list has to be sorted.
  * - sortByDesc: true if sort is to be reversed (descending). By default sdates are descending sorts
  * - subHeader: (true/false) shows sub header with filter/sort/add buttons just below the search component.
@@ -2287,7 +2288,12 @@ angular.module('ep.menu.builder', [
                             scope.showDirectory = false;
                             scope.directory = epListService.getDirectoryByDate(scope.listData, scope.groupBy);
                         } else {
-                            scope.directory = epListService.getDirectory(scope.listData, scope.groupBy);
+                            if (scope.groupByType === 'sfield') {
+                                scope.directory = epListService.getDirectoryByField(scope.listData, scope.groupBy);
+                            }
+                            else {
+                                scope.directory = epListService.getDirectory(scope.listData, scope.groupBy);
+                            }
                         }
                     } else {
                         //If no grouping the control is in straight filtering mode
@@ -2672,6 +2678,47 @@ angular.module('ep.menu.builder', [
             return dir;
         }
 
+        function getDirectoryByField(listData, groupBy) {
+            //keys - group keys that have been processed
+            var keys = {};
+            var groupKey;
+            var groupDisplay;
+            //directory that is returned
+            var dir = {};
+            var dirKey;
+            var previousItem;
+
+            var totalItems = listData.length;
+
+            for (var i = 0; i < totalItems; i++) {
+                dirKey = listData[i][groupBy];
+                groupKey = (dirKey || '');
+                groupDisplay = groupKey;
+                if (groupKey.length === 0) {
+                    groupKey = '@';
+                }
+                if (!keys[groupKey]) {
+                    keys[groupKey] = true;
+                    var prevIndex = previousItem ? previousItem.index : 0;
+                    if (previousItem) {
+                        previousItem.nextIndex = i;
+                    }
+                    if (groupKey === '@') {
+                        groupDisplay = '[No Value]';
+                    }
+                    var curItem = {
+                        letter: groupKey, groupDisplay: groupDisplay, dirKey: dirKey,
+                        index: i, prevIndex: prevIndex, nextIndex: totalItems,
+                        previous: previousItem, next: undefined, data: listData[i]
+                    };
+                    dir[dirKey] = previousItem = curItem;
+                    if (previousItem) {
+                        previousItem.next = curItem;
+                    }
+                }
+            }
+            return dir;
+        }
 
         /**
          * @ngdoc method
@@ -2696,6 +2743,7 @@ angular.module('ep.menu.builder', [
             getDirectory: getDirectory,
             getDirectoryKey: getDirectoryKey,
             getDirectoryByDate: getDirectoryByDate,
+            getDirectoryByField: getDirectoryByField,
             showListModalForm: showListModalForm
         };
     }
