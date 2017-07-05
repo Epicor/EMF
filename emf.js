@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.391 built: 05-07-2017
+ * version:1.0.12-dev.392 built: 05-07-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.391","built":"2017-07-05"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.392","built":"2017-07-05"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -4503,6 +4503,83 @@ angular.module('ep.binding').
             return data;
         }
 
+        function hasCachedValue(cacheKey, key){
+            var cache = getCache(cacheKey);
+            if(cache){
+                var value = cache[key];
+                if(value) {
+                    var deferred = $q.defer();
+                    deferred.resolve(value);
+                    return deferred.promise;
+                } else{
+                    return loadPersistedCacheValue(cacheKey, key);
+                }
+            } else {
+                return loadPersistedCacheValue(cacheKey, key)
+            }
+        }
+
+        function hasPersistedCachedValue(cacheKey, key){
+            var deferred = $q.defer();
+            epIndexedDbService.openDatabase('ep-cache-db', 1).then(
+                //successfully completed
+                function(db) {
+                    var store = db.getObjectStore('ep-cache');
+                    return store.get(key).then(function(cacheEntry) {
+                        deferred.resolve(!!cacheEntry);
+                    }, function(){
+                        deferred.resolve(false);
+                    });
+                }, 
+                //error/failure
+                function(err){
+                    $log.warn('An error occured that prevented data from being retreived from the cache. ' +
+                        'This is probably caused by two or more open tabs sending contending commands to ' +
+                        'the underlying database. If this warning occurs frequently, then it could temporarily ' +
+                        'degrade performance of the application.');
+                    deferred.reject(err);
+                });
+            return deferred.promise;
+        }
+
+        /**
+         * @ngdoc method
+         * @name getCacheDataWithFallback
+         * @methodOf ep.cache.service:epCacheService
+         * @public
+         * @description
+         * Returns the data with the given key from the cache with the given id
+         * @param {string|Function} cacheId - the cache to access
+         * @param {string|Function} key - the key to the data that will be returned from the cache
+         */
+        function getCacheDataWithFallback(cacheKey, key) {
+            
+            var cache = getCache(cacheKey);
+            
+            if(cache){
+                var value = cache[key];
+                if(value) {
+                    var deferred = $q.defer();
+                    deferred.resolve(value);
+                    return deferred.promise;
+                } else{
+                    return loadPersistedCacheValue(cacheKey, key);
+                }
+            } else {
+                return loadPersistedCacheValue(cacheKey, key)
+            }
+        }
+        /**
+         * @ngdoc method
+         * @name savePersistedCacheValue
+         * @methodOf ep.cache.service:epCacheService
+         * @public
+         * @description
+         * Stores the data with the given key in the cache with the given id
+         * @param {string|Function} cacheId - the cache to access
+         * @param {string|Function} key - the key to the data that will be returned from the cache
+         * @param {Object} value - the value to store in the cache
+         */
         function savePersistedCacheValue(cacheId, key, value) {
             var cacheEntry = { key: key, cacheId: cacheId, value: value, cacheTimestamp: new Date() };
             return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
@@ -4523,20 +4600,29 @@ angular.module('ep.binding').
          * @public
          * @description
          * Returns the data with the given key from the cache with the given id
+         * @param {string|Function} cacheId - the cache to access
          * @param {string|Function} key - the key to the data that will be returned from the cache
          */
         function loadPersistedCacheValue(cacheKey, key) {
-            return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
-                var store = db.getObjectStore('ep-cache');
-                return store.get(key).then(function(cacheEntry) {
-                    return cacheEntry;
-                })
-            }, function(err){
-                $log.warn('An error occured that prevented data from being retreived from the cache. ' +
-                    'This is probably caused by two or more open tabs sending contending commands to ' +
-                    'the underlying database. If this warning occurs frequently, then it could temporarily ' +
-                    'degrade performance of the application.');
-            });
+            var deferred = $q.defer();
+            epIndexedDbService.openDatabase('ep-cache-db', 1).then(
+                //successfully completed
+                function(db) {
+                    var store = db.getObjectStore('ep-cache');
+                    return store.get(key).then(function(cacheEntry) {
+                        cacheData(cacheKey, key, cacheEntry);
+                        deferred.resolve(cacheEntry);
+                    }, deferred.reject);
+                }, 
+                //error/failure
+                function(err){
+                    $log.warn('An error occured that prevented data from being retreived from the cache. ' +
+                        'This is probably caused by two or more open tabs sending contending commands to ' +
+                        'the underlying database. If this warning occurs frequently, then it could temporarily ' +
+                        'degrade performance of the application.');
+                    deferred.reject(err);
+                });
+            return deferred.promise;
         }
 
         /**
@@ -4585,10 +4671,9 @@ angular.module('ep.binding').
             savePersistedCacheValue: savePersistedCacheValue,
             loadPersistedCacheValue: loadPersistedCacheValue,
 
-            // This are the accessor functions for getting/setting  data from the memory 
+            // This are the accessor functions for getting data from the memory 
             // cache with a fallback to the indexeddb based cache
-            //getPersistedCacheValue: getPersistedCacheValue,
-            //setPersistedCacheValue: setPersistedCacheValue,
+            getCacheDataWithFallback: getCacheDataWithFallback,
 
             // The get and set methods are the preferred overloads for getting a value 
             // from the memory cache syncronously
@@ -16292,6 +16377,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             self.$log.warn('Transaction error occurred on ' + self.name + '. ' + e);
             deferred.reject(e);
         };
+        transaction.onblocked = function (event) {
+            deferred.reject(event);
+        };
+        transaction.onupgradeneeded = function (event) {
+            deferred.reject(event);
+        };
 
         var store = transaction.objectStore(self.name);
         var request = activity(store);
@@ -16303,15 +16394,20 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             self.$log.warn('Request error occurred on ' + self.name + '. ' + e);
             deferred.reject(e);
         };
-
+        request.onblocked = function (event) {
+            deferred.reject(event);
+        };
+        request.onupgradeneeded = function (event) {
+            deferred.reject(event);
+        };
         return deferred.promise;
     };
     ObjectStoreWrapper.prototype.openCursor = function() {
         var self = this;
-        var deferred = $q.defer();
+        var deferred = self.$q.defer();
         var objectStore = self.db.transaction(this.name, 'readwrite').objectStore(self.name);
-        var cursorRequest = objectStore.openCursor();
-        cursorRequest.onsuccess = function(e) {
+        var request = objectStore.openCursor();
+        request.onsuccess = function(e) {
             var cursor = e.target.result;
             if (cursor) {
                 deferred.notify(cursor.value);
@@ -16320,27 +16416,39 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 deferred.resolve();
             }
         };
-        cursorRequest.onerror = function(e) {
+        request.onerror = function(e) {
             deferred.reject(e);
+        };
+        request.onblocked = function (event) {
+            deferred.reject(event);
+        };
+        request.onupgradeneeded = function (event) {
+            deferred.reject(event);
         };
         return deferred.promise;
     };
     ObjectStoreWrapper.prototype.openKeyCursor = function(keyRange, direction) {
         var self = this;
-        var deferred = $q.defer();
+        var deferred = self.$q.defer();
         var objectStore = self.db.transaction(this.name, 'readwrite').objectStore(self.name);
-        var cursorRequest = objectStore.openKeyCursor(keyRange, direction);
-        cursorRequest.onsuccess = function(e) {
+        var request = objectStore.openKeyCursor(keyRange, direction);
+        request.onsuccess = function(e) {
             var cursor = e.target.result;
             if (cursor) {
-                deferred.notify(cursor.value);
+                deferred.notify(cursor);
                 cursor.continue();
             } else {
                 deferred.resolve();
             }
         };
-        cursorRequest.onerror = function(e) {
+        request.onerror = function(e) {
             deferred.reject(e);
+        };
+        request.onblocked = function (event) {
+            deferred.reject(event);
+        };
+        request.onupgradeneeded = function (event) {
+            deferred.reject(event);
         };
         return deferred.promise;
     };
@@ -16371,9 +16479,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         var trans = self.db.transaction(self.name, 'readwrite');
         var store = trans.objectStore(self.name);
         var idx = store.index(indexName);
-        var deleteRequest = idx.openKeyCursor(IDBKeyRange.only(indexValue));
-        deleteRequest.onsuccess = function() {
-            var cursor = deleteRequest.result;
+        var request = idx.openKeyCursor(IDBKeyRange.only(indexValue));
+        request.onsuccess = function() {
+            var cursor = request.result;
             if (cursor) {
                 store.delete(cursor.primaryKey);
                 cursor.continue();
@@ -16382,8 +16490,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 deferred.resolve(true);
             }
         };
-        deleteRequest.onerror = function(e) {
+        request.onerror = function(e) {
             deferred.reject(e);
+        };
+        request.onblocked = function (event) {
+            deferred.reject(event);
+        };
+        request.onupgradeneeded = function (event) {
+            deferred.reject(event);
         };
         return deferred.promise;
     };
@@ -16416,6 +16530,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         request.onerror = function(e) {
             deferred.reject(e);
         };
+        request.onblocked = function (event) {
+            deferred.reject(event);
+        };
+        request.onupgradeneeded = function (event) {
+            deferred.reject(event);
+        };
         return deferred.promise;
     };
 
@@ -16441,14 +16561,19 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             self.$log.warn('Request error occurred on ' + self.name + '. ' + e);
             deferred.reject(e);
         };
-
+        request.onblocked = function (event) {
+            deferred.reject(event);
+        };
+        request.onupgradeneeded = function (event) {
+            deferred.reject(event);
+        };
         return deferred.promise;
     };
     IndexWrapper.prototype.openCursor = function() {
         var self = this;
-        var deferred = $q.defer();
-        var cursorRequest = self.index.openCursor();
-        cursorRequest.onsuccess = function(e) {
+        var deferred = self.$q.defer();
+        var request = self.index.openCursor();
+        request.onsuccess = function(e) {
             var cursor = e.target.result;
             if (cursor) {
                 deferred.notify(cursor.value);
@@ -16457,16 +16582,22 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 deferred.resolve();
             }
         };
-        cursorRequest.onerror = function(e) {
+        request.onerror = function(e) {
             deferred.reject(e);
+        };
+        request.onblocked = function (event) {
+            deferred.reject(event);
+        };
+        request.onupgradeneeded = function (event) {
+            deferred.reject(event);
         };
         return deferred.promise;
     };
     IndexWrapper.prototype.openKeyCursor = function() {
         var self = this;
-        var deferred = $q.defer();
-        var cursorRequest = self.index.openCursor();
-        cursorRequest.onsuccess = function(e) {
+        var deferred = self.$q.defer();
+        var request = self.index.openCursor();
+        request.onsuccess = function(e) {
             var cursor = e.target.result;
             if (cursor) {
                 deferred.notify(cursor.value);
@@ -16475,8 +16606,15 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 deferred.resolve();
             }
         };
-        cursorRequest.onerror = function(e) {
+        request.onerror = function(e) {
             deferred.reject(e);
+        };
+        request.onblocked = function (event) {
+            $log.warn('Unable to open IndexedDB key cursor ' + self.name + '. The request is blocked.');
+            deferred.reject(event);
+        };
+        request.onupgradeneeded = function (event) {
+            deferred.reject(event);
         };
         return deferred.promise;
     };
@@ -16536,27 +16674,27 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             if (openDatabaseMap[id]) {
                 deferred.resolve(openDatabaseMap[id]);
             } else {
-                var openRequest = indexedDB.open(id, version);
+                var request = indexedDB.open(id, version);
                 var cancellationToken = $timeout(function() {
                     $log.warn('Database ' + id + ' v' + version + ' could not be opened. ' +
                         'This is possibly due to a conflict between two or more open tabs.');
                     
                     deferred.reject('Timeout reached while waiting for database ' + id +' to open.');
                 }, 1500);
-                openRequest.onsuccess = function() {
-                    var db = openRequest.result;
+                request.onsuccess = function() {
+                    var db = request.result;
                     var wrapper = new DatabaseWrapper($log, $q, db);
                     openDatabaseMap[id] = wrapper;
                     $timeout.cancel(cancellationToken);
                     deferred.resolve(wrapper);
                 };
-                openRequest.onerror = function(event) {
+                request.onerror = function(event) {
                     deferred.reject(event);
                 };
-                openRequest.onblocked = function() {
+                request.onblocked = function() {
                     deferred.reject('Unable to open database. The request is blocked.');
                 };
-                openRequest.onupgradeneeded = function(event) {
+                request.onupgradeneeded = function(event) {
                     var db = event.target.result;
                     var schema = schemas[id];
                     if (!schema) {
@@ -16583,17 +16721,18 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          */
         function deleteDatabase(id) {
             var deferred = $q.defer();
-            var deleteRequest = indexedDB.deleteDatabase(id);
-            deleteRequest.onsuccess = function() {
+            var request = indexedDB.deleteDatabase(id);
+            request.onsuccess = function() {
                 deferred.resolve(true);
             };
-            deleteRequest.onerror = function(event) {
+            request.onerror = function(event) {
                 deferred.reject(event);
             };
-            deleteRequest.onblocked = function (event) {
+            request.onblocked = function (event) {
+                $log.warn('Unable to delete database '+ id + '. The request is blocked.');
                 deferred.reject(event);
             };
-            deleteRequest.onupgradeneeded = function (event) {
+            request.onupgradeneeded = function (event) {
                 deferred.reject(event);
             };
             return deferred.promise;
