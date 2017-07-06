@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.403 built: 06-07-2017
+ * version:1.0.12-dev.404 built: 06-07-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.12-dev.403","built":"2017-07-06"};
+__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.12-dev.404","built":"2017-07-06"};
 
 (function() {
   'use strict';
@@ -1934,15 +1934,17 @@ angular.module('ep.signature').directive('epSignature',
          * @param {string|Function} key - the key to the data that will be removed from the cache
          */
         function deleteCacheKey(cacheId, key) {
+            cacheId = reify(cacheId);
             var cache = getCache(cacheId);
             key = reify(key);
             if (cache && cache[key]) {
                 delete cache[key];
             }
-            epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
-                db.getObjectStore('ep-cache').delete(key);
+            return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
+                return db.getObjectStore('ep-cache').delete(key).then(function(){
+                    $rootScope.$emit(epShellConstants.SHELL_CACHE_DATA_DELETED_EVENT, { cacheId: cacheId, key: key });
+                });
             });
-            $rootScope.$emit(epShellConstants.SHELL_CACHE_DATA_DELETED_EVENT, { cacheId: reify(cacheId), key: key });
         }
 
         /**
@@ -2129,7 +2131,7 @@ angular.module('ep.signature').directive('epSignature',
         }
 
         function deleteKey(key){
-            deleteCacheKey()
+            return deleteCacheKey('ep-cache', key);
         }
 
         return {
