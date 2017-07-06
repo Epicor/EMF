@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.399 built: 06-07-2017
+ * version:1.0.12-dev.400 built: 06-07-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.399","built":"2017-07-06"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.400","built":"2017-07-06"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -4498,9 +4498,9 @@ angular.module('ep.binding').
             var cache = getCache(cacheId);
             var data = cache[key];
             if (angular.isUndefined(data)) {
-                data = (cache[key] = defaultValue);
+                data = (cache[key] = { key: key, cacheId: cacheId, value: defaultValue, cacheTimestamp: new Date() } );
             }
-            return data;
+            return data.value;
         }
 
         function hasCachedValue(cacheKey, key){
