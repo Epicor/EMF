@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.400 built: 06-07-2017
+ * version:1.0.12-dev.401 built: 06-07-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.400","built":"2017-07-06"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.401","built":"2017-07-06"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -28799,17 +28799,17 @@ angular.module('ep.signature').directive('epSignature',
 })();
 
 (function() {
-'use strict';
+    'use strict';
 
-/**
- * @ngdoc controller
- * @name ep.token.controller:epLoginViewCtrl
- * @description
- * Represents the epLoginViewCtrl controller for the epLoginViewDirective
- *
- * @example
- *
- */
+    /**
+     * @ngdoc controller
+     * @name ep.token.controller:epLoginViewCtrl
+     * @description
+     * Represents the epLoginViewCtrl controller for the epLoginViewDirective
+     *
+     * @example
+     *
+     */
     epLoginViewCtrl.$inject = ['$q', '$scope', 'epUtilsService', 'epModalDialogService', 'epTokenService'];
     angular.module('ep.token')
         .controller('epLoginViewCtrl', epLoginViewCtrl);
@@ -28841,7 +28841,6 @@ angular.module('ep.signature').directive('epSignature',
                 return;
             }
 
-            epModalDialogService.showProgress({ title: 'Logging in', message: '' });
             if ($scope.settings.username === '' || $scope.settings.password === '') {
                 $scope.hasError = true;
                 $scope.status = $scope.settings.username === '' ?
@@ -28869,62 +28868,68 @@ angular.module('ep.signature').directive('epSignature',
             if ($scope.settings.username.toLowerCase() === 'demo' &&
                 $scope.settings.password.toLowerCase() === 'demo' &&
                 $scope.settings.serverName && $scope.settings.serverName.toLowerCase() === 'demo') { //demo user
-                    tokenOptions.debug = true;
-                    tokenOptions.timeout = '10000';
+                tokenOptions.debug = true;
+                tokenOptions.timeout = '10000';
             }
-            epTokenService.login(tokenUser, tokenOptions).success(function(data) {
-                $scope.accessToken = data.AccessToken;
-                try {
-                    $scope.settings.token = epTokenService.getToken();
-                    if (!$scope.settings.token) {
-                        return;
-                    }
-                    $scope.options.username = $scope.settings.username;
-                    $scope.options.serverName = $scope.settings.serverName;
-                    if ($scope.options.fnOnGetToken) {
-                        $q.when($scope.options.fnOnGetToken($scope.settings)).then(function(message) {
-                            if (message && angular.isString(message)) {
+
+            //turn on the progress bar
+            $scope.showLoader = true;
+            epTokenService.login(tokenUser, tokenOptions).then(function(data) {
+                    $scope.accessToken = data.AccessToken;
+                    try {
+                        $scope.settings.token = epTokenService.getToken();
+                        if (!$scope.settings.token) {
+                            return;
+                        }
+                        $scope.options.username = $scope.settings.username;
+                        $scope.options.serverName = $scope.settings.serverName;
+                        if ($scope.options.fnOnGetToken) {
+                            $q.when($scope.options.fnOnGetToken($scope.settings)).then(function(message) {
+                                if (message && angular.isString(message)) {
+                                    $scope.showLoader = false;
+                                    $scope.hasError = true;
+                                    $scope.status = message;
+                                    return;
+                                }
+                                if ($scope.options.fnOnSuccess) {
+                                    $scope.options.fnOnSuccess($scope.settings);
+                                }
+                            }, function(message) {
+                                $scope.showLoader = false;
                                 $scope.hasError = true;
                                 $scope.status = message;
                                 return;
-                            }
-                            if ($scope.options.fnOnSuccess) {
-                                $scope.options.fnOnSuccess($scope.settings);
-                            }
-                        }, function(message) {
-                            $scope.hasError = true;
-                            $scope.status = message;
-                            return;
-                        });
-                    } else if ($scope.options.fnOnSuccess) {
-                        $scope.options.fnOnSuccess($scope.settings);
+                            });
+                        } else if ($scope.options.fnOnSuccess) {
+                            $scope.showLoader = false;
+                            $scope.options.fnOnSuccess($scope.settings);
+                        }
+                    } catch (err) {
+                        alert(err.message);
                     }
-                } catch (err) {
-                    alert(err.message);
-                }
-            }).error(function(data, status, headers, config) {
-                var restServer = (config !== undefined && config !== null) ? config.url : '';
-                $scope.hasError = true;
-                switch (status) {
-                    case 401:
-                        $scope.status = 'Please review the user or password.';
-                        break;
-                    case 400:
-                        $scope.status = 'Possibly token authentication is not enabled on the E10 server. ' +
-                            'Refer to the Epicor Administration Console.';
-                        break;
-                    default:
-                        $scope.status = 'We couldn\'t connect to the server. Please review it.';
-                }
-            });
-            epModalDialogService.hide();
+                },
+                function(response) {
+                    $scope.showLoader = false;
+                    $scope.hasError = true;
+                    switch (response.status) {
+                        case 401:
+                            $scope.status = 'Connection failed, please review the username and password and try again.';
+                            break;
+                        case 400:
+                            $scope.status = 'Token authentication may not be enabled on the Epicor server. ' +
+                                'Refer to the Epicor Administration Console.';
+                            break;
+                        default:
+                            $scope.status = 'Connection failed, please review the username and password and try again.';
+                    }
+                });
         };
 
         $scope.passwordKeyPress = function(event) {
             $scope.hasError = false;
             $scope.status = '';
             var key = typeof event.which === 'undefined' ? event.keyCode : event.which;
-            (key === 13) ? $scope.loginUser() : false;
+            (key === 13) ? $scope.loginUser(): false;
         }
 
         $scope.clearWarning = function() {
@@ -28937,7 +28942,6 @@ angular.module('ep.signature').directive('epSignature',
         }
     }
 }());
-
 (function() {
 'use strict';
 /**
@@ -29228,13 +29232,13 @@ angular.module('ep.token').
      * @example
      *
      */
-    epTokenService.$inject = ['$http', '$q', '$timeout', 'epTokenConfig', 'epUtilsService', 'epModalDialogService', 'epLocalStorageService'];
+    epTokenService.$inject = ['$http', '$injector', '$q', '$timeout', 'epTokenConfig', 'epUtilsService', 'epModalDialogService', 'epLocalStorageService', 'epFeatureDetectionService'];
     angular.module('ep.token').
-        service('epTokenService', epTokenService);
+    service('epTokenService', epTokenService);
 
     /*@ngInject*/
-    function epTokenService($http, $q, $timeout,
-        epTokenConfig, epUtilsService, epModalDialogService, epLocalStorageService) {
+    function epTokenService($http, $injector, $q, $timeout,
+        epTokenConfig, epUtilsService, epModalDialogService, epLocalStorageService, epFeatureDetectionService) {
         var state = {
             tokenTimeoutPromise: undefined,
             options: {}
@@ -29446,7 +29450,22 @@ angular.module('ep.token').
                 }
             };
             var url = epUtilsService.ensureEndsWith(uri, '/'); //need for Chrome
-            return $http.post(url, null, options);
+
+            var features = epFeatureDetectionService.getFeatures();
+            if (features.platform && features.platform.app === 'Cordova' && features.platform.os === 'iOS') {
+                // We need to use cordovaHTTP when downloading, because the default behavior on Cordova-iOS
+                // when encountering a 401 login challenge on a "GET" is to ignore the response and never resolve/reject
+                // the promise.
+                var cordovaHTTP = $injector.get('cordovaHTTP');
+                return cordovaHTTP.post(url, {}, options.headers).then(function(response) {
+                    response.data = JSON.parse(response.data);
+                    return response;
+                });
+            } else {
+                // On android, the cordovaHTTP service doesn't work, so we need to fall
+                // back to using the standard $http service.
+                return $http.post(url, null, options);
+            }
         }
 
         // allow manager/Epicor123 to login without the real token for now
@@ -29525,11 +29544,10 @@ angular.module('ep.token').
             }
             var fnFetch = state.options.fnUserFetchToken || fetchToken;
             // return the http promise so the caller can also handle the success/error
-            return fnFetch(user, uri).success(function(data) {
+            return fnFetch(user, uri).then(function(response) {
                 // here is where we want to scrape off the 'Bearer' and put this onto our cookieStore
-                writeCookie(data, user, uri);
-            }).error(function() {
-                // error handling
+                writeCookie(response.data, user, uri);
+                return response.data;
             });
         }
 
@@ -29572,8 +29590,7 @@ angular.module('ep.token').
                             message: 'Your session is about to expire in {timer} seconds...',
                             autoClose: expiresIn,
                             icon: 'fa fa-warning fa-4x',
-                            buttons: [
-                                {
+                            buttons: [{
                                     text: 'Continue',
                                     action: function() {
                                         doRenewToken(tkn);
@@ -29613,7 +29630,6 @@ angular.module('ep.token').
         };
     }
 }());
-
 
 (function() {
     'use strict';
@@ -30920,7 +30936,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.token/ep-login-view/ep-login-view.html',
-    "<!--This is a partial for the ep-login-view directive --><div class=\"ep-login-view container-fluid\"><div class=ep-login-background><div class=ep-background-image ng-if=!settings.customImage></div><img class=ep-background-custom-image ng-if=settings.customImage ng-src={{settings.customImage}} alt=\"\"></div><div class=ep-login-up-box><div class=\"ep-login-box center-block\"><form class=form-group><div class=form-group><p class=ep-login-text><b>Please enter your credentials to sign in.</b></p><div class=input-group><span class=input-group-addon><i class=\"fa fa-user fa-fw\"></i></span> <input clearable name=username ng-keypress=clearWarning() id=username class=form-control ng-model=settings.username placeholder=\"User Name\"></div><br><div class=input-group><span class=input-group-addon><i class=\"fa fa-lock fa-fw\"></i></span> <input type=password clearable ng-keypress=passwordKeyPress($event) name=password id=password class=form-control ng-model=settings.password placeholder=\"Password\"></div><br><div ng-show=showServerName class=input-group><span class=input-group-addon><i class=\"fa fa-server fa-fw\"></i></span> <input spellcheck autocorrect=false clearable name=servername id=serverValue class=form-control ng-model=settings.serverName placeholder=\"Server\"></div><br><div ng-if=status class=\"text-center alert alert-warning\"><label>{{status}}</label><br></div><div><button ng-if=\"options.showSettingsButton !== false\" class=\"btn btn-default pull-left\" ng-click=showServer()><i class=\"fa fa-cog fa-fw\"></i></button> <button type=submit class=\"btn btn-primary pull-right\" ng-click=loginUser()>Log in</button></div></div></form></div></div></div>"
+    "<!--This is a partial for the ep-login-view directive --><div class=\"ep-login-view container-fluid\"><div class=ep-login-background><div class=ep-background-image ng-if=!settings.customImage></div><img class=ep-background-custom-image ng-if=settings.customImage ng-src={{settings.customImage}} alt=\"\"></div><div class=ep-login-up-box><div class=\"ep-login-box center-block\"><form class=form-group><div class=form-group><p class=ep-login-text><b>Please enter your credentials to sign in.</b></p><div class=input-group><span class=input-group-addon><i class=\"fa fa-user fa-fw\"></i></span> <input clearable name=username ng-keypress=clearWarning() id=username class=form-control ng-model=settings.username placeholder=\"User Name\"></div><br><div class=input-group><span class=input-group-addon><i class=\"fa fa-lock fa-fw\"></i></span> <input type=password clearable ng-keypress=passwordKeyPress($event) name=password id=password class=form-control ng-model=settings.password placeholder=\"Password\"></div><br><div ng-show=showServerName class=input-group><span class=input-group-addon><i class=\"fa fa-server fa-fw\"></i></span> <input spellcheck autocorrect=false clearable name=servername id=serverValue class=form-control ng-model=settings.serverName placeholder=\"Server\"></div><br><div align=center ng-if=showLoader><div class=progress><div class=\"progress-bar progress-bar-striped active\" role=progressbar aria-valuenow=100 aria-valuemin=0 aria-valuemax=100 style=\"width: 100%\"></div></div></div><div ng-if=status class=\"alert alert-danger\"><label>{{status}}</label><br></div><div><button ng-if=\"options.showSettingsButton !== false\" class=\"btn btn-default pull-left\" ng-click=showServer()><i class=\"fa fa-cog fa-fw\"></i></button> <button type=submit class=\"btn btn-primary pull-right\" ng-click=loginUser()>Log in</button></div></div></form></div></div></div>"
   );
 
 
