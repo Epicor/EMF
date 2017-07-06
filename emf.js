@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.396 built: 06-07-2017
+ * version:1.0.12-dev.397 built: 06-07-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.396","built":"2017-07-06"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.397","built":"2017-07-06"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -3307,7 +3307,7 @@ angular.module('ep.binding').
                 state.id = _id;
                 state.data = _data;
                 state.row = state.data && state.data.length ? 0 : -1;
-                state.original = epUtilsService.merge([], state.data);
+                state.original = angular.merge([], state.data);
                 resetState();
             }
 
@@ -4555,19 +4555,16 @@ angular.module('ep.binding').
         function getCacheDataWithFallback(cacheKey, key) {
             
             var cache = getCache(cacheKey);
-            
-            if(cache){
-                var value = cache[key];
-                if(value) {
-                    var deferred = $q.defer();
-                    deferred.resolve(value);
-                    return deferred.promise;
-                } else{
-                    return loadPersistedCacheValue(cacheKey, key);
-                }
+
+            var value = cache[key];
+            if(value) {
+                var deferred = $q.defer();
+                deferred.resolve(value);
+                return deferred.promise;
             } else {
-                return loadPersistedCacheValue(cacheKey, key)
+                return loadPersistedCacheValue(cacheKey, key);
             }
+            
         }
         /**
          * @ngdoc method
@@ -4581,7 +4578,14 @@ angular.module('ep.binding').
          * @param {Object} value - the value to store in the cache
          */
         function savePersistedCacheValue(cacheId, key, value) {
-            var cacheEntry = { key: key, cacheId: cacheId, value: value, cacheTimestamp: new Date() };
+            var cacheEntry = null;
+            // if we're resaving an existing cacheEntry, then we need to preserve the timestamp & other metadata
+            if(value.key && value.cacheId && value.cacheTimestamp){
+                cacheEntry = value;
+            } else {
+                cacheEntry = { key: key, cacheId: cacheId, value: value, cacheTimestamp: new Date() };
+            }
+            
             return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
                 var store = db.getObjectStore('ep-cache');
                 return store.put(cacheEntry);
@@ -4610,7 +4614,9 @@ angular.module('ep.binding').
                 function(db) {
                     var store = db.getObjectStore('ep-cache');
                     return store.get(key).then(function(cacheEntry) {
-                        cacheData(cacheKey, key, cacheEntry);
+                        if(cacheEntry) {
+                            cacheData(cacheKey, key, cacheEntry);
+                        }
                         deferred.resolve(cacheEntry);
                     }, deferred.reject);
                 }, 
@@ -4638,13 +4644,21 @@ angular.module('ep.binding').
          * @param {Object} data - the data that will be stored in the cache
          */
         function cacheData(cacheId, key, data) {
+            cacheId = reify(cacheId);
             if (epShellConfig.options.enableCache) {
                 var cache = getCache(cacheId);
                 key = reify(key);
-                cache[key] = data;
+                var cacheEntry = null;
+                // we need to preserve the cache entry metadata if there is any
+                if(data.key && data.cacheId && data.cacheTimestamp){
+                    cacheEntry = data;
+                } else {
+                    cacheEntry = { key: key, cacheId: cacheId, value: data, cacheTimestamp: new Date() };
+                }
+                cache[key] = cacheEntry;
                 savePersistedCacheValue(cacheId, key, data).then(function() {
                     $rootScope.$emit(epShellConstants.SHELL_DATA_CACHED_EVENT,
-                        { cacheId: reify(cacheId), key: key, data: data });
+                        { cacheId: cacheId, key: key, data: cacheEntry.value });
                 }, function(e) {
                     $log.warn('Unable to open cache database: ' + e);
                 });
