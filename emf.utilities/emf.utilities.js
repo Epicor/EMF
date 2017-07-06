@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.401 built: 06-07-2017
+ * version:1.0.12-dev.402 built: 06-07-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.12-dev.401","built":"2017-07-06"};
+__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.12-dev.402","built":"2017-07-06"};
 
 (function() {
   'use strict';
@@ -1832,7 +1832,7 @@ angular.module('ep.signature').directive('epSignature',
                 if (!data) {
                     loadPersistedCacheValue(cacheId, key).then(function(result) {
                         if (result) {
-                            cache[key] = result.value;
+                            cache[key] = result;
                             deferred.resolve(result.value);
                         } else {
                             resolveServiceCall(deferred, key, cacheId, getDataFromService);

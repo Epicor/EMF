@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.401 built: 06-07-2017
+ * version:1.0.12-dev.402 built: 06-07-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.401","built":"2017-07-06"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.402","built":"2017-07-06"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -4369,7 +4369,7 @@ angular.module('ep.binding').
                 if (!data) {
                     loadPersistedCacheValue(cacheId, key).then(function(result) {
                         if (result) {
-                            cache[key] = result.value;
+                            cache[key] = result;
                             deferred.resolve(result.value);
                         } else {
                             resolveServiceCall(deferred, key, cacheId, getDataFromService);
