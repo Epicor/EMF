@@ -1791,7 +1791,7 @@ angular.module('ep.signature').directive('epSignature',
                 return store.getAll();
             }).then(function(results){
                 results.forEach(function(entry){
-                    var metaCache = metaCacheStore[entry.cacheId] || {};
+                    var metaCache = getMetaCache(entry.cacheId);
                     metaCache[entry.key] = entry;
                 });
                 $log.debug('Cache service initialization complete.');
@@ -2063,6 +2063,37 @@ angular.module('ep.signature').directive('epSignature',
 
         /**
          * @ngdoc method
+         * @name getExistingMetadata
+         * @methodOf ep.cache.service:epCacheService
+         * @public
+         * @description
+         * Returns the metadata for the given cache, or all caches if no cacheId is given
+         * @param {string|Function} cacheId (optional) - the id of the cache from which to extract keys, or falsy to return all keys from all caches
+         */
+        function getExistingMetadata(cacheId){
+            var deferred = $q.defer();
+            if(initialized){
+                deferred.resolve(executeGetExistingMetadata(cacheId));
+            } else {
+                initialize().then(function(){
+                    deferred.resolve(executeGetExistingMetadata(cacheId));
+                })
+            }
+            return deferred.promise;
+        }
+
+        function executeGetExistingMetadata(cacheId){
+            var results = {};
+            if(cacheId){
+                results = getMetaCache(cacheId);
+            } else {
+                results = metaCacheStore;
+            }
+            return results;
+        }
+
+        /**
+         * @ngdoc method
          * @name getCacheDataWithFallback
          * @methodOf ep.cache.service:epCacheService
          * @public
@@ -2225,6 +2256,7 @@ angular.module('ep.signature').directive('epSignature',
 
             getMetaRecord: getMetaRecord,
             getExistingKeys: getExistingKeys,
+            getExistingMetadata: getExistingMetadata,
             initialize: initialize
         }
     }
