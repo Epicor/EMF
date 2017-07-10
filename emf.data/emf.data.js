@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.419 built: 10-07-2017
+ * version:1.0.12-dev.420 built: 10-07-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.419","built":"2017-07-10"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.420","built":"2017-07-10"};
 
 (function() {
     'use strict';
@@ -3517,12 +3517,12 @@ angular.module('ep.binding').
      *
      */
 
-    epDataViewFactory.$inject = ['$rootScope', 'epUtilsService'];
+    epDataViewFactory.$inject = ['$rootScope'];
     angular.module('ep.binding').
         factory('epDataViewFactory', epDataViewFactory);
 
     /*@ngInject*/
-    function epDataViewFactory($rootScope, epUtilsService) {
+    function epDataViewFactory($rootScope) {
         var factoryInstance = function(viewId, viewData) {
             var state = {
                 userData: {}
@@ -3901,7 +3901,7 @@ angular.module('ep.binding').
              * rollback current view changes
              */
             function rollback() {
-                state.data = epUtilsService.merge([], state.original);
+                state.data = angular.merge([], state.original);
                 resetState();
                 $rootScope.$emit('EP_BINDING_ROLLBACK', {
                     viewId: state.id
@@ -3917,7 +3917,7 @@ angular.module('ep.binding').
              * commits all changes (the changes are rolled into original data and modified flags reset)
              */
             function commit() {
-                state.original = epUtilsService.merge([], state.data);
+                state.original = angular.merge([], state.data);
                 resetState();
                 $rootScope.$emit('EP_BINDING_COMMIT', {
                     viewId: state.id

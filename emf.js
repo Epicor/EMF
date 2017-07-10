@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.419 built: 10-07-2017
+ * version:1.0.12-dev.420 built: 10-07-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.419","built":"2017-07-10"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.420","built":"2017-07-10"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -3292,12 +3292,12 @@ angular.module('ep.binding').
      *
      */
 
-    epDataViewFactory.$inject = ['$rootScope', 'epUtilsService'];
+    epDataViewFactory.$inject = ['$rootScope'];
     angular.module('ep.binding').
         factory('epDataViewFactory', epDataViewFactory);
 
     /*@ngInject*/
-    function epDataViewFactory($rootScope, epUtilsService) {
+    function epDataViewFactory($rootScope) {
         var factoryInstance = function(viewId, viewData) {
             var state = {
                 userData: {}
@@ -3676,7 +3676,7 @@ angular.module('ep.binding').
              * rollback current view changes
              */
             function rollback() {
-                state.data = epUtilsService.merge([], state.original);
+                state.data = angular.merge([], state.original);
                 resetState();
                 $rootScope.$emit('EP_BINDING_ROLLBACK', {
                     viewId: state.id
@@ -3692,7 +3692,7 @@ angular.module('ep.binding').
              * commits all changes (the changes are rolled into original data and modified flags reset)
              */
             function commit() {
-                state.original = epUtilsService.merge([], state.data);
+                state.original = angular.merge([], state.data);
                 resetState();
                 $rootScope.$emit('EP_BINDING_COMMIT', {
                     viewId: state.id
@@ -4308,12 +4308,37 @@ angular.module('ep.binding').
     /*@ngInject*/
     function epCacheService($log, $q, $rootScope, epIndexedDbService, epShellConstants, epShellConfig) {
         var cacheStore = {};
+        var metaCacheStore = {};
+        var initialized = false;
+
         //define the cache database
         epIndexedDbService.createSchema('ep-cache-db')
             .defineVersion(1, function(db) {
                 var cacheTable = db.createObjectStore('ep-cache', { keyPath: 'key' });
                 cacheTable.createIndex('cacheId', 'cacheId', { unique: false });
             });
+        // define the meta-cache database for faster predicate lookups
+        epIndexedDbService.createSchema('ep-meta-cache-db')
+            .defineVersion(1, function(db) {
+                var metaCacheTable = db.createObjectStore('ep-meta-cache', { keyPath: 'key' })
+                metaCacheTable.createIndex('cacheId', 'cacheId', { unique: false });
+            });
+
+        function initialize(){
+            initialized = true;
+            // read the metaCache into memory
+            return epIndexedDbService.openDatabase('ep-meta-cache-db').then(function(db){
+                var store = db.getObjectStore('ep-meta-cache');
+                return store.getAll();
+            }).then(function(results){
+                results.forEach(function(entry){
+                    var metaCache = metaCacheStore[entry.cacheId] || {};
+                    metaCache[entry.key] = entry;
+                });
+                $log.debug('Cache service initialization complete.');
+                return true;
+            });
+        }
 
         function reify(val) {
             if (angular.isFunction(val)) {
@@ -4338,6 +4363,23 @@ angular.module('ep.binding').
             cacheId = reify(cacheId);
             cacheStore[cacheId] = cacheStore[cacheId] || {};
             return cacheStore[cacheId];
+        }
+
+        /**
+         * @ngdoc method
+         * @name getMetaCache
+         * @methodOf ep.cache.service:epCacheService
+         * @private
+         * @description
+         * Get the in-memory metacache with the given Id
+         * @param {string|Function} cacheId - the id of the cache where the data will be stored/read or a function returning the same
+
+         * @returns {Object} An object that represents the isolated cache
+         */
+        function getMetaCache(cacheId) {
+            cacheId = reify(cacheId);
+            metaCacheStore[cacheId] = metaCacheStore[cacheId] || {};
+            return metaCacheStore[cacheId];
         }
 
         /**
@@ -4477,6 +4519,13 @@ angular.module('ep.binding').
             if (cache && cache[key]) {
                 delete cache[key];
             }
+            var metaCache = getMetaCache(cacheId);
+            if(metaCache[key]){
+                delete metaCache[key];
+            }
+            epIndexedDbService.openDatabase('ep-meta-cache-db', 1).then(function(db) {
+                return db.getObjectStore('ep-meta-cache').delete(key);;
+            });
             return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
                 return db.getObjectStore('ep-cache').delete(key).then(function(){
                     $rootScope.$emit(epShellConstants.SHELL_CACHE_DATA_DELETED_EVENT, { cacheId: cacheId, key: key });
@@ -4504,44 +4553,53 @@ angular.module('ep.binding').
             }
             return data.value;
         }
-
-        function hasCachedValue(cacheKey, key){
-            var cache = getCache(cacheKey);
-            if(cache){
-                var value = cache[key];
-                if(value) {
-                    var deferred = $q.defer();
-                    deferred.resolve(value);
-                    return deferred.promise;
-                } else{
-                    return loadPersistedCacheValue(cacheKey, key);
-                }
-            } else {
-                return loadPersistedCacheValue(cacheKey, key)
-            }
+        /**
+         * @ngdoc method
+         * @name getMetaRecord
+         * @methodOf ep.cache.service:epCacheService
+         * @public
+         * @description
+         * Returns the data with the given key from the cache with the given id
+         * @param {string|Function} cacheId - the id of the cache where the data is stored or a function returning the same
+         * @param {string|Function} key - the key to the metadata record to examine
+         */
+        function getMetaRecord(cacheId, key){
+            var metaCache = getMetaCache(cacheId);
+            return metaCache[key];
         }
 
-        function hasPersistedCachedValue(cacheKey, key){
+        /**
+         * @ngdoc method
+         * @name getExistingKeys
+         * @methodOf ep.cache.service:epCacheService
+         * @public
+         * @description
+         * Returns the data with the given key from the cache with the given id
+         * @param {string|Function} cacheId (optional) - the id of the cache from which to extract keys, or falsy to return all keys from all caches
+         */
+        function getExistingKeys(cacheId) {
             var deferred = $q.defer();
-            epIndexedDbService.openDatabase('ep-cache-db', 1).then(
-                //successfully completed
-                function(db) {
-                    var store = db.getObjectStore('ep-cache');
-                    return store.get(key).then(function(cacheEntry) {
-                        deferred.resolve(!!cacheEntry);
-                    }, function(){
-                        deferred.resolve(false);
-                    });
-                }, 
-                //error/failure
-                function(err){
-                    $log.warn('An error occured that prevented data from being retreived from the cache. ' +
-                        'This is probably caused by two or more open tabs sending contending commands to ' +
-                        'the underlying database. If this warning occurs frequently, then it could temporarily ' +
-                        'degrade performance of the application.');
-                    deferred.reject(err);
-                });
+            if(initialized){
+                deferred.resolve(executeGetKeys(cacheId));
+            } else {
+                initialize().then(function(){
+                    deferred.resolve(executeGetKeys(cacheId));
+                })
+            }
             return deferred.promise;
+        }
+
+        function executeGetKeys(cacheId){
+            var results = [];
+            if(cacheId){
+                cacheId = reify(cacheId);
+                var metaCache = getMetaCache(cacheId);
+                results = Object.keys(metaCache);
+            } else {
+                var caches = Object.keys(metaCacheStore);
+                results = caches.reduce(function(prev, current){ return prev.concat(executeGetKeys(current)); }, results);
+            }
+            return results;
         }
 
         /**
@@ -4555,9 +4613,7 @@ angular.module('ep.binding').
          * @param {string|Function} key - the key to the data that will be returned from the cache
          */
         function getCacheDataWithFallback(cacheKey, key) {
-            
             var cache = getCache(cacheKey);
-
             var value = cache[key];
             if(value) {
                 var deferred = $q.defer();
@@ -4566,7 +4622,6 @@ angular.module('ep.binding').
             } else {
                 return loadPersistedCacheValue(cacheKey, key);
             }
-            
         }
         /**
          * @ngdoc method
@@ -4587,7 +4642,10 @@ angular.module('ep.binding').
             } else {
                 cacheEntry = { key: key, cacheId: cacheId, value: value, cacheTimestamp: new Date() };
             }
-            
+            epIndexedDbService.openDatabase('ep-meta-cache-db', 1).then(function(db) {
+                var store = db.getObjectStore('ep-meta-cache');
+                return store.put({key: cacheEntry.key, cacheId: cacheEntry.cacheId, cacheTimestamp: cacheEntry.cacheTimestamp});
+            });
             return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
                 var store = db.getObjectStore('ep-cache');
                 return store.put(cacheEntry);
@@ -4633,6 +4691,10 @@ angular.module('ep.binding').
             return deferred.promise;
         }
 
+        // function getAllKeys(cacheId){
+
+        //}
+        
         /**
          * @ngdoc method
          * @name cacheData
@@ -4649,6 +4711,7 @@ angular.module('ep.binding').
             cacheId = reify(cacheId);
             if (epShellConfig.options.enableCache) {
                 var cache = getCache(cacheId);
+                var metaCache = getMetaCache(cacheId);
                 key = reify(key);
                 var cacheEntry = null;
                 // we need to preserve the cache entry metadata if there is any
@@ -4658,6 +4721,7 @@ angular.module('ep.binding').
                     cacheEntry = { key: key, cacheId: cacheId, value: data, cacheTimestamp: new Date() };
                 }
                 cache[key] = cacheEntry;
+                //TODO: delete from meta
                 savePersistedCacheValue(cacheId, key, data).then(function() {
                     $rootScope.$emit(epShellConstants.SHELL_DATA_CACHED_EVENT,
                         { cacheId: cacheId, key: key, data: cacheEntry.value });
@@ -4698,7 +4762,11 @@ angular.module('ep.binding').
 
             // These are the deprecated overloads for accessing memory cached data syncronously
             getCachedData: getCachedData,
-            cacheData: cacheData
+            cacheData: cacheData,
+
+            getMetaRecord: getMetaRecord,
+            getExistingKeys: getExistingKeys,
+            initialize: initialize
         }
     }
 })();
@@ -16331,7 +16399,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         this.$log = $log;
         this.$q = $q;
         this.db = db;
-        this.db.onerror = this.logError;
+        this.db.onerror = function(e){ $log.error('An IndexedDB error has occured: ' + e); };
         this.db.onversionchange = function (event) {
             // Empty version implies that the database is being deleted,
             // so we need to close the connection first
@@ -16344,10 +16412,6 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
     DatabaseWrapper.prototype.getObjectStore = function(objectStoreName) {
         return new ObjectStoreWrapper(this.$log, this.$q, this.db, objectStoreName);
     };
-
-    DatabaseWrapper.prototype.logError = function(e){
-        this.$log.error('An IndexedDB error has occured: ' + e);
-    }
 
     var proto = {
         get: function(key) {
