@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.422 built: 10-07-2017
+ * version:1.0.12-dev.423 built: 10-07-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.12-dev.422","built":"2017-07-10"};
+__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.12-dev.423","built":"2017-07-10"};
 
 (function() {
   'use strict';
@@ -1925,14 +1925,9 @@ angular.module('ep.signature').directive('epSignature',
             if (properties.length) {
                 var cacheToDelete = properties[0];
                 // Delete one cache and wait for the promise before deleting next cache
-                deleteCache(cacheToDelete).then(function () {
+                deleteCache(cacheToDelete).then(function (){
                     // Run function recursively when this cache is deleted
                     deleteAllCaches();
-                });
-            }
-            else {
-                epIndexedDbService.deleteDatabase('ep-cache-db').then(function () {
-                    epIndexedDbService.closeDatabase('ep-cache-db');
                 });
             }
         }
@@ -1951,6 +1946,15 @@ angular.module('ep.signature').directive('epSignature',
             if (cacheStore[cacheId]) {
                 delete cacheStore[cacheId];
             }
+            if (metaCacheStore[cacheId]){
+                delete metaCacheStore[cacheId];
+            }
+            epIndexedDbService.openDatabase('ep-meta-cache-db', 1).then(function (db) {
+                return db.getObjectStore('ep-meta-cache').deleteByIndex('cacheId', cacheId);
+            }, function (err) {
+                $log.error(err);
+            });
+
             return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function (db) {
                 return db.getObjectStore('ep-cache').deleteByIndex('cacheId', cacheId).then(function (result) {
                     $rootScope.$emit(epShellConstants.SHELL_CACHE_DELETED_EVENT, { cacheId: cacheId });
@@ -2070,24 +2074,32 @@ angular.module('ep.signature').directive('epSignature',
          * Returns the metadata for the given cache, or all caches if no cacheId is given
          * @param {string|Function} cacheId (optional) - the id of the cache from which to extract keys, or falsy to return all keys from all caches
          */
-        function getExistingMetadata(cacheId){
+        function getExistingMetadata(cacheId, fnUserData){
             var deferred = $q.defer();
             if(initialized){
-                deferred.resolve(executeGetExistingMetadata(cacheId));
+                deferred.resolve(executeGetExistingMetadata(cacheId, fnUserData));
             } else {
                 initialize().then(function(){
-                    deferred.resolve(executeGetExistingMetadata(cacheId));
+                    deferred.resolve(executeGetExistingMetadata(cacheId, fnUserData));
                 })
             }
             return deferred.promise;
         }
 
-        function executeGetExistingMetadata(cacheId){
+        function executeGetExistingMetadata(cacheId, fnUserData){
             var results = {};
             if(cacheId){
                 results = getMetaCache(cacheId);
+                if(fnUserData){
+                    results.forEach(function(entry){
+                        entry.userData = fnUserData(entry);
+                    });
+                }
             } else {
-                results = metaCacheStore;
+                results = {};
+                Object.keys(metaCacheStore).forEach(function(cid){
+                    results[cid] = executeGetExistingMetadata(cid, fnUserData);
+                });
             }
             return results;
         }
@@ -2132,9 +2144,14 @@ angular.module('ep.signature').directive('epSignature',
             } else {
                 cacheEntry = { key: key, cacheId: cacheId, value: value, cacheTimestamp: new Date() };
             }
+            
+            var metaCacheEntry = {key: cacheEntry.key, cacheId: cacheEntry.cacheId, cacheTimestamp: cacheEntry.cacheTimestamp};
+            var metaCache = getMetaCache(cacheId);
+            metaCache[cacheEntry.key] = metaCacheEntry;
+
             epIndexedDbService.openDatabase('ep-meta-cache-db', 1).then(function(db) {
                 var store = db.getObjectStore('ep-meta-cache');
-                return store.put({key: cacheEntry.key, cacheId: cacheEntry.cacheId, cacheTimestamp: cacheEntry.cacheTimestamp});
+                return store.put(metaCacheEntry);
             });
             return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
                 var store = db.getObjectStore('ep-cache');
@@ -2201,7 +2218,7 @@ angular.module('ep.signature').directive('epSignature',
             cacheId = reify(cacheId);
             if (epShellConfig.options.enableCache) {
                 var cache = getCache(cacheId);
-                var metaCache = getMetaCache(cacheId);
+                
                 key = reify(key);
                 var cacheEntry = null;
                 // we need to preserve the cache entry metadata if there is any
@@ -2211,7 +2228,10 @@ angular.module('ep.signature').directive('epSignature',
                     cacheEntry = { key: key, cacheId: cacheId, value: data, cacheTimestamp: new Date() };
                 }
                 cache[key] = cacheEntry;
-                //TODO: delete from meta
+                
+                var metaCache = getMetaCache(cacheId);
+                metaCache[key] = {key: cacheEntry.key, cacheId: cacheEntry.cacheId, cacheTimestamp: cacheEntry.cacheTimestamp};
+
                 savePersistedCacheValue(cacheId, key, data).then(function() {
                     $rootScope.$emit(epShellConstants.SHELL_DATA_CACHED_EVENT,
                         { cacheId: cacheId, key: key, data: cacheEntry.value });
@@ -2254,9 +2274,8 @@ angular.module('ep.signature').directive('epSignature',
             getCachedData: getCachedData,
             cacheData: cacheData,
 
-            getMetaRecord: getMetaRecord,
-            getExistingKeys: getExistingKeys,
             getExistingMetadata: getExistingMetadata,
+            getExistingKeys: getExistingKeys,
             initialize: initialize
         }
     }
