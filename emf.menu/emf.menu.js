@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.426 built: 11-07-2017
+ * version:1.0.12-dev.427 built: 11-07-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.426","built":"2017-07-11"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.427","built":"2017-07-11"};
 
 (function() {
     'use strict';
@@ -2165,13 +2165,16 @@ angular.module('ep.menu.builder', [
  * - handler: handler function when clicks on a list item.
  * - mainTitle: main title to display on list
  * - subTitle: sub title to display on list just below main title.
- * - additionalTitle: additional title to display on list just below sub title.
+ * - formatSubtitle: function to format subtitle fields. function(fields, record) By default comma separated.
+ * - additionalTitle: additional title to display on list just below sub title. function(field, record) 
+ * - formatAdditionalTitle: function to format additional title
  * - id: value to be displayed on right side of the list.
  * - groupBy: groupBy field name by which the list has to be grouped.
  * - groupByType: 'sdate' - string date format like '1910-01-01T00:00:00' (otherwise string)
  *      'sfield' - string field (whole field opposed to first letter)
  * - sortBy: sortBy field name by which the list has to be sorted.
  * - sortByDesc: true if sort is to be reversed (descending). By default sdates are descending sorts
+ * - searchFields: (string array) field names by which search is executed
  * - subHeader: (true/false) shows sub header with filter/sort/add buttons just below the search component.
  * - arrow: (true/false) whether to show arrow on right side of list or not.
  * - statuses: additional list fields that needs to be displayed on right side of the list.
@@ -2290,6 +2293,9 @@ angular.module('ep.menu.builder', [
                         } else {
                             if (scope.groupByType === 'sfield') {
                                 scope.directory = epListService.getDirectoryByField(scope.listData, scope.groupBy);
+                                scope.searchType = 'sfield';
+                                scope.filteredData = scope.listData;
+                                scope.filtered = true;
                             }
                             else {
                                 scope.directory = epListService.getDirectory(scope.listData, scope.groupBy);
@@ -2313,15 +2319,15 @@ angular.module('ep.menu.builder', [
                     var ret = true;
                     if (scope.searchFilter) {
                         //searchFields
-                        if (scope.groupBy) {
-                            ret = (obj[scope.groupBy].toLowerCase() || '').indexOf(scope.searchFilter.toLowerCase()) === 0;
-                        } else if (scope.searchFields) {
+                        if (scope.searchFields) {
                             var field = _.find(scope.searchFields, function(fld) {
                                 return ((obj[fld] + '').toLowerCase() || '').indexOf(scope.searchFilter.toLowerCase()) === 0;
                             });
                             if (!field) {
                                 ret = false;
                             }
+                        } else if (scope.groupBy) {
+                            ret = (obj[scope.groupBy].toLowerCase() || '').indexOf(scope.searchFilter.toLowerCase()) === 0;
                         }
                     }
                     return ret;
@@ -2421,6 +2427,8 @@ angular.module('ep.menu.builder', [
                 function applySearchFilter(searchValue) {
                     if (scope.searchType === 'sdate') {
                         applyStrDateSearchFilter(searchValue);
+                    } else if (scope.searchType === 'sfield') {
+                        scope.searchFilter = searchValue;
                     } else if (scope.directory) {
                         applyTextSearchFilter(searchValue);
                     } else {
@@ -2455,6 +2463,24 @@ angular.module('ep.menu.builder', [
                     $timeout(function() {
                         scope.$broadcast('vsRepeatTrigger');
                     });
+                };
+
+                //default function for formatting additional title. User can overwrite
+                scope.wrapFormatAdditionalTitle = function(field, record) {
+                    if (scope.formatAdditionalTitle) {
+                        return scope.formatAdditionalTitle(field, record);
+                    } else {
+                        return record[field];
+                    }
+                };
+
+                //default function for formatting subtitle. User can overwrite
+                scope.wrapFormatSubtitle = function(fields, record) {
+                    if (scope.formatSubtitle) {
+                        return scope.formatSubtitle(fields, record);
+                    } else {
+                        return fields.reduce(function(p, c) { return (p ? (p + ', ') : '') + record[c]; }, '');
+                    }
                 };
 
                 scope.$watch('data', function(newValue) {
@@ -3122,9 +3148,9 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
     "\n" +
     "            <div class=\"ep-list-item-title ep-crm-text-ellipsis\">{{ obj[mainTitle] }}</div>\r" +
     "\n" +
-    "            <div ng-if=\"subTitle\" class=\"ep-list-item-sub-title ep-crm-text-ellipsis\">{{formatSubtitle(subTitle, obj)}}</div>\r" +
+    "            <div ng-if=\"subTitle\" class=\"ep-list-item-sub-title ep-crm-text-ellipsis\">{{wrapFormatSubtitle(subTitle, obj)}}</div>\r" +
     "\n" +
-    "            <div ng-if=\"additionalTitle\" class=\"ep-list-item-additional-title ep-crm-text-ellipsis\">{{formatAdditionalTitle(additionalTitle, obj)}}</div>\r" +
+    "            <div ng-if=\"additionalTitle\" class=\"ep-list-item-additional-title ep-crm-text-ellipsis\">{{wrapFormatAdditionalTitle(additionalTitle, obj)}}</div>\r" +
     "\n" +
     "        </div>\r" +
     "\n" +

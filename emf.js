@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.426 built: 11-07-2017
+ * version:1.0.12-dev.427 built: 11-07-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.426","built":"2017-07-11"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.427","built":"2017-07-11"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -193,18 +193,6 @@ angular.module('ep.card', [
         'ep.templates',
         'ep.sysconfig'
     ]);
-})();
-
-/**
- * @ngdoc overview
- * @name ep.contacts.list
- * @description
- * Provides the contact list directive
- */
-(function() {
-    'use strict';
-
-    angular.module('ep.contacts.list', []);
 })();
 
 'use strict';
@@ -5923,299 +5911,6 @@ app.directive('epCardTitle',
             hasLog: hasLog,
             clearLog: clearLog,
             showLog: showLog
-        };
-    }
-})();
-
-/**
- * @ngdoc object
- * @name ep.contacts.list:epContactsListConstants
- * @description
- * Constants for epContactsListConstants.
- * ep.constacts.list constants
- * Events:
-    * <pre>
-    *   CONTACTS_LIST_INDEXES - indexes displayed default.
-    *   CONTACTS_LIST_INDEXES_SMALL - indexes displayed if contacts list container height is < 430px
-    * </pre>
- */
-(function() {
-    'use strict';
-
-    angular.module('ep.contacts.list').constant('epContactsListConstants', {
-        CONTACTS_LIST_INDEXES: '#ABCDEFGHIJKLMNOPQRSTUVWXYZ@',
-        CONTACTS_LIST_INDEXES_SMALL: '#A.E.H.L.O.S.V.Z',
-        CONTACTS_LIST_INDEXES_BREAKPOINT: 430,
-        CONTACTS_LIST_INDEXES_HIDDEN_BREAKPOINT: 180
-    });
-})();
-
-/**
- * @ngdoc directive
- * @name ep.contacts.list:epContactsList
- * @restrict EA
- *
- * @description
- * Represents contacts list with alphabet indexes on right side
- * - data: contacts list array
- * - handler: handler function when clicks on a contact.
- * - mainTitle: main title to display on list
- * - subTitle: sub title to display on list just below main title.
- * - additionalTitle: additional title to display on list just below sub title.
- * - id: value to be displayed on right side of the list.
- * - filter: handler function on click of filter button in sub header section of the list
- * - sort: handler function on click of sort button in sub header section of the list.
- * - add: handler function on click of add button in sub header section of the list.
- * - groupBy: true/false
- *
- * @example
- *  <pre>
- *      <ep-contacts-list data="['Bname', 'Cname', 'Aname'"></ep-contacts-list>
- *  </pre>
- */
-(function() {
-    'use strict';
-
-    epContactsListDirective.$inject = ['$filter', '$timeout', 'epContactsListService', 'epContactsListConstants'];
-    angular.module('ep.contacts.list').directive('epContactsList', epContactsListDirective);
-    function epContactsListDirective($filter, $timeout, epContactsListService, epContactsListConstants) {
-        return {
-            restrict: 'EA',
-            replace: true,
-            scope: {
-                data: '=',
-                handler: '&',
-                mainTitle: '@',
-                id: '@',
-                filter: '&',
-                sort: '&',
-                add: '&',
-                init: '&',
-                subTitle: '=',
-                formatSubtitle: '=',
-
-                additionalTitle: '=',
-                formatAdditionalTitle: '=',
-                groupBy: '@',
-                subHeader: '@',
-                hideAdd: '@',
-                sortBy: '@',
-                type: '@'
-            },
-            templateUrl: 'src/components/ep.contacts.list/contacts_list.html',
-            link: function(scope, element) {
-
-                scope.originalData = scope.data;
-                scope.initData = function() {
-                    scope.sortedData = $filter('orderBy')(scope.data, scope.groupBy);
-                    scope.listData = scope.data;
-                    
-                    if (scope.sortBy && scope.sortBy !== '') {
-                        scope.listData = _.sortBy(scope.listData, scope.sortBy).reverse();
-                    }
-                    if (scope.groupBy && scope.groupBy !== '') {
-                        if (scope.type && scope.type !== '') {
-                            scope.listData = epContactsListService.getDateGroupedList(scope.listData, scope.groupBy, scope.type);
-                        }
-                        else {
-                            scope.directory = epContactsListService.getDirectory(scope.listData, scope.groupBy);
-                        }
-                    }
-                    scope.filterVal = [];
-                    scope.indexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES;
-                    scope.smallIndexKeys = epContactsListConstants.CONTACTS_LIST_INDEXES_SMALL;
-                    epContactsListService.toggleIndexes(element);
-                    scope.items.count = scope.data.length;
-                    if(scope.init){
-                        scope.init(scope);
-                    }
-                }
-
-                scope.items = { count: 0 };
-
-                $(window).resize(function() {
-                    epContactsListService.toggleIndexes(element);
-                });
-
-                scope.getDetails = function(obj) {
-                    return obj;
-                };
-
-                scope.$watch('contactListSearch', function(term) {
-                    var val = $filter('filter')(scope.data, term);
-                    if (scope.items) {
-                        scope.items.count = val.length;
-                    }
-                });
-
-                scope.$watch('data', function(newValue) {
-                    if (newValue) {
-                        scope.initData();
-                    }
-                });
-
-                scope.$watch('groupBy', function(newValue, oldValue) {
-                    if (newValue) {
-                        scope.initData();
-                    }
-                });
-
-                scope.$watch('sortBy', function(newValue, oldValue) {
-                    if (newValue) {
-                        scope.initData();
-                    }
-                });
-
-                scope.goToLink = function(menu) {
-                    var old = $location.hash();
-                    $location.hash('list-group-' + menu.letter);
-                    $anchorScroll();
-                    //reset to old to keep any additional routing logic from kicking in
-                    $location.hash(old);
-                };
-            }
-        };
-    }
-})();
-
-/**
- * @ngdoc service
- * @name ep.contacts.list:epContactsListService
- * @description
- * Provides methods for dislaying contacts list with indexes.
- *
- * @example
- *
- */
-(function() {
-    'use strict';
-
-    epContactsListService.$inject = ['$filter', '$timeout', 'epContactsListConstants'];
-    angular.module('ep.contacts.list').factory('epContactsListService', epContactsListService);
-
-    function epContactsListService($filter, $timeout, epContactsListConstants) {
-
-        /**
-         * @ngdoc method
-         * @name getGroupedList
-         * @methodOf ep.contacts.list:epContactsListService
-         * @public
-         * @param {Array} listData - list of contacts to display
-         * @description
-         * To group the contacts list based on alphabets
-         */
-        function getGroupedList(listData, mainTitle) {
-            var sortedList = _.sortBy(listData, function(obj) { return obj[mainTitle].toLowerCase(); });
-            return _.groupBy(sortedList, function(row){ 
-                var datum = row[0];
-                return (!isNaN(datum)) ? '#' : datum.toUpperCase();
-            });
-        }
-        function getDirectory(listData, groupBy){
-            var sorted = $filter('orderBy')(listData, groupBy);
-            var keys = {};
-            var dir = {};
-            for (var i = 0; i < sorted.length; i++) {
-                var ch = (sorted[i][groupBy] || '').substr(0, 1).toUpperCase();
-                if (ch) {
-                    if (ch < 'A') {
-                        ch = '#';
-                    } else if (ch > 'Z') {
-                        ch = '@';
-                    }
-                    if (!keys[ch]) {
-                        keys[ch] = true;
-                        dir[i] = { key: ch, letter: ch };
-                    }
-                }
-            }
-            return dir;
-        }
-        /**
-         * @ngdoc method
-         * @name getDateGroupedList
-         * @methodOf ep.contacts.list:epContactsListService
-         * @public
-         * @param {Array} listData - list of items to display
-         * @param {String} groupBy - date field by which the list has to be grouped
-         * @description
-         * To group the list based on groupBy Value
-         */
-        function getDateGroupedList(listData, groupBy) {
-            var listName = [];
-            //we need to find some better solution if date is null. But at this moment it will do
-            var sortedlist = _.sortBy(listData, function(d) {
-                if (d[groupBy] == null) {
-                    d[groupBy] = '1910-01-01T00:00:00';
-                }
-                return d[groupBy];
-            }).reverse();
-            var groupedObj = {};
-            var itemGroup = [];
-            var currAlphabet = '';
-            var prevAlphabet = '';
-            for (var i = 0; i < sortedlist.length; i++) {
-                if (sortedlist[i][groupBy] === '1910-01-01T00:00:00') {
-                    currAlphabet = 'No Date';
-                }
-                else {
-                    var fetchDate = sortedlist[i][groupBy].split('-', 2);
-                    var concatDate = fetchDate[1] + '-' + fetchDate[0];
-
-                    currAlphabet = concatDate;
-                }
-                if (currAlphabet !== prevAlphabet && prevAlphabet !== '') {
-                    groupedObj[prevAlphabet] = itemGroup;
-                    itemGroup = [];
-                }
-                itemGroup.push(sortedlist[i]);
-
-                if (i === (sortedlist.length - 1)) {
-                    groupedObj[currAlphabet] = itemGroup;
-                    itemGroup = [];
-                }
-                prevAlphabet = currAlphabet;
-
-            }
-            return groupedObj;
-        }
-
-
-        /**
-         * @ngdoc method
-         * @name toggleIndexes
-         * @methodOf ep.contacts.list:epContactsListService
-         * @public
-         * @description
-         * To toggle index list based on the contacts container height
-         */
-        function toggleIndexes(element) {
-            $timeout(function() {
-                var mainContainerHeight = element.find('.ep-contacts-list').height();
-                var indexesLength = 0;
-                var indexItemHeight = 0;
-                if (mainContainerHeight < epContactsListConstants.CONTACTS_LIST_INDEXES_HIDDEN_BREAKPOINT) {
-                    element.find('.ep-index-list').hide();
-                } else if (mainContainerHeight < epContactsListConstants.CONTACTS_LIST_INDEXES_BREAKPOINT) {
-                    element.find('.ep-index-list.large-index-list').hide();
-                    element.find('.ep-index-list.small-index-list').show();
-                    indexesLength = element.find('.ep-index-list.small-index-list li').length;
-                } else {
-                    element.find('.ep-index-list.small-index-list').hide();
-                    element.find('.ep-index-list.large-index-list').show();
-                    indexesLength = element.find('.ep-index-list.large-index-list li').length;
-                }
-                //adjust index list height based on the list container height
-                indexItemHeight = parseInt(mainContainerHeight / indexesLength);
-                element.find('.ep-index-list li').css('line-height', indexItemHeight + 'px');
-            });
-        }
-
-        return {
-            getGroupedList: getGroupedList,
-            getDirectory: getDirectory,
-            getDateGroupedList: getDateGroupedList,
-            toggleIndexes: toggleIndexes
         };
     }
 })();
@@ -16889,13 +16584,16 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * - handler: handler function when clicks on a list item.
  * - mainTitle: main title to display on list
  * - subTitle: sub title to display on list just below main title.
- * - additionalTitle: additional title to display on list just below sub title.
+ * - formatSubtitle: function to format subtitle fields. function(fields, record) By default comma separated.
+ * - additionalTitle: additional title to display on list just below sub title. function(field, record) 
+ * - formatAdditionalTitle: function to format additional title
  * - id: value to be displayed on right side of the list.
  * - groupBy: groupBy field name by which the list has to be grouped.
  * - groupByType: 'sdate' - string date format like '1910-01-01T00:00:00' (otherwise string)
  *      'sfield' - string field (whole field opposed to first letter)
  * - sortBy: sortBy field name by which the list has to be sorted.
  * - sortByDesc: true if sort is to be reversed (descending). By default sdates are descending sorts
+ * - searchFields: (string array) field names by which search is executed
  * - subHeader: (true/false) shows sub header with filter/sort/add buttons just below the search component.
  * - arrow: (true/false) whether to show arrow on right side of list or not.
  * - statuses: additional list fields that needs to be displayed on right side of the list.
@@ -17014,6 +16712,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         } else {
                             if (scope.groupByType === 'sfield') {
                                 scope.directory = epListService.getDirectoryByField(scope.listData, scope.groupBy);
+                                scope.searchType = 'sfield';
+                                scope.filteredData = scope.listData;
+                                scope.filtered = true;
                             }
                             else {
                                 scope.directory = epListService.getDirectory(scope.listData, scope.groupBy);
@@ -17037,15 +16738,15 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     var ret = true;
                     if (scope.searchFilter) {
                         //searchFields
-                        if (scope.groupBy) {
-                            ret = (obj[scope.groupBy].toLowerCase() || '').indexOf(scope.searchFilter.toLowerCase()) === 0;
-                        } else if (scope.searchFields) {
+                        if (scope.searchFields) {
                             var field = _.find(scope.searchFields, function(fld) {
                                 return ((obj[fld] + '').toLowerCase() || '').indexOf(scope.searchFilter.toLowerCase()) === 0;
                             });
                             if (!field) {
                                 ret = false;
                             }
+                        } else if (scope.groupBy) {
+                            ret = (obj[scope.groupBy].toLowerCase() || '').indexOf(scope.searchFilter.toLowerCase()) === 0;
                         }
                     }
                     return ret;
@@ -17145,6 +16846,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 function applySearchFilter(searchValue) {
                     if (scope.searchType === 'sdate') {
                         applyStrDateSearchFilter(searchValue);
+                    } else if (scope.searchType === 'sfield') {
+                        scope.searchFilter = searchValue;
                     } else if (scope.directory) {
                         applyTextSearchFilter(searchValue);
                     } else {
@@ -17179,6 +16882,24 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     $timeout(function() {
                         scope.$broadcast('vsRepeatTrigger');
                     });
+                };
+
+                //default function for formatting additional title. User can overwrite
+                scope.wrapFormatAdditionalTitle = function(field, record) {
+                    if (scope.formatAdditionalTitle) {
+                        return scope.formatAdditionalTitle(field, record);
+                    } else {
+                        return record[field];
+                    }
+                };
+
+                //default function for formatting subtitle. User can overwrite
+                scope.wrapFormatSubtitle = function(fields, record) {
+                    if (scope.formatSubtitle) {
+                        return scope.formatSubtitle(fields, record);
+                    } else {
+                        return fields.reduce(function(p, c) { return (p ? (p + ', ') : '') + record[c]; }, '');
+                    }
                 };
 
                 scope.$watch('data', function(newValue) {
@@ -30711,11 +30432,6 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   );
 
 
-  $templateCache.put('src/components/ep.contacts.list/contacts_list.html',
-    "<div class=ep-contacts-list-container><!--Calling filter list component for search option--><ep-filter-list search-by=contactListSearch count=items.count></ep-filter-list><!--Header as optional--><div class=ep-contact-sub-header ng-if=\"subHeader == 'true'\"><label class=ep-contact-sub-header-label ng-click=filter()>Filter</label><label class=ep-contact-sub-header-label ng-click=sort()>Sort</label><span class=\"pull-right ep-pad-right-20 text-primary\" ng-hide=\"hideAdd == 'true'\" ng-click=add()><i class=ep-cicrm-add aria-hidden=true></i></span></div><!--List area--><div class=ep-contacts-list ng-class=\"{'ep-list-header-padding':subHeader == 'true'}\"><div class=ep-contacts-list-inner ng-if=\"groupBy && groupBy!== ''\"><ul class=ep-dir-row ng-repeat=\"obj in sortedData | limitTo:5000 | filter:contactListSearch track by $index\" ng-click=handler(obj)><li ng-if=directory[$index] class=ep-dir-divider id=list-group-{{directory[$index].letter}}><b>{{directory[$index].letter}}</b></li><li class=ep-pad-vert-10><div class=mainTitle><strong class=ep-crm-text-ellipsis>{{obj[mainTitle]}}</strong> <span class=\"text-right ep-crm-text-ellipsis\">{{obj[id]}}</span></div><div class=\"pull-right ep-contact-list-arrow ep-contact-list-subtitle-arrow\"><i class=ep-cicrm-right-chevron></i></div><div class=subTitle><span>{{formatSubtitle(subTitle, obj)}}</span></div><div class=additionalTitle>{{formatAdditionalTitle(additionalTitle, obj)}}</div></li></ul></div><div class=ep-contacts-list-inner ng-if=\"!groupBy || groupBy ===''\"><ul><li ng-repeat=\"obj in sortedData | limitTo:5000 | filter:contactListSearch track by $index\" ng-click=handler(obj) class=ep-pad-vert-10><div class=mainTitle><strong class=ep-crm-text-ellipsis>{{obj[mainTitle]}}</strong> <span class=\"text-right ep-crm-text-ellipsis\">{{obj[id]}}</span></div><div class=\"pull-right ep-contact-list-arrow ep-contact-list-subtitle-arrow\"><i class=ep-cicrm-right-chevron></i></div><div class=subTitle><span>{{formatSubtitle(subTitle, obj)}}</span></div><div class=additionalTitle>{{formatAdditionalTitle(additionalTitle, obj)}}</div></li></ul></div></div><!--Index--><ul ng-if=\"groupBy && groupBy!== '' && (!type || type == '')\" class=\"ep-index-list large-index-list\" ng-hide=contactListSearch><li ng-repeat=\"(id,row) in directory | limitTo:40\"><a ng-click=goToLink(row)>{{row.letter}}</a></li></ul><!--Index for smaller device screen--><ul ng-if=\"groupBy && groupBy!== '' && (!type || type == '')\" class=\"ep-index-list small-index-list\" ng-hide=contactListSearch><li ng-repeat=\"key in smallIndexKeys track by $index\" ng-click=goToLink(key)><span ng-if=\"key == '.'\" class=\"fa fa-circle\"></span> <span ng-if=\"key !='.'\">{{key}}</span></li></ul></div>"
-  );
-
-
   $templateCache.put('src/components/ep.customization/ep-customization-container.html',
     "<div class=\"row ep-customization-container\" ng-style=state.style><div ng-repeat=\"control in state.controls | orderBy:orderByControls\" class=\"ep-custom-element {{control.class}}\" id={{control.id}} ep-drop-area drop-handler=handleDrop1 drop-item-types=ep-custom-element drop-enabled=epCustomizationInfo.isCustomizeActive ep-draggable drag-enabled=epCustomizationInfo.isCustomizeActive drag-item=control drag-item-type=\"'ep-custom-element'\"><ep-binding-editor ng-if=\"control.type === 'binding-editor'\" ep-binding=control.binding column=control.props></ep-binding-editor><ep-editor-control ng-if=\"control.type === 'editor-control'\" value=epCustomizationInfo.data[control.columnName] column=control.props></ep-editor-control><ep-include ng-if=\"control.type === 'html'\" user-data=epCustomizationInfo.data template-scope=epCustomizationInfo.parentScope template=control.props.html template-style=control.props.style></ep-include></div></div>"
   );
@@ -30844,9 +30560,9 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
     "\n" +
     "            <div class=\"ep-list-item-title ep-crm-text-ellipsis\">{{ obj[mainTitle] }}</div>\r" +
     "\n" +
-    "            <div ng-if=\"subTitle\" class=\"ep-list-item-sub-title ep-crm-text-ellipsis\">{{formatSubtitle(subTitle, obj)}}</div>\r" +
+    "            <div ng-if=\"subTitle\" class=\"ep-list-item-sub-title ep-crm-text-ellipsis\">{{wrapFormatSubtitle(subTitle, obj)}}</div>\r" +
     "\n" +
-    "            <div ng-if=\"additionalTitle\" class=\"ep-list-item-additional-title ep-crm-text-ellipsis\">{{formatAdditionalTitle(additionalTitle, obj)}}</div>\r" +
+    "            <div ng-if=\"additionalTitle\" class=\"ep-list-item-additional-title ep-crm-text-ellipsis\">{{wrapFormatAdditionalTitle(additionalTitle, obj)}}</div>\r" +
     "\n" +
     "        </div>\r" +
     "\n" +
@@ -31053,7 +30769,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.token/ep-login-view/ep-login-view.html',
-    "<!--This is a partial for the ep-login-view directive --><div class=\"ep-login-view container-fluid\"><div class=ep-login-background><div class=ep-background-image ng-if=!settings.customImage></div><img class=ep-background-custom-image ng-if=settings.customImage ng-src={{settings.customImage}} alt=\"\"></div><div class=ep-login-up-box><div class=\"ep-login-box center-block\"><form class=form-group><div class=form-group><p class=ep-login-text><b>Please enter your credentials to sign in.</b></p><div class=input-group><span class=input-group-addon><i class=\"fa fa-user fa-fw\"></i></span> <input clearable name=username ng-keypress=clearWarning() id=username class=form-control ng-model=settings.username placeholder=\"User Name\"></div><br><div class=input-group><span class=input-group-addon><i class=\"fa fa-lock fa-fw\"></i></span> <input type=password clearable ng-keypress=passwordKeyPress($event) name=password id=password class=form-control ng-model=settings.password placeholder=\"Password\"></div><br><div ng-show=showServerName class=input-group><span class=input-group-addon><i class=\"fa fa-server fa-fw\"></i></span> <input spellcheck autocorrect=false clearable name=servername id=serverValue class=form-control ng-model=settings.serverName placeholder=\"Server\"></div><br><div align=center ng-if=showLoader><div class=progress><div class=\"progress-bar progress-bar-striped active\" role=progressbar aria-valuenow=100 aria-valuemin=0 aria-valuemax=100 style=\"width: 100%\"></div></div></div><div ng-if=status class=\"alert alert-danger\"><label>{{status}}</label><br></div><div><button ng-if=\"options.showSettingsButton !== false\" class=\"btn btn-default pull-left\" ng-click=showServer()><i class=\"fa fa-cog fa-fw\"></i></button> <button type=submit class=\"btn btn-primary pull-right\" ng-click=loginUser()>Log in</button></div></div></form></div></div></div>"
+    "<!--This is a partial for the ep-login-view directive --><div class=\"ep-login-view container-fluid\"><div class=ep-login-background><div class=ep-background-image ng-if=!settings.customImage></div><img class=ep-background-custom-image ng-if=settings.customImage ng-src={{settings.customImage}} alt=\"\"></div><div class=ep-login-up-box><div class=\"ep-login-box center-block\"><form class=form-group><div class=form-group><p class=ep-login-text><b>Please enter your credentials to sign in.</b></p><div class=input-group><span class=input-group-addon><i class=\"fa fa-user fa-fw\"></i></span> <input clearable name=username ng-keypress=clearWarning() id=username class=form-control ng-model=settings.username placeholder=\"User Name\"></div><br><div class=input-group><span class=input-group-addon><i class=\"fa fa-lock fa-fw\"></i></span> <input type=password clearable ng-keypress=passwordKeyPress($event) name=password id=password class=form-control ng-model=settings.password placeholder=\"Password\"></div><br><div ng-show=showServerName class=input-group><span class=input-group-addon><i class=\"fa fa-server fa-fw\"></i></span> <input spellcheck autocorrect=false clearable name=servername id=serverValue class=form-control ng-model=settings.serverName placeholder=\"Server\"></div><br><div align=center ng-if=showLoader><div class=progress><div class=\"progress-bar progress-bar-striped active\" role=progressbar aria-valuenow=100 aria-valuemin=0 aria-valuemax=100 style=\"width: 100%\"></div></div></div><div ng-if=status class=\"alert alert-danger\"><label>{{status}}</label><br></div><div><button ng-if=\"options.showSettingsButton !== false\" class=\"btn btn-default pull-left\" ng-click=showServer()><i class=\"fa fa-cog fa-fw\"></i></button> <button type=submit class=\"btn btn-primary pull-right\" ng-click=loginUser() ng-disabled=showLoader>Log in</button></div></div></form></div></div></div>"
   );
 
 
