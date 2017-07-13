@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.433 built: 13-07-2017
+ * version:1.0.12-dev.434 built: 13-07-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.433","built":"2017-07-13"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.434","built":"2017-07-13"};
 
 (function() {
     'use strict';
@@ -112,7 +112,7 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                 return logEntry;
             }
 
-            function submitLogEntry(logEntry, merge, response) {
+            function submitLogEntry(logEntry, merge) {
                 if (!isLogOn || !logEntry) {
                     return;
                 }
@@ -140,7 +140,7 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
             function getErrorMsg(response, defaultMsg) {
                 var msg = '';
                 if (response) {
-                    var msg = response.ErrorMessage || '';
+                    msg = response.ErrorMessage || '';
                     if (!msg && response['odata.error']) {
                         msg = response['odata.error'].message.value;
                     }
@@ -249,8 +249,9 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
 
                 var sCallSettings = JSON.stringify(callSettings || {});
 
+                // TODO: what should "data" be?-- it's undefined here
                 var logEntry = createLogEntry('REST CALL: ' + path,
-                                              'ep-rest-service (delete)', url, data, callSettings);
+                                              'ep-rest-service (delete)', url, {}, callSettings);
 
                 var promise = $http({
                     method: 'DELETE',
@@ -382,8 +383,8 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                 patch: patch,
                 getXML: getXML,
                 getErrorMsg: getErrorMsg
-            }
-        }])
+            };
+        }]);
 })();
 
 (function() {
@@ -517,17 +518,17 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
             $scope.hasError = false;
             $scope.status = '';
             var key = typeof event.which === 'undefined' ? event.keyCode : event.which;
-            (key === 13) ? $scope.loginUser() : false;
-        }
+            if (key === 13) { $scope.loginUser(); }
+        };
 
         $scope.clearWarning = function() {
             $scope.hasError = false;
             $scope.status = '';
-        }
+        };
 
         $scope.showServer = function() {
             $scope.showServerName = !$scope.showServerName;
-        }
+        };
     }
 }());
 
@@ -1662,7 +1663,7 @@ angular.module('ep.token').
         * @returns {this} to allow for method chaining
         */
         function setWhereItems(whereItemsArray, params) {
-            var prms = params || {};
+            params = params || {};
             var expr = '(';
             for (var i = 0; i < whereItemsArray.length; i++) {
                 var item = whereItemsArray[i];
@@ -2185,7 +2186,7 @@ angular.module('ep.token').
                 }
                 scope.setColumn();
             }
-        }
+        };
     }
 }());
 
@@ -2264,7 +2265,7 @@ angular.module('ep.token').
                 scope.setLabel();
                 scope.setRequired();
             }
-        }
+        };
     }
 }());
 
@@ -2348,7 +2349,7 @@ angular.module('ep.binding').
                     if (scope.view) {
                         scope.view.row(scope.currentPage - 1);
                     }
-                }
+                };
             }
         };
     }
@@ -2461,7 +2462,7 @@ angular.module('ep.binding').
                                         if (valid) {
                                             try {
                                                 var fff;
-                                                eval('fff = function(ctx, ev, value) { ' + valid + '}');
+                                                scope.$eval('fff = function(ctx, ev, value) { ' + valid + '}');
                                                 col.fnOnFldValidate = fff;
                                             } catch (err) {
 
@@ -2477,11 +2478,11 @@ angular.module('ep.binding').
                     }
                 }
 
-                scope.$watch('options', function(newValue) {
+                scope.$watch('options', function() {
                     setOptions();
                 }, true);
             }
-        }
+        };
     }
 }());
 
@@ -2555,7 +2556,7 @@ angular.module('ep.binding').
             updatable: true,
             list: undefined,
             sizeClass: 'col-lg-12',
-            fnOnChange: function(ev, ctx) {
+            fnOnChange: function() {
                 //var column = ctx.fnGetCurrentValue();
                 scope.config.binding = '[' + scope.meta.view + '].[' + scope.meta.column + ']';
             }
@@ -2578,7 +2579,7 @@ angular.module('ep.binding').
                             label: key,
                             value: key
                         });
-                    })
+                    });
                 }
                 if (view.hasData()) {
                     var record = view.dataRow();
@@ -2731,7 +2732,7 @@ angular.module('ep.binding').
                 scope.$watch('epBinding', function(newValue) {
                     if (newValue !== undefined) {
                         var callbacks = {
-                            onViewReady: function(view) {
+                            onViewReady: function() {
                                 scope.state.data = scope.epBindingInfo.view.data();
                                 scope.ready = true;
                             }
@@ -2777,7 +2778,7 @@ angular.module('ep.binding').
                                 scope.ready = true;
                             });
                         },
-                        onChange: function(mode) {
+                        onChange: function() {
                             setHeadersAndMeta();
                             scope.ready = false;
                             $timeout(function() {
@@ -2787,7 +2788,7 @@ angular.module('ep.binding').
                     }
                 };
             }
-        }
+        };
     }
 }());
 
@@ -2825,7 +2826,7 @@ angular.module('ep.binding').
                 //we have to clear all the values because angular
                 //is going to merge the attrs collection
                 //back into the element after this function finishes
-                angular.forEach(inner.attributes, function(attr, key) {
+                angular.forEach(inner.attributes, function(attr) {
                     attr.value = '';
                 });
                 attr.$set('ng-if', value);
@@ -3269,7 +3270,7 @@ angular.module('ep.binding').
             function freeze() {
                 angular.forEach(watches, function(w) {
                     w();
-                })
+                });
             }
 
             init(theBinding);
@@ -3279,7 +3280,7 @@ angular.module('ep.binding').
                 changeBinding: changeBinding,
                 freeze: freeze
             };
-        }
+        };
         return factoryInstance;
     }
 }());
@@ -3412,14 +3413,14 @@ angular.module('ep.binding').
                 ret = {
                     view: b,
                     column: ''
-                }
+                };
                 if (b.indexOf('[') === 0 && (b.lastIndexOf(']') === b.length - 1)) {
                     var matches = b.match(/\[(.*?)\]/g);
                     if (matches.length > 1) {
                         ret = {
                             view: matches[0].replace('[', '').replace(']', ''),
                             column: matches[1].replace('[', '').replace(']', '')
-                        }
+                        };
                     } else if (matches.length === 1) {
                         ret.view = matches[0].replace('[', '').replace(']', '');
                     }
@@ -3429,7 +3430,7 @@ angular.module('ep.binding').
                         ret = {
                             view: parts[0],
                             column: parts[1]
-                        }
+                        };
                     }
                 }
             } else {
@@ -3491,7 +3492,7 @@ angular.module('ep.binding').
                     angular.forEach(vstate.modifiedRows, function(idx) {
                         $log.debug('  row:' + idx + ';state:' + vstate.modified[idx].state +
                             ';columns:' + JSON.stringify(vstate.modified[idx].columns));
-                    })
+                    });
                 });
             }
             if (!onOff) {
@@ -4479,7 +4480,7 @@ angular.module('ep.binding').
                 get: get,
                 set: set
             };
-        }
+        };
 
         //------------------------------------------------>>>>>
         var currentTrx;
@@ -4538,6 +4539,7 @@ angular.module('ep.binding').
     /*@ngInject*/
     function epErpBaqService($q, epErpRestService, epModalDialogService, epTransactionFactory, odataQueryFactory,
         epBindingMetadataService) {
+
         function getBAQList(idStartsWith) {
             var url = 'Ice.BO.BAQDesignerSvc/BAQDesigners';
             var query = odataQueryFactory
@@ -4548,8 +4550,7 @@ angular.module('ep.binding').
             query = query.compose();
 
             var promise = epErpRestService.get(url, query).$promise;
-            promise.then(function(data) {
-                var baqList = data.value;
+            promise.then(function() {
             }, function(data) {
                 var msg = data['odata.error'] ? data['odata.error'].message.value : data.statusText;
                 epModalDialogService.showException({ title: 'Exception', message: msg });
@@ -4591,9 +4592,9 @@ angular.module('ep.binding').
                     url += paramJoiner + params;
                 }
             }
-
+            // TODO: review
             var promise = epErpRestService.get(url, oQuery, options.callSettings).$promise;
-            promise.then(function(data) {
+            promise.then(function() {
                 //if (data.value) {
                 //    epTransactionFactory.current().add(viewId, data.value);
                 //}
@@ -4614,7 +4615,7 @@ angular.module('ep.binding').
                         var columns = getMetaColumns(result.data.returnObj);
                         epBindingMetadataService.add(viewId, 'baq', columns);
                     }
-                }, function(data) { });
+                }, function() { });
             }
 
             $q.all([promise, promiseMeta]).then(function(results) {
@@ -4635,7 +4636,6 @@ angular.module('ep.binding').
                 }
                 deferred.resolve(results[0]);
             });
-
             return deferred.promise;
         }
 
@@ -4673,9 +4673,10 @@ angular.module('ep.binding').
                 if (showProgress) {
                     epModalDialogService.hide();
                 }
-            }
+            };
 
             var deferred = $q.defer();
+            var meta;
             try {
                 if (showProgress) {
                     epModalDialogService.showLoading({
@@ -4688,7 +4689,7 @@ angular.module('ep.binding').
 
                 var d = angular.copy(data);
                 if (options.convertToJsonType !== false) {
-                    var meta = epBindingMetadataService.get(baqId);
+                    meta = epBindingMetadataService.get(baqId);
                     convertFromJSonTypes(meta, d);
                 }
 
@@ -4696,7 +4697,7 @@ angular.module('ep.binding').
                     delete d.$$hashKey;
                 }
 
-                var meta = epBindingMetadataService.get(baqId);
+                meta = epBindingMetadataService.get(baqId);
                 var uColsRemove;
                 var dataUpdate = d;
                 if (options.updatableOnly !== false) {
@@ -4721,7 +4722,7 @@ angular.module('ep.binding').
                         dataUpdate = angular.copy(d);
                         //remove fields that are not in meta
                         var list = [];
-                        var sysFields = ['RowMod','RowIdent','SysRowID']
+                        var sysFields = ['RowMod','RowIdent','SysRowID'];
                         angular.forEach(Object.keys(dataUpdate), function(key) {
                             if (!meta.columns[key] && sysFields.indexOf(key) === -1) {
                                 list.push(key);
@@ -4778,10 +4779,9 @@ angular.module('ep.binding').
                     deferred.reject(response);
                 });
             } catch (err) {
-                showException(response, (options.showError !== false));
+                showException(err, (options.showError !== false));
                 fnOnComplete();
             }
-
             return deferred.promise;
         }
 
@@ -4838,7 +4838,6 @@ angular.module('ep.binding').
                     deferred.resolve([]);
                 });
             }
-
             return deferred.promise;
         }
 
@@ -4864,33 +4863,37 @@ angular.module('ep.binding').
                 showException(response, showError);
                 deferred.resolve(false);
             });
-
             return deferred.promise;
         }
 
-        function getBAQMetadata(baqId) {
-            var url = 'BaqSvc/' + baqId + '/$metadata';
-            var promiseMetadata = epErpRestService.getXML(url);
-            promiseMetadata.then(function(data) {
-                var dt = data.data;
-                var idx1 = dt.indexOf('<EntityType Name="QueryResult">');
-                if (idx1) {
-                    idx1 = dt.indexOf('<Property ');
-                    var idx2 = dt.indexOf('</EntityType>', idx1 + 1);
-                    var str = dt.substr(idx1, idx2 - idx1);
-                    var regExp1 = /Name\=\"([A-Za-z0-9. _]*)\" Type\=\"([A-Za-z0-9. _]*)\"/g;
-                    var props = [];
-                    while (regExp1.exec(str)) {
-                        props.push({ name: RegExp.$1, type: RegExp.$2 });
-                    }
-                }
-            }, function(data) {
-                var msg = showException(data, false);
-                deferred.reject(msg, data);
-            });
-        }
-
         //private functions --->
+
+        //Leave this for future use!!!
+        //function getBAQMetadata(baqId) {
+        //    var deferred = $q.defer();
+        //    var url = 'BaqSvc/' + baqId + '/$metadata';
+        //    var promiseMetadata = epErpRestService.getXML(url);
+        //    promiseMetadata.then(function(data) {
+        //        var dt = data.data;
+        //        var props = [];
+        //        var idx1 = dt.indexOf('<EntityType Name="QueryResult">');
+        //        if (idx1) {
+        //            idx1 = dt.indexOf('<Property ');
+        //            var idx2 = dt.indexOf('</EntityType>', idx1 + 1);
+        //            var str = dt.substr(idx1, idx2 - idx1);
+        //            var regExp1 = /Name\=\"([A-Za-z0-9. _]*)\" Type\=\"([A-Za-z0-9. _]*)\"/g;
+
+        //            while (regExp1.exec(str)) {
+        //                props.push({ name: RegExp.$1, type: RegExp.$2 });
+        //            }
+        //        }
+        //        deferred.resolve({ data: data.data, props: props });
+        //    }, function(data) {
+        //        var msg = showException(data, false);
+        //        deferred.reject(msg, data);
+        //    });
+        //}
+
         function showException(response, showError) {
             var msg = epErpRestService.getErrorMsg(response, 'Unknown exception in erpBaqService');
             var maskedResponse = {};
@@ -4986,22 +4989,22 @@ angular.module('ep.binding').
          * @description
          * get primary key information
          */
-        function getPK(baqId, row) {
-            var ret = [];
-            var meta = epBindingMetadataService.get(baqId);
-            if (meta && meta.columns) {
-                angular.forEach(meta.columns, function(c) {
-                    if (c.isKeyField) {
-                        if (row) {
-                            ret.push({ name: c.name, value: row[c.name] });
-                        } else {
-                            ret.push(c.name);
-                        }
-                    }
-                });
-            }
-            return ret;
-        }
+        //function getPK(baqId, row) {
+        //    var ret = [];
+        //    var meta = epBindingMetadataService.get(baqId);
+        //    if (meta && meta.columns) {
+        //        angular.forEach(meta.columns, function(c) {
+        //            if (c.isKeyField) {
+        //                if (row) {
+        //                    ret.push({ name: c.name, value: row[c.name] });
+        //                } else {
+        //                    ret.push(c.name);
+        //                }
+        //            }
+        //        });
+        //    }
+        //    return ret;
+        //}
 
         /**
          * @ngdoc method
@@ -5084,7 +5087,7 @@ angular.module('ep.binding').
             var deferred = $q.defer();
 
             var promise = epErpRestService.get(svc, myQuery, options.callSettings).$promise;
-            promise.then(function(data) {
+            promise.then(function() {
                 //if (data.value) {
                 //    epTransactionFactory.current().add(viewId, data.value);
                 //}
@@ -5104,7 +5107,7 @@ angular.module('ep.binding').
                             epBindingMetadataService.add(sSvcName, 'swagger', undefined, data);
                         }
                     }, function(data) {
-                        showException(data);
+                        var msg = showException(data);
                         deferred.reject(msg, data);
                     });
                 }

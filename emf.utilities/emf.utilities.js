@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.433 built: 13-07-2017
+ * version:1.0.12-dev.434 built: 13-07-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.12-dev.433","built":"2017-07-13"};
+__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.12-dev.434","built":"2017-07-13"};
 
 (function() {
   'use strict';
@@ -252,7 +252,7 @@ angular.module('ep.signature', [
                             } else {
                                 failWith(deferred, filename);
                             }
-                        })
+                        });
                     });
                     break;
                 case storageSystems.localStorage:
@@ -348,8 +348,8 @@ angular.module('ep.signature', [
                             db.getObjectStore('ep-file').put(fileEntry).then(function() {
                                 $log.debug('Saved ' + filename + ' to indexedDB');
                                 deferred.resolve();
-                            }, failWith(deferred, filename))
-                        })
+                            }, failWith(deferred, filename));
+                        });
                         break;
                     case storageSystems.localStorage:
                         if (!filename) {
@@ -446,14 +446,14 @@ angular.module('ep.signature', [
             switch (storageSystem) {
                 case storageSystems.fileStorage:
                     return $window.cordova.file.dataDirectory + filename;
-                    break;
                 case storageSystems.indexedDB:
                     return filename;
-                    break;
                 case storageSystems.localStorage:
                     return epFileConstants.namespace + '.' + filename;
-                    break;
+                default:
+                    return epFileConstants.namespace + '.' + filename;
             }
+            return epFileConstants.namespace + '.' + filename;
         }
         /**
          * @ngdoc method
@@ -1270,7 +1270,7 @@ angular.module('ep.signature').directive('epSignature',
                 scope.clearSearch = function() {
                     scope.searchBy = '';
                     scope.showRemove = false;
-                }
+                };
             }
         };
     });
@@ -1465,7 +1465,7 @@ angular.module('ep.signature').directive('epSignature',
     ObjectStoreWrapper.prototype.add = function(value) {
         return this._execute('readwrite', function(store) {
             return store.add(value);
-        })
+        });
     };
     ObjectStoreWrapper.prototype.index = function(name) {
         var self = this;
@@ -1522,7 +1522,7 @@ angular.module('ep.signature').directive('epSignature',
                 getRequest.onerror = function() {
                     self.$log.warn('An error occurred while executing query ' + indexName + '=' + indexValue);
                     cursor.continue();
-                }
+                };
             } else {
                 deferred.resolve(result);
             }
@@ -1610,7 +1610,7 @@ angular.module('ep.signature').directive('epSignature',
             deferred.reject(e);
         };
         request.onblocked = function(event) {
-            $log.warn('Unable to open IndexedDB key cursor ' + self.name + '. The request is blocked.');
+            self.$log.warn('Unable to open IndexedDB key cursor ' + self.name + '. The request is blocked.');
             deferred.reject(event);
         };
         request.onupgradeneeded = function(event) {
@@ -1779,7 +1779,7 @@ angular.module('ep.signature').directive('epSignature',
         // define the meta-cache database for faster predicate lookups
         epIndexedDbService.createSchema('ep-meta-cache-db')
             .defineVersion(1, function(db) {
-                var metaCacheTable = db.createObjectStore('ep-meta-cache', { keyPath: 'key' })
+                var metaCacheTable = db.createObjectStore('ep-meta-cache', { keyPath: 'key' });
                 metaCacheTable.createIndex('cacheId', 'cacheId', { unique: false });
             });
 
@@ -1987,7 +1987,7 @@ angular.module('ep.signature').directive('epSignature',
                 delete metaCache[key];
             }
             epIndexedDbService.openDatabase('ep-meta-cache-db', 1).then(function(db) {
-                return db.getObjectStore('ep-meta-cache').delete(key);;
+                return db.getObjectStore('ep-meta-cache').delete(key);
             });
             return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
                 return db.getObjectStore('ep-cache').delete(key).then(function() {
@@ -2033,7 +2033,7 @@ angular.module('ep.signature').directive('epSignature',
             } else {
                 initialize().then(function() {
                     deferred.resolve(executeGetKeys(cacheId));
-                })
+                });
             }
             return deferred.promise;
         }
@@ -2070,7 +2070,7 @@ angular.module('ep.signature').directive('epSignature',
             } else {
                 initialize().then(function() {
                     deferred.resolve(executeGetExistingMetadata(cacheId, fnUserData));
-                })
+                });
             }
             return deferred.promise;
         }
@@ -2151,6 +2151,7 @@ angular.module('ep.signature').directive('epSignature',
                 var store = db.getObjectStore('ep-cache');
                 return store.put(cacheEntry);
             }, function(err) {
+                $log.error(err);
                 $log.warn('An error occured that prevented data from being stored in the cache. ' +
                     'This is probably caused by two or more open tabs sending contending commands to ' +
                     'the underlying database. If this warning occurs frequently, then it could temporarily ' +
@@ -2273,7 +2274,7 @@ angular.module('ep.signature').directive('epSignature',
             getExistingMetadata: getExistingMetadata,
             getExistingKeys: getExistingKeys,
             initialize: initialize
-        }
+        };
     }
 })();
 

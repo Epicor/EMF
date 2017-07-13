@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.433 built: 13-07-2017
+ * version:1.0.12-dev.434 built: 13-07-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["editors"] = {"libName":"editors","version":"1.0.12-dev.433","built":"2017-07-13"};
+__ep_build_info["editors"] = {"libName":"editors","version":"1.0.12-dev.434","built":"2017-07-13"};
 
 (function() {
     'use strict';
@@ -1370,7 +1370,7 @@ angular.module('ep.record.editor', [
                 //scope.overHandler = function(drop) {
                 //};
 
-                scope.$on('EP-VALIDATE-EDITOR-CONTROLS', function(event) {
+                scope.$on('EP-VALIDATE-EDITOR-CONTROLS', function() {
                     scope.ctx.displayInvalid = true;
                     scope.ctx.showInvalidFields = true;
                     scope.ctx.fnDoValidations();
@@ -1980,7 +1980,7 @@ angular.module('ep.record.editor', [
                         scope.state.isReadOnly = newValue;
                         $timeout(function() {
                             scope.setReadOnly();
-                        })
+                        });
                     }
                 });
 
@@ -2034,7 +2034,7 @@ angular.module('ep.record.editor', [
                                     ctx.fnSetSizeClass(newValue || '');
                                 }
                             });
-                        })
+                        });
                     }
                 });
 

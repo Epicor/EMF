@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.433 built: 13-07-2017
+ * version:1.0.12-dev.434 built: 13-07-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.12-dev.433","built":"2017-07-13"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.12-dev.434","built":"2017-07-13"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -935,11 +935,14 @@ if (!epEmfGlobal) {
                 if (!config.libPath) {
                     config.libPath = './lib';
                 }
+
+                // jshint ignore:start
                 // jscs:disable
                 if (__ep_build_info) {
                     config.emfBuildInfo = __ep_build_info;
                 }
                 // jscs:enable
+                // jshint ignore:end
 
                 config.getEmfLibPath = function(libName) {
                     var ret = './lib/bower/emf';
@@ -1719,7 +1722,7 @@ if (!epEmfGlobal) {
             } else {
                 val = value;
             }
-            update(key, val)
+            update(key, val);
         }
 
         /**

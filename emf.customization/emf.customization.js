@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.433 built: 13-07-2017
+ * version:1.0.12-dev.434 built: 13-07-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["customization"] = {"libName":"customization","version":"1.0.12-dev.433","built":"2017-07-13"};
+__ep_build_info["customization"] = {"libName":"customization","version":"1.0.12-dev.434","built":"2017-07-13"};
 
 'use strict';
 /**
@@ -80,7 +80,7 @@ angular.module('ep.customization', [
                     angular.element(el).append($compile(eContainer)(scope));
                 }
             }
-        }
+        };
     }
 }());
 
@@ -119,22 +119,24 @@ angular.module('ep.customization', [
                 var cProps = epCustomizationService.getCustomization(scope.epCustomizationInfo.id);
                 if (cProps) {
 
-                    if (cProps['$container']) {
-                        scope.state.style = cProps['$container'].style;
+                    if (cProps.$container) {
+                        scope.state.style = cProps.$container.style;
                         if (scope.state.style) {
                             try {
-                                eval('scope.state.style = ' + scope.state.style);
+                                scope.$eval('scope.state.style = ' + scope.state.style);
                             } catch (err) {
                                 $log.error('error during execution of customization style for ' +
                                     scope.epCustomizationInfo.id);
                             }
                         }
 
-                        scope.state.script = cProps['$container'].script;
+                        scope.state.script = cProps.$container.script;
+
                         if (scope.state.script) {
+                            var fn;
                             try {
-                                var f = new Function(scope.state.script);
-                                f();
+                                fn = new Function(scope.state.script); // jshint ignore:line
+                                fn();
                             } catch (err) {
                                 $log.error('error during execution of customization script for ' +
                                     scope.epCustomizationInfo.id + '\nerror:' + err.message);
@@ -184,7 +186,7 @@ angular.module('ep.customization', [
 
                     scope.orderByControls = function(ctrl) {
                         return ctrl.seq;
-                    }
+                    };
 
                     scope.handleDrop1 = function(drop, element) {
                         if (drop && drop.dragItem && element) {
@@ -216,10 +218,10 @@ angular.module('ep.customization', [
                             }
                         }
                         scope.$apply();
-                    }
+                    };
                 }
             }
-        }
+        };
     }
 }());
 
@@ -458,7 +460,7 @@ angular.module('ep.customization', [
                     controlKind: 'editor'
                 };
 
-                function onCustomizationChange(id) {
+                function onCustomizationChange() {
                     if (scope.customization) {
                         scope.customization.api.onCustomizeActivate(false);
                     }
@@ -528,7 +530,7 @@ angular.module('ep.customization', [
                 }
 
                 function setChangedProp(propName, propValue, id) {
-                    var id = id || scope.curColProps.id;
+                    id = id || scope.curColProps.id;
                     if (!scope.changes[id]) {
                         scope.changes[id] = {};
                     }
@@ -536,18 +538,7 @@ angular.module('ep.customization', [
                 }
 
                 function getNextCtrlId() {
-                    var ret = 'Ctrl-0';
-                    if (scope.controlsList) {
-                        for (var i = 1; i < 100; i++) {
-                            ret = 'Ctrl-' + i;
-                            if (!_.find(scope.controlsList.list, function(c) {
-                                return c.value === ret;
-                            })) {
-                                return ret;
-                            }
-                        }
-                    }
-                    return ret;
+                    return _.uniqueId('Ctrl-');
                 }
 
                 function showEditor(propName, fnSave) {
@@ -595,7 +586,7 @@ angular.module('ep.customization', [
                         buttons: [{
                             id: 'okButton', type: 'default', text: 'Ok', action: function(cfg) {
                                 if (fnSave) {
-                                    fnSave(cfg.editText)
+                                    fnSave(cfg.editText);
                                 } else {
                                     setProp(propName, cfg.editText);
                                 }
@@ -1256,12 +1247,12 @@ angular.module('ep.customization', [
                         buttons: [
                             {
                                 id: 'cancelButton', type: 'cancel', isCance: true, text: 'Close',
-                                action: function(cfg) {
+                                action: function() {
                                 }
                             },
                             {
                                 id: 'okButton', type: 'default', isDefault: true, text: 'Ok',
-                                action: function(cfg) {
+                                action: function() {
                                     $route.reload();
                                 }
                             }
@@ -1369,7 +1360,7 @@ angular.module('ep.customization', [
         function onReaderLoad(event) {
             var obj = JSON.parse(event.target.result);
             if (obj) {
-                epCustomizationService.importCustomization(obj)
+                epCustomizationService.importCustomization(obj);
                 alert('customization was imported!');
             }
         }

@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.433 built: 13-07-2017
+ * version:1.0.12-dev.434 built: 13-07-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.433","built":"2017-07-13"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.434","built":"2017-07-13"};
 
 (function() {
     'use strict';
@@ -341,7 +341,7 @@ angular.module('ep.menu.builder', [
 
             function buildIndex(menuItems) {
                 traverseTree(menuItems);
-                $scope.state.searchIndex.sort(function(a, b) { return a.caption > b.caption ? 1 : 0});
+                $scope.state.searchIndex.sort(function(a, b) { return a.caption > b.caption ? 1 : 0; });
             }
 
             // private build the index for faster searching
@@ -2312,8 +2312,7 @@ angular.module('ep.menu.builder', [
                     if (scope.init) {
                         scope.init(scope);
                     }
-                }
-                //scope.initData();
+                };
 
                 scope.filterByName = function(obj) {
                     var ret = true;
@@ -2321,19 +2320,19 @@ angular.module('ep.menu.builder', [
                         //searchFields
                         if (scope.searchFields) {
                             var field = _.find(scope.searchFields, function(fld) {
-                                return ((obj[fld] + '').toLowerCase() || '')
+                                return ((obj[fld] + '').toLowerCase())
                                     .indexOf(scope.searchFilter.toLowerCase()) === 0;
                             });
                             if (!field) {
                                 ret = false;
                             }
                         } else if (scope.groupBy) {
-                            ret = (obj[scope.groupBy].toLowerCase() || '')
+                            ret = ((obj[scope.groupBy] + '').toLowerCase())
                                 .indexOf(scope.searchFilter.toLowerCase()) === 0;
                         }
                     }
                     return ret;
-                }
+                };
 
                 function applyTextSearchFilter(searchValue) {
                     if (searchValue) {
@@ -2344,7 +2343,7 @@ angular.module('ep.menu.builder', [
                             });
                             if (!scope.selectedDirectoryEntry) {
                                 //no such first letter in directory - default to 'all'
-                                scope.selectedDirectoryEntry = scope.directory['__all__'];
+                                scope.selectedDirectoryEntry = scope.directory.__all__;
                                 scope.filteredData = [];
                             } else {
                                 scope.filteredData = scope.origListData.slice(
@@ -2544,7 +2543,7 @@ angular.module('ep.menu.builder', [
          * @description
          * To group the list based on groupBy Value
          */
-        function getGroupedList(listData, groupBy) {
+        function getGroupedList(listData) {
             return _.groupBy(listData, function(row) {
                 var datum = row[0];
                 return (!isNaN(datum)) ? '#' : datum.toUpperCase();
@@ -2588,14 +2587,10 @@ angular.module('ep.menu.builder', [
                     return true;
                 }
                 return directoryLetter === itemFirstLetter;
-            }
+            };
 
             var allKey = '__all__';
-            //keys - group keys that have been processed
 
-            var keys = {};
-            var groupKey;
-            var groupDisplay;
             //directory that is returned
             var dir = {};
 
@@ -2626,7 +2621,6 @@ angular.module('ep.menu.builder', [
                 };
             });
 
-            var previousItem;
             var currentLetter = '';
             var previousLetter = '';
 
@@ -2650,7 +2644,7 @@ angular.module('ep.menu.builder', [
                     dir[groupValue] = previousItem = dirEntry;
                     delete dir[currentLetter];
                 }
-            };
+            }
             return dir;
         }
 

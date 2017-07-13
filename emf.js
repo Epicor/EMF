@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.433 built: 13-07-2017
+ * version:1.0.12-dev.434 built: 13-07-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.433","built":"2017-07-13"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.434","built":"2017-07-13"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -1703,11 +1703,14 @@ angular.module('ep.signature', [
                 if (!config.libPath) {
                     config.libPath = './lib';
                 }
+
+                // jshint ignore:start
                 // jscs:disable
                 if (__ep_build_info) {
                     config.emfBuildInfo = __ep_build_info;
                 }
                 // jscs:enable
+                // jshint ignore:end
 
                 config.getEmfLibPath = function(libName) {
                     var ret = './lib/bower/emf';
@@ -1945,7 +1948,7 @@ angular.module('ep.signature', [
                 }
                 scope.setColumn();
             }
-        }
+        };
     }
 }());
 
@@ -2024,7 +2027,7 @@ angular.module('ep.signature', [
                 scope.setLabel();
                 scope.setRequired();
             }
-        }
+        };
     }
 }());
 
@@ -2108,7 +2111,7 @@ angular.module('ep.binding').
                     if (scope.view) {
                         scope.view.row(scope.currentPage - 1);
                     }
-                }
+                };
             }
         };
     }
@@ -2221,7 +2224,7 @@ angular.module('ep.binding').
                                         if (valid) {
                                             try {
                                                 var fff;
-                                                eval('fff = function(ctx, ev, value) { ' + valid + '}');
+                                                scope.$eval('fff = function(ctx, ev, value) { ' + valid + '}');
                                                 col.fnOnFldValidate = fff;
                                             } catch (err) {
 
@@ -2237,11 +2240,11 @@ angular.module('ep.binding').
                     }
                 }
 
-                scope.$watch('options', function(newValue) {
+                scope.$watch('options', function() {
                     setOptions();
                 }, true);
             }
-        }
+        };
     }
 }());
 
@@ -2315,7 +2318,7 @@ angular.module('ep.binding').
             updatable: true,
             list: undefined,
             sizeClass: 'col-lg-12',
-            fnOnChange: function(ev, ctx) {
+            fnOnChange: function() {
                 //var column = ctx.fnGetCurrentValue();
                 scope.config.binding = '[' + scope.meta.view + '].[' + scope.meta.column + ']';
             }
@@ -2338,7 +2341,7 @@ angular.module('ep.binding').
                             label: key,
                             value: key
                         });
-                    })
+                    });
                 }
                 if (view.hasData()) {
                     var record = view.dataRow();
@@ -2491,7 +2494,7 @@ angular.module('ep.binding').
                 scope.$watch('epBinding', function(newValue) {
                     if (newValue !== undefined) {
                         var callbacks = {
-                            onViewReady: function(view) {
+                            onViewReady: function() {
                                 scope.state.data = scope.epBindingInfo.view.data();
                                 scope.ready = true;
                             }
@@ -2537,7 +2540,7 @@ angular.module('ep.binding').
                                 scope.ready = true;
                             });
                         },
-                        onChange: function(mode) {
+                        onChange: function() {
                             setHeadersAndMeta();
                             scope.ready = false;
                             $timeout(function() {
@@ -2547,7 +2550,7 @@ angular.module('ep.binding').
                     }
                 };
             }
-        }
+        };
     }
 }());
 
@@ -2585,7 +2588,7 @@ angular.module('ep.binding').
                 //we have to clear all the values because angular
                 //is going to merge the attrs collection
                 //back into the element after this function finishes
-                angular.forEach(inner.attributes, function(attr, key) {
+                angular.forEach(inner.attributes, function(attr) {
                     attr.value = '';
                 });
                 attr.$set('ng-if', value);
@@ -3029,7 +3032,7 @@ angular.module('ep.binding').
             function freeze() {
                 angular.forEach(watches, function(w) {
                     w();
-                })
+                });
             }
 
             init(theBinding);
@@ -3039,7 +3042,7 @@ angular.module('ep.binding').
                 changeBinding: changeBinding,
                 freeze: freeze
             };
-        }
+        };
         return factoryInstance;
     }
 }());
@@ -3172,14 +3175,14 @@ angular.module('ep.binding').
                 ret = {
                     view: b,
                     column: ''
-                }
+                };
                 if (b.indexOf('[') === 0 && (b.lastIndexOf(']') === b.length - 1)) {
                     var matches = b.match(/\[(.*?)\]/g);
                     if (matches.length > 1) {
                         ret = {
                             view: matches[0].replace('[', '').replace(']', ''),
                             column: matches[1].replace('[', '').replace(']', '')
-                        }
+                        };
                     } else if (matches.length === 1) {
                         ret.view = matches[0].replace('[', '').replace(']', '');
                     }
@@ -3189,7 +3192,7 @@ angular.module('ep.binding').
                         ret = {
                             view: parts[0],
                             column: parts[1]
-                        }
+                        };
                     }
                 }
             } else {
@@ -3251,7 +3254,7 @@ angular.module('ep.binding').
                     angular.forEach(vstate.modifiedRows, function(idx) {
                         $log.debug('  row:' + idx + ';state:' + vstate.modified[idx].state +
                             ';columns:' + JSON.stringify(vstate.modified[idx].columns));
-                    })
+                    });
                 });
             }
             if (!onOff) {
@@ -4239,7 +4242,7 @@ angular.module('ep.binding').
                 get: get,
                 set: set
             };
-        }
+        };
 
         //------------------------------------------------>>>>>
         var currentTrx;
@@ -4311,7 +4314,7 @@ angular.module('ep.binding').
         // define the meta-cache database for faster predicate lookups
         epIndexedDbService.createSchema('ep-meta-cache-db')
             .defineVersion(1, function(db) {
-                var metaCacheTable = db.createObjectStore('ep-meta-cache', { keyPath: 'key' })
+                var metaCacheTable = db.createObjectStore('ep-meta-cache', { keyPath: 'key' });
                 metaCacheTable.createIndex('cacheId', 'cacheId', { unique: false });
             });
 
@@ -4519,7 +4522,7 @@ angular.module('ep.binding').
                 delete metaCache[key];
             }
             epIndexedDbService.openDatabase('ep-meta-cache-db', 1).then(function(db) {
-                return db.getObjectStore('ep-meta-cache').delete(key);;
+                return db.getObjectStore('ep-meta-cache').delete(key);
             });
             return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
                 return db.getObjectStore('ep-cache').delete(key).then(function() {
@@ -4565,7 +4568,7 @@ angular.module('ep.binding').
             } else {
                 initialize().then(function() {
                     deferred.resolve(executeGetKeys(cacheId));
-                })
+                });
             }
             return deferred.promise;
         }
@@ -4602,7 +4605,7 @@ angular.module('ep.binding').
             } else {
                 initialize().then(function() {
                     deferred.resolve(executeGetExistingMetadata(cacheId, fnUserData));
-                })
+                });
             }
             return deferred.promise;
         }
@@ -4683,6 +4686,7 @@ angular.module('ep.binding').
                 var store = db.getObjectStore('ep-cache');
                 return store.put(cacheEntry);
             }, function(err) {
+                $log.error(err);
                 $log.warn('An error occured that prevented data from being stored in the cache. ' +
                     'This is probably caused by two or more open tabs sending contending commands to ' +
                     'the underlying database. If this warning occurs frequently, then it could temporarily ' +
@@ -4805,7 +4809,7 @@ angular.module('ep.binding').
             getExistingMetadata: getExistingMetadata,
             getExistingKeys: getExistingKeys,
             initialize: initialize
-        }
+        };
     }
 })();
 
@@ -5973,7 +5977,7 @@ app.directive('epCardTitle',
                     angular.element(el).append($compile(eContainer)(scope));
                 }
             }
-        }
+        };
     }
 }());
 
@@ -6012,22 +6016,24 @@ app.directive('epCardTitle',
                 var cProps = epCustomizationService.getCustomization(scope.epCustomizationInfo.id);
                 if (cProps) {
 
-                    if (cProps['$container']) {
-                        scope.state.style = cProps['$container'].style;
+                    if (cProps.$container) {
+                        scope.state.style = cProps.$container.style;
                         if (scope.state.style) {
                             try {
-                                eval('scope.state.style = ' + scope.state.style);
+                                scope.$eval('scope.state.style = ' + scope.state.style);
                             } catch (err) {
                                 $log.error('error during execution of customization style for ' +
                                     scope.epCustomizationInfo.id);
                             }
                         }
 
-                        scope.state.script = cProps['$container'].script;
+                        scope.state.script = cProps.$container.script;
+
                         if (scope.state.script) {
+                            var fn;
                             try {
-                                var f = new Function(scope.state.script);
-                                f();
+                                fn = new Function(scope.state.script); // jshint ignore:line
+                                fn();
                             } catch (err) {
                                 $log.error('error during execution of customization script for ' +
                                     scope.epCustomizationInfo.id + '\nerror:' + err.message);
@@ -6077,7 +6083,7 @@ app.directive('epCardTitle',
 
                     scope.orderByControls = function(ctrl) {
                         return ctrl.seq;
-                    }
+                    };
 
                     scope.handleDrop1 = function(drop, element) {
                         if (drop && drop.dragItem && element) {
@@ -6109,10 +6115,10 @@ app.directive('epCardTitle',
                             }
                         }
                         scope.$apply();
-                    }
+                    };
                 }
             }
-        }
+        };
     }
 }());
 
@@ -6351,7 +6357,7 @@ app.directive('epCardTitle',
                     controlKind: 'editor'
                 };
 
-                function onCustomizationChange(id) {
+                function onCustomizationChange() {
                     if (scope.customization) {
                         scope.customization.api.onCustomizeActivate(false);
                     }
@@ -6421,7 +6427,7 @@ app.directive('epCardTitle',
                 }
 
                 function setChangedProp(propName, propValue, id) {
-                    var id = id || scope.curColProps.id;
+                    id = id || scope.curColProps.id;
                     if (!scope.changes[id]) {
                         scope.changes[id] = {};
                     }
@@ -6429,18 +6435,7 @@ app.directive('epCardTitle',
                 }
 
                 function getNextCtrlId() {
-                    var ret = 'Ctrl-0';
-                    if (scope.controlsList) {
-                        for (var i = 1; i < 100; i++) {
-                            ret = 'Ctrl-' + i;
-                            if (!_.find(scope.controlsList.list, function(c) {
-                                return c.value === ret;
-                            })) {
-                                return ret;
-                            }
-                        }
-                    }
-                    return ret;
+                    return _.uniqueId('Ctrl-');
                 }
 
                 function showEditor(propName, fnSave) {
@@ -6488,7 +6483,7 @@ app.directive('epCardTitle',
                         buttons: [{
                             id: 'okButton', type: 'default', text: 'Ok', action: function(cfg) {
                                 if (fnSave) {
-                                    fnSave(cfg.editText)
+                                    fnSave(cfg.editText);
                                 } else {
                                     setProp(propName, cfg.editText);
                                 }
@@ -7149,12 +7144,12 @@ app.directive('epCardTitle',
                         buttons: [
                             {
                                 id: 'cancelButton', type: 'cancel', isCance: true, text: 'Close',
-                                action: function(cfg) {
+                                action: function() {
                                 }
                             },
                             {
                                 id: 'okButton', type: 'default', isDefault: true, text: 'Ok',
-                                action: function(cfg) {
+                                action: function() {
                                     $route.reload();
                                 }
                             }
@@ -7262,7 +7257,7 @@ app.directive('epCardTitle',
         function onReaderLoad(event) {
             var obj = JSON.parse(event.target.result);
             if (obj) {
-                epCustomizationService.importCustomization(obj)
+                epCustomizationService.importCustomization(obj);
                 alert('customization was imported!');
             }
         }
@@ -10177,7 +10172,7 @@ angular.module('ep.datagrid').
                 return attrVal.split(',').map(function(v) { return v.trim().toLowerCase(); });
             }
 
-            function processFlow(zones) {
+            function processFlow(zones, $scope) {
                 zoneNames.forEach(function(zoneName) {
                     zones[zoneName].forEach(function($zone) {
                         var flowPropName = zoneName + 'Flow';
@@ -10190,7 +10185,7 @@ angular.module('ep.datagrid').
                         //    var $child = $(this);
                         //})
                     });
-                })
+                });
             }
 
             function processAnchors(zones) {
@@ -10201,7 +10196,7 @@ angular.module('ep.datagrid').
                     zones[zone].forEach(function($zone) {
                         var children = $zone.children();
                         // flatten all of the anchors so we can get a count
-                        var allAnchors = Array.from(children).reduce(function(p, c) { return p.concat(c); }, []);
+                        //var allAnchors = Array.from(children).reduce(function(p, c) { return p.concat(c); }, []);
 
                         children.each(function() {
                             var $child = $(this);
@@ -10217,7 +10212,7 @@ angular.module('ep.datagrid').
                                     var values = parseAnchors(anchorAttr);
                                     values.forEach(function(v) {
                                         anchors[v] = true;
-                                    })
+                                    });
                                 } catch (e) {
                                     $log.warn('An error occurred while parsing the anchor ' +
                                         'attribute for the zone "' + zone + '".');
@@ -10251,8 +10246,7 @@ angular.module('ep.datagrid').
                                 }
                             }
                         });
-
-                    })
+                    });
                 });
             }
 
@@ -10329,6 +10323,8 @@ angular.module('ep.datagrid').
                 // count how many zones there are that are set to "stretch"
                 var flex;
                 var stretchCount = 0;
+                var innerFlex;
+                var ic;
                 // set each docked element to stretch the correct amount
                 if (topFirst) {
                     // if topFirst is true, then the main axis is the y-axis, and the cross axis is the x-axis
@@ -10356,7 +10352,7 @@ angular.module('ep.datagrid').
                             ic = (docks.left.hasContent && docks.left.epPanelMode === 'stretch' ? 1 : 0) +
                                 (docks.center.hasContent && docks.center.epPanelMode === 'stretch' ? 1 : 0) +
                                 (docks.right.hasContent && docks.right.epPanelMode === 'stretch' ? 1 : 0);
-                            var innerFlex = 100 / ic;
+                            innerFlex = 100 / ic;
                             if (docks.left.hasContent && docks.left.epPanelMode === 'stretch') {
                                 $scope.leftFlex = '1 1 ' + innerFlex + '%';
                             }
@@ -10393,10 +10389,10 @@ angular.module('ep.datagrid').
                         if (docks.top.hasContent || docks.center.hasContent || docks.bottom.hasContent) {
                             $scope.crossFlex = '1 1 ' + flex + '%';
                             // set the flex values for the top, center, and bottom
-                            var ic = (docks.top.hasContent && docks.top.epPanelMode === 'stretch' ? 1 : 0) +
+                            ic = (docks.top.hasContent && docks.top.epPanelMode === 'stretch' ? 1 : 0) +
                                 (docks.center.hasContent && docks.center.epPanelMode === 'stretch' ? 1 : 0) +
                                 (docks.bottom.hasContent && docks.bottom.epPanelMode === 'stretch' ? 1 : 0);
-                            var innerFlex = 100 / ic;
+                            innerFlex = 100 / ic;
                             if (docks.top.hasContent && docks.top.epPanelMode === 'stretch') {
                                 $scope.topFlex = '1 1 ' + innerFlex + '%';
                             }
@@ -10414,7 +10410,8 @@ angular.module('ep.datagrid').
                     }
                 }
                 $timeout(function() {
-                    processFlow(zones);
+                    processFlow(zones, $scope);
+                    processAnchors(zones);
                 });
 
             }
@@ -10429,8 +10426,8 @@ angular.module('ep.datagrid').
                     pre: preLink,
                     post: postLink
                 }
-            }
-        }])
+            };
+        }]);
 
 })();
 
@@ -12430,6 +12427,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
     /*@ngInject*/
     function epErpBaqService($q, epErpRestService, epModalDialogService, epTransactionFactory, odataQueryFactory,
         epBindingMetadataService) {
+
         function getBAQList(idStartsWith) {
             var url = 'Ice.BO.BAQDesignerSvc/BAQDesigners';
             var query = odataQueryFactory
@@ -12440,8 +12438,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             query = query.compose();
 
             var promise = epErpRestService.get(url, query).$promise;
-            promise.then(function(data) {
-                var baqList = data.value;
+            promise.then(function() {
             }, function(data) {
                 var msg = data['odata.error'] ? data['odata.error'].message.value : data.statusText;
                 epModalDialogService.showException({ title: 'Exception', message: msg });
@@ -12483,9 +12480,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     url += paramJoiner + params;
                 }
             }
-
+            // TODO: review
             var promise = epErpRestService.get(url, oQuery, options.callSettings).$promise;
-            promise.then(function(data) {
+            promise.then(function() {
                 //if (data.value) {
                 //    epTransactionFactory.current().add(viewId, data.value);
                 //}
@@ -12506,7 +12503,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         var columns = getMetaColumns(result.data.returnObj);
                         epBindingMetadataService.add(viewId, 'baq', columns);
                     }
-                }, function(data) { });
+                }, function() { });
             }
 
             $q.all([promise, promiseMeta]).then(function(results) {
@@ -12527,7 +12524,6 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 }
                 deferred.resolve(results[0]);
             });
-
             return deferred.promise;
         }
 
@@ -12565,9 +12561,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 if (showProgress) {
                     epModalDialogService.hide();
                 }
-            }
+            };
 
             var deferred = $q.defer();
+            var meta;
             try {
                 if (showProgress) {
                     epModalDialogService.showLoading({
@@ -12580,7 +12577,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
                 var d = angular.copy(data);
                 if (options.convertToJsonType !== false) {
-                    var meta = epBindingMetadataService.get(baqId);
+                    meta = epBindingMetadataService.get(baqId);
                     convertFromJSonTypes(meta, d);
                 }
 
@@ -12588,7 +12585,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     delete d.$$hashKey;
                 }
 
-                var meta = epBindingMetadataService.get(baqId);
+                meta = epBindingMetadataService.get(baqId);
                 var uColsRemove;
                 var dataUpdate = d;
                 if (options.updatableOnly !== false) {
@@ -12613,7 +12610,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         dataUpdate = angular.copy(d);
                         //remove fields that are not in meta
                         var list = [];
-                        var sysFields = ['RowMod','RowIdent','SysRowID']
+                        var sysFields = ['RowMod','RowIdent','SysRowID'];
                         angular.forEach(Object.keys(dataUpdate), function(key) {
                             if (!meta.columns[key] && sysFields.indexOf(key) === -1) {
                                 list.push(key);
@@ -12670,10 +12667,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     deferred.reject(response);
                 });
             } catch (err) {
-                showException(response, (options.showError !== false));
+                showException(err, (options.showError !== false));
                 fnOnComplete();
             }
-
             return deferred.promise;
         }
 
@@ -12730,7 +12726,6 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     deferred.resolve([]);
                 });
             }
-
             return deferred.promise;
         }
 
@@ -12756,33 +12751,37 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 showException(response, showError);
                 deferred.resolve(false);
             });
-
             return deferred.promise;
         }
 
-        function getBAQMetadata(baqId) {
-            var url = 'BaqSvc/' + baqId + '/$metadata';
-            var promiseMetadata = epErpRestService.getXML(url);
-            promiseMetadata.then(function(data) {
-                var dt = data.data;
-                var idx1 = dt.indexOf('<EntityType Name="QueryResult">');
-                if (idx1) {
-                    idx1 = dt.indexOf('<Property ');
-                    var idx2 = dt.indexOf('</EntityType>', idx1 + 1);
-                    var str = dt.substr(idx1, idx2 - idx1);
-                    var regExp1 = /Name\=\"([A-Za-z0-9. _]*)\" Type\=\"([A-Za-z0-9. _]*)\"/g;
-                    var props = [];
-                    while (regExp1.exec(str)) {
-                        props.push({ name: RegExp.$1, type: RegExp.$2 });
-                    }
-                }
-            }, function(data) {
-                var msg = showException(data, false);
-                deferred.reject(msg, data);
-            });
-        }
-
         //private functions --->
+
+        //Leave this for future use!!!
+        //function getBAQMetadata(baqId) {
+        //    var deferred = $q.defer();
+        //    var url = 'BaqSvc/' + baqId + '/$metadata';
+        //    var promiseMetadata = epErpRestService.getXML(url);
+        //    promiseMetadata.then(function(data) {
+        //        var dt = data.data;
+        //        var props = [];
+        //        var idx1 = dt.indexOf('<EntityType Name="QueryResult">');
+        //        if (idx1) {
+        //            idx1 = dt.indexOf('<Property ');
+        //            var idx2 = dt.indexOf('</EntityType>', idx1 + 1);
+        //            var str = dt.substr(idx1, idx2 - idx1);
+        //            var regExp1 = /Name\=\"([A-Za-z0-9. _]*)\" Type\=\"([A-Za-z0-9. _]*)\"/g;
+
+        //            while (regExp1.exec(str)) {
+        //                props.push({ name: RegExp.$1, type: RegExp.$2 });
+        //            }
+        //        }
+        //        deferred.resolve({ data: data.data, props: props });
+        //    }, function(data) {
+        //        var msg = showException(data, false);
+        //        deferred.reject(msg, data);
+        //    });
+        //}
+
         function showException(response, showError) {
             var msg = epErpRestService.getErrorMsg(response, 'Unknown exception in erpBaqService');
             var maskedResponse = {};
@@ -12878,22 +12877,22 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @description
          * get primary key information
          */
-        function getPK(baqId, row) {
-            var ret = [];
-            var meta = epBindingMetadataService.get(baqId);
-            if (meta && meta.columns) {
-                angular.forEach(meta.columns, function(c) {
-                    if (c.isKeyField) {
-                        if (row) {
-                            ret.push({ name: c.name, value: row[c.name] });
-                        } else {
-                            ret.push(c.name);
-                        }
-                    }
-                });
-            }
-            return ret;
-        }
+        //function getPK(baqId, row) {
+        //    var ret = [];
+        //    var meta = epBindingMetadataService.get(baqId);
+        //    if (meta && meta.columns) {
+        //        angular.forEach(meta.columns, function(c) {
+        //            if (c.isKeyField) {
+        //                if (row) {
+        //                    ret.push({ name: c.name, value: row[c.name] });
+        //                } else {
+        //                    ret.push(c.name);
+        //                }
+        //            }
+        //        });
+        //    }
+        //    return ret;
+        //}
 
         /**
          * @ngdoc method
@@ -12976,7 +12975,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             var deferred = $q.defer();
 
             var promise = epErpRestService.get(svc, myQuery, options.callSettings).$promise;
-            promise.then(function(data) {
+            promise.then(function() {
                 //if (data.value) {
                 //    epTransactionFactory.current().add(viewId, data.value);
                 //}
@@ -12996,7 +12995,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             epBindingMetadataService.add(sSvcName, 'swagger', undefined, data);
                         }
                     }, function(data) {
-                        showException(data);
+                        var msg = showException(data);
                         deferred.reject(msg, data);
                     });
                 }
@@ -13707,7 +13706,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             } else {
                                 failWith(deferred, filename);
                             }
-                        })
+                        });
                     });
                     break;
                 case storageSystems.localStorage:
@@ -13803,8 +13802,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             db.getObjectStore('ep-file').put(fileEntry).then(function() {
                                 $log.debug('Saved ' + filename + ' to indexedDB');
                                 deferred.resolve();
-                            }, failWith(deferred, filename))
-                        })
+                            }, failWith(deferred, filename));
+                        });
                         break;
                     case storageSystems.localStorage:
                         if (!filename) {
@@ -13901,14 +13900,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             switch (storageSystem) {
                 case storageSystems.fileStorage:
                     return $window.cordova.file.dataDirectory + filename;
-                    break;
                 case storageSystems.indexedDB:
                     return filename;
-                    break;
                 case storageSystems.localStorage:
                     return epFileConstants.namespace + '.' + filename;
-                    break;
+                default:
+                    return epFileConstants.namespace + '.' + filename;
             }
+            return epFileConstants.namespace + '.' + filename;
         }
         /**
          * @ngdoc method
@@ -14083,7 +14082,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 scope.clearSearch = function() {
                     scope.searchBy = '';
                     scope.showRemove = false;
-                }
+                };
             }
         };
     });
@@ -16289,7 +16288,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
     ObjectStoreWrapper.prototype.add = function(value) {
         return this._execute('readwrite', function(store) {
             return store.add(value);
-        })
+        });
     };
     ObjectStoreWrapper.prototype.index = function(name) {
         var self = this;
@@ -16346,7 +16345,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 getRequest.onerror = function() {
                     self.$log.warn('An error occurred while executing query ' + indexName + '=' + indexValue);
                     cursor.continue();
-                }
+                };
             } else {
                 deferred.resolve(result);
             }
@@ -16434,7 +16433,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             deferred.reject(e);
         };
         request.onblocked = function(event) {
-            $log.warn('Unable to open IndexedDB key cursor ' + self.name + '. The request is blocked.');
+            self.$log.warn('Unable to open IndexedDB key cursor ' + self.name + '. The request is blocked.');
             deferred.reject(event);
         };
         request.onupgradeneeded = function(event) {
@@ -16730,8 +16729,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     if (scope.init) {
                         scope.init(scope);
                     }
-                }
-                //scope.initData();
+                };
 
                 scope.filterByName = function(obj) {
                     var ret = true;
@@ -16739,19 +16737,19 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         //searchFields
                         if (scope.searchFields) {
                             var field = _.find(scope.searchFields, function(fld) {
-                                return ((obj[fld] + '').toLowerCase() || '')
+                                return ((obj[fld] + '').toLowerCase())
                                     .indexOf(scope.searchFilter.toLowerCase()) === 0;
                             });
                             if (!field) {
                                 ret = false;
                             }
                         } else if (scope.groupBy) {
-                            ret = (obj[scope.groupBy].toLowerCase() || '')
+                            ret = ((obj[scope.groupBy] + '').toLowerCase())
                                 .indexOf(scope.searchFilter.toLowerCase()) === 0;
                         }
                     }
                     return ret;
-                }
+                };
 
                 function applyTextSearchFilter(searchValue) {
                     if (searchValue) {
@@ -16762,7 +16760,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             });
                             if (!scope.selectedDirectoryEntry) {
                                 //no such first letter in directory - default to 'all'
-                                scope.selectedDirectoryEntry = scope.directory['__all__'];
+                                scope.selectedDirectoryEntry = scope.directory.__all__;
                                 scope.filteredData = [];
                             } else {
                                 scope.filteredData = scope.origListData.slice(
@@ -16962,7 +16960,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @description
          * To group the list based on groupBy Value
          */
-        function getGroupedList(listData, groupBy) {
+        function getGroupedList(listData) {
             return _.groupBy(listData, function(row) {
                 var datum = row[0];
                 return (!isNaN(datum)) ? '#' : datum.toUpperCase();
@@ -17006,14 +17004,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     return true;
                 }
                 return directoryLetter === itemFirstLetter;
-            }
+            };
 
             var allKey = '__all__';
-            //keys - group keys that have been processed
 
-            var keys = {};
-            var groupKey;
-            var groupDisplay;
             //directory that is returned
             var dir = {};
 
@@ -17044,7 +17038,6 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 };
             });
 
-            var previousItem;
             var currentLetter = '';
             var previousLetter = '';
 
@@ -17068,7 +17061,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     dir[groupValue] = previousItem = dirEntry;
                     delete dir[currentLetter];
                 }
-            };
+            }
             return dir;
         }
 
@@ -17410,7 +17403,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             } else {
                 val = value;
             }
-            update(key, val)
+            update(key, val);
         }
 
         /**
@@ -19110,7 +19103,7 @@ angular.module('ep.menu.builder').
 
             function buildIndex(menuItems) {
                 traverseTree(menuItems);
-                $scope.state.searchIndex.sort(function(a, b) { return a.caption > b.caption ? 1 : 0});
+                $scope.state.searchIndex.sort(function(a, b) { return a.caption > b.caption ? 1 : 0; });
             }
 
             // private build the index for faster searching
@@ -20414,7 +20407,7 @@ angular.module('ep.menu.builder').
         * @returns {this} to allow for method chaining
         */
         function setWhereItems(whereItemsArray, params) {
-            var prms = params || {};
+            params = params || {};
             var expr = '(';
             for (var i = 0; i < whereItemsArray.length; i++) {
                 var item = whereItemsArray[i];
@@ -21552,7 +21545,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                 //scope.overHandler = function(drop) {
                 //};
 
-                scope.$on('EP-VALIDATE-EDITOR-CONTROLS', function(event) {
+                scope.$on('EP-VALIDATE-EDITOR-CONTROLS', function() {
                     scope.ctx.displayInvalid = true;
                     scope.ctx.showInvalidFields = true;
                     scope.ctx.fnDoValidations();
@@ -22162,7 +22155,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                         scope.state.isReadOnly = newValue;
                         $timeout(function() {
                             scope.setReadOnly();
-                        })
+                        });
                     }
                 });
 
@@ -22216,7 +22209,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                                     ctx.fnSetSizeClass(newValue || '');
                                 }
                             });
-                        })
+                        });
                     }
                 });
 
@@ -26103,11 +26096,10 @@ angular.module('ep.signature').directive('epSignature',
 
 (function() {
     'use strict';
-    epPane.$inject = ['$timeout'];
     angular.module('ep.sliding.panel')
     .directive('epPane', epPane);
     /*@ngInject */
-    function epPane($timeout) {
+    function epPane() {
         return {
             restrict: 'E',
             transclude: true,
@@ -26129,7 +26121,7 @@ angular.module('ep.signature').directive('epSignature',
                 };
                 $scope.state.panes.push($scope.pane);
             }
-        }
+        };
     }
 })();
 
@@ -26197,7 +26189,7 @@ angular.module('ep.signature').directive('epSignature',
                 hideNavBar: '='
             },
             templateUrl: 'src/components/ep.sliding.panel/ep-sliding-panel.html',
-            controller: /*@ngInject*/['$scope', '$element', function($scope, $element) {
+            controller: /*@ngInject*/['$scope', function($scope) {
                 this.getState = function() { return $scope.state; };
             }],
             link:function($scope, $el, $attrs) {
@@ -26235,7 +26227,7 @@ angular.module('ep.signature').directive('epSignature',
 
                 $scope.finish = epSlidingPanelService.finish.bind(null, $scope.state.id);
             }
-        }
+        };
     }
 })();
 
@@ -26344,8 +26336,8 @@ angular.module('ep.signature').directive('epSignature',
                         return {
                             oldPane: oldPane,
                             newPane: newPane
-                        }
-                    })
+                        };
+                    });
                 });
         }
         /**
@@ -26502,8 +26494,8 @@ angular.module('ep.signature').directive('epSignature',
             prev: prev,
             register: register,
             unregister: unregister
-        }
-    }])
+        };
+    }]);
 })();
 
 (function() {
@@ -28372,7 +28364,7 @@ angular.module('ep.signature').directive('epSignature',
                 return logEntry;
             }
 
-            function submitLogEntry(logEntry, merge, response) {
+            function submitLogEntry(logEntry, merge) {
                 if (!isLogOn || !logEntry) {
                     return;
                 }
@@ -28400,7 +28392,7 @@ angular.module('ep.signature').directive('epSignature',
             function getErrorMsg(response, defaultMsg) {
                 var msg = '';
                 if (response) {
-                    var msg = response.ErrorMessage || '';
+                    msg = response.ErrorMessage || '';
                     if (!msg && response['odata.error']) {
                         msg = response['odata.error'].message.value;
                     }
@@ -28509,8 +28501,9 @@ angular.module('ep.signature').directive('epSignature',
 
                 var sCallSettings = JSON.stringify(callSettings || {});
 
+                // TODO: what should "data" be?-- it's undefined here
                 var logEntry = createLogEntry('REST CALL: ' + path,
-                                              'ep-rest-service (delete)', url, data, callSettings);
+                                              'ep-rest-service (delete)', url, {}, callSettings);
 
                 var promise = $http({
                     method: 'DELETE',
@@ -28642,8 +28635,8 @@ angular.module('ep.signature').directive('epSignature',
                 patch: patch,
                 getXML: getXML,
                 getErrorMsg: getErrorMsg
-            }
-        }])
+            };
+        }]);
 })();
 
 (function() {
@@ -28777,17 +28770,17 @@ angular.module('ep.signature').directive('epSignature',
             $scope.hasError = false;
             $scope.status = '';
             var key = typeof event.which === 'undefined' ? event.keyCode : event.which;
-            (key === 13) ? $scope.loginUser() : false;
-        }
+            if (key === 13) { $scope.loginUser(); }
+        };
 
         $scope.clearWarning = function() {
             $scope.hasError = false;
             $scope.status = '';
-        }
+        };
 
         $scope.showServer = function() {
             $scope.showServerName = !$scope.showServerName;
-        }
+        };
     }
 }());
 
