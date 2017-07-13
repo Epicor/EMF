@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.430 built: 12-07-2017
+ * version:1.0.12-dev.431 built: 12-07-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.12-dev.430","built":"2017-07-12"};
+__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.12-dev.431","built":"2017-07-12"};
 
 (function() {
   'use strict';
@@ -406,16 +406,16 @@ angular.module('ep.signature', [
                         }
                         epIndexedDbService.openDatabase('ep-file-db', 1).then(function(db) {
                             var store = db.getObjectStore('ep-file');
-                            store.get(filename).then(function (fileEntry) {
+                            store.get(filename).then(function(fileEntry) {
                                 if (fileEntry) {
                                     deferred.resolve(true);
                                 } else {
                                     deferred.resolve(false);
                                 }
-                            }, function () {
+                            }, function() {
                                 deferred.resolve(false);
                             });
-                        }, function () {
+                        }, function() {
                             deferred.resolve(false);
                         });
                         break;
@@ -1319,8 +1319,8 @@ angular.module('ep.signature').directive('epSignature',
         this.$log = $log;
         this.$q = $q;
         this.db = db;
-        this.db.onerror = function(e){ $log.error('An IndexedDB error has occured: ' + e); };
-        this.db.onversionchange = function (event) {
+        this.db.onerror = function(e) { $log.error('An IndexedDB error has occured: ' + e); };
+        this.db.onversionchange = function(event) {
             // Empty version implies that the database is being deleted,
             // so we need to close the connection first
             // Otherwise, we will get a blocked state when deleting the db
@@ -1377,10 +1377,10 @@ angular.module('ep.signature').directive('epSignature',
             self.$log.warn('Transaction error occurred on ' + self.name + '. ' + e);
             deferred.reject(e);
         };
-        transaction.onblocked = function (event) {
+        transaction.onblocked = function(event) {
             deferred.reject(event);
         };
-        transaction.onupgradeneeded = function (event) {
+        transaction.onupgradeneeded = function(event) {
             deferred.reject(event);
         };
 
@@ -1394,10 +1394,10 @@ angular.module('ep.signature').directive('epSignature',
             self.$log.warn('Request error occurred on ' + self.name + '. ' + e);
             deferred.reject(e);
         };
-        request.onblocked = function (event) {
+        request.onblocked = function(event) {
             deferred.reject(event);
         };
-        request.onupgradeneeded = function (event) {
+        request.onupgradeneeded = function(event) {
             deferred.reject(event);
         };
         return deferred.promise;
@@ -1419,10 +1419,10 @@ angular.module('ep.signature').directive('epSignature',
         request.onerror = function(e) {
             deferred.reject(e);
         };
-        request.onblocked = function (event) {
+        request.onblocked = function(event) {
             deferred.reject(event);
         };
-        request.onupgradeneeded = function (event) {
+        request.onupgradeneeded = function(event) {
             deferred.reject(event);
         };
         return deferred.promise;
@@ -1444,10 +1444,10 @@ angular.module('ep.signature').directive('epSignature',
         request.onerror = function(e) {
             deferred.reject(e);
         };
-        request.onblocked = function (event) {
+        request.onblocked = function(event) {
             deferred.reject(event);
         };
-        request.onupgradeneeded = function (event) {
+        request.onupgradeneeded = function(event) {
             deferred.reject(event);
         };
         return deferred.promise;
@@ -1493,10 +1493,10 @@ angular.module('ep.signature').directive('epSignature',
         request.onerror = function(e) {
             deferred.reject(e);
         };
-        request.onblocked = function (event) {
+        request.onblocked = function(event) {
             deferred.reject(event);
         };
-        request.onupgradeneeded = function (event) {
+        request.onupgradeneeded = function(event) {
             deferred.reject(event);
         };
         return deferred.promise;
@@ -1530,10 +1530,10 @@ angular.module('ep.signature').directive('epSignature',
         request.onerror = function(e) {
             deferred.reject(e);
         };
-        request.onblocked = function (event) {
+        request.onblocked = function(event) {
             deferred.reject(event);
         };
-        request.onupgradeneeded = function (event) {
+        request.onupgradeneeded = function(event) {
             deferred.reject(event);
         };
         return deferred.promise;
@@ -1561,10 +1561,10 @@ angular.module('ep.signature').directive('epSignature',
             self.$log.warn('Request error occurred on ' + self.name + '. ' + e);
             deferred.reject(e);
         };
-        request.onblocked = function (event) {
+        request.onblocked = function(event) {
             deferred.reject(event);
         };
-        request.onupgradeneeded = function (event) {
+        request.onupgradeneeded = function(event) {
             deferred.reject(event);
         };
         return deferred.promise;
@@ -1585,10 +1585,10 @@ angular.module('ep.signature').directive('epSignature',
         request.onerror = function(e) {
             deferred.reject(e);
         };
-        request.onblocked = function (event) {
+        request.onblocked = function(event) {
             deferred.reject(event);
         };
-        request.onupgradeneeded = function (event) {
+        request.onupgradeneeded = function(event) {
             deferred.reject(event);
         };
         return deferred.promise;
@@ -1609,11 +1609,11 @@ angular.module('ep.signature').directive('epSignature',
         request.onerror = function(e) {
             deferred.reject(e);
         };
-        request.onblocked = function (event) {
+        request.onblocked = function(event) {
             $log.warn('Unable to open IndexedDB key cursor ' + self.name + '. The request is blocked.');
             deferred.reject(event);
         };
-        request.onupgradeneeded = function (event) {
+        request.onupgradeneeded = function(event) {
             deferred.reject(event);
         };
         return deferred.promise;
@@ -1678,8 +1678,8 @@ angular.module('ep.signature').directive('epSignature',
                 var cancellationToken = $timeout(function() {
                     $log.warn('Database ' + id + ' v' + version + ' could not be opened. ' +
                         'This is possibly due to a conflict between two or more open tabs.');
-                    
-                    deferred.reject('Timeout reached while waiting for database ' + id +' to open.');
+
+                    deferred.reject('Timeout reached while waiting for database ' + id + ' to open.');
                 }, 1500);
                 request.onsuccess = function() {
                     var db = request.result;
@@ -1728,11 +1728,11 @@ angular.module('ep.signature').directive('epSignature',
             request.onerror = function(event) {
                 deferred.reject(event);
             };
-            request.onblocked = function (event) {
-                $log.warn('Unable to delete database '+ id + '. The request is blocked.');
+            request.onblocked = function(event) {
+                $log.warn('Unable to delete database ' + id + '. The request is blocked.');
                 deferred.reject(event);
             };
-            request.onupgradeneeded = function (event) {
+            request.onupgradeneeded = function(event) {
                 deferred.reject(event);
             };
             return deferred.promise;
@@ -1783,14 +1783,14 @@ angular.module('ep.signature').directive('epSignature',
                 metaCacheTable.createIndex('cacheId', 'cacheId', { unique: false });
             });
 
-        function initialize(){
+        function initialize() {
             initialized = true;
             // read the metaCache into memory
-            return epIndexedDbService.openDatabase('ep-meta-cache-db').then(function(db){
+            return epIndexedDbService.openDatabase('ep-meta-cache-db').then(function(db) {
                 var store = db.getObjectStore('ep-meta-cache');
                 return store.getAll();
-            }).then(function(results){
-                results.forEach(function(entry){
+            }).then(function(results) {
+                results.forEach(function(entry) {
                     var metaCache = getMetaCache(entry.cacheId);
                     metaCache[entry.key] = entry;
                 });
@@ -1925,7 +1925,7 @@ angular.module('ep.signature').directive('epSignature',
             if (properties.length) {
                 var cacheToDelete = properties[0];
                 // Delete one cache and wait for the promise before deleting next cache
-                deleteCache(cacheToDelete).then(function (){
+                deleteCache(cacheToDelete).then(function() {
                     // Run function recursively when this cache is deleted
                     deleteAllCaches();
                 });
@@ -1946,21 +1946,21 @@ angular.module('ep.signature').directive('epSignature',
             if (cacheStore[cacheId]) {
                 delete cacheStore[cacheId];
             }
-            if (metaCacheStore[cacheId]){
+            if (metaCacheStore[cacheId]) {
                 delete metaCacheStore[cacheId];
             }
-            epIndexedDbService.openDatabase('ep-meta-cache-db', 1).then(function (db) {
+            epIndexedDbService.openDatabase('ep-meta-cache-db', 1).then(function(db) {
                 return db.getObjectStore('ep-meta-cache').deleteByIndex('cacheId', cacheId);
-            }, function (err) {
+            }, function(err) {
                 $log.error(err);
             });
 
-            return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function (db) {
-                return db.getObjectStore('ep-cache').deleteByIndex('cacheId', cacheId).then(function (result) {
+            return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
+                return db.getObjectStore('ep-cache').deleteByIndex('cacheId', cacheId).then(function(result) {
                     $rootScope.$emit(epShellConstants.SHELL_CACHE_DELETED_EVENT, { cacheId: cacheId });
                     return result;
                 });
-            }, function (err) {
+            }, function(err) {
                 $log.error(err);
             });
         }
@@ -1983,14 +1983,14 @@ angular.module('ep.signature').directive('epSignature',
                 delete cache[key];
             }
             var metaCache = getMetaCache(cacheId);
-            if(metaCache[key]){
+            if (metaCache[key]) {
                 delete metaCache[key];
             }
             epIndexedDbService.openDatabase('ep-meta-cache-db', 1).then(function(db) {
                 return db.getObjectStore('ep-meta-cache').delete(key);;
             });
             return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
-                return db.getObjectStore('ep-cache').delete(key).then(function(){
+                return db.getObjectStore('ep-cache').delete(key).then(function() {
                     $rootScope.$emit(epShellConstants.SHELL_CACHE_DATA_DELETED_EVENT, { cacheId: cacheId, key: key });
                 });
             });
@@ -2012,23 +2012,9 @@ angular.module('ep.signature').directive('epSignature',
             var cache = getCache(cacheId);
             var data = cache[key];
             if (angular.isUndefined(data)) {
-                data = (cache[key] = { key: key, cacheId: cacheId, value: defaultValue, cacheTimestamp: new Date() } );
+                data = (cache[key] = { key: key, cacheId: cacheId, value: defaultValue, cacheTimestamp: new Date() });
             }
             return data.value;
-        }
-        /**
-         * @ngdoc method
-         * @name getMetaRecord
-         * @methodOf ep.cache.service:epCacheService
-         * @public
-         * @description
-         * Returns the data with the given key from the cache with the given id
-         * @param {string|Function} cacheId - the id of the cache where the data is stored or a function returning the same
-         * @param {string|Function} key - the key to the metadata record to examine
-         */
-        function getMetaRecord(cacheId, key){
-            var metaCache = getMetaCache(cacheId);
-            return metaCache[key];
         }
 
         /**
@@ -2042,25 +2028,28 @@ angular.module('ep.signature').directive('epSignature',
          */
         function getExistingKeys(cacheId) {
             var deferred = $q.defer();
-            if(initialized){
+            if (initialized) {
                 deferred.resolve(executeGetKeys(cacheId));
             } else {
-                initialize().then(function(){
+                initialize().then(function() {
                     deferred.resolve(executeGetKeys(cacheId));
                 })
             }
             return deferred.promise;
         }
 
-        function executeGetKeys(cacheId){
+        // private helper function for getExistingKeys
+        function executeGetKeys(cacheId) {
             var results = [];
-            if(cacheId){
+            if (cacheId) {
                 cacheId = reify(cacheId);
                 var metaCache = getMetaCache(cacheId);
                 results = Object.keys(metaCache);
             } else {
                 var caches = Object.keys(metaCacheStore);
-                results = caches.reduce(function(prev, current){ return prev.concat(executeGetKeys(current)); }, results);
+                results = caches.reduce(function(prev, current) {
+                    return prev.concat(executeGetKeys(current));
+                }, results);
             }
             return results;
         }
@@ -2074,30 +2063,31 @@ angular.module('ep.signature').directive('epSignature',
          * Returns the metadata for the given cache, or all caches if no cacheId is given
          * @param {string|Function} cacheId (optional) - the id of the cache from which to extract keys, or falsy to return all keys from all caches
          */
-        function getExistingMetadata(cacheId, fnUserData){
+        function getExistingMetadata(cacheId, fnUserData) {
             var deferred = $q.defer();
-            if(initialized){
+            if (initialized) {
                 deferred.resolve(executeGetExistingMetadata(cacheId, fnUserData));
             } else {
-                initialize().then(function(){
+                initialize().then(function() {
                     deferred.resolve(executeGetExistingMetadata(cacheId, fnUserData));
                 })
             }
             return deferred.promise;
         }
 
-        function executeGetExistingMetadata(cacheId, fnUserData){
+        // private helper function for getExistingMetadata
+        function executeGetExistingMetadata(cacheId, fnUserData) {
             var results = {};
-            if(cacheId){
+            if (cacheId) {
                 results = getMetaCache(cacheId);
-                if(fnUserData){
-                    results.forEach(function(entry){
+                if (fnUserData) {
+                    results.forEach(function(entry) {
                         entry.userData = fnUserData(entry);
                     });
                 }
             } else {
                 results = {};
-                Object.keys(metaCacheStore).forEach(function(cid){
+                Object.keys(metaCacheStore).forEach(function(cid) {
                     results[cid] = executeGetExistingMetadata(cid, fnUserData);
                 });
             }
@@ -2114,15 +2104,15 @@ angular.module('ep.signature').directive('epSignature',
          * @param {string|Function} cacheId - the cache to access
          * @param {string|Function} key - the key to the data that will be returned from the cache
          */
-        function getCacheDataWithFallback(cacheKey, key) {
-            var cache = getCache(cacheKey);
+        function getCacheDataWithFallback(cacheId, key) {
+            var cache = getCache(cacheId);
             var value = cache[key];
-            if(value) {
+            if (value) {
                 var deferred = $q.defer();
                 deferred.resolve(value);
                 return deferred.promise;
             } else {
-                return loadPersistedCacheValue(cacheKey, key);
+                return loadPersistedCacheValue(cacheId, key);
             }
         }
         /**
@@ -2139,13 +2129,17 @@ angular.module('ep.signature').directive('epSignature',
         function savePersistedCacheValue(cacheId, key, value) {
             var cacheEntry = null;
             // if we're resaving an existing cacheEntry, then we need to preserve the timestamp & other metadata
-            if(value.key && value.cacheId && value.cacheTimestamp){
+            if (value.key && value.cacheId && value.cacheTimestamp) {
                 cacheEntry = value;
             } else {
                 cacheEntry = { key: key, cacheId: cacheId, value: value, cacheTimestamp: new Date() };
             }
-            
-            var metaCacheEntry = {key: cacheEntry.key, cacheId: cacheEntry.cacheId, cacheTimestamp: cacheEntry.cacheTimestamp};
+
+            var metaCacheEntry = {
+                key: cacheEntry.key,
+                cacheId: cacheEntry.cacheId,
+                cacheTimestamp: cacheEntry.cacheTimestamp
+            };
             var metaCache = getMetaCache(cacheId);
             metaCache[cacheEntry.key] = metaCacheEntry;
 
@@ -2156,7 +2150,7 @@ angular.module('ep.signature').directive('epSignature',
             return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
                 var store = db.getObjectStore('ep-cache');
                 return store.put(cacheEntry);
-            }, function(err){
+            }, function(err) {
                 $log.warn('An error occured that prevented data from being stored in the cache. ' +
                     'This is probably caused by two or more open tabs sending contending commands to ' +
                     'the underlying database. If this warning occurs frequently, then it could temporarily ' +
@@ -2174,21 +2168,21 @@ angular.module('ep.signature').directive('epSignature',
          * @param {string|Function} cacheId - the cache to access
          * @param {string|Function} key - the key to the data that will be returned from the cache
          */
-        function loadPersistedCacheValue(cacheKey, key) {
+        function loadPersistedCacheValue(cacheId, key) {
             var deferred = $q.defer();
             epIndexedDbService.openDatabase('ep-cache-db', 1).then(
                 //successfully completed
                 function(db) {
                     var store = db.getObjectStore('ep-cache');
                     return store.get(key).then(function(cacheEntry) {
-                        if(cacheEntry) {
-                            cacheData(cacheKey, key, cacheEntry);
+                        if (cacheEntry) {
+                            cacheData(cacheId, key, cacheEntry);
                         }
                         deferred.resolve(cacheEntry);
                     }, deferred.reject);
-                }, 
+                },
                 //error/failure
-                function(err){
+                function(err) {
                     $log.warn('An error occured that prevented data from being retreived from the cache. ' +
                         'This is probably caused by two or more open tabs sending contending commands to ' +
                         'the underlying database. If this warning occurs frequently, then it could temporarily ' +
@@ -2198,10 +2192,6 @@ angular.module('ep.signature').directive('epSignature',
             return deferred.promise;
         }
 
-        // function getAllKeys(cacheId){
-
-        //}
-        
         /**
          * @ngdoc method
          * @name cacheData
@@ -2218,20 +2208,26 @@ angular.module('ep.signature').directive('epSignature',
             cacheId = reify(cacheId);
             if (epShellConfig.options.enableCache) {
                 var cache = getCache(cacheId);
-                
                 key = reify(key);
                 var cacheEntry = null;
-                // we need to preserve the cache entry metadata if there is any
-                if(data.key && data.cacheId && data.cacheTimestamp){
+
+                // we need to potentially preserve the cache entry original metadata
+                if (data.key && data.cacheId && data.cacheTimestamp) {
                     cacheEntry = data;
                 } else {
                     cacheEntry = { key: key, cacheId: cacheId, value: data, cacheTimestamp: new Date() };
                 }
                 cache[key] = cacheEntry;
-                
-                var metaCache = getMetaCache(cacheId);
-                metaCache[key] = {key: cacheEntry.key, cacheId: cacheEntry.cacheId, cacheTimestamp: cacheEntry.cacheTimestamp};
 
+                // now update the in-memory metadata cache
+                var metaCache = getMetaCache(cacheId);
+                metaCache[key] = {
+                    key: cacheEntry.key,
+                    cacheId: cacheEntry.cacheId,
+                    cacheTimestamp: cacheEntry.cacheTimestamp
+                };
+
+                // save the data to the indexeddb cache
                 savePersistedCacheValue(cacheId, key, data).then(function() {
                     $rootScope.$emit(epShellConstants.SHELL_DATA_CACHED_EVENT,
                         { cacheId: cacheId, key: key, data: cacheEntry.value });
@@ -2241,7 +2237,7 @@ angular.module('ep.signature').directive('epSignature',
             }
         }
 
-        function deleteKey(key){
+        function deleteKey(key) {
             return deleteCacheKey('ep-cache', key);
         }
 
@@ -2261,11 +2257,11 @@ angular.module('ep.signature').directive('epSignature',
             savePersistedCacheValue: savePersistedCacheValue,
             loadPersistedCacheValue: loadPersistedCacheValue,
 
-            // This are the accessor functions for getting data from the memory 
+            // This are the accessor functions for getting data from the memory
             // cache with a fallback to the indexeddb based cache
             getCacheDataWithFallback: getCacheDataWithFallback,
 
-            // The get and set methods are the preferred overloads for getting a value 
+            // The get and set methods are the preferred overloads for getting a value
             // from the memory cache syncronously
             get: getCachedData,
             set: cacheData,

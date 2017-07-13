@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.430 built: 12-07-2017
+ * version:1.0.12-dev.431 built: 12-07-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.12-dev.430","built":"2017-07-12"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.12-dev.431","built":"2017-07-12"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -1566,7 +1566,7 @@ if (!epEmfGlobal) {
     angular.module('ep.local.storage').service('epLocalStorageService', [
     'epLocalStorageConfig',
     function(epLocalStorageConfig) {
-        var settings = angular.extend({}, epLocalStorageConfig.settings);
+        var settings = angular.merge({}, epLocalStorageConfig.settings);
 
         //  This routine parses a path string in the form of 'object.property'
         //  and adds, updates or deletes the value at that settings location.
@@ -1640,7 +1640,7 @@ if (!epEmfGlobal) {
                 setValueAtPath(settings, path, defaultSetting);
             } else {
                 localStorage.removeItem(epLocalStorageConfig.settingsID);
-                settings = angular.extend({}, epLocalStorageConfig.settings);
+                settings = angular.merge({}, epLocalStorageConfig.settings);
             }
             /*jshint validthis: true */
             commit();
@@ -2966,7 +2966,6 @@ function() {
          */
         var logMessages = [];
 
-
         /**
          * @private
          * @description
@@ -3015,7 +3014,7 @@ function() {
                 var modifiedArguments = [].slice.call(arguments);
                 var timestamp = moment().format();
                 loggingFunc.apply(null, modifiedArguments);
-                
+
                 if (logMessages.length > maxCount + 100) {
                     //prevent excess messages
                     logMessages.splice(0, 100);
@@ -4944,14 +4943,14 @@ function() {
                     showToggleButton: true, enabled: false,
                     toggleButtonIcon: 'fa-bars'
                 };
-                if(left.enabled === undefined){
+                if (left.enabled === undefined) {
                     left.enabled = mode.enableLeftSidebar;
                 }
                 var right = shellState.viewSettings.sidebar.right || {
                     showToggleButton: true, enabled: false,
                     toggleButtonIcon: 'fa-bars'
                 };
-                if(right.enabled === undefined){
+                if (right.enabled === undefined) {
                     right.enabled = mode.enableRightSidebar;
                 }
 
@@ -5344,14 +5343,14 @@ function() {
                 if (viewScope) {
                     $timeout(function() {
                         var el = angular.element('#apptitle');
-                        if(shellState.titleScope){
+                        if (shellState.titleScope) {
                             shellState.titleScope.$destroy();
                             shellState.titleScope = null;
                         }
 
                         shellState.titleScope = viewScope.$new();
                         var content = $compile(html)(shellState.titleScope);
-                        if(content.length){
+                        if (content.length) {
                             el.empty();
                             el.append(angular.element(content));
                         } else {
@@ -5430,16 +5429,16 @@ function() {
              */
             function setFooterHTML(html, viewScope) {
                 if (viewScope) {
-                    $timeout(function(){
+                    $timeout(function() {
                         var el = angular.element('#footerElement');
-                        if(shellState.footerScope){
+                        if (shellState.footerScope) {
                             shellState.footerScope.$destroy();
                             shellState.footerScope = null;
                         }
 
                         shellState.footerScope = viewScope.$new();
                         var content = $compile(html)(shellState.footerScope);
-                        if(content.length) {
+                        if (content.length) {
                             el.empty();
                             el.append(angular.element(content));
                         } else {

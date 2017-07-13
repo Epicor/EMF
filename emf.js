@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.430 built: 12-07-2017
+ * version:1.0.12-dev.431 built: 12-07-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.430","built":"2017-07-12"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.12-dev.431","built":"2017-07-12"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -2004,7 +2004,8 @@ angular.module('ep.signature', [
                         scope.state.requiredFlag = false;
                     } else {
                         if (scope.state.epBinding.column) {
-                            scope.state.requiredFlag = scope.state.metaColumn.required && scope.state.metaColumn.requiredFlag;
+                            scope.state.requiredFlag =
+                                (scope.state.metaColumn.required && scope.state.metaColumn.requiredFlag);
                         } else {
                             scope.state.requiredFlag = (scope.required === true);
                         }
@@ -2574,7 +2575,7 @@ angular.module('ep.binding').
             restrict: 'A',
             replace: true,
             scope: true,
-            template: function (element, attr) {
+            template: function(element, attr) {
                 var value = 'epb.view && epb.view.hasData()';
                 //Make sure to combine with existing ngIf!
                 if (attr.ngIf) {
@@ -2582,13 +2583,13 @@ angular.module('ep.binding').
                 }
                 var inner = element.get(0);
                 //we have to clear all the values because angular
-                //is going to merge the attrs collection 
+                //is going to merge the attrs collection
                 //back into the element after this function finishes
-                angular.forEach(inner.attributes, function(attr, key){
+                angular.forEach(inner.attributes, function(attr, key) {
                     attr.value = '';
                 });
                 attr.$set('ng-if', value);
-                return inner.outerHTML;            
+                return inner.outerHTML;
             },
             compile: function(element, attrs) {
                 return {
@@ -4187,8 +4188,9 @@ angular.module('ep.binding').
              * @public
              * @description
              * set transaction from storage
-             * @param {array} ignoreList - List if view id's to ignore
-             * @param {array} includeList - List if view id's to include
+             * @param {array} trx - transaction array to process
+             * @param {array} ignoreList - List of view id's to ignore
+             * @param {array} includeList - List of view id's to include
              */
             function set(trx, ignoreList, includeList) {
                 if (trx && angular.isArray(trx)) {
@@ -4211,6 +4213,7 @@ angular.module('ep.binding').
              * @private
              * @description
              * is the specified view included based on ignore/include lists
+             * @param {string} viewId - id of the view to check
              * @param {array} ignoreList - List if view id's to ignore
              * @param {array} includeList - List if view id's to include
              */
@@ -4312,14 +4315,14 @@ angular.module('ep.binding').
                 metaCacheTable.createIndex('cacheId', 'cacheId', { unique: false });
             });
 
-        function initialize(){
+        function initialize() {
             initialized = true;
             // read the metaCache into memory
-            return epIndexedDbService.openDatabase('ep-meta-cache-db').then(function(db){
+            return epIndexedDbService.openDatabase('ep-meta-cache-db').then(function(db) {
                 var store = db.getObjectStore('ep-meta-cache');
                 return store.getAll();
-            }).then(function(results){
-                results.forEach(function(entry){
+            }).then(function(results) {
+                results.forEach(function(entry) {
                     var metaCache = getMetaCache(entry.cacheId);
                     metaCache[entry.key] = entry;
                 });
@@ -4454,7 +4457,7 @@ angular.module('ep.binding').
             if (properties.length) {
                 var cacheToDelete = properties[0];
                 // Delete one cache and wait for the promise before deleting next cache
-                deleteCache(cacheToDelete).then(function (){
+                deleteCache(cacheToDelete).then(function() {
                     // Run function recursively when this cache is deleted
                     deleteAllCaches();
                 });
@@ -4475,21 +4478,21 @@ angular.module('ep.binding').
             if (cacheStore[cacheId]) {
                 delete cacheStore[cacheId];
             }
-            if (metaCacheStore[cacheId]){
+            if (metaCacheStore[cacheId]) {
                 delete metaCacheStore[cacheId];
             }
-            epIndexedDbService.openDatabase('ep-meta-cache-db', 1).then(function (db) {
+            epIndexedDbService.openDatabase('ep-meta-cache-db', 1).then(function(db) {
                 return db.getObjectStore('ep-meta-cache').deleteByIndex('cacheId', cacheId);
-            }, function (err) {
+            }, function(err) {
                 $log.error(err);
             });
 
-            return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function (db) {
-                return db.getObjectStore('ep-cache').deleteByIndex('cacheId', cacheId).then(function (result) {
+            return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
+                return db.getObjectStore('ep-cache').deleteByIndex('cacheId', cacheId).then(function(result) {
                     $rootScope.$emit(epShellConstants.SHELL_CACHE_DELETED_EVENT, { cacheId: cacheId });
                     return result;
                 });
-            }, function (err) {
+            }, function(err) {
                 $log.error(err);
             });
         }
@@ -4512,14 +4515,14 @@ angular.module('ep.binding').
                 delete cache[key];
             }
             var metaCache = getMetaCache(cacheId);
-            if(metaCache[key]){
+            if (metaCache[key]) {
                 delete metaCache[key];
             }
             epIndexedDbService.openDatabase('ep-meta-cache-db', 1).then(function(db) {
                 return db.getObjectStore('ep-meta-cache').delete(key);;
             });
             return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
-                return db.getObjectStore('ep-cache').delete(key).then(function(){
+                return db.getObjectStore('ep-cache').delete(key).then(function() {
                     $rootScope.$emit(epShellConstants.SHELL_CACHE_DATA_DELETED_EVENT, { cacheId: cacheId, key: key });
                 });
             });
@@ -4541,23 +4544,9 @@ angular.module('ep.binding').
             var cache = getCache(cacheId);
             var data = cache[key];
             if (angular.isUndefined(data)) {
-                data = (cache[key] = { key: key, cacheId: cacheId, value: defaultValue, cacheTimestamp: new Date() } );
+                data = (cache[key] = { key: key, cacheId: cacheId, value: defaultValue, cacheTimestamp: new Date() });
             }
             return data.value;
-        }
-        /**
-         * @ngdoc method
-         * @name getMetaRecord
-         * @methodOf ep.cache.service:epCacheService
-         * @public
-         * @description
-         * Returns the data with the given key from the cache with the given id
-         * @param {string|Function} cacheId - the id of the cache where the data is stored or a function returning the same
-         * @param {string|Function} key - the key to the metadata record to examine
-         */
-        function getMetaRecord(cacheId, key){
-            var metaCache = getMetaCache(cacheId);
-            return metaCache[key];
         }
 
         /**
@@ -4571,25 +4560,28 @@ angular.module('ep.binding').
          */
         function getExistingKeys(cacheId) {
             var deferred = $q.defer();
-            if(initialized){
+            if (initialized) {
                 deferred.resolve(executeGetKeys(cacheId));
             } else {
-                initialize().then(function(){
+                initialize().then(function() {
                     deferred.resolve(executeGetKeys(cacheId));
                 })
             }
             return deferred.promise;
         }
 
-        function executeGetKeys(cacheId){
+        // private helper function for getExistingKeys
+        function executeGetKeys(cacheId) {
             var results = [];
-            if(cacheId){
+            if (cacheId) {
                 cacheId = reify(cacheId);
                 var metaCache = getMetaCache(cacheId);
                 results = Object.keys(metaCache);
             } else {
                 var caches = Object.keys(metaCacheStore);
-                results = caches.reduce(function(prev, current){ return prev.concat(executeGetKeys(current)); }, results);
+                results = caches.reduce(function(prev, current) {
+                    return prev.concat(executeGetKeys(current));
+                }, results);
             }
             return results;
         }
@@ -4603,30 +4595,31 @@ angular.module('ep.binding').
          * Returns the metadata for the given cache, or all caches if no cacheId is given
          * @param {string|Function} cacheId (optional) - the id of the cache from which to extract keys, or falsy to return all keys from all caches
          */
-        function getExistingMetadata(cacheId, fnUserData){
+        function getExistingMetadata(cacheId, fnUserData) {
             var deferred = $q.defer();
-            if(initialized){
+            if (initialized) {
                 deferred.resolve(executeGetExistingMetadata(cacheId, fnUserData));
             } else {
-                initialize().then(function(){
+                initialize().then(function() {
                     deferred.resolve(executeGetExistingMetadata(cacheId, fnUserData));
                 })
             }
             return deferred.promise;
         }
 
-        function executeGetExistingMetadata(cacheId, fnUserData){
+        // private helper function for getExistingMetadata
+        function executeGetExistingMetadata(cacheId, fnUserData) {
             var results = {};
-            if(cacheId){
+            if (cacheId) {
                 results = getMetaCache(cacheId);
-                if(fnUserData){
-                    results.forEach(function(entry){
+                if (fnUserData) {
+                    results.forEach(function(entry) {
                         entry.userData = fnUserData(entry);
                     });
                 }
             } else {
                 results = {};
-                Object.keys(metaCacheStore).forEach(function(cid){
+                Object.keys(metaCacheStore).forEach(function(cid) {
                     results[cid] = executeGetExistingMetadata(cid, fnUserData);
                 });
             }
@@ -4643,15 +4636,15 @@ angular.module('ep.binding').
          * @param {string|Function} cacheId - the cache to access
          * @param {string|Function} key - the key to the data that will be returned from the cache
          */
-        function getCacheDataWithFallback(cacheKey, key) {
-            var cache = getCache(cacheKey);
+        function getCacheDataWithFallback(cacheId, key) {
+            var cache = getCache(cacheId);
             var value = cache[key];
-            if(value) {
+            if (value) {
                 var deferred = $q.defer();
                 deferred.resolve(value);
                 return deferred.promise;
             } else {
-                return loadPersistedCacheValue(cacheKey, key);
+                return loadPersistedCacheValue(cacheId, key);
             }
         }
         /**
@@ -4668,13 +4661,17 @@ angular.module('ep.binding').
         function savePersistedCacheValue(cacheId, key, value) {
             var cacheEntry = null;
             // if we're resaving an existing cacheEntry, then we need to preserve the timestamp & other metadata
-            if(value.key && value.cacheId && value.cacheTimestamp){
+            if (value.key && value.cacheId && value.cacheTimestamp) {
                 cacheEntry = value;
             } else {
                 cacheEntry = { key: key, cacheId: cacheId, value: value, cacheTimestamp: new Date() };
             }
-            
-            var metaCacheEntry = {key: cacheEntry.key, cacheId: cacheEntry.cacheId, cacheTimestamp: cacheEntry.cacheTimestamp};
+
+            var metaCacheEntry = {
+                key: cacheEntry.key,
+                cacheId: cacheEntry.cacheId,
+                cacheTimestamp: cacheEntry.cacheTimestamp
+            };
             var metaCache = getMetaCache(cacheId);
             metaCache[cacheEntry.key] = metaCacheEntry;
 
@@ -4685,7 +4682,7 @@ angular.module('ep.binding').
             return epIndexedDbService.openDatabase('ep-cache-db', 1).then(function(db) {
                 var store = db.getObjectStore('ep-cache');
                 return store.put(cacheEntry);
-            }, function(err){
+            }, function(err) {
                 $log.warn('An error occured that prevented data from being stored in the cache. ' +
                     'This is probably caused by two or more open tabs sending contending commands to ' +
                     'the underlying database. If this warning occurs frequently, then it could temporarily ' +
@@ -4703,21 +4700,21 @@ angular.module('ep.binding').
          * @param {string|Function} cacheId - the cache to access
          * @param {string|Function} key - the key to the data that will be returned from the cache
          */
-        function loadPersistedCacheValue(cacheKey, key) {
+        function loadPersistedCacheValue(cacheId, key) {
             var deferred = $q.defer();
             epIndexedDbService.openDatabase('ep-cache-db', 1).then(
                 //successfully completed
                 function(db) {
                     var store = db.getObjectStore('ep-cache');
                     return store.get(key).then(function(cacheEntry) {
-                        if(cacheEntry) {
-                            cacheData(cacheKey, key, cacheEntry);
+                        if (cacheEntry) {
+                            cacheData(cacheId, key, cacheEntry);
                         }
                         deferred.resolve(cacheEntry);
                     }, deferred.reject);
-                }, 
+                },
                 //error/failure
-                function(err){
+                function(err) {
                     $log.warn('An error occured that prevented data from being retreived from the cache. ' +
                         'This is probably caused by two or more open tabs sending contending commands to ' +
                         'the underlying database. If this warning occurs frequently, then it could temporarily ' +
@@ -4727,10 +4724,6 @@ angular.module('ep.binding').
             return deferred.promise;
         }
 
-        // function getAllKeys(cacheId){
-
-        //}
-        
         /**
          * @ngdoc method
          * @name cacheData
@@ -4747,20 +4740,26 @@ angular.module('ep.binding').
             cacheId = reify(cacheId);
             if (epShellConfig.options.enableCache) {
                 var cache = getCache(cacheId);
-                
                 key = reify(key);
                 var cacheEntry = null;
-                // we need to preserve the cache entry metadata if there is any
-                if(data.key && data.cacheId && data.cacheTimestamp){
+
+                // we need to potentially preserve the cache entry original metadata
+                if (data.key && data.cacheId && data.cacheTimestamp) {
                     cacheEntry = data;
                 } else {
                     cacheEntry = { key: key, cacheId: cacheId, value: data, cacheTimestamp: new Date() };
                 }
                 cache[key] = cacheEntry;
-                
-                var metaCache = getMetaCache(cacheId);
-                metaCache[key] = {key: cacheEntry.key, cacheId: cacheEntry.cacheId, cacheTimestamp: cacheEntry.cacheTimestamp};
 
+                // now update the in-memory metadata cache
+                var metaCache = getMetaCache(cacheId);
+                metaCache[key] = {
+                    key: cacheEntry.key,
+                    cacheId: cacheEntry.cacheId,
+                    cacheTimestamp: cacheEntry.cacheTimestamp
+                };
+
+                // save the data to the indexeddb cache
                 savePersistedCacheValue(cacheId, key, data).then(function() {
                     $rootScope.$emit(epShellConstants.SHELL_DATA_CACHED_EVENT,
                         { cacheId: cacheId, key: key, data: cacheEntry.value });
@@ -4770,7 +4769,7 @@ angular.module('ep.binding').
             }
         }
 
-        function deleteKey(key){
+        function deleteKey(key) {
             return deleteCacheKey('ep-cache', key);
         }
 
@@ -4790,11 +4789,11 @@ angular.module('ep.binding').
             savePersistedCacheValue: savePersistedCacheValue,
             loadPersistedCacheValue: loadPersistedCacheValue,
 
-            // This are the accessor functions for getting data from the memory 
+            // This are the accessor functions for getting data from the memory
             // cache with a fallback to the indexeddb based cache
             getCacheDataWithFallback: getCacheDataWithFallback,
 
-            // The get and set methods are the preferred overloads for getting a value 
+            // The get and set methods are the preferred overloads for getting a value
             // from the memory cache syncronously
             get: getCachedData,
             set: cacheData,
@@ -5706,7 +5705,6 @@ app.directive('epCardTitle',
          */
         var logMessages = [];
 
-
         /**
          * @private
          * @description
@@ -5755,7 +5753,7 @@ app.directive('epCardTitle',
                 var modifiedArguments = [].slice.call(arguments);
                 var timestamp = moment().format();
                 loggingFunc.apply(null, modifiedArguments);
-                
+
                 if (logMessages.length > maxCount + 100) {
                     //prevent excess messages
                     logMessages.splice(0, 100);
@@ -9040,7 +9038,7 @@ angular.module('ep.datagrid').directive('epDataGrid', [
             scope.state.$table.removeClass('table-hover');
 
             if (scope.state.allowSearchInput) {
-                $timeout(function () {
+                $timeout(function() {
                     //only focus the field if we are on a non touch device because it causes the keyboard to popup
                     //on touch devices which can be an annoying user experience.
                     if (!epFeatureDetectionService.hasTouchEvents()) {
@@ -12596,7 +12594,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 if (options.updatableOnly !== false) {
                     if (meta && meta.columns) {
                         dataUpdate = angular.copy(d);
-                        //remove non-updatable fields and non-key fields and if not SysRowID 
+                        //remove non-updatable fields and non-key fields and if not SysRowID
                         //also remove if field does not have underscore or starts with underscore
                         uColsRemove = _.filter(meta.columns, function(cc) {
                             return cc.updatable !== true && cc.isKeyField !== true && cc.name !== 'SysRowID' &&
@@ -13863,16 +13861,16 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         }
                         epIndexedDbService.openDatabase('ep-file-db', 1).then(function(db) {
                             var store = db.getObjectStore('ep-file');
-                            store.get(filename).then(function (fileEntry) {
+                            store.get(filename).then(function(fileEntry) {
                                 if (fileEntry) {
                                     deferred.resolve(true);
                                 } else {
                                     deferred.resolve(false);
                                 }
-                            }, function () {
+                            }, function() {
                                 deferred.resolve(false);
                             });
-                        }, function () {
+                        }, function() {
                             deferred.resolve(false);
                         });
                         break;
@@ -16145,8 +16143,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         this.$log = $log;
         this.$q = $q;
         this.db = db;
-        this.db.onerror = function(e){ $log.error('An IndexedDB error has occured: ' + e); };
-        this.db.onversionchange = function (event) {
+        this.db.onerror = function(e) { $log.error('An IndexedDB error has occured: ' + e); };
+        this.db.onversionchange = function(event) {
             // Empty version implies that the database is being deleted,
             // so we need to close the connection first
             // Otherwise, we will get a blocked state when deleting the db
@@ -16203,10 +16201,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             self.$log.warn('Transaction error occurred on ' + self.name + '. ' + e);
             deferred.reject(e);
         };
-        transaction.onblocked = function (event) {
+        transaction.onblocked = function(event) {
             deferred.reject(event);
         };
-        transaction.onupgradeneeded = function (event) {
+        transaction.onupgradeneeded = function(event) {
             deferred.reject(event);
         };
 
@@ -16220,10 +16218,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             self.$log.warn('Request error occurred on ' + self.name + '. ' + e);
             deferred.reject(e);
         };
-        request.onblocked = function (event) {
+        request.onblocked = function(event) {
             deferred.reject(event);
         };
-        request.onupgradeneeded = function (event) {
+        request.onupgradeneeded = function(event) {
             deferred.reject(event);
         };
         return deferred.promise;
@@ -16245,10 +16243,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         request.onerror = function(e) {
             deferred.reject(e);
         };
-        request.onblocked = function (event) {
+        request.onblocked = function(event) {
             deferred.reject(event);
         };
-        request.onupgradeneeded = function (event) {
+        request.onupgradeneeded = function(event) {
             deferred.reject(event);
         };
         return deferred.promise;
@@ -16270,10 +16268,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         request.onerror = function(e) {
             deferred.reject(e);
         };
-        request.onblocked = function (event) {
+        request.onblocked = function(event) {
             deferred.reject(event);
         };
-        request.onupgradeneeded = function (event) {
+        request.onupgradeneeded = function(event) {
             deferred.reject(event);
         };
         return deferred.promise;
@@ -16319,10 +16317,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         request.onerror = function(e) {
             deferred.reject(e);
         };
-        request.onblocked = function (event) {
+        request.onblocked = function(event) {
             deferred.reject(event);
         };
-        request.onupgradeneeded = function (event) {
+        request.onupgradeneeded = function(event) {
             deferred.reject(event);
         };
         return deferred.promise;
@@ -16356,10 +16354,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         request.onerror = function(e) {
             deferred.reject(e);
         };
-        request.onblocked = function (event) {
+        request.onblocked = function(event) {
             deferred.reject(event);
         };
-        request.onupgradeneeded = function (event) {
+        request.onupgradeneeded = function(event) {
             deferred.reject(event);
         };
         return deferred.promise;
@@ -16387,10 +16385,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             self.$log.warn('Request error occurred on ' + self.name + '. ' + e);
             deferred.reject(e);
         };
-        request.onblocked = function (event) {
+        request.onblocked = function(event) {
             deferred.reject(event);
         };
-        request.onupgradeneeded = function (event) {
+        request.onupgradeneeded = function(event) {
             deferred.reject(event);
         };
         return deferred.promise;
@@ -16411,10 +16409,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         request.onerror = function(e) {
             deferred.reject(e);
         };
-        request.onblocked = function (event) {
+        request.onblocked = function(event) {
             deferred.reject(event);
         };
-        request.onupgradeneeded = function (event) {
+        request.onupgradeneeded = function(event) {
             deferred.reject(event);
         };
         return deferred.promise;
@@ -16435,11 +16433,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         request.onerror = function(e) {
             deferred.reject(e);
         };
-        request.onblocked = function (event) {
+        request.onblocked = function(event) {
             $log.warn('Unable to open IndexedDB key cursor ' + self.name + '. The request is blocked.');
             deferred.reject(event);
         };
-        request.onupgradeneeded = function (event) {
+        request.onupgradeneeded = function(event) {
             deferred.reject(event);
         };
         return deferred.promise;
@@ -16504,8 +16502,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 var cancellationToken = $timeout(function() {
                     $log.warn('Database ' + id + ' v' + version + ' could not be opened. ' +
                         'This is possibly due to a conflict between two or more open tabs.');
-                    
-                    deferred.reject('Timeout reached while waiting for database ' + id +' to open.');
+
+                    deferred.reject('Timeout reached while waiting for database ' + id + ' to open.');
                 }, 1500);
                 request.onsuccess = function() {
                     var db = request.result;
@@ -16554,11 +16552,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             request.onerror = function(event) {
                 deferred.reject(event);
             };
-            request.onblocked = function (event) {
-                $log.warn('Unable to delete database '+ id + '. The request is blocked.');
+            request.onblocked = function(event) {
+                $log.warn('Unable to delete database ' + id + '. The request is blocked.');
                 deferred.reject(event);
             };
-            request.onupgradeneeded = function (event) {
+            request.onupgradeneeded = function(event) {
                 deferred.reject(event);
             };
             return deferred.promise;
@@ -16585,7 +16583,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * - mainTitle: main title to display on list
  * - subTitle: sub title to display on list just below main title.
  * - formatSubtitle: function to format subtitle fields. function(fields, record) By default comma separated.
- * - additionalTitle: additional title to display on list just below sub title. function(field, record) 
+ * - additionalTitle: additional title to display on list just below sub title. function(field, record)
  * - formatAdditionalTitle: function to format additional title
  * - id: value to be displayed on right side of the list.
  * - groupBy: groupBy field name by which the list has to be grouped.
@@ -16600,7 +16598,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * - filter: handler function on click of filter button in sub header section of the list
  * - sort: handler function on click of sort button in sub header section of the list.
  * - add: handler function on click of add button in sub header section of the list.
- * - useVirtualScrolling: (true/false) uses 
+ * - useVirtualScrolling: (true/false) uses
  * - showDirectory
  * - vsRenderBufferSize
  * - vsRowLineCount
@@ -16643,12 +16641,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 getStatusTextClass: '=',
                 formatStatusText: '=',
                 formatStatusSource: '=',
-                
+
                 groupBy: '@',
                 groupByType: '@',
                 subHeader: '@',
                 showArrow: '=',
-                
+
                 icon: '@',
                 showInRed: '@',
                 hideAdd: '@',
@@ -16657,7 +16655,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 hideDisplayOptions: '@',
 
                 useVirtualScrolling: '=',
-                
+
                 itemContentTemplate: '@',
                 showDirectory: '=',
                 vsRenderBufferSize: '@',
@@ -16671,7 +16669,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 scope.localId = _.uniqueId('epList');
                 scope.items = { count: 0 };
                 scope.originalData = scope.data;
-                
+
                 scope.vsRenderBufferSize = (scope.vsRenderBufferSize && JSON.parse(scope.vsRenderBufferSize)) || 50;
                 scope.vsRowLineCount = (scope.vsRowLineCount && JSON.parse(scope.vsRowLineCount)) || 2;
                 scope.vsItemSize = scope.vsRowLineCount * 30;
@@ -16681,9 +16679,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 scope.searchPrompt = '';
                 scope.itemContentTemplate = scope.itemContentTemplate || 'defaultItemContentTemplate';
                 scope.filterState = {};
-                
+
                 scope.initData = function() {
 
+                    scope.searchType = 'text';
+                    scope.searchPrompt = '';
                     var isGroupByDate = !!(scope.groupByType && scope.groupByType === 'sdate');
 
                     scope.listData = $filter('orderBy')(scope.data, scope.groupBy);
@@ -16715,8 +16715,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                                 scope.searchType = 'sfield';
                                 scope.filteredData = scope.listData;
                                 scope.filtered = true;
-                            }
-                            else {
+                            } else {
                                 scope.directory = epListService.getDirectory(scope.listData, scope.groupBy);
                             }
                         }
@@ -16728,7 +16727,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
                     scope.origListData = angular.extend([], scope.listData);
                     scope.items.count = scope.data.length;
-                    if(scope.init){
+                    if (scope.init) {
                         scope.init(scope);
                     }
                 }
@@ -16740,13 +16739,15 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         //searchFields
                         if (scope.searchFields) {
                             var field = _.find(scope.searchFields, function(fld) {
-                                return ((obj[fld] + '').toLowerCase() || '').indexOf(scope.searchFilter.toLowerCase()) === 0;
+                                return ((obj[fld] + '').toLowerCase() || '')
+                                    .indexOf(scope.searchFilter.toLowerCase()) === 0;
                             });
                             if (!field) {
                                 ret = false;
                             }
                         } else if (scope.groupBy) {
-                            ret = (obj[scope.groupBy].toLowerCase() || '').indexOf(scope.searchFilter.toLowerCase()) === 0;
+                            ret = (obj[scope.groupBy].toLowerCase() || '')
+                                .indexOf(scope.searchFilter.toLowerCase()) === 0;
                         }
                     }
                     return ret;
@@ -16807,7 +16808,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             if (groups.length) {
                                 //we found some groups, lets get filtered data
                                 angular.forEach(groups, function(group) {
-                                    filteredData = filteredData.concat(scope.origListData.slice(group.index, group.nextIndex));
+                                    filteredData =
+                                        filteredData.concat(scope.origListData.slice(group.index, group.nextIndex));
                                 });
                             }
                             filtered = true;
@@ -16866,7 +16868,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         scope.goingToDirectory = false;
                     }
                 });
-                
+
                 scope.goToDirectory = function(directoryEntry) {
                     if (scope.listSearch) {
                         //we are going to directory, clear the search but avoid watch kicking in
@@ -16961,12 +16963,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * To group the list based on groupBy Value
          */
         function getGroupedList(listData, groupBy) {
-            return _.groupBy(listData, function(row){ 
+            return _.groupBy(listData, function(row) {
                 var datum = row[0];
                 return (!isNaN(datum)) ? '#' : datum.toUpperCase();
             });
         }
-        
+
         /**
          * @ngdoc method
          * @name getDirectoryKey
@@ -16976,10 +16978,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @description
          * Returns the directory key for a given string value.
          */
-        function getDirectoryKey(value){
+        function getDirectoryKey(value) {
             var key = value ? value.substr(0, 1).toUpperCase() : '';
-            if(key < 'A') { key = alphabet[0]; }
-            if(key > 'Z') { key = alphabet[alphabet.length -1]; }
+            if (key < 'A') { key = alphabet[0]; }
+            if (key > 'Z') { key = alphabet[alphabet.length - 1]; }
             return key;
         }
 
@@ -16993,19 +16995,18 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @description
          * To group the list based on groupBy Value
          */
-        function getDirectory(listData, groupBy){
+        function getDirectory(listData, groupBy) {
 
             // A comparison function to tell us if we're still iterating through the same section of the data
-            var compare = function(directoryLetter, itemFirstLetter){
-                if(directoryLetter === '#'){
+            var compare = function(directoryLetter, itemFirstLetter) {
+                if (directoryLetter === '#') {
                     return itemFirstLetter < 'A';
                 }
-                if (directoryLetter === '@'){
+                if (directoryLetter === '@') {
                     return true;
-                } 
+                }
                 return directoryLetter === itemFirstLetter;
             }
-
 
             var allKey = '__all__';
             //keys - group keys that have been processed
@@ -17030,7 +17031,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 nextIndex: totalItems,
                 disabled: false
             };
-            
+
             //create entry for each alphabet letter (disabled), we will enable when we find data
             alphabet.forEach(function(letter, idx) {
                 dir[letter] = {
@@ -17177,7 +17178,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         function showListModalForm(dialogOptions) {
             if (dialogOptions) {
                 var winClass = dialogOptions.windowClass || '';
-                if (winClass) winClass += ' ';
+                if (winClass) { winClass += ' '; }
                 dialogOptions.windowClass = winClass + 'ep-list-modal-dialog';
             }
             return epModalDialogService.showModalForm(dialogOptions);
@@ -17256,7 +17257,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
     angular.module('ep.local.storage').service('epLocalStorageService', [
     'epLocalStorageConfig',
     function(epLocalStorageConfig) {
-        var settings = angular.extend({}, epLocalStorageConfig.settings);
+        var settings = angular.merge({}, epLocalStorageConfig.settings);
 
         //  This routine parses a path string in the form of 'object.property'
         //  and adds, updates or deletes the value at that settings location.
@@ -17330,7 +17331,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 setValueAtPath(settings, path, defaultSetting);
             } else {
                 localStorage.removeItem(epLocalStorageConfig.settingsID);
-                settings = angular.extend({}, epLocalStorageConfig.settings);
+                settings = angular.merge({}, epLocalStorageConfig.settings);
             }
             /*jshint validthis: true */
             commit();
@@ -19072,7 +19073,7 @@ angular.module('ep.menu.builder').
 
     angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl',
         /*@ngInject*/
-        ['$rootScope', '$scope', '$timeout', 'epMultiLevelMenuFactory', 'epMultiLevelMenuConstants', 'epMultiLevelMenuService', function($rootScope, $scope, $timeout, epMultiLevelMenuFactory, epMultiLevelMenuConstants, 
+        ['$rootScope', '$scope', '$timeout', 'epMultiLevelMenuFactory', 'epMultiLevelMenuConstants', 'epMultiLevelMenuService', function($rootScope, $scope, $timeout, epMultiLevelMenuFactory, epMultiLevelMenuConstants,
                  epMultiLevelMenuService) {
 
             // init the scope properties
@@ -19107,22 +19108,21 @@ angular.module('ep.menu.builder').
                 }
             }
 
-            function buildIndex(menuItems){
+            function buildIndex(menuItems) {
                 traverseTree(menuItems);
-                $scope.state.searchIndex.sort(function(a, b){ return a.caption > b.caption ? 1 : 0});
+                $scope.state.searchIndex.sort(function(a, b) { return a.caption > b.caption ? 1 : 0});
             }
 
             // private build the index for faster searching
-            function traverseTree(menuItems){
+            function traverseTree(menuItems) {
                 // menuItems is an array of objects, and each object potentially has a subarray of menuitems making a tree structure.
                 //  we want to flatten the tree into a hashable object.
-                menuItems.forEach(function(menuItem){
+                menuItems.forEach(function(menuItem) {
                     // for the purposes of searching, we only care about leaf nodes
-                    if(menuItem._type === 'item') {
+                    if (menuItem._type === 'item') {
                         menuItem.searchTerm = menuItem.caption.toLowerCase();
                         $scope.state.searchIndex.push(menuItem);
-                    }
-                    else{
+                    } else {
                         traverseTree(menuItem.menuitems);
                     }
                 });
@@ -19167,17 +19167,17 @@ angular.module('ep.menu.builder').
             function searchChildren(searchTerm, type, results) {
                 // This is some pretty hot code here, so be careful
                 // about making changes that could affect performance
-                angular.forEach($scope.state.searchIndex, function (child) {
+                angular.forEach($scope.state.searchIndex, function(child) {
                     var terms = searchTerm.split(/(\S+)/g);
                     var added = false;
                     child.hitCount = 10;
-                    terms.forEach(function(phrase){
+                    terms.forEach(function(phrase) {
                         var term = phrase.trim();
-                        if(term && term.length && child && child.searchTerm.indexOf(term) !== -1){
+                        if (term && term.length && child && child.searchTerm.indexOf(term) !== -1) {
                            // if we are type checking, also check the system-set _type
                             if (type === '' || child.type === type || child._type === type) {
                                 child.hitCount--;
-                                if(!added){
+                                if (!added) {
                                     results.push(child);
                                 }
                                 added = true;
@@ -19290,7 +19290,7 @@ angular.module('ep.menu.builder').
                 $scope.data = $scope.multiLevelMenuHelper.data;
                 $scope.data.next = $scope.multiLevelMenuHelper.data.menu;
                 // now we build a simple index for searching quickly
-                if($scope.menu){
+                if ($scope.menu) {
                     buildIndex($scope.menu.menuitems);
                 }
 
@@ -19310,7 +19310,7 @@ angular.module('ep.menu.builder').
                         $scope.multiLevelMenuHelper.populate($scope.menu, true);
                         $scope.data = $scope.multiLevelMenuHelper.data;
                         $scope.data.next = $scope.multiLevelMenuHelper.data.menu;
-                        if($scope.menu){
+                        if ($scope.menu) {
                             buildIndex($scope.menu.menuitems);
                         }
                         setCurrentItems();
@@ -20307,7 +20307,7 @@ angular.module('ep.menu.builder').
         *       day, month, year, second, minute, hour,
         *       math (see math params)
         * @param {object} arg1 The object that repesents the second argument in the where clause
-        * @param {object} params (optional) 
+        * @param {object} params (optional)
         * { guid : true } to indicate that arg1 is a guid (special filter syntax is applied)
         * { or : true } to include 'or' logical operator.
         * { not: true} to include negative logical operator.
@@ -20408,7 +20408,7 @@ angular.module('ep.menu.builder').
         *
         * @param {array} whereItemsArray An array of where items in format [whereItem1, whereItem2,...]
         *       each whereItem is {column, op, value, params}
-        * @param {object} params (optional) 
+        * @param {object} params (optional)
         * { itemJoinOr : true } to join each where item by 'or' operator (default is 'and')
         * { or : true } to join expression to previous by 'or' operator  (default is 'and')
         * @returns {this} to allow for method chaining
@@ -20436,7 +20436,6 @@ angular.module('ep.menu.builder').
             /*jshint validthis: true */
             return this;
         }
-
 
         /**
         * @ngdoc method
@@ -20920,16 +20919,23 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                             $scope.hourStep = col.time.hourStep || 1;
                             $scope.minuteStep = col.time.minuteStep || 15;
 
+                            $scope.$watch('ctx.dateValue', function(newValue, oldValue) {
+                                if (newValue && newValue !== oldValue && $scope.changingTime !== true) {
+                                    $scope.timeValue = newValue;
+                                }
+                                $scope.changingTime = false;
+                            });
+
                             $scope.timeChanged = function() {
-                                var value = ctx.dateValue;
+                                var value = $scope.timeValue;
                                 var dd = null;
                                 if (value !== undefined) {
                                     var m = moment(value);
-                                    var fmt = 'YYYY-MM-DDTHH:mm:ss';
-                                    dd = m.isValid() ? m.format(fmt) : null;
+                                    dd = m.isValid() ? m.format('YYYY-MM-DDTHH:mm:ss') : null;
                                 }
                                 var vCur = $scope.ctx.fnGetCurrentValue();
                                 if (vCur !== dd) {
+                                    $scope.changingTime = true;
                                     $scope.ctx.fnSetCurrentValue(dd);
                                 }
                             };
@@ -21098,7 +21104,8 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
         directive('epEditorControl', epEditorControlDirective);
 
     /*@ngInject*/
-    function epEditorControlDirective($log, $timeout, $window, $compile, $q, epUtilsService, epFeatureDetectionService) {
+    function epEditorControlDirective($log, $timeout, $window, $compile, $q,
+                                      epUtilsService, epFeatureDetectionService) {
 
         var defaultSizeClass = 'col-xs-12 col-sm-8 col-md-6 col-lg-3';
 
@@ -21331,7 +21338,8 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                 ctx.invalidFlag = false;
                 if (ctx.displayInvalid && ctx.editorContainer) {
                     var state = scope.ctx.recordEditorState;
-                    var showAllInvalidFields = (state && state.showAllInvalidFields) || (ctx.showInvalidFields === true);
+                    var showAllInvalidFields =
+                        (state && state.showAllInvalidFields) || (ctx.showInvalidFields === true);
                     var editor = angular.element(ctx.editorContainer).find('.form-control.editor');
                     if (editor.length) {
                         //TO DO: check in angular if we can remove the 'ng-invalid-remove'/'ng-dirty-add' check
@@ -23598,14 +23606,14 @@ angular.module('ep.record.editor').
                     showToggleButton: true, enabled: false,
                     toggleButtonIcon: 'fa-bars'
                 };
-                if(left.enabled === undefined){
+                if (left.enabled === undefined) {
                     left.enabled = mode.enableLeftSidebar;
                 }
                 var right = shellState.viewSettings.sidebar.right || {
                     showToggleButton: true, enabled: false,
                     toggleButtonIcon: 'fa-bars'
                 };
-                if(right.enabled === undefined){
+                if (right.enabled === undefined) {
                     right.enabled = mode.enableRightSidebar;
                 }
 
@@ -23998,14 +24006,14 @@ angular.module('ep.record.editor').
                 if (viewScope) {
                     $timeout(function() {
                         var el = angular.element('#apptitle');
-                        if(shellState.titleScope){
+                        if (shellState.titleScope) {
                             shellState.titleScope.$destroy();
                             shellState.titleScope = null;
                         }
 
                         shellState.titleScope = viewScope.$new();
                         var content = $compile(html)(shellState.titleScope);
-                        if(content.length){
+                        if (content.length) {
                             el.empty();
                             el.append(angular.element(content));
                         } else {
@@ -24084,16 +24092,16 @@ angular.module('ep.record.editor').
              */
             function setFooterHTML(html, viewScope) {
                 if (viewScope) {
-                    $timeout(function(){
+                    $timeout(function() {
                         var el = angular.element('#footerElement');
-                        if(shellState.footerScope){
+                        if (shellState.footerScope) {
                             shellState.footerScope.$destroy();
                             shellState.footerScope = null;
                         }
 
                         shellState.footerScope = viewScope.$new();
                         var content = $compile(html)(shellState.footerScope);
-                        if(content.length) {
+                        if (content.length) {
                             el.empty();
                             el.append(angular.element(content));
                         } else {
@@ -26252,7 +26260,7 @@ angular.module('ep.signature').directive('epSignature',
                     result.then(function(val) {
                         deferred.resolve(val);
                         owner.fired = false;
-                    }, function(){
+                    }, function() {
                         owner.fired = false;
                     });
                 } else {
@@ -28437,7 +28445,8 @@ angular.module('ep.signature').directive('epSignature',
 
                 var sCallSettings = JSON.stringify(callSettings || {});
 
-                logData.logEntry = createLogEntry('REST CALL: ' + sPath, 'ep-rest-service (get)', url, query, callSettings);
+                logData.logEntry = createLogEntry('REST CALL: ' + sPath,
+                                                  'ep-rest-service (get)', url, query, callSettings);
 
                 return $resource(url, query, {
                     get: {
@@ -28500,7 +28509,8 @@ angular.module('ep.signature').directive('epSignature',
 
                 var sCallSettings = JSON.stringify(callSettings || {});
 
-                var logEntry = createLogEntry('REST CALL: ' + path, 'ep-rest-service (delete)', url, data, callSettings);
+                var logEntry = createLogEntry('REST CALL: ' + path,
+                                              'ep-rest-service (delete)', url, data, callSettings);
 
                 var promise = $http({
                     method: 'DELETE',
@@ -28767,7 +28777,7 @@ angular.module('ep.signature').directive('epSignature',
             $scope.hasError = false;
             $scope.status = '';
             var key = typeof event.which === 'undefined' ? event.keyCode : event.which;
-            (key === 13) ? $scope.loginUser(): false;
+            (key === 13) ? $scope.loginUser() : false;
         }
 
         $scope.clearWarning = function() {
@@ -28780,6 +28790,7 @@ angular.module('ep.signature').directive('epSignature',
         }
     }
 }());
+
 (function() {
 'use strict';
 /**
@@ -29468,6 +29479,7 @@ angular.module('ep.token').
         };
     }
 }());
+
 
 (function() {
     'use strict';
@@ -30642,7 +30654,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-date-editor.html',
-    "<section class=ep-date-editor><input id=dd_{{ctx.name}} ng-model=value ep-date-convert=toDate ng-hide=\"true\"><div class=\"input-group date datepicker\" id=dp_{{ctx.name}} ng-if=!ctx.useDateInput><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input size=16 ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor {{isMeridian ? 'ep-time-meridian' : ''}}\" ng-hide=ctx.fnDoValidations() ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) pattern={{ctx.pattern}} ng-keydown=ctx.fnDateKeyDown($event) uib-datepicker-popup={{ctx.format}} data-container=body datepicker-options111={{ctx.dateOptions}} placeholder={{ctx.format}} ng-pattern={{ctx.pattern}} is-open=\"ctx.dateOpened\"> <span ng-if=\"showTime === true\" class=\"input-group-addon ep-time-picker {{isMeridian ? 'ep-time-meridian' : ''}}\" uib-timepicker show-spinners=false ng-model=ctx.dateValue ng-change=timeChanged() hour-step=hourStep minute-step=minuteStep show-meridian=isMeridian></span> <span class=input-group-addon ng-click=ctx.fnDateOpen($event) ng-style=\"{ 'cursor': ctx.disabled ? 'not-allowed' : 'pointer' }\"><a ng-if=!ctx.disabled><i class=\"fa fa-calendar\"></i></a> <i ng-if=ctx.disabled class=\"fa fa-calendar\"></i></span> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div><div class=\"input-group date\" id=dp_{{ctx.name}} ng-if=\"ctx.useDateInput === true\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input size=16 type=date ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor {{isMeridian ? 'ep-time-meridian' : ''}}\" ng-hide=ctx.fnDoValidations(this) ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=\"ctx.fnBlur($event)\"> <span ng-if=\"showTime === true\" class=\"input-group-addon ep-time-picker {{isMeridian ? 'ep-time-meridian' : ''}}\" uib-timepicker show-spinners=false ng-model=ctx.dateValue ng-change=timeChanged() hour-step=hourStep minute-step=minuteStep show-meridian=isMeridian></span> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
+    "<section class=ep-date-editor><input id=dd_{{ctx.name}} ng-model=value ep-date-convert=toDate ng-hide=\"true\"><div class=\"input-group date datepicker\" id=dp_{{ctx.name}} ng-if=!ctx.useDateInput><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input size=16 ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor {{isMeridian ? 'ep-time-meridian' : ''}}\" ng-hide=ctx.fnDoValidations() ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) pattern={{ctx.pattern}} ng-keydown=ctx.fnDateKeyDown($event) uib-datepicker-popup={{ctx.format}} data-container=body datepicker-options111={{ctx.dateOptions}} placeholder={{ctx.format}} ng-pattern={{ctx.pattern}} is-open=\"ctx.dateOpened\"> <span ng-if=\"showTime === true\" class=\"input-group-addon ep-time-picker {{isMeridian ? 'ep-time-meridian' : ''}}\" uib-timepicker show-spinners=false ng-model=timeValue ng-change=timeChanged() hour-step=hourStep minute-step=minuteStep show-meridian=isMeridian></span> <span class=input-group-addon ng-click=ctx.fnDateOpen($event) ng-style=\"{ 'cursor': ctx.disabled ? 'not-allowed' : 'pointer' }\"><a ng-if=!ctx.disabled><i class=\"fa fa-calendar\"></i></a> <i ng-if=ctx.disabled class=\"fa fa-calendar\"></i></span> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div><div class=\"input-group date\" id=dp_{{ctx.name}} ng-if=\"ctx.useDateInput === true\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input size=16 type=date ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor {{isMeridian ? 'ep-time-meridian' : ''}}\" ng-hide=ctx.fnDoValidations(this) ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=\"ctx.fnBlur($event)\"> <span ng-if=\"showTime === true\" class=\"input-group-addon ep-time-picker {{isMeridian ? 'ep-time-meridian' : ''}}\" uib-timepicker show-spinners=false ng-model=timeValue ng-change=timeChanged() hour-step=hourStep minute-step=minuteStep show-meridian=isMeridian></span> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
   );
 
 

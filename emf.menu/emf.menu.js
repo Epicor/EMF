@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.430 built: 12-07-2017
+ * version:1.0.12-dev.431 built: 12-07-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.430","built":"2017-07-12"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.12-dev.431","built":"2017-07-12"};
 
 (function() {
     'use strict';
@@ -304,7 +304,7 @@ angular.module('ep.menu.builder', [
 
     angular.module('ep.multi.level.menu').controller('epMultiLevelMenuCtrl',
         /*@ngInject*/
-        ['$rootScope', '$scope', '$timeout', 'epMultiLevelMenuFactory', 'epMultiLevelMenuConstants', 'epMultiLevelMenuService', function($rootScope, $scope, $timeout, epMultiLevelMenuFactory, epMultiLevelMenuConstants, 
+        ['$rootScope', '$scope', '$timeout', 'epMultiLevelMenuFactory', 'epMultiLevelMenuConstants', 'epMultiLevelMenuService', function($rootScope, $scope, $timeout, epMultiLevelMenuFactory, epMultiLevelMenuConstants,
                  epMultiLevelMenuService) {
 
             // init the scope properties
@@ -339,22 +339,21 @@ angular.module('ep.menu.builder', [
                 }
             }
 
-            function buildIndex(menuItems){
+            function buildIndex(menuItems) {
                 traverseTree(menuItems);
-                $scope.state.searchIndex.sort(function(a, b){ return a.caption > b.caption ? 1 : 0});
+                $scope.state.searchIndex.sort(function(a, b) { return a.caption > b.caption ? 1 : 0});
             }
 
             // private build the index for faster searching
-            function traverseTree(menuItems){
+            function traverseTree(menuItems) {
                 // menuItems is an array of objects, and each object potentially has a subarray of menuitems making a tree structure.
                 //  we want to flatten the tree into a hashable object.
-                menuItems.forEach(function(menuItem){
+                menuItems.forEach(function(menuItem) {
                     // for the purposes of searching, we only care about leaf nodes
-                    if(menuItem._type === 'item') {
+                    if (menuItem._type === 'item') {
                         menuItem.searchTerm = menuItem.caption.toLowerCase();
                         $scope.state.searchIndex.push(menuItem);
-                    }
-                    else{
+                    } else {
                         traverseTree(menuItem.menuitems);
                     }
                 });
@@ -399,17 +398,17 @@ angular.module('ep.menu.builder', [
             function searchChildren(searchTerm, type, results) {
                 // This is some pretty hot code here, so be careful
                 // about making changes that could affect performance
-                angular.forEach($scope.state.searchIndex, function (child) {
+                angular.forEach($scope.state.searchIndex, function(child) {
                     var terms = searchTerm.split(/(\S+)/g);
                     var added = false;
                     child.hitCount = 10;
-                    terms.forEach(function(phrase){
+                    terms.forEach(function(phrase) {
                         var term = phrase.trim();
-                        if(term && term.length && child && child.searchTerm.indexOf(term) !== -1){
+                        if (term && term.length && child && child.searchTerm.indexOf(term) !== -1) {
                            // if we are type checking, also check the system-set _type
                             if (type === '' || child.type === type || child._type === type) {
                                 child.hitCount--;
-                                if(!added){
+                                if (!added) {
                                     results.push(child);
                                 }
                                 added = true;
@@ -522,7 +521,7 @@ angular.module('ep.menu.builder', [
                 $scope.data = $scope.multiLevelMenuHelper.data;
                 $scope.data.next = $scope.multiLevelMenuHelper.data.menu;
                 // now we build a simple index for searching quickly
-                if($scope.menu){
+                if ($scope.menu) {
                     buildIndex($scope.menu.menuitems);
                 }
 
@@ -542,7 +541,7 @@ angular.module('ep.menu.builder', [
                         $scope.multiLevelMenuHelper.populate($scope.menu, true);
                         $scope.data = $scope.multiLevelMenuHelper.data;
                         $scope.data.next = $scope.multiLevelMenuHelper.data.menu;
-                        if($scope.menu){
+                        if ($scope.menu) {
                             buildIndex($scope.menu.menuitems);
                         }
                         setCurrentItems();
@@ -2166,7 +2165,7 @@ angular.module('ep.menu.builder', [
  * - mainTitle: main title to display on list
  * - subTitle: sub title to display on list just below main title.
  * - formatSubtitle: function to format subtitle fields. function(fields, record) By default comma separated.
- * - additionalTitle: additional title to display on list just below sub title. function(field, record) 
+ * - additionalTitle: additional title to display on list just below sub title. function(field, record)
  * - formatAdditionalTitle: function to format additional title
  * - id: value to be displayed on right side of the list.
  * - groupBy: groupBy field name by which the list has to be grouped.
@@ -2181,7 +2180,7 @@ angular.module('ep.menu.builder', [
  * - filter: handler function on click of filter button in sub header section of the list
  * - sort: handler function on click of sort button in sub header section of the list.
  * - add: handler function on click of add button in sub header section of the list.
- * - useVirtualScrolling: (true/false) uses 
+ * - useVirtualScrolling: (true/false) uses
  * - showDirectory
  * - vsRenderBufferSize
  * - vsRowLineCount
@@ -2224,12 +2223,12 @@ angular.module('ep.menu.builder', [
                 getStatusTextClass: '=',
                 formatStatusText: '=',
                 formatStatusSource: '=',
-                
+
                 groupBy: '@',
                 groupByType: '@',
                 subHeader: '@',
                 showArrow: '=',
-                
+
                 icon: '@',
                 showInRed: '@',
                 hideAdd: '@',
@@ -2238,7 +2237,7 @@ angular.module('ep.menu.builder', [
                 hideDisplayOptions: '@',
 
                 useVirtualScrolling: '=',
-                
+
                 itemContentTemplate: '@',
                 showDirectory: '=',
                 vsRenderBufferSize: '@',
@@ -2252,7 +2251,7 @@ angular.module('ep.menu.builder', [
                 scope.localId = _.uniqueId('epList');
                 scope.items = { count: 0 };
                 scope.originalData = scope.data;
-                
+
                 scope.vsRenderBufferSize = (scope.vsRenderBufferSize && JSON.parse(scope.vsRenderBufferSize)) || 50;
                 scope.vsRowLineCount = (scope.vsRowLineCount && JSON.parse(scope.vsRowLineCount)) || 2;
                 scope.vsItemSize = scope.vsRowLineCount * 30;
@@ -2262,9 +2261,11 @@ angular.module('ep.menu.builder', [
                 scope.searchPrompt = '';
                 scope.itemContentTemplate = scope.itemContentTemplate || 'defaultItemContentTemplate';
                 scope.filterState = {};
-                
+
                 scope.initData = function() {
 
+                    scope.searchType = 'text';
+                    scope.searchPrompt = '';
                     var isGroupByDate = !!(scope.groupByType && scope.groupByType === 'sdate');
 
                     scope.listData = $filter('orderBy')(scope.data, scope.groupBy);
@@ -2296,8 +2297,7 @@ angular.module('ep.menu.builder', [
                                 scope.searchType = 'sfield';
                                 scope.filteredData = scope.listData;
                                 scope.filtered = true;
-                            }
-                            else {
+                            } else {
                                 scope.directory = epListService.getDirectory(scope.listData, scope.groupBy);
                             }
                         }
@@ -2309,7 +2309,7 @@ angular.module('ep.menu.builder', [
 
                     scope.origListData = angular.extend([], scope.listData);
                     scope.items.count = scope.data.length;
-                    if(scope.init){
+                    if (scope.init) {
                         scope.init(scope);
                     }
                 }
@@ -2321,13 +2321,15 @@ angular.module('ep.menu.builder', [
                         //searchFields
                         if (scope.searchFields) {
                             var field = _.find(scope.searchFields, function(fld) {
-                                return ((obj[fld] + '').toLowerCase() || '').indexOf(scope.searchFilter.toLowerCase()) === 0;
+                                return ((obj[fld] + '').toLowerCase() || '')
+                                    .indexOf(scope.searchFilter.toLowerCase()) === 0;
                             });
                             if (!field) {
                                 ret = false;
                             }
                         } else if (scope.groupBy) {
-                            ret = (obj[scope.groupBy].toLowerCase() || '').indexOf(scope.searchFilter.toLowerCase()) === 0;
+                            ret = (obj[scope.groupBy].toLowerCase() || '')
+                                .indexOf(scope.searchFilter.toLowerCase()) === 0;
                         }
                     }
                     return ret;
@@ -2388,7 +2390,8 @@ angular.module('ep.menu.builder', [
                             if (groups.length) {
                                 //we found some groups, lets get filtered data
                                 angular.forEach(groups, function(group) {
-                                    filteredData = filteredData.concat(scope.origListData.slice(group.index, group.nextIndex));
+                                    filteredData =
+                                        filteredData.concat(scope.origListData.slice(group.index, group.nextIndex));
                                 });
                             }
                             filtered = true;
@@ -2447,7 +2450,7 @@ angular.module('ep.menu.builder', [
                         scope.goingToDirectory = false;
                     }
                 });
-                
+
                 scope.goToDirectory = function(directoryEntry) {
                     if (scope.listSearch) {
                         //we are going to directory, clear the search but avoid watch kicking in
@@ -2542,12 +2545,12 @@ angular.module('ep.menu.builder', [
          * To group the list based on groupBy Value
          */
         function getGroupedList(listData, groupBy) {
-            return _.groupBy(listData, function(row){ 
+            return _.groupBy(listData, function(row) {
                 var datum = row[0];
                 return (!isNaN(datum)) ? '#' : datum.toUpperCase();
             });
         }
-        
+
         /**
          * @ngdoc method
          * @name getDirectoryKey
@@ -2557,10 +2560,10 @@ angular.module('ep.menu.builder', [
          * @description
          * Returns the directory key for a given string value.
          */
-        function getDirectoryKey(value){
+        function getDirectoryKey(value) {
             var key = value ? value.substr(0, 1).toUpperCase() : '';
-            if(key < 'A') { key = alphabet[0]; }
-            if(key > 'Z') { key = alphabet[alphabet.length -1]; }
+            if (key < 'A') { key = alphabet[0]; }
+            if (key > 'Z') { key = alphabet[alphabet.length - 1]; }
             return key;
         }
 
@@ -2574,19 +2577,18 @@ angular.module('ep.menu.builder', [
          * @description
          * To group the list based on groupBy Value
          */
-        function getDirectory(listData, groupBy){
+        function getDirectory(listData, groupBy) {
 
             // A comparison function to tell us if we're still iterating through the same section of the data
-            var compare = function(directoryLetter, itemFirstLetter){
-                if(directoryLetter === '#'){
+            var compare = function(directoryLetter, itemFirstLetter) {
+                if (directoryLetter === '#') {
                     return itemFirstLetter < 'A';
                 }
-                if (directoryLetter === '@'){
+                if (directoryLetter === '@') {
                     return true;
-                } 
+                }
                 return directoryLetter === itemFirstLetter;
             }
-
 
             var allKey = '__all__';
             //keys - group keys that have been processed
@@ -2611,7 +2613,7 @@ angular.module('ep.menu.builder', [
                 nextIndex: totalItems,
                 disabled: false
             };
-            
+
             //create entry for each alphabet letter (disabled), we will enable when we find data
             alphabet.forEach(function(letter, idx) {
                 dir[letter] = {
@@ -2758,7 +2760,7 @@ angular.module('ep.menu.builder', [
         function showListModalForm(dialogOptions) {
             if (dialogOptions) {
                 var winClass = dialogOptions.windowClass || '';
-                if (winClass) winClass += ' ';
+                if (winClass) { winClass += ' '; }
                 dialogOptions.windowClass = winClass + 'ep-list-modal-dialog';
             }
             return epModalDialogService.showModalForm(dialogOptions);

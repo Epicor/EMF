@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.12-dev.430 built: 12-07-2017
+ * version:1.0.12-dev.431 built: 12-07-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.430","built":"2017-07-12"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.12-dev.431","built":"2017-07-12"};
 
 (function() {
     'use strict';
@@ -185,7 +185,8 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
 
                 var sCallSettings = JSON.stringify(callSettings || {});
 
-                logData.logEntry = createLogEntry('REST CALL: ' + sPath, 'ep-rest-service (get)', url, query, callSettings);
+                logData.logEntry = createLogEntry('REST CALL: ' + sPath,
+                                                  'ep-rest-service (get)', url, query, callSettings);
 
                 return $resource(url, query, {
                     get: {
@@ -248,7 +249,8 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
 
                 var sCallSettings = JSON.stringify(callSettings || {});
 
-                var logEntry = createLogEntry('REST CALL: ' + path, 'ep-rest-service (delete)', url, data, callSettings);
+                var logEntry = createLogEntry('REST CALL: ' + path,
+                                              'ep-rest-service (delete)', url, data, callSettings);
 
                 var promise = $http({
                     method: 'DELETE',
@@ -515,7 +517,7 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
             $scope.hasError = false;
             $scope.status = '';
             var key = typeof event.which === 'undefined' ? event.keyCode : event.which;
-            (key === 13) ? $scope.loginUser(): false;
+            (key === 13) ? $scope.loginUser() : false;
         }
 
         $scope.clearWarning = function() {
@@ -528,6 +530,7 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
         }
     }
 }());
+
 (function() {
 'use strict';
 /**
@@ -1218,6 +1221,7 @@ angular.module('ep.token').
 }());
 
 
+
 (function() {
     'use strict';
 
@@ -1551,7 +1555,7 @@ angular.module('ep.token').
         *       day, month, year, second, minute, hour,
         *       math (see math params)
         * @param {object} arg1 The object that repesents the second argument in the where clause
-        * @param {object} params (optional) 
+        * @param {object} params (optional)
         * { guid : true } to indicate that arg1 is a guid (special filter syntax is applied)
         * { or : true } to include 'or' logical operator.
         * { not: true} to include negative logical operator.
@@ -1652,7 +1656,7 @@ angular.module('ep.token').
         *
         * @param {array} whereItemsArray An array of where items in format [whereItem1, whereItem2,...]
         *       each whereItem is {column, op, value, params}
-        * @param {object} params (optional) 
+        * @param {object} params (optional)
         * { itemJoinOr : true } to join each where item by 'or' operator (default is 'and')
         * { or : true } to join expression to previous by 'or' operator  (default is 'and')
         * @returns {this} to allow for method chaining
@@ -1680,7 +1684,6 @@ angular.module('ep.token').
             /*jshint validthis: true */
             return this;
         }
-
 
         /**
         * @ngdoc method
@@ -2241,7 +2244,8 @@ angular.module('ep.token').
                         scope.state.requiredFlag = false;
                     } else {
                         if (scope.state.epBinding.column) {
-                            scope.state.requiredFlag = scope.state.metaColumn.required && scope.state.metaColumn.requiredFlag;
+                            scope.state.requiredFlag =
+                                (scope.state.metaColumn.required && scope.state.metaColumn.requiredFlag);
                         } else {
                             scope.state.requiredFlag = (scope.required === true);
                         }
@@ -2811,7 +2815,7 @@ angular.module('ep.binding').
             restrict: 'A',
             replace: true,
             scope: true,
-            template: function (element, attr) {
+            template: function(element, attr) {
                 var value = 'epb.view && epb.view.hasData()';
                 //Make sure to combine with existing ngIf!
                 if (attr.ngIf) {
@@ -2819,13 +2823,13 @@ angular.module('ep.binding').
                 }
                 var inner = element.get(0);
                 //we have to clear all the values because angular
-                //is going to merge the attrs collection 
+                //is going to merge the attrs collection
                 //back into the element after this function finishes
-                angular.forEach(inner.attributes, function(attr, key){
+                angular.forEach(inner.attributes, function(attr, key) {
                     attr.value = '';
                 });
                 attr.$set('ng-if', value);
-                return inner.outerHTML;            
+                return inner.outerHTML;
             },
             compile: function(element, attrs) {
                 return {
@@ -4424,8 +4428,9 @@ angular.module('ep.binding').
              * @public
              * @description
              * set transaction from storage
-             * @param {array} ignoreList - List if view id's to ignore
-             * @param {array} includeList - List if view id's to include
+             * @param {array} trx - transaction array to process
+             * @param {array} ignoreList - List of view id's to ignore
+             * @param {array} includeList - List of view id's to include
              */
             function set(trx, ignoreList, includeList) {
                 if (trx && angular.isArray(trx)) {
@@ -4448,6 +4453,7 @@ angular.module('ep.binding').
              * @private
              * @description
              * is the specified view included based on ignore/include lists
+             * @param {string} viewId - id of the view to check
              * @param {array} ignoreList - List if view id's to ignore
              * @param {array} includeList - List if view id's to include
              */
@@ -4696,7 +4702,7 @@ angular.module('ep.binding').
                 if (options.updatableOnly !== false) {
                     if (meta && meta.columns) {
                         dataUpdate = angular.copy(d);
-                        //remove non-updatable fields and non-key fields and if not SysRowID 
+                        //remove non-updatable fields and non-key fields and if not SysRowID
                         //also remove if field does not have underscore or starts with underscore
                         uColsRemove = _.filter(meta.columns, function(cc) {
                             return cc.updatable !== true && cc.isKeyField !== true && cc.name !== 'SysRowID' &&
