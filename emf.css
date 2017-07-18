@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.13-dev.16 built: 17-07-2017
+ * version:1.0.13-dev.17 built: 17-07-2017
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -2762,6 +2762,7 @@ ep-editor-control .ep-record-editor-container.ep-is-row-editor {
 }
 .ep-editor-control .ep-date-editor .ep-time-picker .form-control {
   padding: 0px;
+  min-width: 30px;
 }
 /* workaround for now beacuse with meridian the time cells are not aligned */
 .ep-editor-control .ep-date-editor .form-control.editor.ep-time-meridian {
