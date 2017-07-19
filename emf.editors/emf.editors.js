@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.13-dev.20 built: 18-07-2017
+ * version:1.0.13-dev.21 built: 18-07-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["editors"] = {"libName":"editors","version":"1.0.13-dev.20","built":"2017-07-18"};
+__ep_build_info["editors"] = {"libName":"editors","version":"1.0.13-dev.21","built":"2017-07-18"};
 
 (function() {
     'use strict';
@@ -649,7 +649,14 @@ angular.module('ep.record.editor', [
                         var dd = null;
                         if (value !== undefined) {
                             var m = moment(value);
-                            var fmt = scope.ctx.isDateTime ? 'YYYY-MM-DDT00:00:00' : 'YYYY-MM-DD';
+                            var fmt = 'YYYY-MM-DD';
+                            if (scope.ctx.isDateTime) {
+                                if (scope.ctx.col && scope.ctx.col.time && scope.ctx.col.time.defaultNoon === true) {
+                                    fmt = 'YYYY-MM-DDT12:00:00';
+                                } else {
+                                    fmt = 'YYYY-MM-DDT00:00:00';
+                                }
+                            }
                             dd = m.isValid() ? m.format(fmt) : null;
                         }
                         var vCur = scope.ctx.fnGetCurrentValue();
@@ -736,6 +743,7 @@ angular.module('ep.record.editor', [
                             $scope.isMeridian = col.time.meridian === true;
                             $scope.hourStep = col.time.hourStep || 1;
                             $scope.minuteStep = col.time.minuteStep || 15;
+                            $scope.ctx.isDateTime = true;
 
                             $scope.$watch('ctx.dateValue', function(newValue, oldValue) {
                                 if (newValue && newValue !== oldValue && $scope.changingTime !== true) {
