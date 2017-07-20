@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.13-dev.24 built: 19-07-2017
+ * version:1.0.13-dev.25 built: 19-07-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.13-dev.24","built":"2017-07-19"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.13-dev.25","built":"2017-07-19"};
 
 (function() {
     'use strict';
@@ -2172,6 +2172,7 @@ angular.module('ep.menu.builder', [
  * - groupByType: 'sdate' - string date format like '1910-01-01T00:00:00' (otherwise string)
  *      'sfield' - string field (whole field opposed to first letter)
  * - sortBy: sortBy field name by which the list has to be sorted.
+ * - formatGroupTitle: function to format group title. function(record, groupBy, groupDisplay, groupKey)
  * - sortByDesc: true if sort is to be reversed (descending). By default sdates are descending sorts
  * - searchFields: (string array) field names by which search is executed
  * - subHeader: (true/false) shows sub header with filter/sort/add buttons just below the search component.
@@ -2226,6 +2227,7 @@ angular.module('ep.menu.builder', [
 
                 groupBy: '@',
                 groupByType: '@',
+                formatGroupTitle: '=',
                 subHeader: '@',
                 showArrow: '=',
 
@@ -2482,6 +2484,17 @@ angular.module('ep.menu.builder', [
                         return scope.formatSubtitle(fields, record);
                     } else {
                         return fields.reduce(function(p, c) { return (p ? (p + ', ') : '') + record[c]; }, '');
+                    }
+                };
+
+                //default function for formatting subtitle. User can overwrite
+                scope.wrapFormatGroupTitle = function(record) {
+                    var grDisplay = scope.directory[record[scope.groupBy]].groupDisplay;
+                    if (scope.formatGroupTitle) {
+                        var grKey = scope.directory[record[scope.groupBy]].dirKey;
+                        return scope.formatGroupTitle(record, scope.groupBy, grDisplay, grKey);
+                    } else {
+                        return grDisplay;
                     }
                 };
 
@@ -3174,7 +3187,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
     "\n" +
     "                ng-class=\"{'ep-margin-top-10':subTitle && !additionalTitle, 'ep-margin-top-15': additionalTitle}\"><i class=\"fa fa-check\"></i></div>\r" +
     "\n" +
-    "        </div></script><script id=listItemTemplate type=text/ng-template><div ng-if=\"groupBy && directory[obj[groupBy]] && directory[obj[groupBy]].data === obj\" class=\"ep-dir-divider ep-group-heading\"><b>{{directory[obj[groupBy]].groupDisplay}}</b></div>\r" +
+    "        </div></script><script id=listItemTemplate type=text/ng-template><div ng-if=\"groupBy && directory[obj[groupBy]] && directory[obj[groupBy]].data === obj\" class=\"ep-dir-divider ep-group-heading\"><b>{{wrapFormatGroupTitle(obj)}}</b></div>\r" +
     "\n" +
     "        <div class=\"ep-list-item-content\" ng-include=\"itemContentTemplate\"></div></script><!--Calling filter list component for search option--><ep-filter-list search-by=listSearch count=\"filtered ? filterState.filterResult.length : items.count\" search-prompt=searchPrompt></ep-filter-list><!--Header as optional--><div class=ep-list-sub-header ng-if=\"subHeader == 'true'\"><label ng-click=filter() ng-hide=\"hideDisplayOptions == 'true'\">Filter</label><label ng-click=sort() ng-hide=\"hideDisplayOptions == 'true'\">Sort</label><span class=\"pull-right ep-pad-right-20 text-primary\" ng-hide=\"hideAdd == 'true'\" ng-click=add()><i class=\"fa fa-plus fa-lg\" aria-hidden=true></i></span></div><!-- Alphabet Selector --><div class=ep-list-directory ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=\"showDirectory && groupBy\"><div class=ep-list-directory-item ng-repeat=\"(id,dir) in directory | epOrderObjectBy:'sort'\"><a ng-if=\"dir.letter === '*'\" class=ep-list-directory-item-enabled ng-click=goToDirectory(dir)><i class=\"fa fa-asterisk\"></i></a> <span ng-if=\"(dir.letter !== '*') && dir.disabled\" class=text-muted>{{dir.letter}}</span> <a ng-if=\"(dir.letter !== '*') && !dir.disabled\" class=ep-list-directory-item-enabled ng-class=\"{ 'text-danger': selectedDirectoryEntry.letter === dir.letter && filtered }\" ng-click=goToDirectory(dir)>{{dir.letter}}</a></div></div><div ng-if=useVirtualScrolling><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=!filtered id={{localId}} vs-repeat={{vsItemSize}} vs-excess={{vsRenderBufferSize}} vs-options=\"{ latch: {{vsLatch}} }\"><li ng-repeat=\"obj in listData track by $index\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=filtered id={{localId}} vs-repeat={{vsItemSize}} vs-excess={{vsRenderBufferSize}} vs-options=\"{ latch: {{vsLatch}} }\"><li ng-repeat=\"obj in (filterState.filterResult = (filteredData | filter:filterByName))\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul></div><div ng-if=!useVirtualScrolling><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=!filtered id={{localId}}><li ng-repeat=\"obj in listData track by $index\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=filtered id={{localId}}><li ng-repeat=\"obj in (filterState.filterResult = (filteredData | filter:filterByName))\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul></div></div>"
   );
