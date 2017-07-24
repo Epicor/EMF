@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.13-dev.44 built: 24-07-2017
+ * version:1.0.13-dev.45 built: 24-07-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.13-dev.44","built":"2017-07-24"};
+__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.13-dev.45","built":"2017-07-24"};
 
 (function() {
   'use strict';
@@ -250,7 +250,7 @@ angular.module('ep.signature', [
                             if (fileEntry) {
                                 deferred.resolve(fileEntry.value);
                             } else {
-                                failWith(deferred, filename);
+                                failWith(deferred, filename)({ code: 1 });
                             }
                         });
                     });
@@ -2134,7 +2134,8 @@ angular.module('ep.signature').directive('epSignature',
             } else {
                 cacheEntry = { key: key, cacheId: cacheId, value: value, cacheTimestamp: new Date() };
             }
-
+            cache[key] = cacheEntry;
+            
             var metaCacheEntry = {
                 key: cacheEntry.key,
                 cacheId: cacheEntry.cacheId,
