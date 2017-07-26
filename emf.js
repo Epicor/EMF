@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.13-dev.48 built: 25-07-2017
+ * version:1.0.13-dev.49 built: 25-07-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.13-dev.48","built":"2017-07-25"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.13-dev.49","built":"2017-07-25"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -4546,7 +4546,7 @@ angular.module('ep.binding').
         function getCachedData(cacheId, key, defaultValue) {
             var cache = getCache(cacheId);
             var data = cache[key];
-            if (angular.isUndefined(data)) {
+            if (angular.isUndefined(data) && !angular.isUndefined(defaultValue)) {
                 data = (cache[key] = { key: key, cacheId: cacheId, value: defaultValue, cacheTimestamp: new Date() });
             }
             return data.value;
@@ -19175,23 +19175,19 @@ angular.module('ep.menu.builder').
             function searchChildren(searchTerm, type, results) {
                 // This is some pretty hot code here, so be careful
                 // about making changes that could affect performance
+                var terms = searchTerm.split(/(\S+)/g);
                 angular.forEach($scope.state.searchIndex, function(child) {
-                    var terms = searchTerm.split(/(\S+)/g);
-                    var added = false;
-                    child.hitCount = 10;
-                    terms.forEach(function(phrase) {
-                        var term = phrase.trim();
-                        if (term && term.length && child && child.searchTerm.indexOf(term) !== -1) {
-                           // if we are type checking, also check the system-set _type
-                            if (type === '' || child.type === type || child._type === type) {
-                                child.hitCount--;
-                                if (!added) {
-                                    results.push(child);
-                                }
-                                added = true;
-                            }
-                        }
-                    });
+                    var childTerms = child.searchTerm.split(/(\S+)/g);
+                    // make sure that all terms match something
+                    if (_.all(terms, function(phrase) {
+                            var term = phrase.trim();
+                            // every term must match at the beginning of at least one child caption
+                            return !term || _.any(childTerms, function(childTerm){
+                                return childTerm.indexOf(term) === 0;
+                            });
+                        })){
+                        results.push(child);
+                    }
                 });
             }
 

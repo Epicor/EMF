@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.13-dev.48 built: 25-07-2017
+ * version:1.0.13-dev.49 built: 25-07-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.13-dev.48","built":"2017-07-25"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.13-dev.49","built":"2017-07-25"};
 
 (function() {
     'use strict';
@@ -398,23 +398,19 @@ angular.module('ep.menu.builder', [
             function searchChildren(searchTerm, type, results) {
                 // This is some pretty hot code here, so be careful
                 // about making changes that could affect performance
+                var terms = searchTerm.split(/(\S+)/g);
                 angular.forEach($scope.state.searchIndex, function(child) {
-                    var terms = searchTerm.split(/(\S+)/g);
-                    var added = false;
-                    child.hitCount = 10;
-                    terms.forEach(function(phrase) {
-                        var term = phrase.trim();
-                        if (term && term.length && child && child.searchTerm.indexOf(term) !== -1) {
-                           // if we are type checking, also check the system-set _type
-                            if (type === '' || child.type === type || child._type === type) {
-                                child.hitCount--;
-                                if (!added) {
-                                    results.push(child);
-                                }
-                                added = true;
-                            }
-                        }
-                    });
+                    var childTerms = child.searchTerm.split(/(\S+)/g);
+                    // make sure that all terms match something
+                    if (_.all(terms, function(phrase) {
+                            var term = phrase.trim();
+                            // every term must match at the beginning of at least one child caption
+                            return !term || _.any(childTerms, function(childTerm){
+                                return childTerm.indexOf(term) === 0;
+                            });
+                        })){
+                        results.push(child);
+                    }
                 });
             }
 
