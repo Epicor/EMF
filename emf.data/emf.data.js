@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.13-dev.60 built: 28-07-2017
+ * version:1.0.13-dev.61 built: 28-07-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.13-dev.60","built":"2017-07-28"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.13-dev.61","built":"2017-07-28"};
 
 (function() {
     'use strict';
@@ -3534,6 +3534,9 @@ angular.module('ep.binding').
             };
 
             function init(_id, _data) {
+                if (_data === undefined) {
+                    _data = [];
+                }
                 state.id = _id;
                 state.data = _data;
                 state.row = state.data && state.data.length ? 0 : -1;
@@ -5092,7 +5095,7 @@ angular.module('ep.binding').
                 //    epTransactionFactory.current().add(viewId, data.value);
                 //}
             }, function(data) {
-                var msg = showException(data);
+                var msg = showException(data, options);
                 deferred.reject(msg, data);
             });
 
@@ -5107,7 +5110,7 @@ angular.module('ep.binding').
                             epBindingMetadataService.add(sSvcName, 'swagger', undefined, data);
                         }
                     }, function(data) {
-                        var msg = showException(data);
+                        var msg = showException(data, options);
                         deferred.reject(msg, data);
                     });
                 }
@@ -5194,13 +5197,17 @@ angular.module('ep.binding').
                 if (showProgress) {
                     epModalDialogService.hide();
                 }
-                showException(response);
+                showException(response, options);
             });
             return promise;
         }
 
         //private functions --->
-        function showException(response) {
+        function showException(response, options) {
+            if (!options) {
+                options = {};
+            }
+
             var msg = response.ErrorMessage || '';
             if (!msg && response['odata.error']) {
                 msg = response['odata.error'].message.value;
@@ -5213,10 +5220,21 @@ angular.module('ep.binding').
                 maskedResponse.config.headers.Authorization) {
                 maskedResponse.config.headers.Authorization = '***';
             }
-            epModalDialogService.showException({
-                title: 'Info', message: msg || '',
-                messageDetails: angular.toJson(maskedResponse, 2)
-            });
+
+            if (options.showError !== false) {
+                var showErr = true;
+                if (options.ignoreHttpErrors && response.HttpStatus) {
+                    if (options.ignoreHttpErrors.indexOf(response.HttpStatus) > -1) {
+                        showErr = false;
+                    }
+                }
+                if (showErr) {
+                    epModalDialogService.showException({
+                        title: 'Info', message: msg || '',
+                        messageDetails: angular.toJson(maskedResponse, 2)
+                    });
+                }
+            }
         }
 
         return {
