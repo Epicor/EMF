@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.13-dev.62 built: 28-07-2017
+ * version:1.0.14 built: 31-07-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.13-dev.62","built":"2017-07-28"};
+__ep_build_info["utilities"] = {"libName":"utilities","version":"1.0.14","built":"2017-07-31"};
 
 (function() {
   'use strict';
@@ -250,7 +250,7 @@ angular.module('ep.signature', [
                             if (fileEntry) {
                                 deferred.resolve(fileEntry.value);
                             } else {
-                                failWith(deferred, filename)({ code: 1 });
+                                failWith(deferred, filename);
                             }
                         });
                     });
@@ -2011,7 +2011,7 @@ angular.module('ep.signature').directive('epSignature',
         function getCachedData(cacheId, key, defaultValue) {
             var cache = getCache(cacheId);
             var data = cache[key];
-            if (angular.isUndefined(data) && !angular.isUndefined(defaultValue)) {
+            if (angular.isUndefined(data)) {
                 data = (cache[key] = { key: key, cacheId: cacheId, value: defaultValue, cacheTimestamp: new Date() });
             }
             return data.value;
@@ -2134,8 +2134,6 @@ angular.module('ep.signature').directive('epSignature',
             } else {
                 cacheEntry = { key: key, cacheId: cacheId, value: value, cacheTimestamp: new Date() };
             }
-            var cache = getCache(cacheId);
-            cache[key] = cacheEntry;
 
             var metaCacheEntry = {
                 key: cacheEntry.key,

@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.13-dev.62 built: 28-07-2017
+ * version:1.0.14 built: 31-07-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["editors"] = {"libName":"editors","version":"1.0.13-dev.62","built":"2017-07-28"};
+__ep_build_info["editors"] = {"libName":"editors","version":"1.0.14","built":"2017-07-31"};
 
 (function() {
     'use strict';
@@ -649,14 +649,7 @@ angular.module('ep.record.editor', [
                         var dd = null;
                         if (value !== undefined) {
                             var m = moment(value);
-                            var fmt = 'YYYY-MM-DD';
-                            if (scope.ctx.isDateTime) {
-                                if (scope.ctx.col && scope.ctx.col.time && scope.ctx.col.time.defaultNoon === true) {
-                                    fmt = 'YYYY-MM-DDT12:00:00';
-                                } else {
-                                    fmt = 'YYYY-MM-DDT00:00:00';
-                                }
-                            }
+                            var fmt = scope.ctx.isDateTime ? 'YYYY-MM-DDT00:00:00' : 'YYYY-MM-DD';
                             dd = m.isValid() ? m.format(fmt) : null;
                         }
                         var vCur = scope.ctx.fnGetCurrentValue();
@@ -743,17 +736,16 @@ angular.module('ep.record.editor', [
                             $scope.isMeridian = col.time.meridian === true;
                             $scope.hourStep = col.time.hourStep || 1;
                             $scope.minuteStep = col.time.minuteStep || 15;
-                            $scope.ctx.isDateTime = true;
 
                             $scope.$watch('ctx.dateValue', function(newValue, oldValue) {
                                 if (newValue && newValue !== oldValue && $scope.changingTime !== true) {
-                                    $scope.ctx.timeValue = newValue;
+                                    $scope.timeValue = newValue;
                                 }
                                 $scope.changingTime = false;
                             });
 
                             $scope.timeChanged = function() {
-                                var value = $scope.ctx.timeValue;
+                                var value = $scope.timeValue;
                                 var dd = null;
                                 if (value !== undefined) {
                                     var m = moment(value);
@@ -2600,7 +2592,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-date-editor.html',
-    "<section class=ep-date-editor><input id=dd_{{ctx.name}} ng-model=value ep-date-convert=toDate ng-hide=\"true\"><div class=\"input-group date datepicker\" id=dp_{{ctx.name}} ng-if=!ctx.useDateInput><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input size=16 ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor {{isMeridian ? 'ep-time-meridian' : ''}}\" ng-hide=ctx.fnDoValidations() ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) pattern={{ctx.pattern}} ng-keydown=ctx.fnDateKeyDown($event) uib-datepicker-popup={{ctx.format}} data-container=body datepicker-options111={{ctx.dateOptions}} placeholder={{ctx.format}} ng-pattern={{ctx.pattern}} is-open=\"ctx.dateOpened\"> <span ng-if=\"showTime === true\" class=\"input-group-addon ep-time-picker {{isMeridian ? 'ep-time-meridian' : ''}}\" uib-timepicker show-spinners=false ng-model=ctx.timeValue ng-change=timeChanged() hour-step=hourStep minute-step=minuteStep show-meridian=isMeridian></span> <span class=input-group-addon ng-click=ctx.fnDateOpen($event) ng-style=\"{ 'cursor': ctx.disabled ? 'not-allowed' : 'pointer' }\"><a ng-if=!ctx.disabled><i class=\"fa fa-calendar\"></i></a> <i ng-if=ctx.disabled class=\"fa fa-calendar\"></i></span> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div><div class=\"input-group date\" id=dp_{{ctx.name}} ng-if=\"ctx.useDateInput === true\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input size=16 type=date ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor {{isMeridian ? 'ep-time-meridian' : ''}}\" ng-hide=ctx.fnDoValidations(this) ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=\"ctx.fnBlur($event)\"> <span ng-if=\"showTime === true\" class=\"input-group-addon ep-time-picker {{isMeridian ? 'ep-time-meridian' : ''}}\" uib-timepicker show-spinners=false ng-model=ctx.timeValue ng-change=timeChanged() hour-step=hourStep minute-step=minuteStep show-meridian=isMeridian></span> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
+    "<section class=ep-date-editor><input id=dd_{{ctx.name}} ng-model=value ep-date-convert=toDate ng-hide=\"true\"><div class=\"input-group date datepicker\" id=dp_{{ctx.name}} ng-if=!ctx.useDateInput><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input size=16 ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor {{isMeridian ? 'ep-time-meridian' : ''}}\" ng-hide=ctx.fnDoValidations() ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) pattern={{ctx.pattern}} ng-keydown=ctx.fnDateKeyDown($event) uib-datepicker-popup={{ctx.format}} data-container=body datepicker-options111={{ctx.dateOptions}} placeholder={{ctx.format}} ng-pattern={{ctx.pattern}} is-open=\"ctx.dateOpened\"> <span ng-if=\"showTime === true\" class=\"input-group-addon ep-time-picker {{isMeridian ? 'ep-time-meridian' : ''}}\" uib-timepicker show-spinners=false ng-model=timeValue ng-change=timeChanged() hour-step=hourStep minute-step=minuteStep show-meridian=isMeridian></span> <span class=input-group-addon ng-click=ctx.fnDateOpen($event) ng-style=\"{ 'cursor': ctx.disabled ? 'not-allowed' : 'pointer' }\"><a ng-if=!ctx.disabled><i class=\"fa fa-calendar\"></i></a> <i ng-if=ctx.disabled class=\"fa fa-calendar\"></i></span> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div><div class=\"input-group date\" id=dp_{{ctx.name}} ng-if=\"ctx.useDateInput === true\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input size=16 type=date ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor {{isMeridian ? 'ep-time-meridian' : ''}}\" ng-hide=ctx.fnDoValidations(this) ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=\"ctx.fnBlur($event)\"> <span ng-if=\"showTime === true\" class=\"input-group-addon ep-time-picker {{isMeridian ? 'ep-time-meridian' : ''}}\" uib-timepicker show-spinners=false ng-model=timeValue ng-change=timeChanged() hour-step=hourStep minute-step=minuteStep show-meridian=isMeridian></span> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
   );
 
 
