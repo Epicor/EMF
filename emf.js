@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14 built: 31-07-2017
+ * version:1.0.15-0 built: 31-07-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14","built":"2017-07-31"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.15-0","built":"2017-07-31"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -3296,6 +3296,9 @@ angular.module('ep.binding').
             };
 
             function init(_id, _data) {
+                if (_data === undefined) {
+                    _data = [];
+                }
                 state.id = _id;
                 state.data = _data;
                 state.row = state.data && state.data.length ? 0 : -1;
@@ -4546,7 +4549,7 @@ angular.module('ep.binding').
         function getCachedData(cacheId, key, defaultValue) {
             var cache = getCache(cacheId);
             var data = cache[key];
-            if (angular.isUndefined(data)) {
+            if (angular.isUndefined(data) && !angular.isUndefined(defaultValue)) {
                 data = (cache[key] = { key: key, cacheId: cacheId, value: defaultValue, cacheTimestamp: new Date() });
             }
             return data.value;
@@ -4669,6 +4672,8 @@ angular.module('ep.binding').
             } else {
                 cacheEntry = { key: key, cacheId: cacheId, value: value, cacheTimestamp: new Date() };
             }
+            var cache = getCache(cacheId);
+            cache[key] = cacheEntry;
 
             var metaCacheEntry = {
                 key: cacheEntry.key,
@@ -12980,7 +12985,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 //    epTransactionFactory.current().add(viewId, data.value);
                 //}
             }, function(data) {
-                var msg = showException(data);
+                var msg = showException(data, options);
                 deferred.reject(msg, data);
             });
 
@@ -12995,7 +13000,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             epBindingMetadataService.add(sSvcName, 'swagger', undefined, data);
                         }
                     }, function(data) {
-                        var msg = showException(data);
+                        var msg = showException(data, options);
                         deferred.reject(msg, data);
                     });
                 }
@@ -13082,13 +13087,17 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 if (showProgress) {
                     epModalDialogService.hide();
                 }
-                showException(response);
+                showException(response, options);
             });
             return promise;
         }
 
         //private functions --->
-        function showException(response) {
+        function showException(response, options) {
+            if (!options) {
+                options = {};
+            }
+
             var msg = response.ErrorMessage || '';
             if (!msg && response['odata.error']) {
                 msg = response['odata.error'].message.value;
@@ -13101,10 +13110,21 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 maskedResponse.config.headers.Authorization) {
                 maskedResponse.config.headers.Authorization = '***';
             }
-            epModalDialogService.showException({
-                title: 'Info', message: msg || '',
-                messageDetails: angular.toJson(maskedResponse, 2)
-            });
+
+            if (options.showError !== false) {
+                var showErr = true;
+                if (options.ignoreHttpErrors && response.HttpStatus) {
+                    if (options.ignoreHttpErrors.indexOf(response.HttpStatus) > -1) {
+                        showErr = false;
+                    }
+                }
+                if (showErr) {
+                    epModalDialogService.showException({
+                        title: 'Info', message: msg || '',
+                        messageDetails: angular.toJson(maskedResponse, 2)
+                    });
+                }
+            }
         }
 
         return {
@@ -13704,7 +13724,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             if (fileEntry) {
                                 deferred.resolve(fileEntry.value);
                             } else {
-                                failWith(deferred, filename);
+                                failWith(deferred, filename)({ code: 1 });
                             }
                         });
                     });
@@ -16589,6 +16609,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * - groupByType: 'sdate' - string date format like '1910-01-01T00:00:00' (otherwise string)
  *      'sfield' - string field (whole field opposed to first letter)
  * - sortBy: sortBy field name by which the list has to be sorted.
+ * - formatGroupTitle: function to format group title. function(record, groupBy, groupDisplay, groupKey)
  * - sortByDesc: true if sort is to be reversed (descending). By default sdates are descending sorts
  * - searchFields: (string array) field names by which search is executed
  * - subHeader: (true/false) shows sub header with filter/sort/add buttons just below the search component.
@@ -16643,6 +16664,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
                 groupBy: '@',
                 groupByType: '@',
+                formatGroupTitle: '=',
                 subHeader: '@',
                 showArrow: '=',
 
@@ -16899,6 +16921,17 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         return scope.formatSubtitle(fields, record);
                     } else {
                         return fields.reduce(function(p, c) { return (p ? (p + ', ') : '') + record[c]; }, '');
+                    }
+                };
+
+                //default function for formatting subtitle. User can overwrite
+                scope.wrapFormatGroupTitle = function(record) {
+                    var grDisplay = scope.directory[record[scope.groupBy]].groupDisplay;
+                    if (scope.formatGroupTitle) {
+                        var grKey = scope.directory[record[scope.groupBy]].dirKey;
+                        return scope.formatGroupTitle(record, scope.groupBy, grDisplay, grKey);
+                    } else {
+                        return grDisplay;
                     }
                 };
 
@@ -19160,23 +19193,19 @@ angular.module('ep.menu.builder').
             function searchChildren(searchTerm, type, results) {
                 // This is some pretty hot code here, so be careful
                 // about making changes that could affect performance
+                var terms = searchTerm.split(/(\S+)/g);
                 angular.forEach($scope.state.searchIndex, function(child) {
-                    var terms = searchTerm.split(/(\S+)/g);
-                    var added = false;
-                    child.hitCount = 10;
-                    terms.forEach(function(phrase) {
-                        var term = phrase.trim();
-                        if (term && term.length && child && child.searchTerm.indexOf(term) !== -1) {
-                           // if we are type checking, also check the system-set _type
-                            if (type === '' || child.type === type || child._type === type) {
-                                child.hitCount--;
-                                if (!added) {
-                                    results.push(child);
-                                }
-                                added = true;
-                            }
-                        }
-                    });
+                    var childTerms = child.searchTerm.split(/(\S+)/g);
+                    // make sure that all terms match something
+                    if (_.all(terms, function(phrase) {
+                            var term = phrase.trim();
+                            // every term must match at the beginning of at least one child caption
+                            return !term || _.any(childTerms, function(childTerm){
+                                return childTerm.indexOf(term) === 0;
+                            });
+                        })){
+                        results.push(child);
+                    }
                 });
             }
 
@@ -20824,7 +20853,14 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                         var dd = null;
                         if (value !== undefined) {
                             var m = moment(value);
-                            var fmt = scope.ctx.isDateTime ? 'YYYY-MM-DDT00:00:00' : 'YYYY-MM-DD';
+                            var fmt = 'YYYY-MM-DD';
+                            if (scope.ctx.isDateTime) {
+                                if (scope.ctx.col && scope.ctx.col.time && scope.ctx.col.time.defaultNoon === true) {
+                                    fmt = 'YYYY-MM-DDT12:00:00';
+                                } else {
+                                    fmt = 'YYYY-MM-DDT00:00:00';
+                                }
+                            }
                             dd = m.isValid() ? m.format(fmt) : null;
                         }
                         var vCur = scope.ctx.fnGetCurrentValue();
@@ -20911,16 +20947,17 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                             $scope.isMeridian = col.time.meridian === true;
                             $scope.hourStep = col.time.hourStep || 1;
                             $scope.minuteStep = col.time.minuteStep || 15;
+                            $scope.ctx.isDateTime = true;
 
                             $scope.$watch('ctx.dateValue', function(newValue, oldValue) {
                                 if (newValue && newValue !== oldValue && $scope.changingTime !== true) {
-                                    $scope.timeValue = newValue;
+                                    $scope.ctx.timeValue = newValue;
                                 }
                                 $scope.changingTime = false;
                             });
 
                             $scope.timeChanged = function() {
-                                var value = $scope.timeValue;
+                                var value = $scope.ctx.timeValue;
                                 var dd = null;
                                 if (value !== undefined) {
                                     var m = moment(value);
@@ -30595,7 +30632,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
     "\n" +
     "                ng-class=\"{'ep-margin-top-10':subTitle && !additionalTitle, 'ep-margin-top-15': additionalTitle}\"><i class=\"fa fa-check\"></i></div>\r" +
     "\n" +
-    "        </div></script><script id=listItemTemplate type=text/ng-template><div ng-if=\"groupBy && directory[obj[groupBy]] && directory[obj[groupBy]].data === obj\" class=\"ep-dir-divider ep-group-heading\"><b>{{directory[obj[groupBy]].groupDisplay}}</b></div>\r" +
+    "        </div></script><script id=listItemTemplate type=text/ng-template><div ng-if=\"groupBy && directory[obj[groupBy]] && directory[obj[groupBy]].data === obj\" class=\"ep-dir-divider ep-group-heading\"><b>{{wrapFormatGroupTitle(obj)}}</b></div>\r" +
     "\n" +
     "        <div class=\"ep-list-item-content\" ng-include=\"itemContentTemplate\"></div></script><!--Calling filter list component for search option--><ep-filter-list search-by=listSearch count=\"filtered ? filterState.filterResult.length : items.count\" search-prompt=searchPrompt></ep-filter-list><!--Header as optional--><div class=ep-list-sub-header ng-if=\"subHeader == 'true'\"><label ng-click=filter() ng-hide=\"hideDisplayOptions == 'true'\">Filter</label><label ng-click=sort() ng-hide=\"hideDisplayOptions == 'true'\">Sort</label><span class=\"pull-right ep-pad-right-20 text-primary\" ng-hide=\"hideAdd == 'true'\" ng-click=add()><i class=\"fa fa-plus fa-lg\" aria-hidden=true></i></span></div><!-- Alphabet Selector --><div class=ep-list-directory ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=\"showDirectory && groupBy\"><div class=ep-list-directory-item ng-repeat=\"(id,dir) in directory | epOrderObjectBy:'sort'\"><a ng-if=\"dir.letter === '*'\" class=ep-list-directory-item-enabled ng-click=goToDirectory(dir)><i class=\"fa fa-asterisk\"></i></a> <span ng-if=\"(dir.letter !== '*') && dir.disabled\" class=text-muted>{{dir.letter}}</span> <a ng-if=\"(dir.letter !== '*') && !dir.disabled\" class=ep-list-directory-item-enabled ng-class=\"{ 'text-danger': selectedDirectoryEntry.letter === dir.letter && filtered }\" ng-click=goToDirectory(dir)>{{dir.letter}}</a></div></div><div ng-if=useVirtualScrolling><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=!filtered id={{localId}} vs-repeat={{vsItemSize}} vs-excess={{vsRenderBufferSize}} vs-options=\"{ latch: {{vsLatch}} }\"><li ng-repeat=\"obj in listData track by $index\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=filtered id={{localId}} vs-repeat={{vsItemSize}} vs-excess={{vsRenderBufferSize}} vs-options=\"{ latch: {{vsLatch}} }\"><li ng-repeat=\"obj in (filterState.filterResult = (filteredData | filter:filterByName))\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul></div><div ng-if=!useVirtualScrolling><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=!filtered id={{localId}}><li ng-repeat=\"obj in listData track by $index\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=filtered id={{localId}}><li ng-repeat=\"obj in (filterState.filterResult = (filteredData | filter:filterByName))\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul></div></div>"
   );
@@ -30647,7 +30684,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-date-editor.html',
-    "<section class=ep-date-editor><input id=dd_{{ctx.name}} ng-model=value ep-date-convert=toDate ng-hide=\"true\"><div class=\"input-group date datepicker\" id=dp_{{ctx.name}} ng-if=!ctx.useDateInput><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input size=16 ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor {{isMeridian ? 'ep-time-meridian' : ''}}\" ng-hide=ctx.fnDoValidations() ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) pattern={{ctx.pattern}} ng-keydown=ctx.fnDateKeyDown($event) uib-datepicker-popup={{ctx.format}} data-container=body datepicker-options111={{ctx.dateOptions}} placeholder={{ctx.format}} ng-pattern={{ctx.pattern}} is-open=\"ctx.dateOpened\"> <span ng-if=\"showTime === true\" class=\"input-group-addon ep-time-picker {{isMeridian ? 'ep-time-meridian' : ''}}\" uib-timepicker show-spinners=false ng-model=timeValue ng-change=timeChanged() hour-step=hourStep minute-step=minuteStep show-meridian=isMeridian></span> <span class=input-group-addon ng-click=ctx.fnDateOpen($event) ng-style=\"{ 'cursor': ctx.disabled ? 'not-allowed' : 'pointer' }\"><a ng-if=!ctx.disabled><i class=\"fa fa-calendar\"></i></a> <i ng-if=ctx.disabled class=\"fa fa-calendar\"></i></span> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div><div class=\"input-group date\" id=dp_{{ctx.name}} ng-if=\"ctx.useDateInput === true\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input size=16 type=date ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor {{isMeridian ? 'ep-time-meridian' : ''}}\" ng-hide=ctx.fnDoValidations(this) ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=\"ctx.fnBlur($event)\"> <span ng-if=\"showTime === true\" class=\"input-group-addon ep-time-picker {{isMeridian ? 'ep-time-meridian' : ''}}\" uib-timepicker show-spinners=false ng-model=timeValue ng-change=timeChanged() hour-step=hourStep minute-step=minuteStep show-meridian=isMeridian></span> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
+    "<section class=ep-date-editor><input id=dd_{{ctx.name}} ng-model=value ep-date-convert=toDate ng-hide=\"true\"><div class=\"input-group date datepicker\" id=dp_{{ctx.name}} ng-if=!ctx.useDateInput><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input size=16 ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor {{isMeridian ? 'ep-time-meridian' : ''}}\" ng-hide=ctx.fnDoValidations() ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) pattern={{ctx.pattern}} ng-keydown=ctx.fnDateKeyDown($event) uib-datepicker-popup={{ctx.format}} data-container=body datepicker-options111={{ctx.dateOptions}} placeholder={{ctx.format}} ng-pattern={{ctx.pattern}} is-open=\"ctx.dateOpened\"> <span ng-if=\"showTime === true\" class=\"input-group-addon ep-time-picker {{isMeridian ? 'ep-time-meridian' : ''}}\" uib-timepicker show-spinners=false ng-model=ctx.timeValue ng-change=timeChanged() hour-step=hourStep minute-step=minuteStep show-meridian=isMeridian></span> <span class=input-group-addon ng-click=ctx.fnDateOpen($event) ng-style=\"{ 'cursor': ctx.disabled ? 'not-allowed' : 'pointer' }\"><a ng-if=!ctx.disabled><i class=\"fa fa-calendar\"></i></a> <i ng-if=ctx.disabled class=\"fa fa-calendar\"></i></span> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div><div class=\"input-group date\" id=dp_{{ctx.name}} ng-if=\"ctx.useDateInput === true\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input size=16 type=date ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor {{isMeridian ? 'ep-time-meridian' : ''}}\" ng-hide=ctx.fnDoValidations(this) ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=\"ctx.fnBlur($event)\"> <span ng-if=\"showTime === true\" class=\"input-group-addon ep-time-picker {{isMeridian ? 'ep-time-meridian' : ''}}\" uib-timepicker show-spinners=false ng-model=ctx.timeValue ng-change=timeChanged() hour-step=hourStep minute-step=minuteStep show-meridian=isMeridian></span> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
   );
 
 
