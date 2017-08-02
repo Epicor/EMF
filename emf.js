@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.4 built: 01-08-2017
+ * version:1.0.14-dev.5 built: 01-08-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.4","built":"2017-08-01"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.5","built":"2017-08-01"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -16702,6 +16702,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 scope.filterState = {};
 
                 scope.initData = function() {
+
+                    scope.listSearch = '';
+                    scope.prevFirstLetter = '';
 
                     scope.searchType = 'text';
                     scope.searchPrompt = '';
