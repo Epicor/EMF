@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.8 built: 02-08-2017
+ * version:1.0.14-dev.9 built: 02-08-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.8","built":"2017-08-02"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.9","built":"2017-08-02"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -20868,7 +20868,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                         }
                         var vCur = scope.ctx.fnGetCurrentValue();
                         if (vCur !== dd) {
-                            scope.ctx.fnSetCurrentValue(dd);
+                            scope.ctx.fnSetCurrentValue(dd, false);
                         }
                         return value;
                     });
@@ -20969,7 +20969,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                                 var vCur = $scope.ctx.fnGetCurrentValue();
                                 if (vCur !== dd) {
                                     $scope.changingTime = true;
-                                    $scope.ctx.fnSetCurrentValue(dd);
+                                    $scope.ctx.fnSetCurrentValue(dd, false);
                                 }
                             };
                         }
@@ -21324,7 +21324,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                             angular.element(edt).addClass('ng-dirty');
                         }
                         if (ctx.updatable) {
-                            doValidation(ctx, {}, true);
+                            doValidation(ctx, {}, focus === true);
                         }
                         ctx.fnOnChange({}, ctx);
                     }

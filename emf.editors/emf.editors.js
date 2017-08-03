@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.8 built: 02-08-2017
+ * version:1.0.14-dev.9 built: 02-08-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["editors"] = {"libName":"editors","version":"1.0.14-dev.8","built":"2017-08-02"};
+__ep_build_info["editors"] = {"libName":"editors","version":"1.0.14-dev.9","built":"2017-08-02"};
 
 (function() {
     'use strict';
@@ -661,7 +661,7 @@ angular.module('ep.record.editor', [
                         }
                         var vCur = scope.ctx.fnGetCurrentValue();
                         if (vCur !== dd) {
-                            scope.ctx.fnSetCurrentValue(dd);
+                            scope.ctx.fnSetCurrentValue(dd, false);
                         }
                         return value;
                     });
@@ -762,7 +762,7 @@ angular.module('ep.record.editor', [
                                 var vCur = $scope.ctx.fnGetCurrentValue();
                                 if (vCur !== dd) {
                                     $scope.changingTime = true;
-                                    $scope.ctx.fnSetCurrentValue(dd);
+                                    $scope.ctx.fnSetCurrentValue(dd, false);
                                 }
                             };
                         }
@@ -1117,7 +1117,7 @@ angular.module('ep.record.editor', [
                             angular.element(edt).addClass('ng-dirty');
                         }
                         if (ctx.updatable) {
-                            doValidation(ctx, {}, true);
+                            doValidation(ctx, {}, focus === true);
                         }
                         ctx.fnOnChange({}, ctx);
                     }
