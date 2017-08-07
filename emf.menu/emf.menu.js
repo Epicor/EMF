@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.27 built: 07-08-2017
+ * version:1.0.14-dev.28 built: 07-08-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.14-dev.27","built":"2017-08-07"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.14-dev.28","built":"2017-08-07"};
 
 (function() {
     'use strict';
@@ -2269,9 +2269,13 @@ angular.module('ep.menu.builder', [
                     scope.searchPrompt = '';
                     var isGroupByDate = !!(scope.groupByType && scope.groupByType === 'sdate');
 
+                    scope.filteredData = [];
+                    scope.filtered = false;
+                    scope.selectedDirectoryEntry = undefined;
+
                     scope.listData = $filter('orderBy')(scope.data, scope.groupBy);
                     if (scope.sortBy && scope.sortBy !== '') {
-                        //By default sort is descending only for group by dates
+                        //By default sort is descending only for group by 
                         scope.isSortDesc = isGroupByDate;
                         //But user can override that
                         if (scope.sortByDesc === true) {
