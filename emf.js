@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.36 built: 09-08-2017
+ * version:1.0.14-dev.37 built: 09-08-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.36","built":"2017-08-09"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.37","built":"2017-08-09"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -14139,7 +14139,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 /**
                 * @ngdoc property
                 * @name resourcePath
-                * @propertyOf ep.internalization.object:epInternalizationConfig
+                * @propertyOf ep.globalization.object:epGlobalizationConfig
                 * @public
                 * @description
                 * Represents base locale that acts as a fallback
@@ -14149,7 +14149,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 /**
                 * @ngdoc property
                 * @name resourcePath
-                * @propertyOf ep.internalization.object:epInternalizationConfig
+                * @propertyOf ep.globalization.object:epGlobalizationConfig
                 * @public
                 * @description
                 * Represents path to resources
