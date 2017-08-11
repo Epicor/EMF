@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.41 built: 10-08-2017
+ * version:1.0.14-dev.42 built: 10-08-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.41","built":"2017-08-10"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.42","built":"2017-08-10"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -14208,12 +14208,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      * @example
      *
      */
-    epTranslationService.$inject = ['$q', '$http', 'epGlobalizationConfig', 'epUtilsService'];
+    epTranslationService.$inject = ['$q', '$http', 'epUtilsService', 'epGlobalizationConfig'];
     angular.module('ep.globalization').
         service('epTranslationService', epTranslationService);
 
     /*@ngInject*/
-    function epTranslationService($q, $http, epGlobalizationConfig, epUtilsService) {
+    function epTranslationService($q, $http, epUtilsService, epGlobalizationConfig) {
         var resources = {};
         var bsLocale = 'en-us';
         var baseResource = {};
@@ -14230,24 +14230,25 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          */
         function initialize(localeId) {
             var deferred = $q.defer();
-
             bsLocale = vlocale(epGlobalizationConfig.bsLocale) || 'en-us';
+            if (localeId) {
+                var loc = vlocale(localeId);
+                loadResource(loc).then(function () {
+                    if (resources[loc] && resources[loc].status !== 0) {
+                        curLocale = loc;
+                        curResource = resources[loc].resource;
+                    }
+                    deferred.resolve(true);
+                });
+            }
             loadResource(bsLocale).then(function () {
                 if (resources[bsLocale] && resources[bsLocale].status !== 0) {
                     baseResource = resources[bsLocale].resource;
                 }
-                curLocale = bsLocale;
-                curResource = baseResource;
-
-                var loc = vlocale(localeId);
-                if (loc && loc !== bsLocale) {
-                    loadResource(loc).then(function () {
-                        if (resources[loc] && resources[loc].status !== 0) {
-                            curLocale = loc;
-                            curResource = resources[loc].resource;
-                        }
-                        deferred.resolve(true);
-                    });
+                if(!localeId){
+                    curLocale = bsLocale;
+                    curResource = baseResource;
+                    deferred.resolve(true);
                 }
             });
             return deferred.promise;
