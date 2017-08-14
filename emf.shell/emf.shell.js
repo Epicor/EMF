@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.42 built: 10-08-2017
+ * version:1.0.14-dev.43 built: 14-08-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.14-dev.42","built":"2017-08-10"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.14-dev.43","built":"2017-08-14"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -4572,19 +4572,23 @@ function() {
      *   <epshell><div ng-view></div></epshell>
      * </body>
      */
-(function() {
+(function () {
     'use strict';
 
-    angular.module('ep.shell').directive('epShell', [
-    function() {
+    angular.module('ep.shell').
+        directive('epShell', epShellDirective);
+
+    /*@ngInject*/
+    function epShellDirective() {
         return {
             restrict: 'E,A',
             replace: true,
             transclude: true,
-            templateUrl: 'src/components/ep.shell/shell.html'
+            templateUrl: 'src/components/ep.shell/shell.html',
+            link: function() {
+            }
         };
     }
-    ]);
 })();
 
 /**
@@ -5052,14 +5056,18 @@ function() {
                     FastClick.attach(document.body);
                 }, false);
 
-                $timeout(epThemeService.initialize, 200);
+                var fnStartInit = function() {
+                    $timeout(epThemeService.initialize, 200);
 
-                var windowWidth = $(window).width();
-                shellState.mediaMode = windowWidth >= epShellConstants.MEDIA_SIZE_BREAKPOINT ?
-                    epShellConstants.MEDIA_MODE_LARGE : epShellConstants.MEDIA_MODE_SMALL;
-                // initialize the sidebar as "shown" if we're in large mode, otherwise false.
-                shellState.showSidebar = isMediaModeLarge();
-                $rootScope.initComplete = true;
+                    var windowWidth = $(window).width();
+                    shellState.mediaMode = windowWidth >= epShellConstants.MEDIA_SIZE_BREAKPOINT ?
+                        epShellConstants.MEDIA_MODE_LARGE : epShellConstants.MEDIA_MODE_SMALL;
+                    // initialize the sidebar as "shown" if we're in large mode, otherwise false.
+                    shellState.showSidebar = isMediaModeLarge();
+                    $rootScope.initComplete = true;
+                }
+
+                fnStartInit();
             }
 
             /**

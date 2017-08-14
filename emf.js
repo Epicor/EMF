@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.42 built: 10-08-2017
+ * version:1.0.14-dev.43 built: 14-08-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.42","built":"2017-08-10"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.43","built":"2017-08-14"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -14144,7 +14144,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 * @description
                 * Represents base locale that acts as a fallback
                 */
-                baseLocale: 'en-US',
+                baseLocaleId: 'en-US',
 
                 /**
                 * @ngdoc property
@@ -14167,29 +14167,31 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 })();
 
 /**
-* @ngdoc directive
+* @ngdoc filter
 * @name ep.globalization.filter:epTranslate
 *
 * @description
-* A filter to translate (get resource string)
+* A filter to translate (get resource string). Specify a resource id followed by epTranslate filter
+* to get the translation.
 *
 * @example
 * <p>{{'customer.Address1' | epTranslate}}</p>
 *
 */
-(function () {
+(function() {
     'use strict';
 
     angular.module('ep.globalization').
         filter('epTranslate',
         /*@ngInject*/
-        ['epTranslationService', function (epTranslationService) {
-            var filter = function (id) {
+        ['epTranslationService', function(epTranslationService) {
+            var filter = function(id) {
                 if (arguments.length > 1) {
                     return epTranslationService.getString(id, Array.prototype.slice.call(arguments, 1));
                 }
                 return epTranslationService.getString(id);
             };
+            filter.$stateful = true;
             return filter;
         }]
         );
@@ -14214,11 +14216,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
     /*@ngInject*/
     function epTranslationService($q, $http, epUtilsService, epGlobalizationConfig) {
-        var resources = {};
-        var bsLocale = 'en-us';
-        var baseResource = {};
-        var curLocale = 'en-us';
-        var curResource = {};
+        var resources = {}; //all locale resources are held here
+        var baseLocaleId = 'en-us'; //base locale
+        var baseResource = {}; //pointer to base resource
+        var curLocaleId = 'en-us'; //current locale
+        var curResource = {}; //pointer to current resource
+        var initializeCompleted = false; //set to true when both current and base are initialized
 
         /**
          * @ngdoc method
@@ -14230,27 +14233,28 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          */
         function initialize(localeId) {
             var deferred = $q.defer();
-            bsLocale = vlocale(epGlobalizationConfig.bsLocale) || 'en-us';
-            if (localeId) {
-                var loc = vlocale(localeId);
-                loadResource(loc).then(function () {
+
+            var bsLocale = vlocale(epGlobalizationConfig.baseLocale) || 'en-us';
+            var loc = vlocale(localeId);
+            if (loc) {
+                loadResource(loc).then(function() {
                     if (resources[loc] && resources[loc].status !== 0) {
-                        curLocale = loc;
+                        curLocaleId = loc;
                         curResource = resources[loc].resource;
+                        if (bsLocale === loc) {
+                            baseResource = resources[bsLocale].resource;
+                            initializeCompleted = true;
+                        } else {
+                            loadBase(bsLocale);
+                        }
+                    } else {
+                        loadBase(bsLocale, true);
                     }
                     deferred.resolve(true);
                 });
+            } else {
+                loadBase(bsLocale, true, deferred);
             }
-            loadResource(bsLocale).then(function () {
-                if (resources[bsLocale] && resources[bsLocale].status !== 0) {
-                    baseResource = resources[bsLocale].resource;
-                }
-                if(!localeId){
-                    curLocale = bsLocale;
-                    curResource = baseResource;
-                    deferred.resolve(true);
-                }
-            });
             return deferred.promise;
         }
 
@@ -14263,7 +14267,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * get the current locale
          */
         function currentLocale() {
-            return curLocale;
+            return curLocaleId;
         }
 
         /**
@@ -14277,7 +14281,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         function setLocale(localeId) {
             var loc = vlocale(localeId);
             if (resources[loc] && resources[loc].status !== 0) {
-                curLocale = loc;
+                curLocaleId = loc;
                 curResource = resources[loc].resource;
             }
         }
@@ -14291,7 +14295,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * get the base locale
          */
         function baseLocale() {
-            return bsLocale;
+            return baseLocaleId;
         }
 
         /**
@@ -14332,10 +14336,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 resource: resource,
                 status: 1
             };
-            if (loc === bsLocale) {
+            if (loc === baseLocaleId) {
                 baseResource = resources[loc].resource;
             }
-            if (loc === curLocale) {
+            if (loc === curLocaleId) {
                 curResource = resources[loc].resource;
             }
         }
@@ -14362,6 +14366,14 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
         //private
 
+        /**
+         * @ngdoc method
+         * @name loadResource
+         * @methodOf ep.globalization.service:epTranslationService
+         * @private
+         * @description
+         * load resource for specified locale from json file
+         */
         function loadResource(localeId) {
             var loc = vlocale(localeId);
             var ret = {
@@ -14384,9 +14396,35 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             return deferred.promise;
         }
 
+        //make sure locale is forced into lower case
         function vlocale(id) {
             return (id || '').toLowerCase(); 
         }
+
+        /**
+         * @ngdoc method
+         * @name loadBase
+         * @methodOf ep.globalization.service:epTranslationService
+         * @private
+         * @description
+         * load base locale resources. Used in initialization only
+         */
+        function loadBase(baseLocId, setCurrrent, deferred) {
+            loadResource(baseLocId).then(function() {
+                if (resources[baseLocId] && resources[baseLocId].status !== 0) {
+                    baseLocaleId = baseLocId;
+                    baseResource = resources[baseLocId].resource;
+                    if (setCurrrent) {
+                        curResource = baseResource;
+                        curLocaleId = baseLocaleId;
+                    }
+                }
+                if (deferred) {
+                    deferred.resolve(true);
+                }
+                initializeCompleted = true;
+            });
+        };
 
         return {
             initialize: initialize,
@@ -16966,6 +17004,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 sortBy: '@',
                 sortByDesc: '=',
                 hideDisplayOptions: '@',
+                showFilterOn: '=',
+                showSortOn: '=',
 
                 useVirtualScrolling: '=',
 
@@ -23552,19 +23592,23 @@ angular.module('ep.record.editor').
      *   <epshell><div ng-view></div></epshell>
      * </body>
      */
-(function() {
+(function () {
     'use strict';
 
-    angular.module('ep.shell').directive('epShell', [
-    function() {
+    angular.module('ep.shell').
+        directive('epShell', epShellDirective);
+
+    /*@ngInject*/
+    function epShellDirective() {
         return {
             restrict: 'E,A',
             replace: true,
             transclude: true,
-            templateUrl: 'src/components/ep.shell/shell.html'
+            templateUrl: 'src/components/ep.shell/shell.html',
+            link: function() {
+            }
         };
     }
-    ]);
 })();
 
 /**
@@ -24032,14 +24076,18 @@ angular.module('ep.record.editor').
                     FastClick.attach(document.body);
                 }, false);
 
-                $timeout(epThemeService.initialize, 200);
+                var fnStartInit = function() {
+                    $timeout(epThemeService.initialize, 200);
 
-                var windowWidth = $(window).width();
-                shellState.mediaMode = windowWidth >= epShellConstants.MEDIA_SIZE_BREAKPOINT ?
-                    epShellConstants.MEDIA_MODE_LARGE : epShellConstants.MEDIA_MODE_SMALL;
-                // initialize the sidebar as "shown" if we're in large mode, otherwise false.
-                shellState.showSidebar = isMediaModeLarge();
-                $rootScope.initComplete = true;
+                    var windowWidth = $(window).width();
+                    shellState.mediaMode = windowWidth >= epShellConstants.MEDIA_SIZE_BREAKPOINT ?
+                        epShellConstants.MEDIA_MODE_LARGE : epShellConstants.MEDIA_MODE_SMALL;
+                    // initialize the sidebar as "shown" if we're in large mode, otherwise false.
+                    shellState.showSidebar = isMediaModeLarge();
+                    $rootScope.initComplete = true;
+                }
+
+                fnStartInit();
             }
 
             /**
@@ -30951,7 +30999,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
     "\n" +
     "        </div></script><script id=listItemTemplate type=text/ng-template><div ng-if=\"groupBy && directory[obj[groupBy]] && directory[obj[groupBy]].data === obj\" class=\"ep-dir-divider ep-group-heading\"><b>{{wrapFormatGroupTitle(obj)}}</b></div>\r" +
     "\n" +
-    "        <div class=\"ep-list-item-content\" ng-include=\"itemContentTemplate\"></div></script><!--Calling filter list component for search option--><ep-filter-list search-by=listSearch count=\"filtered ? filterState.filterResult.length : items.count\" search-prompt=searchPrompt></ep-filter-list><!--Header as optional--><div class=ep-list-sub-header ng-if=\"subHeader == 'true'\"><label ng-click=filter() ng-hide=\"hideDisplayOptions == 'true'\">Filter</label><label ng-click=sort() ng-hide=\"hideDisplayOptions == 'true'\">Sort</label><span class=\"pull-right ep-pad-right-20 text-primary\" ng-hide=\"hideAdd == 'true'\" ng-click=add()><i class=\"fa fa-plus fa-lg\" aria-hidden=true></i></span></div><!-- Alphabet Selector --><div class=ep-list-directory ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=\"showDirectory && groupBy\"><div class=ep-list-directory-item ng-repeat=\"(id,dir) in directory | epOrderObjectBy:'sort'\"><a ng-if=\"dir.letter === '*'\" class=ep-list-directory-item-enabled ng-click=goToDirectory(dir)><i class=\"fa fa-asterisk\"></i></a> <span ng-if=\"(dir.letter !== '*') && dir.disabled\" class=text-muted>{{dir.letter}}</span> <a ng-if=\"(dir.letter !== '*') && !dir.disabled\" class=ep-list-directory-item-enabled ng-class=\"{ 'text-danger': selectedDirectoryEntry.letter === dir.letter && filtered }\" ng-click=goToDirectory(dir)>{{dir.letter}}</a></div></div><div ng-if=useVirtualScrolling><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=!filtered id={{localId}} vs-repeat={{vsItemSize}} vs-excess={{vsRenderBufferSize}} vs-options=\"{ latch: {{vsLatch}} }\"><li ng-repeat=\"obj in listData track by $index\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=filtered id={{localId}} vs-repeat={{vsItemSize}} vs-excess={{vsRenderBufferSize}} vs-options=\"{ latch: {{vsLatch}} }\"><li ng-repeat=\"obj in (filterState.filterResult = (filteredData | filter:filterByName))\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul></div><div ng-if=!useVirtualScrolling><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=!filtered id={{localId}}><li ng-repeat=\"obj in listData track by $index\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=filtered id={{localId}}><li ng-repeat=\"obj in (filterState.filterResult = (filteredData | filter:filterByName))\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul></div></div>"
+    "        <div class=\"ep-list-item-content\" ng-include=\"itemContentTemplate\"></div></script><!--Calling filter list component for search option--><ep-filter-list search-by=listSearch count=\"filtered ? filterState.filterResult.length : items.count\" search-prompt=searchPrompt></ep-filter-list><!--Header as optional--><div class=ep-list-sub-header ng-if=\"subHeader == 'true'\"><label ng-click=filter() ng-hide=\"hideDisplayOptions == 'true'\">Filter <i class=\"fa fa-check ep-list-filter-indicator\" ng-if=showFilterOn></i></label><label ng-click=sort() ng-hide=\"hideDisplayOptions == 'true'\">Sort <i class=\"fa fa-check ep-list-filter-indicator\" ng-if=showSortOn></i></label><span class=\"pull-right ep-pad-right-20 text-primary\" ng-hide=\"hideAdd == 'true'\" ng-click=add()><i class=\"fa fa-plus fa-lg\" aria-hidden=true></i></span></div><!-- Alphabet Selector --><div class=ep-list-directory ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=\"showDirectory && groupBy\"><div class=ep-list-directory-item ng-repeat=\"(id,dir) in directory | epOrderObjectBy:'sort'\"><a ng-if=\"dir.letter === '*'\" class=ep-list-directory-item-enabled ng-click=goToDirectory(dir)><i class=\"fa fa-asterisk\"></i></a> <span ng-if=\"(dir.letter !== '*') && dir.disabled\" class=text-muted>{{dir.letter}}</span> <a ng-if=\"(dir.letter !== '*') && !dir.disabled\" class=ep-list-directory-item-enabled ng-class=\"{ 'text-danger': selectedDirectoryEntry.letter === dir.letter && filtered }\" ng-click=goToDirectory(dir)>{{dir.letter}}</a></div></div><div ng-if=useVirtualScrolling><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=!filtered id={{localId}} vs-repeat={{vsItemSize}} vs-excess={{vsRenderBufferSize}} vs-options=\"{ latch: {{vsLatch}} }\"><li ng-repeat=\"obj in listData track by $index\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=filtered id={{localId}} vs-repeat={{vsItemSize}} vs-excess={{vsRenderBufferSize}} vs-options=\"{ latch: {{vsLatch}} }\"><li ng-repeat=\"obj in (filterState.filterResult = (filteredData | filter:filterByName))\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul></div><div ng-if=!useVirtualScrolling><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=!filtered id={{localId}}><li ng-repeat=\"obj in listData track by $index\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=filtered id={{localId}}><li ng-repeat=\"obj in (filterState.filterResult = (filteredData | filter:filterByName))\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul></div></div>"
   );
 
 
