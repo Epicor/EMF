@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.50 built: 15-08-2017
+ * version:1.0.14-dev.51 built: 16-08-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.14-dev.50","built":"2017-08-15"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.14-dev.51","built":"2017-08-16"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -2685,12 +2685,12 @@ angular.module('ep.viewmodal').
                 evt.stopPropagation();
                 evt.preventDefault();
                 $(ele).removeClass('ep-drop-active ep-drop-highlight');
-                if ($scope[attrs.overHandler]) {
+                if ($scope[attrs.leaveHandler]) {
                     var dragOperation = getDragOperationFnc();
                     /*jshint validthis:true */
                     var item = dragOperation.dragItem || this;
                     /*jshint validthis:true */
-                    $scope[attrs.overHandler].call(item, dragOperation, evt);
+                    $scope[attrs.leaveHandler].call(item, dragOperation, evt);
                 }
             }
 

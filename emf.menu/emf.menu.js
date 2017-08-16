@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.50 built: 15-08-2017
+ * version:1.0.14-dev.51 built: 16-08-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.14-dev.50","built":"2017-08-15"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.14-dev.51","built":"2017-08-16"};
 
 (function() {
     'use strict';
@@ -2914,12 +2914,12 @@ angular.module('ep.menu.builder').
  * @example
  *
  */
-    epDynamicMenuCtrl.$inject = ['$scope', '$document'];
+    epDynamicMenuCtrl.$inject = ['$scope', '$document', '$window'];
     angular.module('ep.menu.builder')
         .controller('epDynamicMenuCtrl', epDynamicMenuCtrl);
 
     /*@ngInject*/
-    function epDynamicMenuCtrl($scope, $document) {
+    function epDynamicMenuCtrl($scope, $document, $window) {
         /*jshint validthis:true */
         var vm = this;
         vm.closeMenu = closeMenu;
@@ -2956,7 +2956,14 @@ angular.module('ep.menu.builder').
             // if position is fixed we are running on small width devices. Just skip this statement
             // if not, set css position of actionMenu
             if (vm.element.css('position') !== 'fixed') {
-                vm.element.css({ left: args.event.clientX + 'px', top: args.event.clientY + 'px' });
+                setTimeout(function () {
+                    var elementWidth = $(vm.element)[0].scrollWidth || 150;
+                    if (($(window).width() - args.event.clientX) > elementWidth) {
+                        vm.element.css({ left: args.event.clientX + 'px', top: args.event.clientY + 'px' });
+                    } else {
+                        vm.element.css({ left: (args.event.clientX - elementWidth) + 'px', top: args.event.clientY + 'px' });
+                    }
+                }, 10);
             }
             $document.on('click.actionMenu', function() {
                 closeMenu();
