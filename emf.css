@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.51 built: 16-08-2017
+ * version:1.0.14-dev.52 built: 16-08-2017
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -2777,6 +2777,13 @@ ep-editor-control .ep-record-editor-container.ep-is-row-editor {
 /* workaround has-error making text invisible on control buttons */
 .ep-editor-control .has-error .input-group-addon {
   color: initial;
+}
+@media screen and (max-width: 400px) {
+  .ep-editor-control .ep-date-editor .ep-time-meridian.ep-time-new-line {
+    float: left;
+    padding-top: 5px;
+    padding-left: 0;
+  }
 }
 
 .ep-shell .ep-shell-feedback-btn {
