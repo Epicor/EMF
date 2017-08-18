@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.58 built: 17-08-2017
+ * version:1.0.14-dev.59 built: 18-08-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.58","built":"2017-08-17"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.59","built":"2017-08-18"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -30991,7 +30991,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
     "\n" +
     "                <div class=\"status status-text ep-crm-text-ellipsis {{getStatusTextClass(statuses, obj)}}\">{{formatStatusText(statuses, obj)}}</div>\r" +
     "\n" +
-    "                <div class=\"status-source text-success ep-crm-text-ellipsis\">{{formatStatusSource(statuses, obj)}}</div>\r" +
+    "                <div class=\"status-source ep-crm-text-ellipsis\">{{formatStatusSource(statuses, obj)}}</div>\r" +
     "\n" +
     "            </div>\r" +
     "\n" +
