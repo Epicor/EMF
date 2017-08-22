@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.75 built: 22-08-2017
+ * version:1.0.14-dev.76 built: 22-08-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.75","built":"2017-08-22"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.76","built":"2017-08-22"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -2013,7 +2013,7 @@ angular.module('ep.signature', [
                 };
 
                 scope.setLabel = function() {
-                    scope.state.label = scope.state.metaColumn.caption || scope.label ||
+                    scope.state.label = scope.label || scope.state.metaColumn.caption ||
                         scope.state.epBinding.column || '';
                 };
 
