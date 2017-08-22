@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.72 built: 21-08-2017
+ * version:1.0.14-dev.73 built: 21-08-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.72","built":"2017-08-21"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.73","built":"2017-08-21"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -17622,7 +17622,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
     angular.module('ep.local.storage').service('epLocalStorageService', [
     'epLocalStorageConfig',
     function(epLocalStorageConfig) {
-        var settings = angular.merge({}, epLocalStorageConfig.settings);
+        var settingsID;
+        var settings;
 
         //  This routine parses a path string in the form of 'object.property'
         //  and adds, updates or deletes the value at that settings location.
@@ -17671,7 +17672,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         function commit() {
             // Applies any changes that have been made to the settings
             /*jshint validthis: true */
-            localStorage.setItem(epLocalStorageConfig.settingsID, JSON.stringify(settings));
+            localStorage.setItem(settingsID, JSON.stringify(settings));
         }
         /* ------------- Public Methods ----------------------> */
         /**
@@ -17695,7 +17696,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 /*jshint validthis: true */
                 setValueAtPath(settings, path, defaultSetting);
             } else {
-                localStorage.removeItem(epLocalStorageConfig.settingsID);
+                localStorage.removeItem(settingsID);
                 settings = angular.merge({}, epLocalStorageConfig.settings);
             }
             /*jshint validthis: true */
@@ -17726,13 +17727,22 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         * @description
         * This initializes local storage.
         * It will take seed data from sysconfig.json / epLocalStorageConfig.settings
+        *
+        * @param {string} settingsId optional parameter that specifies the suffix of the key for all the local cache
         */
-        function init() {
+        function init(settingsId) {
+            settingsID = epLocalStorageConfig.settingsID;
+            if (settingsId) {
+                settingsID += '.' + settingsId;
+            }
             // Read the settings from the local storage.
-            var settingsSrc = localStorage.getItem(epLocalStorageConfig.settingsID);
+            var settingsSrc = localStorage.getItem(settingsID);
             if (settingsSrc) {
                 /*jshint validthis: true */
                 settings = JSON.parse(settingsSrc);
+            }
+            else {
+                settings = angular.merge({}, epLocalStorageConfig.settings);
             }
         }
         /**
@@ -17810,7 +17820,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             update: update,
             merge: merge,
             getOrAdd: getOrAdd,
-            clear: clear
+            clear: clear,
+            init: init
         };
     }]);
 })();
