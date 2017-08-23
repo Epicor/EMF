@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.76 built: 22-08-2017
+ * version:1.0.14-dev.77 built: 22-08-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.76","built":"2017-08-22"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.77","built":"2017-08-22"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -19435,7 +19435,8 @@ angular.module('ep.menu.builder').
     angular.module('ep.multi.level.menu').constant('epMultiLevelMenuConstants', {
         MLM_INITIALIZED_EVENT: 'MLM_INITIALIZED_EVENT',
         MLM_MENU_DATA_CHANGED: 'MLM_MENU_DATA_CHANGED',
-        MLM_FAVORITES_CHANGED: 'MLM_FAVORITES_CHANGED',
+        MLM_FAVORITES_ADDED: 'MLM_FAVORITES_ADDED',
+        MLM_FAVORITES_DELETED: 'MLM_FAVORITES_DELETED',
         MLM_ITEM_CLICKED: 'MLM_ITEM_CLICKED',
         MLM_ITEM_EXPANDED: 'MLM_ITEM_EXPANDED'
     });
@@ -19682,8 +19683,6 @@ angular.module('ep.menu.builder').
                     $scope.onMenuInit({factory: $scope.multiLevelMenuHelper});
                 }
 
-                emitMenuEvent(epMultiLevelMenuConstants.MLM_INITIALIZED_EVENT);
-
                 $scope.$watch('menu', function(newValue, oldValue) {
                     if (newValue && (!angular.equals(newValue, oldValue) || !$scope.data || !$scope.data.menu)) {
                         $scope.multiLevelMenuHelper.populate($scope.menu, true);
@@ -19694,6 +19693,11 @@ angular.module('ep.menu.builder').
                         }
                         setCurrentItems();
                         emitMenuEvent(epMultiLevelMenuConstants.MLM_MENU_DATA_CHANGED);
+                    }
+                    // Make sure that the old value is not defined and that the new actually contain the menu
+                    // so we can take in consideration that the menu it was initialized correctly.
+                    if (angular.isDefined(newValue) && angular.isUndefined(oldValue)){
+                        emitMenuEvent(epMultiLevelMenuConstants.MLM_INITIALIZED_EVENT);
                     }
                 });
 
@@ -20044,8 +20048,12 @@ angular.module('ep.menu.builder').
                 var menuKey = getStoreKey(item);
                 if (item.favorite) {
                     epLocalStorageService.update(menuKey, (mi._id || mi.id));
+                    // Adding a new favorit and fires an addded event
+                    scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_FAVORITES_ADDED);
                 } else {
                     epLocalStorageService.clear(menuKey);
+                    // Delete the favorite on the list/cache and fire the deleted event.
+                    scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_FAVORITES_DELETED);
                 }
 
                 data.favorites = getFavorites();
@@ -20054,7 +20062,6 @@ angular.module('ep.menu.builder').
                     scope.onFavoriteChange({ menuItem: mi, favorites: data.favorites });
                 }
                 if (event) { event.stopPropagation(); }
-                scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_FAVORITES_CHANGED);
             }
             /**
              * @ngdoc method
@@ -20200,7 +20207,7 @@ angular.module('ep.menu.builder').
                 data.favorites = null;
                 var userKey = getStoreKey();
                 epLocalStorageService.clear(userKey);
-                scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_FAVORITES_CHANGED);
+                scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_FAVORITES_DELETED);
             }
 
             /**
@@ -28429,10 +28436,47 @@ angular.module('ep.signature').directive('epSignature',
             if (!$scope.state.list) {
                 $scope.state.list = [];
             }
+            // first look into the state and see if there are elements on the favorites state that are not there any more in the new favorites array from the updated menu
+            removeFavoritesFromState(event, data);
+            // then just add the new ones, the ones that does not exist on the state favorites, but it does exist in the favorites new object.
+            addFavoritesToState(event, data);
+        };
+
+        function addFavoritesToState(event, data) {
+            if ($scope.menuId !== data.menuId) {
+                return;
+            }
+
+            if (!$scope.state.list) {
+                $scope.state.list = [];
+            }
+
+            var menuFactory = data.factory;
+            var favs = menuFactory.data.favorites;
+
+            angular.forEach(favs, function(menu) {
+                var menuInList = _.find($scope.state.list, function(item) {
+                    return menu === item.menuItem;
+                });
+                if (!menuInList) {
+                    $scope.state.list.push($scope.createItem(menuFactory, menu));
+                }
+            });
+        }
+
+        function removeFavoritesFromState(event, data) {
+            if ($scope.menuId !== data.menuId) {
+                return;
+            }
+
+            if (!$scope.state.list) {
+                $scope.state.list = [];
+            }
 
             var menuFactory = data.factory;
             var favs = menuFactory.data.favorites;
             var removeItems = [];
+
             angular.forEach($scope.state.list, function(item) {
                 var itemInFavs = _.find(favs, function(menu) {
                     return menu === item.menuItem;
@@ -28449,15 +28493,7 @@ angular.module('ep.signature').directive('epSignature',
                     $scope.state.list.splice(idx, 1);
                 }
             });
-            angular.forEach(favs, function(menu) {
-                var menuInList = _.find($scope.state.list, function(item) {
-                    return menu === item.menuItem;
-                });
-                if (!menuInList) {
-                    $scope.state.list.push($scope.createItem(menuFactory, menu));
-                }
-            });
-        };
+        }
 
         $scope.onMenuItemClicked = function(event, data) {
             if ($scope.menuId !== data.menuId) {
@@ -28476,7 +28512,8 @@ angular.module('ep.signature').directive('epSignature',
         };
         $rootScope.$on(epMultiLevelMenuConstants.MLM_INITIALIZED_EVENT, $scope.onMenuChange);
         $rootScope.$on(epMultiLevelMenuConstants.MLM_MENU_DATA_CHANGED, $scope.onMenuChange);
-        $rootScope.$on(epMultiLevelMenuConstants.MLM_FAVORITES_CHANGED, $scope.onFavoritesChange);
+        $rootScope.$on(epMultiLevelMenuConstants.MLM_FAVORITES_ADDED, addFavoritesToState);
+        $rootScope.$on(epMultiLevelMenuConstants.MLM_FAVORITES_DELETED, removeFavoritesFromState);
         $rootScope.$on(epMultiLevelMenuConstants.MLM_ITEM_CLICKED, $scope.onMenuItemClicked);
 
         $scope.$watch('menuId', function(newValue, oldValue) {
