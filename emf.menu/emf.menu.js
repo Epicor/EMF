@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.79 built: 23-08-2017
+ * version:1.0.14-dev.80 built: 23-08-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.14-dev.79","built":"2017-08-23"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.14-dev.80","built":"2017-08-23"};
 
 (function() {
     'use strict';
@@ -885,7 +885,7 @@ angular.module('ep.menu.builder', [
              * @param {object} mi the menu item or menu id
              * @param {object} event the click event that invoked the toggleFavorite method
             */
-            function toggleFavorite(mi, event) {
+            function toggleFavorite(mi, event, stopPropagation) {
                 var item = getMenuItemFromObj(mi);
                 if (!item) {
                     return;
@@ -896,12 +896,16 @@ angular.module('ep.menu.builder', [
                 var menuKey = getStoreKey(item);
                 if (item.favorite) {
                     epLocalStorageService.update(menuKey, (mi._id || mi.id));
-                    // Adding a new favorit and fires an addded event
-                    scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_FAVORITES_ADDED);
+                    // Adding a new favorite and fire an added event just if the stop propagation is not defined/false.
+                    if(!stopPropagation){
+                        scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_FAVORITES_ADDED, mi);
+                    }
                 } else {
                     epLocalStorageService.clear(menuKey);
-                    // Delete the favorite on the list/cache and fire the deleted event.
-                    scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_FAVORITES_DELETED);
+                    // Delete the favorite on the list/cache and fire the deleted event just if the stop propagation is not defined/false.
+                    if(!stopPropagation){
+                        scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_FAVORITES_DELETED, mi);
+                    }
                 }
 
                 data.favorites = getFavorites();
