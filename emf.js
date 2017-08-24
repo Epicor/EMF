@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.83 built: 23-08-2017
+ * version:1.0.14-dev.84 built: 24-08-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.83","built":"2017-08-23"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.84","built":"2017-08-24"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -14167,6 +14167,26 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 })();
 
 /**
+ * @ngdoc object
+ * @name ep.globalization.object:epGlobalizationConstants
+ * @description
+ * Constants for epGlobalization.
+ * ep.globalization constants
+ * Events:
+    * <pre>
+    *   GLOBALIZATION_LOCALE_CHANGE_EVENT - event when locale is changed
+    * </pre>
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.globalization').constant('epGlobalizationConstants', {
+        //EVENT NAMES:
+        GLOBALIZATION_LOCALE_CHANGE_EVENT: 'GLOBALIZATION_LOCALE_CHANGE_EVENT'
+    });
+})();
+
+/**
 * @ngdoc filter
 * @name ep.globalization.filter:epTranslate
 *
@@ -14210,18 +14230,19 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      * @example
      *
      */
-    epTranslationService.$inject = ['$q', '$http', 'epUtilsService', 'epGlobalizationConfig'];
+    epTranslationService.$inject = ['$q', '$http', '$rootScope', 'epUtilsService', 'epGlobalizationConfig', 'epGlobalizationConstants'];
     angular.module('ep.globalization').
         service('epTranslationService', epTranslationService);
 
     /*@ngInject*/
-    function epTranslationService($q, $http, epUtilsService, epGlobalizationConfig) {
+    function epTranslationService($q, $http, $rootScope, epUtilsService, epGlobalizationConfig, epGlobalizationConstants) {
         var resources = {}; //all locale resources are held here
         var baseLocaleId = 'en-us'; //base locale
         var baseResource = {}; //pointer to base resource
         var curLocaleId = 'en-us'; //current locale
         var curResource = {}; //pointer to current resource
         var initializeCompleted = false; //set to true when both current and base are initialized
+        var transOptions = {};
 
         /**
          * @ngdoc method
@@ -14230,15 +14251,18 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @public
          * @description
          * set the current locale
+         * @param {string} localeId - locale to be set as current
+         * @param {object} options - various options
          */
-        function initialize(localeId) {
+        function initialize(localeId, options) {
             var deferred = $q.defer();
+            transOptions = options || {};
 
             var bsLocale = vlocale(epGlobalizationConfig.baseLocale) || 'en-us';
             var loc = vlocale(localeId);
             if (loc) {
                 loadResource(loc).then(function() {
-                    if (resources[loc] && resources[loc].status !== 0) {
+                    if (hasLoadedLocale(loc)) {
                         curLocaleId = loc;
                         curResource = resources[loc].resource;
                         if (bsLocale === loc) {
@@ -14277,12 +14301,17 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @public
          * @description
          * set current locale (must be already loaded)
+         * @param {string} localeId - locale to be set as current
          */
         function setLocale(localeId) {
             var loc = vlocale(localeId);
-            if (resources[loc] && resources[loc].status !== 0) {
+            if (hasLoadedLocale(loc)) {
                 curLocaleId = loc;
                 curResource = resources[loc].resource;
+                $rootScope.$emit(epGlobalizationConstants.GLOBALIZATION_LOCALE_CHANGE_EVENT, {
+                    curLocaleId: curLocaleId,
+                    baseLocaleId: baseLocaleId
+                });
             }
         }
 
@@ -14304,7 +14333,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @methodOf ep.globalization.service:epTranslationService
          * @public
          * @description
-         * get resource string
+         * get resource string. can pass any number of optional arguments after the id. arguments
+         * replace the placeholders in {0}, {1} notation
+         * @param {string} id - id of resource string to be returned from current locale resources
          */
         function getString(id) {
             var str = '';
@@ -14328,20 +14359,21 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @public
          * @description
          * load manually resource strings
+         * @param {string} localeId - id of locale to be loaded
+         * @param {object} resource - json resource (contains string id and string pairs)
+         * @param {bool} setCurrent - optional parameter to set this locale as current (active)
          */
-        function load(localeId, resource) {
+        function load(localeId, resource, setCurrent) {
             var loc = vlocale(localeId);
             resources[loc] = {
                 locale: loc,
                 resource: resource,
                 status: 1
             };
-            if (loc === baseLocaleId) {
-                baseResource = resources[loc].resource;
+            if (setCurrent === true) {
+                setLocale(loc);
             }
-            if (loc === curLocaleId) {
-                curResource = resources[loc].resource;
-            }
+            updateCurrentAndBase(loc);
         }
 
         /**
@@ -14351,6 +14383,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @public
          * @description
          * load resource strings from corresponding resource json file
+         * @param {string} localeId - id of locale to be loaded
+         * @param {bool} setCurrent - optional parameter to set this locale as current (active)
          */
         function loadFromResource(localeId, setCurrent) {
             var deferred = $q.defer();
@@ -14359,8 +14393,37 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 if (setCurrent === true) {
                     setLocale(loc);
                 }
+                updateCurrentAndBase(loc);
                 deferred.resolve(resources[loc]);
             });
+            return deferred.promise;
+        }
+
+        /**
+         * @ngdoc method
+         * @name changeLocale
+         * @methodOf ep.globalization.service:epTranslationService
+         * @public
+         * @description
+         * change locale. if not loaded, it will be loaded from resources
+         * @param {string} localeId - id of locale to be loaded and set as current
+         */
+        function changeLocale(localeId) {
+            var deferred = $q.defer();
+            var loc = vlocale(localeId);
+            if (hasLoadedLocale(loc)) {
+                setLocale(loc);
+                deferred.resolve(true);
+            } else {
+                loadResource(loc).then(function() {
+                    if (hasLoadedLocale(loc)) {
+                        setLocale(loc);
+                        deferred.resolve(true);
+                    } else {
+                        deferred.resolve(false);
+                    }
+                });
+            }
             return deferred.promise;
         }
 
@@ -14411,7 +14474,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          */
         function loadBase(baseLocId, setCurrrent, deferred) {
             loadResource(baseLocId).then(function() {
-                if (resources[baseLocId] && resources[baseLocId].status !== 0) {
+                if (hasLoadedLocale(baseLocId)) {
                     baseLocaleId = baseLocId;
                     baseResource = resources[baseLocId].resource;
                     if (setCurrrent) {
@@ -14426,8 +14489,44 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             });
         };
 
+        /**
+         * @ngdoc method
+         * @name hasLocale
+         * @methodOf ep.globalization.service:epTranslationService
+         * @private
+         * @description
+         * check if current locale is present
+         */
+        function hasLocale(localeId) {
+            var loc = vlocale(localeId);
+            return (resources[loc]);
+        }
+
+        /**
+         * @ngdoc method
+         * @name hasLoadedLocale
+         * @methodOf ep.globalization.service:epTranslationService
+         * @private
+         * @description
+         * check if current locale is present and loaded
+         */
+        function hasLoadedLocale(localeId) {
+            var loc = vlocale(localeId);
+            return (resources[loc] && resources[loc].status !== 0);
+        }
+
+        function updateCurrentAndBase(localeId) {
+            if (localeId === baseLocaleId) {
+                baseResource = resources[localeId].resource;
+            }
+            if (localeId === curLocaleId) {
+                curResource = resources[localeId].resource;
+            }
+        }
+
         return {
             initialize: initialize,
+            changeLocale: changeLocale,
             getString: getString,
             load: load,
             loadFromResource: loadFromResource,
@@ -30525,6 +30624,35 @@ angular.module('ep.token').
 
         /**
          * @ngdoc method
+         * @name makeAppPath
+         * @methodOf ep.utils.service:epUtilsService
+         * @public
+         * @description
+         * Creates application path by concatenation of input arguments which can be strings, array of
+         * strings or arguments object passed from another function
+         * @returns {string} path
+         * @example
+         *   var str = epUtilsService.makeAppPath('dir1','dir2');
+         *   //result: 'app/dir1/dir2'
+         *
+         *   var str = utilsService.makeAppPath(['dir1', 'dir2'], ['dir3', 'dir4'], 'dir5');
+         *   //result: 'app/dir1/dir2/dir3/dir4/dir5';
+         *
+         */
+        function makeAppPath() {
+            var path = 'app';
+            var _args = _.flatten(arguments, true);
+            if (_args && _args.length === 1 && angular.isObject(_args[0]) && _args[0].length === 0) {
+                return path; //special case when caller passed arguments and arguments were empty
+            }
+            angular.forEach(_args, function(arg) {
+                path += '/' + arg;
+            });
+            return path;
+        }
+
+        /**
+         * @ngdoc method
          * @name loadScript
          * @methodOf ep.utils.service:epUtilsService
          * @public
@@ -30719,6 +30847,7 @@ angular.module('ep.token').
             hasProperty: hasProperty,
             loadScript: loadScript,
             makePath: makePath,
+            makeAppPath: makeAppPath,
             mapArray: mapArray,
             merge: merge,
             strFormat: strFormat,

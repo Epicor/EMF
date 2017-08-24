@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.83 built: 23-08-2017
+ * version:1.0.14-dev.84 built: 24-08-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.14-dev.83","built":"2017-08-23"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.14-dev.84","built":"2017-08-24"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -664,6 +664,35 @@ if (!epEmfGlobal) {
 
         /**
          * @ngdoc method
+         * @name makeAppPath
+         * @methodOf ep.utils.service:epUtilsService
+         * @public
+         * @description
+         * Creates application path by concatenation of input arguments which can be strings, array of
+         * strings or arguments object passed from another function
+         * @returns {string} path
+         * @example
+         *   var str = epUtilsService.makeAppPath('dir1','dir2');
+         *   //result: 'app/dir1/dir2'
+         *
+         *   var str = utilsService.makeAppPath(['dir1', 'dir2'], ['dir3', 'dir4'], 'dir5');
+         *   //result: 'app/dir1/dir2/dir3/dir4/dir5';
+         *
+         */
+        function makeAppPath() {
+            var path = 'app';
+            var _args = _.flatten(arguments, true);
+            if (_args && _args.length === 1 && angular.isObject(_args[0]) && _args[0].length === 0) {
+                return path; //special case when caller passed arguments and arguments were empty
+            }
+            angular.forEach(_args, function(arg) {
+                path += '/' + arg;
+            });
+            return path;
+        }
+
+        /**
+         * @ngdoc method
          * @name loadScript
          * @methodOf ep.utils.service:epUtilsService
          * @public
@@ -858,6 +887,7 @@ if (!epEmfGlobal) {
             hasProperty: hasProperty,
             loadScript: loadScript,
             makePath: makePath,
+            makeAppPath: makeAppPath,
             mapArray: mapArray,
             merge: merge,
             strFormat: strFormat,
