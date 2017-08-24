@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.81 built: 23-08-2017
+ * version:1.0.14-dev.82 built: 23-08-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.81","built":"2017-08-23"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.82","built":"2017-08-23"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -26103,7 +26103,7 @@ angular.module('ep.shell').service('epSidebarService', [
                                     //The default is for buttons not to persist when changing views
                                     def.persist = false;
                                 }
-                                if (scope && def.type === 'button') {
+                                if (scope && (def.type === 'button' || def.type === 'toggle')) {
                                     bindButtonAttributes(scope, def);
                                 } else if (scope && def.type === 'select' && def.options && def.options.length) {
                                     // Wire up the options
