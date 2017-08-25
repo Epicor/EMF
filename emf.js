@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.87 built: 24-08-2017
+ * version:1.0.14-dev.88 built: 25-08-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.87","built":"2017-08-24"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.88","built":"2017-08-25"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -14242,7 +14242,15 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         var curLocaleId = 'en-us'; //current locale
         var curResource = {}; //pointer to current resource
         var initializeCompleted = false; //set to true when both current and base are initialized
-        var transOptions = {};
+        var transOptions = {
+            testEnabled: false,
+            test: {
+                fillChar: '^',
+                endingChar: '|',
+                minChars: 8,
+                expandRatio: 0.3
+            }
+        };
 
         /**
          * @ngdoc method
@@ -14252,11 +14260,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @description
          * set the current locale
          * @param {string} localeId - locale to be set as current
-         * @param {object} options - various options
+         * @param {object} options - various translation options
          */
         function initialize(localeId, options) {
             var deferred = $q.defer();
-            transOptions = options || {};
+
+            angular.merge(transOptions, options || {});
 
             var bsLocale = vlocale(epGlobalizationConfig.baseLocale) || 'en-us';
             var loc = vlocale(localeId);
@@ -14342,14 +14351,30 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             if (id) {
                 str = curResource[id] || baseResource[id] || id;
             }
-            if (arguments.length < 2) {
-                return str;
+            var ret = str;
+            if (arguments.length > 1) {
+                if (arguments.length === 2 && angular.isFunction(arguments[1].pop)) {
+                    //if arguments are passed as an array in second parameter
+                    ret = epUtilsService.strFormat(str, arguments[1]);
+                } else {
+                    ret = epUtilsService.strFormat(str, Array.prototype.slice.call(arguments, 1));
+                }
             }
-            if (arguments.length === 2 && angular.isFunction(arguments[1].pop)) {
-                //if arguments are passed as an array in second parameter
-                return epUtilsService.strFormat(str, arguments[1]);
+
+            if (ret && transOptions.test && transOptions.testEnabled === true && curLocaleId === baseLocaleId) {
+                var test = transOptions.test;
+                var expandedStr = ret || '';
+                var origLen = expandedStr.length;
+                var percLen = Math.round(origLen * test.expandRatio);
+                var newLen = (origLen + percLen < test.minChars) ? test.minChars : (origLen + percLen);
+                var expansionLen = newLen - origLen;
+                if (expansionLen > 0) {
+                    if (expansionLen > 1) newLen--;
+                    expandedStr = expandedStr.padEnd(newLen, test.fillChar) + test.endingChar;
+                }
+                ret = expandedStr;
             }
-            return epUtilsService.strFormat(str, Array.prototype.slice.call(arguments, 1));
+            return ret;
         }
 
         /**
@@ -14425,6 +14450,19 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 });
             }
             return deferred.promise;
+        }
+
+        /**
+         * @ngdoc method
+         * @name setOptions
+         * @methodOf ep.globalization.service:epTranslationService
+         * @public
+         * @description
+         * set translation options
+         * @param { object } options - various translation options
+         */
+        function setOptions(options) {
+            angular.merge(transOptions, options || {});
         }
 
         //private
@@ -14532,7 +14570,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             loadFromResource: loadFromResource,
             currentLocale: currentLocale,
             baseLocale: baseLocale,
-            setLocale: setLocale
+            setLocale: setLocale,
+            setOptions: setOptions
         };
     }
 }());
