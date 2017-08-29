@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.91 built: 25-08-2017
+ * version:1.0.14-dev.92 built: 29-08-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.14-dev.91","built":"2017-08-25"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.14-dev.92","built":"2017-08-29"};
 
 (function() {
     'use strict';
@@ -2189,7 +2189,7 @@ angular.module('ep.menu.builder', [
  * - sort: handler function on click of sort button in sub header section of the list.
  * - add: handler function on click of add button in sub header section of the list.
  * - useVirtualScrolling: (true/false) uses
- * - showDirectory
+ * - showDirectory: true to show directory by first letter of group by field
  * - vsRenderBufferSize
  * - vsRowLineCount
  * - vsLatch
@@ -2294,7 +2294,9 @@ angular.module('ep.menu.builder', [
                         if (scope.sortByDesc === true) {
                             scope.isSortDesc = true;
                         }
-                        scope.listData = _.sortBy(scope.listData, scope.sortBy);
+                        if (!scope.groupBy) {
+                            scope.listData = $filter('orderBy')(scope.data, scope.sortBy);
+                        }
                         if (scope.isSortDesc) {
                             scope.listData = scope.listData.reverse();
                         }

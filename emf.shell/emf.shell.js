@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.91 built: 25-08-2017
+ * version:1.0.14-dev.92 built: 29-08-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.14-dev.91","built":"2017-08-25"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.14-dev.92","built":"2017-08-29"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -5421,6 +5421,10 @@ function() {
                         }
 
                         shellState.titleScope = viewScope.$new();
+                        if (html && (html.indexOf('<') < 0) && (html.indexOf('>') < 0)) {
+                            //this will ensure compile does not error
+                            html = '<div>' + html + '</div>';
+                        }
                         var content = $compile(html)(shellState.titleScope);
                         if (content.length) {
                             el.empty();

@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.91 built: 25-08-2017
+ * version:1.0.14-dev.92 built: 29-08-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.91","built":"2017-08-25"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.92","built":"2017-08-29"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -17087,7 +17087,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * - sort: handler function on click of sort button in sub header section of the list.
  * - add: handler function on click of add button in sub header section of the list.
  * - useVirtualScrolling: (true/false) uses
- * - showDirectory
+ * - showDirectory: true to show directory by first letter of group by field
  * - vsRenderBufferSize
  * - vsRowLineCount
  * - vsLatch
@@ -17192,7 +17192,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         if (scope.sortByDesc === true) {
                             scope.isSortDesc = true;
                         }
-                        scope.listData = _.sortBy(scope.listData, scope.sortBy);
+                        if (!scope.groupBy) {
+                            scope.listData = $filter('orderBy')(scope.data, scope.sortBy);
+                        }
                         if (scope.isSortDesc) {
                             scope.listData = scope.listData.reverse();
                         }
@@ -24574,6 +24576,10 @@ angular.module('ep.record.editor').
                         }
 
                         shellState.titleScope = viewScope.$new();
+                        if (html && (html.indexOf('<') < 0) && (html.indexOf('>') < 0)) {
+                            //this will ensure compile does not error
+                            html = '<div>' + html + '</div>';
+                        }
                         var content = $compile(html)(shellState.titleScope);
                         if (content.length) {
                             el.empty();
