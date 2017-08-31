@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.99 built: 30-08-2017
+ * version:1.0.14-dev.100 built: 31-08-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.14-dev.99","built":"2017-08-30"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.14-dev.100","built":"2017-08-31"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -198,6 +198,21 @@ if (!epEmfGlobal) {
     'use strict';
 
     angular.module('ep.modaldialog', ['ep.templates']);
+})();
+
+/**
+ * @ngdoc overview
+ * @name ep.globalization
+ * @description
+ * globalization aspects - such as translation and formats
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.globalization', [
+        'ep.templates',
+        'ep.sysconfig'
+    ]);
 })();
 
 /**
@@ -4325,6 +4340,553 @@ function() {
 })();
 
 /**
+ * @ngdoc object
+ * @name ep.globalization.object:epGlobalizationConfig
+ * @description
+ * Provider for epGlobalizationConfig.
+ * Gets configuration options from sysconfig.json or default
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.globalization').provider('epGlobalizationConfig',
+        function() {
+            var config = {
+                /**
+                * @ngdoc property
+                * @name resourcePath
+                * @propertyOf ep.globalization.object:epGlobalizationConfig
+                * @public
+                * @description
+                * Represents base locale that acts as a fallback
+                */
+                baseLocaleId: 'en-US',
+
+                /**
+                * @ngdoc property
+                * @name resourcePath
+                * @propertyOf ep.globalization.object:epGlobalizationConfig
+                * @public
+                * @description
+                * Represents path to resources
+                */
+                resourcePath: 'app/resources',
+
+                /**
+                * @ngdoc property
+                * @name emfResourceFile
+                * @propertyOf ep.application.object:epApplicationConfig
+                * @public
+                * @description
+                * The resource file containing all resource strings for emf
+                */
+                emfResourceFile: 'locale-en-us.json',
+
+                emfResources: {}
+            };
+
+            //we use the epSysConfig provider to perform the $http read against sysconfig.json
+            //epSysConfig.mergeSection() function merges the defaults with sysconfig.json settings
+            this.$get = ['$log', 'epSysConfig', 'epApplicationConfig', function($log, epSysConfig, epApplicationConfig) {
+                epSysConfig.mergeSection('ep.globalization', config);
+
+                ///This loads the global emf resources
+                config.readResources = function() {
+                    var jsonResources = epApplicationConfig.getAssetsPath('shell', 'locales/' + config.emfResourceFile);
+                    var q = $.ajax({
+                        type: 'GET',
+                        url: jsonResources,
+                        cache: false,
+                        async: false,
+                        contentType: 'application/json'
+                    });
+
+                    if (q.status === 200) {
+                        try {
+                            config.emfResources = angular.fromJson(q.responseText);
+                        }
+                        catch (e) {
+                            $log.warn('Error reading emf locale resources: ' + e.message);
+                        }
+                    }
+                };
+
+                config.getResourcePath = function(localeId) {
+                    return epApplicationConfig.getAssetsPath('shell', 'locales/locale-' + localeId + '.json');
+                };
+
+                config.readResources();
+
+                return config;
+            }];
+        });
+})();
+
+/**
+ * @ngdoc object
+ * @name ep.globalization.object:epGlobalizationConstants
+ * @description
+ * Constants for epGlobalization.
+ * ep.globalization constants
+ * Events:
+    * <pre>
+    *   GLOBALIZATION_LOCALE_CHANGE_EVENT - event when locale is changed
+    * </pre>
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.globalization').constant('epGlobalizationConstants', {
+        //EVENT NAMES:
+        GLOBALIZATION_LOCALE_CHANGE_EVENT: 'GLOBALIZATION_LOCALE_CHANGE_EVENT'
+    });
+})();
+
+/**
+* @ngdoc filter
+* @name ep.globalization.filter:epTranslate
+*
+* @description
+* A filter to translate (get resource string). Specify a resource id followed by epTranslate filter
+* to get the translation.
+*
+* @example
+* <p>{{'customer.Address1' | epTranslate}}</p>
+*
+*/
+(function() {
+    'use strict';
+
+    angular.module('ep.globalization').
+        filter('epTranslate',
+        /*@ngInject*/
+        ['epTranslationService', function(epTranslationService) {
+            var filter = function(id) {
+                if (arguments.length > 1) {
+                    return epTranslationService.getString(id, Array.prototype.slice.call(arguments, 1));
+                }
+                return epTranslationService.getString(id);
+            };
+            filter.$stateful = true;
+            return filter;
+        }]
+        );
+})();
+
+
+(function () {
+    'use strict';
+    /**
+     * @ngdoc service
+     * @name ep.globalization.service:epTranslationService
+     * @description
+     * Service for the ep.globalization module
+     * manage globalization aspects such as translation and formatting
+     *
+     * @example
+     *
+     */
+    epTranslationService.$inject = ['$q', '$http', '$rootScope', 'epUtilsService', 'epGlobalizationConfig', 'epGlobalizationConstants', 'epApplicationConfig'];
+    angular.module('ep.globalization').
+        service('epTranslationService', epTranslationService);
+
+    /*@ngInject*/
+    function epTranslationService($q, $http, $rootScope, epUtilsService, epGlobalizationConfig,
+        epGlobalizationConstants, epApplicationConfig) {
+
+        var resources = {}; //all locale resources are held here
+        var baseLocaleId = 'en-us'; //base locale
+        var baseResource = {}; //pointer to base resource
+        var curLocaleId = 'en-us'; //current locale
+        var curResource = {}; //pointer to current resource
+        var initializeCompleted = false; //set to true when both current and base are initialized
+        var curResourceEmf = {};
+
+        var transOptions = {
+            testEnabled: false,
+            test: {
+                fillChar: '^',
+                endingChar: '|',
+                minChars: 8,
+                expandRatio: 0.3
+            }
+        };
+
+        /**
+         * @ngdoc method
+         * @name initialize
+         * @methodOf ep.globalization.service:epTranslationService
+         * @public
+         * @description
+         * set the current locale
+         * @param {string} localeId - locale to be set as current
+         * @param {object} options - various translation options
+         */
+        function initialize(localeId, options) {
+            var deferred = $q.defer();
+
+            angular.merge(transOptions, options || {});
+
+            var bsLocale = vlocale(epGlobalizationConfig.baseLocale) || 'en-us';
+            var loc = vlocale(localeId);
+            if (loc) {
+                loadResource(loc).then(function() {
+                    if (hasLoadedLocale(loc)) {
+                        curLocaleId = loc;
+                        updateCurrentAndBase(loc);
+                        if (bsLocale === loc) {
+                            initializeCompleted = true;
+                        } else {
+                            loadBase(bsLocale);
+                        }
+                    } else {
+                        loadBase(bsLocale, true);
+                    }
+                    deferred.resolve(true);
+                });
+            } else {
+                loadBase(bsLocale, true, deferred);
+            }
+            return deferred.promise;
+        }
+
+        /**
+         * @ngdoc method
+         * @name currentLocale
+         * @methodOf ep.globalization.service:epTranslationService
+         * @public
+         * @description
+         * get the current locale
+         */
+        function currentLocale() {
+            return curLocaleId;
+        }
+
+        /**
+         * @ngdoc method
+         * @name setLocale
+         * @methodOf ep.globalization.service:epTranslationService
+         * @public
+         * @description
+         * set current locale (must be already loaded)
+         * @param {string} localeId - locale to be set as current
+         */
+        function setLocale(localeId) {
+            var loc = vlocale(localeId);
+            if (hasLocale(loc)) {
+                curLocaleId = loc;
+                updateCurrentAndBase(loc);
+                $rootScope.$emit(epGlobalizationConstants.GLOBALIZATION_LOCALE_CHANGE_EVENT, {
+                    curLocaleId: curLocaleId,
+                    baseLocaleId: baseLocaleId
+                });
+            }
+        }
+
+        /**
+         * @ngdoc method
+         * @name baseLocale
+         * @methodOf ep.globalization.service:epTranslationService
+         * @public
+         * @description
+         * get the base locale
+         */
+        function baseLocale() {
+            return baseLocaleId;
+        }
+
+        /**
+         * @ngdoc method
+         * @name getString
+         * @methodOf ep.globalization.service:epTranslationService
+         * @public
+         * @description
+         * get resource string. can pass any number of optional arguments after the id. arguments
+         * replace the placeholders in {0}, {1} notation
+         * @param {string} id - id of resource string to be returned from current locale resources
+         */
+        function getString(id) {
+            var str = '';
+            if (id) {
+                str = curResource[id] || baseResource[id] || getStringFromEmf(id) || id;
+            }
+            var ret = str;
+            if (arguments.length > 1) {
+                if (arguments.length === 2 && angular.isFunction(arguments[1].pop)) {
+                    //if arguments are passed as an array in second parameter
+                    ret = epUtilsService.strFormat(str, arguments[1]);
+                } else {
+                    ret = epUtilsService.strFormat(str, Array.prototype.slice.call(arguments, 1));
+                }
+            }
+
+            if (ret && transOptions.test && transOptions.testEnabled === true && curLocaleId === baseLocaleId) {
+                var test = transOptions.test;
+                var expandedStr = ret || '';
+                var origLen = expandedStr.length;
+                var percLen = Math.round(origLen * test.expandRatio);
+                var newLen = (origLen + percLen < test.minChars) ? test.minChars : (origLen + percLen);
+                var expansionLen = newLen - origLen;
+                if (expansionLen > 0) {
+                    if (expansionLen > 1) newLen--;
+                    expandedStr = expandedStr.padEnd(newLen, test.fillChar) + test.endingChar;
+                }
+                ret = expandedStr;
+            }
+            return ret;
+        }
+
+        /**
+         * @ngdoc method
+         * @name load
+         * @methodOf ep.globalization.service:epTranslationService
+         * @public
+         * @description
+         * load manually resource strings
+         * @param {string} localeId - id of locale to be loaded
+         * @param {object} resource - json resource (contains string id and string pairs)
+         * @param {bool} setCurrent - optional parameter to set this locale as current (active)
+         */
+        function load(localeId, resource, setCurrent) {
+            var loc = vlocale(localeId);
+            resources[loc] = {
+                locale: loc,
+                resource: resource,
+                status: 1
+            };
+            if (setCurrent === true) {
+                setLocale(loc);
+            }
+            updateCurrentAndBase(loc);
+        }
+
+        /**
+         * @ngdoc method
+         * @name loadFromResource
+         * @methodOf ep.globalization.service:epTranslationService
+         * @public
+         * @description
+         * load resource strings from corresponding resource json file
+         * @param {string} localeId - id of locale to be loaded
+         * @param {bool} setCurrent - optional parameter to set this locale as current (active)
+         */
+        function loadFromResource(localeId, setCurrent) {
+            var deferred = $q.defer();
+            var loc = vlocale(localeId);
+            loadResource(loc).then(function () {
+                if (setCurrent === true) {
+                    setLocale(loc);
+                }
+                updateCurrentAndBase(loc);
+                deferred.resolve(resources[loc]);
+            });
+            return deferred.promise;
+        }
+
+        /**
+         * @ngdoc method
+         * @name changeLocale
+         * @methodOf ep.globalization.service:epTranslationService
+         * @public
+         * @description
+         * change locale. if not loaded, it will be loaded from resources
+         * @param {string} localeId - id of locale to be loaded and set as current
+         */
+        function changeLocale(localeId) {
+            var deferred = $q.defer();
+            var loc = vlocale(localeId);
+            if (hasLoadedLocale(loc)) {
+                setLocale(loc);
+                deferred.resolve(true);
+            } else {
+                loadResource(loc).then(function() {
+                    setLocale(loc);
+                    deferred.resolve(hasLoadedLocale(loc));
+                });
+            }
+            return deferred.promise;
+        }
+
+        /**
+         * @ngdoc method
+         * @name setOptions
+         * @methodOf ep.globalization.service:epTranslationService
+         * @public
+         * @description
+         * set translation options
+         * @param { object } options - various translation options
+         */
+        function setOptions(options) {
+            angular.merge(transOptions, options || {});
+        }
+
+        //private
+
+        /**
+         * @ngdoc method
+         * @name loadResource
+         * @methodOf ep.globalization.service:epTranslationService
+         * @private
+         * @description
+         * load resource for specified locale from json file
+         */
+        function loadResource(localeId) {
+            var loc = vlocale(localeId);
+            var ret = {
+                localeId: loc,
+                resource: {},
+                status: 0,
+                resourceEmf: {},
+                statusEmf: 0,
+                loaded: false
+            };
+
+            var deferred = $q.defer();
+
+            var fnAfterAppLoad = function(result){
+                loadEmfResource(loc, ret).then(function() {
+                    ret.loaded = (ret.status > 0 || ret.statusEmf > 0);
+                    deferred.resolve(result);
+                    resources[loc] = ret;
+                });            
+            };
+
+            var path = epGlobalizationConfig.resourcePath + '/' + loc + '/locale-' + loc + '.json';
+            $http.get(path).then(function(result) {
+                ret.resource = result.data;
+                ret.status = 1;
+                fnAfterAppLoad(ret);
+            }, function(error, status) {
+                fnAfterAppLoad(null);
+            });
+
+            return deferred.promise;
+        }
+
+        //make sure locale is forced into lower case
+        function vlocale(id) {
+            return (id || '').toLowerCase(); 
+        }
+
+        /**
+         * @ngdoc method
+         * @name loadBase
+         * @methodOf ep.globalization.service:epTranslationService
+         * @private
+         * @description
+         * load base locale resources. Used in initialization only
+         */
+        function loadBase(baseLocId, setCurrrent, deferred) {
+            loadResource(baseLocId).then(function() {
+                if (hasLoadedLocale(baseLocId)) {
+                    baseLocaleId = baseLocId;
+                    baseResource = resources[baseLocId].resource;
+                    if (setCurrrent) {
+                        setLocale(baseLocId);
+                    }
+                }
+                if (deferred) {
+                    deferred.resolve(true);
+                }
+                initializeCompleted = true;
+            });
+        };
+
+        /**
+         * @ngdoc method
+         * @name hasLocale
+         * @methodOf ep.globalization.service:epTranslationService
+         * @private
+         * @description
+         * check if current locale is present
+         */
+        function hasLocale(localeId) {
+            var loc = vlocale(localeId);
+            return (resources[loc]);
+        }
+
+        /**
+         * @ngdoc method
+         * @name hasLoadedLocale
+         * @methodOf ep.globalization.service:epTranslationService
+         * @private
+         * @description
+         * check if current locale is present and loaded
+         */
+        function hasLoadedLocale(localeId) {
+            var loc = vlocale(localeId);
+            return (resources[loc] && resources[loc].loaded);
+        }
+
+        /**
+         * @ngdoc method
+         * @name updateCurrentAndBase
+         * @methodOf ep.globalization.service:epTranslationService
+         * @private
+         * @description
+         * after updating locale resources we need to update pointers
+         */
+        function updateCurrentAndBase(updatedLocaleId) {
+            if (updatedLocaleId === baseLocaleId) {
+                baseResource = resources[updatedLocaleId].resource;
+            }
+            if (updatedLocaleId === curLocaleId) {
+                curResource = resources[updatedLocaleId].resource;
+                curResourceEmf = (updatedLocaleId === 'en-us') ? {} : resources[updatedLocaleId].resourceEmf;
+            }         
+        }
+
+        /**
+         * @ngdoc method
+         * @name loadResource
+         * @methodOf ep.globalization.service:epTranslationService
+         * @private
+         * @description
+         * load resource for specified locale from json file
+         */
+        function loadEmfResource(localeId, entry) {
+            var loc = vlocale(localeId);
+
+            var deferred = $q.defer();
+            if (loc === 'en-us') {
+                deferred.resolve(true);
+            } else {
+                var emfResourcePath = epGlobalizationConfig.getResourcePath(loc);
+                $http.get(emfResourcePath).then(function(result) {
+                    entry.resourceEmf = result.data;
+                    entry.statusEmf = 1;
+
+                    deferred.resolve(true);
+                }, function(error, status) {
+                    entry.resourceEmf = {};
+                    entry.statusEmf = 0;
+
+                    deferred.resolve(false);
+                });
+            }
+            return deferred.promise;
+        }
+
+        function getStringFromEmf(id) {
+            //need to optimize this for speed.
+            return curResourceEmf[id] || epGlobalizationConfig.emfResources[id];
+        }
+
+        return {
+            initialize: initialize,
+            changeLocale: changeLocale,
+            getString: getString,
+            load: load,
+            loadFromResource: loadFromResource,
+            currentLocale: currentLocale,
+            baseLocale: baseLocale,
+            setLocale: setLocale,
+            setOptions: setOptions
+        };
+    }
+}());
+
+/**
  * @ngdoc service
  * @name ep.shell.service:epShellFeedbackService
  * @description
@@ -4708,8 +5270,14 @@ function() {
                 config.options.enableFeedback = epSysConfig.optionBool(config.options.enableFeedback, false);
                 config.options.enableViewAnimations = epSysConfig.optionBool(config.options.enableViewAnimations, true);
                 config.options.enableCache = epSysConfig.optionBool(config.options.enableCache, true);
+
+                //expose fnSetRoute in the config for dynamic routing
+                config.fnSetRoute = function(route, properties) {
+                    routeProviderReference.when(route, properties);
+                };
+
                 angular.forEach(config.routes, function(r) {
-                    routeProviderReference.when(r.route, {
+                    config.fnSetRoute(r.route, {
                         index: r.index,
                         templateUrl: r.url,
                         controller: r.controller,

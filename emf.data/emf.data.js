@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.99 built: 30-08-2017
+ * version:1.0.14-dev.100 built: 31-08-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.14-dev.99","built":"2017-08-30"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.14-dev.100","built":"2017-08-31"};
 
 (function() {
     'use strict';
@@ -399,12 +399,12 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
      * @example
      *
      */
-    epLoginViewCtrl.$inject = ['$q', '$scope', 'epUtilsService', 'epModalDialogService', 'epTokenService'];
+    epLoginViewCtrl.$inject = ['$q', '$scope', 'epUtilsService', 'epModalDialogService', 'epTokenService', 'epTranslationService'];
     angular.module('ep.token')
         .controller('epLoginViewCtrl', epLoginViewCtrl);
 
     /*@ngInject*/
-    function epLoginViewCtrl($q, $scope, epUtilsService, epModalDialogService, epTokenService) {
+    function epLoginViewCtrl($q, $scope, epUtilsService, epModalDialogService, epTokenService, epTranslationService) {
 
         $scope.settings = {
             username: '',
@@ -432,13 +432,18 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
 
             if ($scope.settings.username === '' || $scope.settings.password === '') {
                 $scope.hasError = true;
-                $scope.status = $scope.settings.username === '' ?
-                    'Oops.. There\'s no user name there!' : 'Oops.. You forgot to type your password!';
+                if ($scope.settings.username === '') {
+                    $scope.status =
+                        epTranslationService.getString('emf.ep.token.ep-login-view.message.missingUserName');
+                } else {
+                    $scope.status =
+                        epTranslationService.getString('emf.ep.token.ep-login-view.message.youForgotPassword');
+                }
                 epModalDialogService.hide();
                 return;
             } else if ($scope.settings.serverName === '') {
                 $scope.hasError = true;
-                $scope.status = 'Oops... Don\'t forget to type the Server.';
+                $scope.status = epTranslationService.getString('emf.ep.token.ep-login-view.message.missingServer');
                 epModalDialogService.hide();
                 return;
             }
@@ -502,14 +507,16 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                     $scope.hasError = true;
                     switch (response.status) {
                         case 401:
-                            $scope.status = 'Connection failed, please review the username and password and try again.';
+                            $scope.status =
+                                epTranslationService.getString('emf.ep.token.ep-login-view.message.connectionUserPassword');
                             break;
                         case 400:
-                            $scope.status = 'Token authentication may not be enabled on the Epicor server. ' +
-                                'Refer to the Epicor Administration Console.';
+                            $scope.status =
+                                epTranslationService.getString('emf.ep.token.ep-login-view.message.tokenAuthError');
                             break;
                         default:
-                            $scope.status = 'Connection failed, please review the username and password and try again.';
+                            $scope.status =
+                                epTranslationService.getString('emf.ep.token.ep-login-view.message.connectionUserPassword');
                     }
                 });
         };
@@ -822,12 +829,12 @@ angular.module('ep.token').
      * @example
      *
      */
-    epTokenService.$inject = ['$http', '$injector', '$q', '$timeout', 'epTokenConfig', 'epUtilsService', 'epModalDialogService', 'epLocalStorageService', 'epFeatureDetectionService'];
+    epTokenService.$inject = ['$http', '$injector', '$q', '$timeout', 'epTranslationService', 'epTokenConfig', 'epUtilsService', 'epModalDialogService', 'epLocalStorageService', 'epFeatureDetectionService'];
     angular.module('ep.token').
     service('epTokenService', epTokenService);
 
     /*@ngInject*/
-    function epTokenService($http, $injector, $q, $timeout,
+    function epTokenService($http, $injector, $q, $timeout, epTranslationService,
         epTokenConfig, epUtilsService, epModalDialogService, epLocalStorageService, epFeatureDetectionService) {
         var state = {
             tokenTimeoutPromise: undefined,
@@ -5250,7 +5257,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   'use strict';
 
   $templateCache.put('src/components/ep.token/ep-login-view/ep-login-view.html',
-    "<!--This is a partial for the ep-login-view directive --><div class=\"ep-login-view container-fluid\"><div class=ep-login-background><div class=ep-background-image ng-if=!settings.customImage></div><img class=ep-background-custom-image ng-if=settings.customImage ng-src={{settings.customImage}} alt=\"\"></div><div class=ep-login-up-box><div class=\"ep-login-box center-block\"><form class=form-group><div class=form-group><p class=ep-login-text><b>Please enter your credentials to sign in.</b></p><div class=input-group><span class=input-group-addon><i class=\"fa fa-user fa-fw\"></i></span> <input clearable name=username ng-keypress=clearWarning() id=username class=form-control ng-model=settings.username placeholder=\"User Name\"></div><br><div class=input-group><span class=input-group-addon><i class=\"fa fa-lock fa-fw\"></i></span> <input type=password clearable ng-keypress=passwordKeyPress($event) name=password id=password class=form-control ng-model=settings.password placeholder=\"Password\"></div><br><div ng-show=showServerName class=input-group><span class=input-group-addon><i class=\"fa fa-server fa-fw\"></i></span> <input spellcheck autocorrect=false clearable name=servername id=serverValue class=form-control ng-model=settings.serverName placeholder=\"Server\"></div><br><div align=center ng-if=showLoader><div class=progress><div class=\"progress-bar progress-bar-striped active\" role=progressbar aria-valuenow=100 aria-valuemin=0 aria-valuemax=100 style=\"width: 100%\"></div></div></div><div ng-if=status class=\"alert alert-danger\"><label>{{status}}</label><br></div><div><button ng-if=\"options.showSettingsButton !== false\" class=\"btn btn-default pull-left\" ng-click=showServer()><i class=\"fa fa-cog fa-fw\"></i></button> <button type=submit class=\"btn btn-primary pull-right\" ng-click=loginUser() ng-disabled=showLoader>Log in</button></div></div></form></div></div></div>"
+    "<!--This is a partial for the ep-login-view directive --><div class=\"ep-login-view container-fluid\"><div class=ep-login-background><div class=ep-background-image ng-if=!settings.customImage></div><img class=ep-background-custom-image ng-if=settings.customImage ng-src={{settings.customImage}} alt=\"\"></div><div class=ep-login-up-box><div class=\"ep-login-box center-block\"><form class=form-group><div class=form-group><p class=ep-login-text><b>{{'emf.ep.token.ep-login-view.label.enterCredentials' | epTranslate}}</b></p><div class=input-group><span class=input-group-addon><i class=\"fa fa-user fa-fw\"></i></span> <input clearable name=username ng-keypress=clearWarning() id=username class=form-control ng-model=settings.username placeholder=\"{{'emf.ep.token.ep-login-view.placeholder.userName' | epTranslate}}\"></div><br><div class=input-group><span class=input-group-addon><i class=\"fa fa-lock fa-fw\"></i></span> <input type=password clearable ng-keypress=passwordKeyPress($event) name=password id=password class=form-control ng-model=settings.password placeholder=\"{{'emf.ep.token.ep-login-view.placeholder.password' | epTranslate}}\"></div><br><div ng-show=showServerName class=input-group><span class=input-group-addon><i class=\"fa fa-server fa-fw\"></i></span> <input spellcheck autocorrect=false clearable name=servername id=serverValue class=form-control ng-model=settings.serverName placeholder=\"{{'emf.ep.token.ep-login-view.placeholder.server' | epTranslate}}\"></div><br><div align=center ng-if=showLoader><div class=progress><div class=\"progress-bar progress-bar-striped active\" role=progressbar aria-valuenow=100 aria-valuemin=0 aria-valuemax=100 style=\"width: 100%\"></div></div></div><div ng-if=status class=\"alert alert-danger\"><label>{{status}}</label><br></div><div><button ng-if=\"options.showSettingsButton !== false\" class=\"btn btn-default pull-left\" ng-click=showServer()><i class=\"fa fa-cog fa-fw\"></i></button> <button type=submit class=\"btn btn-primary pull-right\" ng-click=loginUser() ng-disabled=showLoader>{{'emf.ep.token.ep-login-view.btn.login' | epTranslate}}</button></div></div></form></div></div></div>"
   );
 
 

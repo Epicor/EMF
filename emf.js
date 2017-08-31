@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.99 built: 30-08-2017
+ * version:1.0.14-dev.100 built: 31-08-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.99","built":"2017-08-30"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.100","built":"2017-08-31"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -14155,12 +14155,52 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 * Represents path to resources
                 */
                 resourcePath: 'app/resources',
+
+                /**
+                * @ngdoc property
+                * @name emfResourceFile
+                * @propertyOf ep.application.object:epApplicationConfig
+                * @public
+                * @description
+                * The resource file containing all resource strings for emf
+                */
+                emfResourceFile: 'locale-en-us.json',
+
+                emfResources: {}
             };
 
             //we use the epSysConfig provider to perform the $http read against sysconfig.json
             //epSysConfig.mergeSection() function merges the defaults with sysconfig.json settings
-            this.$get = ['epSysConfig', function(epSysConfig) {
+            this.$get = ['$log', 'epSysConfig', 'epApplicationConfig', function($log, epSysConfig, epApplicationConfig) {
                 epSysConfig.mergeSection('ep.globalization', config);
+
+                ///This loads the global emf resources
+                config.readResources = function() {
+                    var jsonResources = epApplicationConfig.getAssetsPath('shell', 'locales/' + config.emfResourceFile);
+                    var q = $.ajax({
+                        type: 'GET',
+                        url: jsonResources,
+                        cache: false,
+                        async: false,
+                        contentType: 'application/json'
+                    });
+
+                    if (q.status === 200) {
+                        try {
+                            config.emfResources = angular.fromJson(q.responseText);
+                        }
+                        catch (e) {
+                            $log.warn('Error reading emf locale resources: ' + e.message);
+                        }
+                    }
+                };
+
+                config.getResourcePath = function(localeId) {
+                    return epApplicationConfig.getAssetsPath('shell', 'locales/locale-' + localeId + '.json');
+                };
+
+                config.readResources();
+
                 return config;
             }];
         });
@@ -14230,18 +14270,22 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      * @example
      *
      */
-    epTranslationService.$inject = ['$q', '$http', '$rootScope', 'epUtilsService', 'epGlobalizationConfig', 'epGlobalizationConstants'];
+    epTranslationService.$inject = ['$q', '$http', '$rootScope', 'epUtilsService', 'epGlobalizationConfig', 'epGlobalizationConstants', 'epApplicationConfig'];
     angular.module('ep.globalization').
         service('epTranslationService', epTranslationService);
 
     /*@ngInject*/
-    function epTranslationService($q, $http, $rootScope, epUtilsService, epGlobalizationConfig, epGlobalizationConstants) {
+    function epTranslationService($q, $http, $rootScope, epUtilsService, epGlobalizationConfig,
+        epGlobalizationConstants, epApplicationConfig) {
+
         var resources = {}; //all locale resources are held here
         var baseLocaleId = 'en-us'; //base locale
         var baseResource = {}; //pointer to base resource
         var curLocaleId = 'en-us'; //current locale
         var curResource = {}; //pointer to current resource
         var initializeCompleted = false; //set to true when both current and base are initialized
+        var curResourceEmf = {};
+
         var transOptions = {
             testEnabled: false,
             test: {
@@ -14254,7 +14298,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
         /**
          * @ngdoc method
-         * @name setLocale
+         * @name initialize
          * @methodOf ep.globalization.service:epTranslationService
          * @public
          * @description
@@ -14273,9 +14317,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 loadResource(loc).then(function() {
                     if (hasLoadedLocale(loc)) {
                         curLocaleId = loc;
-                        curResource = resources[loc].resource;
+                        updateCurrentAndBase(loc);
                         if (bsLocale === loc) {
-                            baseResource = resources[bsLocale].resource;
                             initializeCompleted = true;
                         } else {
                             loadBase(bsLocale);
@@ -14314,9 +14357,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          */
         function setLocale(localeId) {
             var loc = vlocale(localeId);
-            if (hasLoadedLocale(loc)) {
+            if (hasLocale(loc)) {
                 curLocaleId = loc;
-                curResource = resources[loc].resource;
+                updateCurrentAndBase(loc);
                 $rootScope.$emit(epGlobalizationConstants.GLOBALIZATION_LOCALE_CHANGE_EVENT, {
                     curLocaleId: curLocaleId,
                     baseLocaleId: baseLocaleId
@@ -14349,7 +14392,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         function getString(id) {
             var str = '';
             if (id) {
-                str = curResource[id] || baseResource[id] || id;
+                str = curResource[id] || baseResource[id] || getStringFromEmf(id) || id;
             }
             var ret = str;
             if (arguments.length > 1) {
@@ -14441,12 +14484,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 deferred.resolve(true);
             } else {
                 loadResource(loc).then(function() {
-                    if (hasLoadedLocale(loc)) {
-                        setLocale(loc);
-                        deferred.resolve(true);
-                    } else {
-                        deferred.resolve(false);
-                    }
+                    setLocale(loc);
+                    deferred.resolve(hasLoadedLocale(loc));
                 });
             }
             return deferred.promise;
@@ -14478,22 +14517,33 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         function loadResource(localeId) {
             var loc = vlocale(localeId);
             var ret = {
-                locale: loc,
-                resource: null,
-                status: 0
+                localeId: loc,
+                resource: {},
+                status: 0,
+                resourceEmf: {},
+                statusEmf: 0,
+                loaded: false
             };
 
             var deferred = $q.defer();
+
+            var fnAfterAppLoad = function(result){
+                loadEmfResource(loc, ret).then(function() {
+                    ret.loaded = (ret.status > 0 || ret.statusEmf > 0);
+                    deferred.resolve(result);
+                    resources[loc] = ret;
+                });            
+            };
+
             var path = epGlobalizationConfig.resourcePath + '/' + loc + '/locale-' + loc + '.json';
-            $http.get(path).then(function (result) {
+            $http.get(path).then(function(result) {
                 ret.resource = result.data;
                 ret.status = 1;
-                resources[loc] = ret;
-                deferred.resolve(ret);
-            }, function (error, status) {
-                resources[loc] = ret;
-                deferred.resolve(null);
+                fnAfterAppLoad(ret);
+            }, function(error, status) {
+                fnAfterAppLoad(null);
             });
+
             return deferred.promise;
         }
 
@@ -14516,8 +14566,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     baseLocaleId = baseLocId;
                     baseResource = resources[baseLocId].resource;
                     if (setCurrrent) {
-                        curResource = baseResource;
-                        curLocaleId = baseLocaleId;
+                        setLocale(baseLocId);
                     }
                 }
                 if (deferred) {
@@ -14550,16 +14599,61 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          */
         function hasLoadedLocale(localeId) {
             var loc = vlocale(localeId);
-            return (resources[loc] && resources[loc].status !== 0);
+            return (resources[loc] && resources[loc].loaded);
         }
 
-        function updateCurrentAndBase(localeId) {
-            if (localeId === baseLocaleId) {
-                baseResource = resources[localeId].resource;
+        /**
+         * @ngdoc method
+         * @name updateCurrentAndBase
+         * @methodOf ep.globalization.service:epTranslationService
+         * @private
+         * @description
+         * after updating locale resources we need to update pointers
+         */
+        function updateCurrentAndBase(updatedLocaleId) {
+            if (updatedLocaleId === baseLocaleId) {
+                baseResource = resources[updatedLocaleId].resource;
             }
-            if (localeId === curLocaleId) {
-                curResource = resources[localeId].resource;
+            if (updatedLocaleId === curLocaleId) {
+                curResource = resources[updatedLocaleId].resource;
+                curResourceEmf = (updatedLocaleId === 'en-us') ? {} : resources[updatedLocaleId].resourceEmf;
+            }         
+        }
+
+        /**
+         * @ngdoc method
+         * @name loadResource
+         * @methodOf ep.globalization.service:epTranslationService
+         * @private
+         * @description
+         * load resource for specified locale from json file
+         */
+        function loadEmfResource(localeId, entry) {
+            var loc = vlocale(localeId);
+
+            var deferred = $q.defer();
+            if (loc === 'en-us') {
+                deferred.resolve(true);
+            } else {
+                var emfResourcePath = epGlobalizationConfig.getResourcePath(loc);
+                $http.get(emfResourcePath).then(function(result) {
+                    entry.resourceEmf = result.data;
+                    entry.statusEmf = 1;
+
+                    deferred.resolve(true);
+                }, function(error, status) {
+                    entry.resourceEmf = {};
+                    entry.statusEmf = 0;
+
+                    deferred.resolve(false);
+                });
             }
+            return deferred.promise;
+        }
+
+        function getStringFromEmf(id) {
+            //need to optimize this for speed.
+            return curResourceEmf[id] || epGlobalizationConfig.emfResources[id];
         }
 
         return {
@@ -23863,8 +23957,14 @@ angular.module('ep.record.editor').
                 config.options.enableFeedback = epSysConfig.optionBool(config.options.enableFeedback, false);
                 config.options.enableViewAnimations = epSysConfig.optionBool(config.options.enableViewAnimations, true);
                 config.options.enableCache = epSysConfig.optionBool(config.options.enableCache, true);
+
+                //expose fnSetRoute in the config for dynamic routing
+                config.fnSetRoute = function(route, properties) {
+                    routeProviderReference.when(route, properties);
+                };
+
                 angular.forEach(config.routes, function(r) {
-                    routeProviderReference.when(r.route, {
+                    config.fnSetRoute(r.route, {
                         index: r.index,
                         templateUrl: r.url,
                         controller: r.controller,
@@ -29257,12 +29357,12 @@ angular.module('ep.signature').directive('epSignature',
      * @example
      *
      */
-    epLoginViewCtrl.$inject = ['$q', '$scope', 'epUtilsService', 'epModalDialogService', 'epTokenService'];
+    epLoginViewCtrl.$inject = ['$q', '$scope', 'epUtilsService', 'epModalDialogService', 'epTokenService', 'epTranslationService'];
     angular.module('ep.token')
         .controller('epLoginViewCtrl', epLoginViewCtrl);
 
     /*@ngInject*/
-    function epLoginViewCtrl($q, $scope, epUtilsService, epModalDialogService, epTokenService) {
+    function epLoginViewCtrl($q, $scope, epUtilsService, epModalDialogService, epTokenService, epTranslationService) {
 
         $scope.settings = {
             username: '',
@@ -29290,13 +29390,18 @@ angular.module('ep.signature').directive('epSignature',
 
             if ($scope.settings.username === '' || $scope.settings.password === '') {
                 $scope.hasError = true;
-                $scope.status = $scope.settings.username === '' ?
-                    'Oops.. There\'s no user name there!' : 'Oops.. You forgot to type your password!';
+                if ($scope.settings.username === '') {
+                    $scope.status =
+                        epTranslationService.getString('emf.ep.token.ep-login-view.message.missingUserName');
+                } else {
+                    $scope.status =
+                        epTranslationService.getString('emf.ep.token.ep-login-view.message.youForgotPassword');
+                }
                 epModalDialogService.hide();
                 return;
             } else if ($scope.settings.serverName === '') {
                 $scope.hasError = true;
-                $scope.status = 'Oops... Don\'t forget to type the Server.';
+                $scope.status = epTranslationService.getString('emf.ep.token.ep-login-view.message.missingServer');
                 epModalDialogService.hide();
                 return;
             }
@@ -29360,14 +29465,16 @@ angular.module('ep.signature').directive('epSignature',
                     $scope.hasError = true;
                     switch (response.status) {
                         case 401:
-                            $scope.status = 'Connection failed, please review the username and password and try again.';
+                            $scope.status =
+                                epTranslationService.getString('emf.ep.token.ep-login-view.message.connectionUserPassword');
                             break;
                         case 400:
-                            $scope.status = 'Token authentication may not be enabled on the Epicor server. ' +
-                                'Refer to the Epicor Administration Console.';
+                            $scope.status =
+                                epTranslationService.getString('emf.ep.token.ep-login-view.message.tokenAuthError');
                             break;
                         default:
-                            $scope.status = 'Connection failed, please review the username and password and try again.';
+                            $scope.status =
+                                epTranslationService.getString('emf.ep.token.ep-login-view.message.connectionUserPassword');
                     }
                 });
         };
@@ -29680,12 +29787,12 @@ angular.module('ep.token').
      * @example
      *
      */
-    epTokenService.$inject = ['$http', '$injector', '$q', '$timeout', 'epTokenConfig', 'epUtilsService', 'epModalDialogService', 'epLocalStorageService', 'epFeatureDetectionService'];
+    epTokenService.$inject = ['$http', '$injector', '$q', '$timeout', 'epTranslationService', 'epTokenConfig', 'epUtilsService', 'epModalDialogService', 'epLocalStorageService', 'epFeatureDetectionService'];
     angular.module('ep.token').
     service('epTokenService', epTokenService);
 
     /*@ngInject*/
-    function epTokenService($http, $injector, $q, $timeout,
+    function epTokenService($http, $injector, $q, $timeout, epTranslationService,
         epTokenConfig, epUtilsService, epModalDialogService, epLocalStorageService, epFeatureDetectionService) {
         var state = {
             tokenTimeoutPromise: undefined,
@@ -31419,7 +31526,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.token/ep-login-view/ep-login-view.html',
-    "<!--This is a partial for the ep-login-view directive --><div class=\"ep-login-view container-fluid\"><div class=ep-login-background><div class=ep-background-image ng-if=!settings.customImage></div><img class=ep-background-custom-image ng-if=settings.customImage ng-src={{settings.customImage}} alt=\"\"></div><div class=ep-login-up-box><div class=\"ep-login-box center-block\"><form class=form-group><div class=form-group><p class=ep-login-text><b>Please enter your credentials to sign in.</b></p><div class=input-group><span class=input-group-addon><i class=\"fa fa-user fa-fw\"></i></span> <input clearable name=username ng-keypress=clearWarning() id=username class=form-control ng-model=settings.username placeholder=\"User Name\"></div><br><div class=input-group><span class=input-group-addon><i class=\"fa fa-lock fa-fw\"></i></span> <input type=password clearable ng-keypress=passwordKeyPress($event) name=password id=password class=form-control ng-model=settings.password placeholder=\"Password\"></div><br><div ng-show=showServerName class=input-group><span class=input-group-addon><i class=\"fa fa-server fa-fw\"></i></span> <input spellcheck autocorrect=false clearable name=servername id=serverValue class=form-control ng-model=settings.serverName placeholder=\"Server\"></div><br><div align=center ng-if=showLoader><div class=progress><div class=\"progress-bar progress-bar-striped active\" role=progressbar aria-valuenow=100 aria-valuemin=0 aria-valuemax=100 style=\"width: 100%\"></div></div></div><div ng-if=status class=\"alert alert-danger\"><label>{{status}}</label><br></div><div><button ng-if=\"options.showSettingsButton !== false\" class=\"btn btn-default pull-left\" ng-click=showServer()><i class=\"fa fa-cog fa-fw\"></i></button> <button type=submit class=\"btn btn-primary pull-right\" ng-click=loginUser() ng-disabled=showLoader>Log in</button></div></div></form></div></div></div>"
+    "<!--This is a partial for the ep-login-view directive --><div class=\"ep-login-view container-fluid\"><div class=ep-login-background><div class=ep-background-image ng-if=!settings.customImage></div><img class=ep-background-custom-image ng-if=settings.customImage ng-src={{settings.customImage}} alt=\"\"></div><div class=ep-login-up-box><div class=\"ep-login-box center-block\"><form class=form-group><div class=form-group><p class=ep-login-text><b>{{'emf.ep.token.ep-login-view.label.enterCredentials' | epTranslate}}</b></p><div class=input-group><span class=input-group-addon><i class=\"fa fa-user fa-fw\"></i></span> <input clearable name=username ng-keypress=clearWarning() id=username class=form-control ng-model=settings.username placeholder=\"{{'emf.ep.token.ep-login-view.placeholder.userName' | epTranslate}}\"></div><br><div class=input-group><span class=input-group-addon><i class=\"fa fa-lock fa-fw\"></i></span> <input type=password clearable ng-keypress=passwordKeyPress($event) name=password id=password class=form-control ng-model=settings.password placeholder=\"{{'emf.ep.token.ep-login-view.placeholder.password' | epTranslate}}\"></div><br><div ng-show=showServerName class=input-group><span class=input-group-addon><i class=\"fa fa-server fa-fw\"></i></span> <input spellcheck autocorrect=false clearable name=servername id=serverValue class=form-control ng-model=settings.serverName placeholder=\"{{'emf.ep.token.ep-login-view.placeholder.server' | epTranslate}}\"></div><br><div align=center ng-if=showLoader><div class=progress><div class=\"progress-bar progress-bar-striped active\" role=progressbar aria-valuenow=100 aria-valuemin=0 aria-valuemax=100 style=\"width: 100%\"></div></div></div><div ng-if=status class=\"alert alert-danger\"><label>{{status}}</label><br></div><div><button ng-if=\"options.showSettingsButton !== false\" class=\"btn btn-default pull-left\" ng-click=showServer()><i class=\"fa fa-cog fa-fw\"></i></button> <button type=submit class=\"btn btn-primary pull-right\" ng-click=loginUser() ng-disabled=showLoader>{{'emf.ep.token.ep-login-view.btn.login' | epTranslate}}</button></div></div></form></div></div></div>"
   );
 
 
