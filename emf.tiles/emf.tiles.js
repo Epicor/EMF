@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.102 built: 31-08-2017
+ * version:1.0.15 built: 31-08-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["tiles"] = {"libName":"tiles","version":"1.0.14-dev.102","built":"2017-08-31"};
+__ep_build_info["tiles"] = {"libName":"tiles","version":"1.0.15","built":"2017-08-31"};
 
 'use strict';
 /**
@@ -659,47 +659,10 @@ app.directive('epCardTitle',
             if (!$scope.state.list) {
                 $scope.state.list = [];
             }
-            // first look into the state and see if there are elements on the favorites state that are not there any more in the new favorites array from the updated menu
-            removeFavoritesFromState(event, data);
-            // then just add the new ones, the ones that does not exist on the state favorites, but it does exist in the favorites new object.
-            addFavoritesToState(event, data);
-        };
-
-        function addFavoritesToState(event, data) {
-            if ($scope.menuId !== data.menuId) {
-                return;
-            }
-
-            if (!$scope.state.list) {
-                $scope.state.list = [];
-            }
-
-            var menuFactory = data.factory;
-            var favs = menuFactory.data.favorites;
-
-            angular.forEach(favs, function(menu) {
-                var menuInList = _.find($scope.state.list, function(item) {
-                    return menu === item.menuItem;
-                });
-                if (!menuInList) {
-                    $scope.state.list.push($scope.createItem(menuFactory, menu));
-                }
-            });
-        }
-
-        function removeFavoritesFromState(event, data) {
-            if ($scope.menuId !== data.menuId) {
-                return;
-            }
-
-            if (!$scope.state.list) {
-                $scope.state.list = [];
-            }
 
             var menuFactory = data.factory;
             var favs = menuFactory.data.favorites;
             var removeItems = [];
-
             angular.forEach($scope.state.list, function(item) {
                 var itemInFavs = _.find(favs, function(menu) {
                     return menu === item.menuItem;
@@ -716,7 +679,15 @@ app.directive('epCardTitle',
                     $scope.state.list.splice(idx, 1);
                 }
             });
-        }
+            angular.forEach(favs, function(menu) {
+                var menuInList = _.find($scope.state.list, function(item) {
+                    return menu === item.menuItem;
+                });
+                if (!menuInList) {
+                    $scope.state.list.push($scope.createItem(menuFactory, menu));
+                }
+            });
+        };
 
         $scope.onMenuItemClicked = function(event, data) {
             if ($scope.menuId !== data.menuId) {
@@ -735,8 +706,7 @@ app.directive('epCardTitle',
         };
         $rootScope.$on(epMultiLevelMenuConstants.MLM_INITIALIZED_EVENT, $scope.onMenuChange);
         $rootScope.$on(epMultiLevelMenuConstants.MLM_MENU_DATA_CHANGED, $scope.onMenuChange);
-        $rootScope.$on(epMultiLevelMenuConstants.MLM_FAVORITES_ADDED, addFavoritesToState);
-        $rootScope.$on(epMultiLevelMenuConstants.MLM_FAVORITES_DELETED, removeFavoritesFromState);
+        $rootScope.$on(epMultiLevelMenuConstants.MLM_FAVORITES_CHANGED, $scope.onFavoritesChange);
         $rootScope.$on(epMultiLevelMenuConstants.MLM_ITEM_CLICKED, $scope.onMenuItemClicked);
 
         $scope.$watch('menuId', function(newValue, oldValue) {
