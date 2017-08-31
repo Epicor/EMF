@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.15 built: 31-08-2017
+ * version:1.0.14-dev.103 built: 31-08-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.15","built":"2017-08-31"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.14-dev.103","built":"2017-08-31"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -198,6 +198,21 @@ if (!epEmfGlobal) {
     'use strict';
 
     angular.module('ep.modaldialog', ['ep.templates']);
+})();
+
+/**
+ * @ngdoc overview
+ * @name ep.globalization
+ * @description
+ * globalization aspects - such as translation and formats
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.globalization', [
+        'ep.templates',
+        'ep.sysconfig'
+    ]);
 })();
 
 /**
@@ -483,6 +498,8 @@ if (!epEmfGlobal) {
          * @description
          * Formats the string in the same way as .NET strFormat('first argument is {0}, second is {1}', 'arg1', 'arg2')
          * will result in 'first argument is arg1, second is arg2'
+         * arguments can be passed comma separated or as an array e.g:
+         * strFormat('first argument is {0}, second is {1}', ['arg1', 'arg2'])
          * @example
          *   var str = epUtilsService.strFormat('The first name is: {0} and the last name {1}','Michael','Jackson');
          * @returns {string} string with combined arguments
@@ -494,12 +511,19 @@ if (!epEmfGlobal) {
             var ret = str;
             if (arguments.length > 1) {
                 var tempArgs = arguments;
+                var offset = 1;
+
+                if (arguments.length === 2 && angular.isArray(arguments[1])) {
+                    //if arguments are passed as an array in second parameter
+                    tempArgs = arguments[1];
+                    offset = 0;
+                }
                 ret = ret.replace(/\{\d+}/g, function(match) {
                     var index = +match.slice(1, -1);
                     var arg = null;
 
-                    if (index + 1 < tempArgs.length) {
-                        arg = tempArgs[index + 1];
+                    if (index + offset < tempArgs.length) {
+                        arg = tempArgs[index + offset];
                     }
                     return arg;
                 });
@@ -643,6 +667,35 @@ if (!epEmfGlobal) {
          */
         function makePath() {
             var path = '';
+            var _args = _.flatten(arguments, true);
+            if (_args && _args.length === 1 && angular.isObject(_args[0]) && _args[0].length === 0) {
+                return path; //special case when caller passed arguments and arguments were empty
+            }
+            angular.forEach(_args, function(arg) {
+                path += '/' + arg;
+            });
+            return path;
+        }
+
+        /**
+         * @ngdoc method
+         * @name makeAppPath
+         * @methodOf ep.utils.service:epUtilsService
+         * @public
+         * @description
+         * Creates application path by concatenation of input arguments which can be strings, array of
+         * strings or arguments object passed from another function
+         * @returns {string} path
+         * @example
+         *   var str = epUtilsService.makeAppPath('dir1','dir2');
+         *   //result: 'app/dir1/dir2'
+         *
+         *   var str = utilsService.makeAppPath(['dir1', 'dir2'], ['dir3', 'dir4'], 'dir5');
+         *   //result: 'app/dir1/dir2/dir3/dir4/dir5';
+         *
+         */
+        function makeAppPath() {
+            var path = 'app';
             var _args = _.flatten(arguments, true);
             if (_args && _args.length === 1 && angular.isObject(_args[0]) && _args[0].length === 0) {
                 return path; //special case when caller passed arguments and arguments were empty
@@ -849,6 +902,7 @@ if (!epEmfGlobal) {
             hasProperty: hasProperty,
             loadScript: loadScript,
             makePath: makePath,
+            makeAppPath: makeAppPath,
             mapArray: mapArray,
             merge: merge,
             strFormat: strFormat,
@@ -1569,7 +1623,8 @@ if (!epEmfGlobal) {
     angular.module('ep.local.storage').service('epLocalStorageService', [
     'epLocalStorageConfig',
     function(epLocalStorageConfig) {
-        var settings = angular.merge({}, epLocalStorageConfig.settings);
+        var settingsID;
+        var settings;
 
         //  This routine parses a path string in the form of 'object.property'
         //  and adds, updates or deletes the value at that settings location.
@@ -1618,7 +1673,7 @@ if (!epEmfGlobal) {
         function commit() {
             // Applies any changes that have been made to the settings
             /*jshint validthis: true */
-            localStorage.setItem(epLocalStorageConfig.settingsID, JSON.stringify(settings));
+            localStorage.setItem(settingsID, JSON.stringify(settings));
         }
         /* ------------- Public Methods ----------------------> */
         /**
@@ -1642,7 +1697,7 @@ if (!epEmfGlobal) {
                 /*jshint validthis: true */
                 setValueAtPath(settings, path, defaultSetting);
             } else {
-                localStorage.removeItem(epLocalStorageConfig.settingsID);
+                localStorage.removeItem(settingsID);
                 settings = angular.merge({}, epLocalStorageConfig.settings);
             }
             /*jshint validthis: true */
@@ -1673,13 +1728,22 @@ if (!epEmfGlobal) {
         * @description
         * This initializes local storage.
         * It will take seed data from sysconfig.json / epLocalStorageConfig.settings
+        *
+        * @param {string} settingsId optional parameter that specifies the suffix of the key for all the local cache
         */
-        function init() {
+        function init(settingsId) {
+            settingsID = epLocalStorageConfig.settingsID;
+            if (settingsId) {
+                settingsID += '.' + settingsId;
+            }
             // Read the settings from the local storage.
-            var settingsSrc = localStorage.getItem(epLocalStorageConfig.settingsID);
+            var settingsSrc = localStorage.getItem(settingsID);
             if (settingsSrc) {
                 /*jshint validthis: true */
                 settings = JSON.parse(settingsSrc);
+            }
+            else {
+                settings = angular.merge({}, epLocalStorageConfig.settings);
             }
         }
         /**
@@ -1757,7 +1821,8 @@ if (!epEmfGlobal) {
             update: update,
             merge: merge,
             getOrAdd: getOrAdd,
-            clear: clear
+            clear: clear,
+            init: init
         };
     }]);
 })();
@@ -2676,12 +2741,12 @@ angular.module('ep.viewmodal').
                 evt.stopPropagation();
                 evt.preventDefault();
                 $(ele).removeClass('ep-drop-active ep-drop-highlight');
-                if ($scope[attrs.overHandler]) {
+                if ($scope[attrs.leaveHandler]) {
                     var dragOperation = getDragOperationFnc();
                     /*jshint validthis:true */
                     var item = dragOperation.dragItem || this;
                     /*jshint validthis:true */
-                    $scope[attrs.overHandler].call(item, dragOperation, evt);
+                    $scope[attrs.leaveHandler].call(item, dragOperation, evt);
                 }
             }
 
@@ -4275,6 +4340,553 @@ function() {
 })();
 
 /**
+ * @ngdoc object
+ * @name ep.globalization.object:epGlobalizationConfig
+ * @description
+ * Provider for epGlobalizationConfig.
+ * Gets configuration options from sysconfig.json or default
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.globalization').provider('epGlobalizationConfig',
+        function() {
+            var config = {
+                /**
+                * @ngdoc property
+                * @name resourcePath
+                * @propertyOf ep.globalization.object:epGlobalizationConfig
+                * @public
+                * @description
+                * Represents base locale that acts as a fallback
+                */
+                baseLocaleId: 'en-US',
+
+                /**
+                * @ngdoc property
+                * @name resourcePath
+                * @propertyOf ep.globalization.object:epGlobalizationConfig
+                * @public
+                * @description
+                * Represents path to resources
+                */
+                resourcePath: 'app/resources',
+
+                /**
+                * @ngdoc property
+                * @name emfResourceFile
+                * @propertyOf ep.application.object:epApplicationConfig
+                * @public
+                * @description
+                * The resource file containing all resource strings for emf
+                */
+                emfResourceFile: 'locale-en-us.json',
+
+                emfResources: {}
+            };
+
+            //we use the epSysConfig provider to perform the $http read against sysconfig.json
+            //epSysConfig.mergeSection() function merges the defaults with sysconfig.json settings
+            this.$get = ['$log', 'epSysConfig', 'epApplicationConfig', function($log, epSysConfig, epApplicationConfig) {
+                epSysConfig.mergeSection('ep.globalization', config);
+
+                ///This loads the global emf resources
+                config.readResources = function() {
+                    var jsonResources = epApplicationConfig.getAssetsPath('shell', 'locales/' + config.emfResourceFile);
+                    var q = $.ajax({
+                        type: 'GET',
+                        url: jsonResources,
+                        cache: false,
+                        async: false,
+                        contentType: 'application/json'
+                    });
+
+                    if (q.status === 200) {
+                        try {
+                            config.emfResources = angular.fromJson(q.responseText);
+                        }
+                        catch (e) {
+                            $log.warn('Error reading emf locale resources: ' + e.message);
+                        }
+                    }
+                };
+
+                config.getResourcePath = function(localeId) {
+                    return epApplicationConfig.getAssetsPath('shell', 'locales/locale-' + localeId + '.json');
+                };
+
+                config.readResources();
+
+                return config;
+            }];
+        });
+})();
+
+/**
+ * @ngdoc object
+ * @name ep.globalization.object:epGlobalizationConstants
+ * @description
+ * Constants for epGlobalization.
+ * ep.globalization constants
+ * Events:
+    * <pre>
+    *   GLOBALIZATION_LOCALE_CHANGE_EVENT - event when locale is changed
+    * </pre>
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.globalization').constant('epGlobalizationConstants', {
+        //EVENT NAMES:
+        GLOBALIZATION_LOCALE_CHANGE_EVENT: 'GLOBALIZATION_LOCALE_CHANGE_EVENT'
+    });
+})();
+
+/**
+* @ngdoc filter
+* @name ep.globalization.filter:epTranslate
+*
+* @description
+* A filter to translate (get resource string). Specify a resource id followed by epTranslate filter
+* to get the translation.
+*
+* @example
+* <p>{{'customer.Address1' | epTranslate}}</p>
+*
+*/
+(function() {
+    'use strict';
+
+    angular.module('ep.globalization').
+        filter('epTranslate',
+        /*@ngInject*/
+        ['epTranslationService', function(epTranslationService) {
+            var filter = function(id) {
+                if (arguments.length > 1) {
+                    return epTranslationService.getString(id, Array.prototype.slice.call(arguments, 1));
+                }
+                return epTranslationService.getString(id);
+            };
+            filter.$stateful = true;
+            return filter;
+        }]
+        );
+})();
+
+
+(function () {
+    'use strict';
+    /**
+     * @ngdoc service
+     * @name ep.globalization.service:epTranslationService
+     * @description
+     * Service for the ep.globalization module
+     * manage globalization aspects such as translation and formatting
+     *
+     * @example
+     *
+     */
+    epTranslationService.$inject = ['$q', '$http', '$rootScope', 'epUtilsService', 'epGlobalizationConfig', 'epGlobalizationConstants', 'epApplicationConfig'];
+    angular.module('ep.globalization').
+        service('epTranslationService', epTranslationService);
+
+    /*@ngInject*/
+    function epTranslationService($q, $http, $rootScope, epUtilsService, epGlobalizationConfig,
+        epGlobalizationConstants, epApplicationConfig) {
+
+        var resources = {}; //all locale resources are held here
+        var baseLocaleId = 'en-us'; //base locale
+        var baseResource = {}; //pointer to base resource
+        var curLocaleId = 'en-us'; //current locale
+        var curResource = {}; //pointer to current resource
+        var initializeCompleted = false; //set to true when both current and base are initialized
+        var curResourceEmf = {};
+
+        var transOptions = {
+            testEnabled: false,
+            test: {
+                fillChar: '^',
+                endingChar: '|',
+                minChars: 8,
+                expandRatio: 0.3
+            }
+        };
+
+        /**
+         * @ngdoc method
+         * @name initialize
+         * @methodOf ep.globalization.service:epTranslationService
+         * @public
+         * @description
+         * set the current locale
+         * @param {string} localeId - locale to be set as current
+         * @param {object} options - various translation options
+         */
+        function initialize(localeId, options) {
+            var deferred = $q.defer();
+
+            angular.merge(transOptions, options || {});
+
+            var bsLocale = vlocale(epGlobalizationConfig.baseLocale) || 'en-us';
+            var loc = vlocale(localeId);
+            if (loc) {
+                loadResource(loc).then(function() {
+                    if (hasLoadedLocale(loc)) {
+                        curLocaleId = loc;
+                        updateCurrentAndBase(loc);
+                        if (bsLocale === loc) {
+                            initializeCompleted = true;
+                        } else {
+                            loadBase(bsLocale);
+                        }
+                    } else {
+                        loadBase(bsLocale, true);
+                    }
+                    deferred.resolve(true);
+                });
+            } else {
+                loadBase(bsLocale, true, deferred);
+            }
+            return deferred.promise;
+        }
+
+        /**
+         * @ngdoc method
+         * @name currentLocale
+         * @methodOf ep.globalization.service:epTranslationService
+         * @public
+         * @description
+         * get the current locale
+         */
+        function currentLocale() {
+            return curLocaleId;
+        }
+
+        /**
+         * @ngdoc method
+         * @name setLocale
+         * @methodOf ep.globalization.service:epTranslationService
+         * @public
+         * @description
+         * set current locale (must be already loaded)
+         * @param {string} localeId - locale to be set as current
+         */
+        function setLocale(localeId) {
+            var loc = vlocale(localeId);
+            if (hasLocale(loc)) {
+                curLocaleId = loc;
+                updateCurrentAndBase(loc);
+                $rootScope.$emit(epGlobalizationConstants.GLOBALIZATION_LOCALE_CHANGE_EVENT, {
+                    curLocaleId: curLocaleId,
+                    baseLocaleId: baseLocaleId
+                });
+            }
+        }
+
+        /**
+         * @ngdoc method
+         * @name baseLocale
+         * @methodOf ep.globalization.service:epTranslationService
+         * @public
+         * @description
+         * get the base locale
+         */
+        function baseLocale() {
+            return baseLocaleId;
+        }
+
+        /**
+         * @ngdoc method
+         * @name getString
+         * @methodOf ep.globalization.service:epTranslationService
+         * @public
+         * @description
+         * get resource string. can pass any number of optional arguments after the id. arguments
+         * replace the placeholders in {0}, {1} notation
+         * @param {string} id - id of resource string to be returned from current locale resources
+         */
+        function getString(id) {
+            var str = '';
+            if (id) {
+                str = curResource[id] || baseResource[id] || getStringFromEmf(id) || id;
+            }
+            var ret = str;
+            if (arguments.length > 1) {
+                if (arguments.length === 2 && angular.isFunction(arguments[1].pop)) {
+                    //if arguments are passed as an array in second parameter
+                    ret = epUtilsService.strFormat(str, arguments[1]);
+                } else {
+                    ret = epUtilsService.strFormat(str, Array.prototype.slice.call(arguments, 1));
+                }
+            }
+
+            if (ret && transOptions.test && transOptions.testEnabled === true && curLocaleId === baseLocaleId) {
+                var test = transOptions.test;
+                var expandedStr = ret || '';
+                var origLen = expandedStr.length;
+                var percLen = Math.round(origLen * test.expandRatio);
+                var newLen = (origLen + percLen < test.minChars) ? test.minChars : (origLen + percLen);
+                var expansionLen = newLen - origLen;
+                if (expansionLen > 0) {
+                    if (expansionLen > 1) newLen--;
+                    expandedStr = expandedStr.padEnd(newLen, test.fillChar) + test.endingChar;
+                }
+                ret = expandedStr;
+            }
+            return ret;
+        }
+
+        /**
+         * @ngdoc method
+         * @name load
+         * @methodOf ep.globalization.service:epTranslationService
+         * @public
+         * @description
+         * load manually resource strings
+         * @param {string} localeId - id of locale to be loaded
+         * @param {object} resource - json resource (contains string id and string pairs)
+         * @param {bool} setCurrent - optional parameter to set this locale as current (active)
+         */
+        function load(localeId, resource, setCurrent) {
+            var loc = vlocale(localeId);
+            resources[loc] = {
+                locale: loc,
+                resource: resource,
+                status: 1
+            };
+            if (setCurrent === true) {
+                setLocale(loc);
+            }
+            updateCurrentAndBase(loc);
+        }
+
+        /**
+         * @ngdoc method
+         * @name loadFromResource
+         * @methodOf ep.globalization.service:epTranslationService
+         * @public
+         * @description
+         * load resource strings from corresponding resource json file
+         * @param {string} localeId - id of locale to be loaded
+         * @param {bool} setCurrent - optional parameter to set this locale as current (active)
+         */
+        function loadFromResource(localeId, setCurrent) {
+            var deferred = $q.defer();
+            var loc = vlocale(localeId);
+            loadResource(loc).then(function () {
+                if (setCurrent === true) {
+                    setLocale(loc);
+                }
+                updateCurrentAndBase(loc);
+                deferred.resolve(resources[loc]);
+            });
+            return deferred.promise;
+        }
+
+        /**
+         * @ngdoc method
+         * @name changeLocale
+         * @methodOf ep.globalization.service:epTranslationService
+         * @public
+         * @description
+         * change locale. if not loaded, it will be loaded from resources
+         * @param {string} localeId - id of locale to be loaded and set as current
+         */
+        function changeLocale(localeId) {
+            var deferred = $q.defer();
+            var loc = vlocale(localeId);
+            if (hasLoadedLocale(loc)) {
+                setLocale(loc);
+                deferred.resolve(true);
+            } else {
+                loadResource(loc).then(function() {
+                    setLocale(loc);
+                    deferred.resolve(hasLoadedLocale(loc));
+                });
+            }
+            return deferred.promise;
+        }
+
+        /**
+         * @ngdoc method
+         * @name setOptions
+         * @methodOf ep.globalization.service:epTranslationService
+         * @public
+         * @description
+         * set translation options
+         * @param { object } options - various translation options
+         */
+        function setOptions(options) {
+            angular.merge(transOptions, options || {});
+        }
+
+        //private
+
+        /**
+         * @ngdoc method
+         * @name loadResource
+         * @methodOf ep.globalization.service:epTranslationService
+         * @private
+         * @description
+         * load resource for specified locale from json file
+         */
+        function loadResource(localeId) {
+            var loc = vlocale(localeId);
+            var ret = {
+                localeId: loc,
+                resource: {},
+                status: 0,
+                resourceEmf: {},
+                statusEmf: 0,
+                loaded: false
+            };
+
+            var deferred = $q.defer();
+
+            var fnAfterAppLoad = function(result){
+                loadEmfResource(loc, ret).then(function() {
+                    ret.loaded = (ret.status > 0 || ret.statusEmf > 0);
+                    deferred.resolve(result);
+                    resources[loc] = ret;
+                });            
+            };
+
+            var path = epGlobalizationConfig.resourcePath + '/' + loc + '/locale-' + loc + '.json';
+            $http.get(path).then(function(result) {
+                ret.resource = result.data;
+                ret.status = 1;
+                fnAfterAppLoad(ret);
+            }, function(error, status) {
+                fnAfterAppLoad(null);
+            });
+
+            return deferred.promise;
+        }
+
+        //make sure locale is forced into lower case
+        function vlocale(id) {
+            return (id || '').toLowerCase(); 
+        }
+
+        /**
+         * @ngdoc method
+         * @name loadBase
+         * @methodOf ep.globalization.service:epTranslationService
+         * @private
+         * @description
+         * load base locale resources. Used in initialization only
+         */
+        function loadBase(baseLocId, setCurrrent, deferred) {
+            loadResource(baseLocId).then(function() {
+                if (hasLoadedLocale(baseLocId)) {
+                    baseLocaleId = baseLocId;
+                    baseResource = resources[baseLocId].resource;
+                    if (setCurrrent) {
+                        setLocale(baseLocId);
+                    }
+                }
+                if (deferred) {
+                    deferred.resolve(true);
+                }
+                initializeCompleted = true;
+            });
+        };
+
+        /**
+         * @ngdoc method
+         * @name hasLocale
+         * @methodOf ep.globalization.service:epTranslationService
+         * @private
+         * @description
+         * check if current locale is present
+         */
+        function hasLocale(localeId) {
+            var loc = vlocale(localeId);
+            return (resources[loc]);
+        }
+
+        /**
+         * @ngdoc method
+         * @name hasLoadedLocale
+         * @methodOf ep.globalization.service:epTranslationService
+         * @private
+         * @description
+         * check if current locale is present and loaded
+         */
+        function hasLoadedLocale(localeId) {
+            var loc = vlocale(localeId);
+            return (resources[loc] && resources[loc].loaded);
+        }
+
+        /**
+         * @ngdoc method
+         * @name updateCurrentAndBase
+         * @methodOf ep.globalization.service:epTranslationService
+         * @private
+         * @description
+         * after updating locale resources we need to update pointers
+         */
+        function updateCurrentAndBase(updatedLocaleId) {
+            if (updatedLocaleId === baseLocaleId) {
+                baseResource = resources[updatedLocaleId].resource;
+            }
+            if (updatedLocaleId === curLocaleId) {
+                curResource = resources[updatedLocaleId].resource;
+                curResourceEmf = (updatedLocaleId === 'en-us') ? {} : resources[updatedLocaleId].resourceEmf;
+            }         
+        }
+
+        /**
+         * @ngdoc method
+         * @name loadResource
+         * @methodOf ep.globalization.service:epTranslationService
+         * @private
+         * @description
+         * load resource for specified locale from json file
+         */
+        function loadEmfResource(localeId, entry) {
+            var loc = vlocale(localeId);
+
+            var deferred = $q.defer();
+            if (loc === 'en-us') {
+                deferred.resolve(true);
+            } else {
+                var emfResourcePath = epGlobalizationConfig.getResourcePath(loc);
+                $http.get(emfResourcePath).then(function(result) {
+                    entry.resourceEmf = result.data;
+                    entry.statusEmf = 1;
+
+                    deferred.resolve(true);
+                }, function(error, status) {
+                    entry.resourceEmf = {};
+                    entry.statusEmf = 0;
+
+                    deferred.resolve(false);
+                });
+            }
+            return deferred.promise;
+        }
+
+        function getStringFromEmf(id) {
+            //need to optimize this for speed.
+            return curResourceEmf[id] || epGlobalizationConfig.emfResources[id];
+        }
+
+        return {
+            initialize: initialize,
+            changeLocale: changeLocale,
+            getString: getString,
+            load: load,
+            loadFromResource: loadFromResource,
+            currentLocale: currentLocale,
+            baseLocale: baseLocale,
+            setLocale: setLocale,
+            setOptions: setOptions
+        };
+    }
+}());
+
+/**
  * @ngdoc service
  * @name ep.shell.service:epShellFeedbackService
  * @description
@@ -4517,7 +5129,15 @@ function() {
 
                     }
                 });
-
+                $scope.buildCssClass = function(animate){
+                    var cssClass = 'ep-fullscreen ep-view ';
+                    if(animate){
+                        cssClass += ' ep-anim-speed-' + $scope.state.animationSpeed;
+                        cssClass += ' ' + $scope.state.animationIn + ' ' + $scope.state.animationOut;
+                        cssClass += ' ep-view-transistion ' + $scope.state.viewAnimation;
+                    } 
+                    return cssClass;
+                }
                 //launch help event function
                 $scope.launchHelp = function() {
                     $location.url('/help');
@@ -4555,19 +5175,23 @@ function() {
      *   <epshell><div ng-view></div></epshell>
      * </body>
      */
-(function() {
+(function () {
     'use strict';
 
-    angular.module('ep.shell').directive('epShell', [
-    function() {
+    angular.module('ep.shell').
+        directive('epShell', epShellDirective);
+
+    /*@ngInject*/
+    function epShellDirective() {
         return {
             restrict: 'E,A',
             replace: true,
             transclude: true,
-            templateUrl: 'src/components/ep.shell/shell.html'
+            templateUrl: 'src/components/ep.shell/shell.html',
+            link: function() {
+            }
         };
     }
-    ]);
 })();
 
 /**
@@ -4646,8 +5270,14 @@ function() {
                 config.options.enableFeedback = epSysConfig.optionBool(config.options.enableFeedback, false);
                 config.options.enableViewAnimations = epSysConfig.optionBool(config.options.enableViewAnimations, true);
                 config.options.enableCache = epSysConfig.optionBool(config.options.enableCache, true);
+
+                //expose fnSetRoute in the config for dynamic routing
+                config.fnSetRoute = function(route, properties) {
+                    routeProviderReference.when(route, properties);
+                };
+
                 angular.forEach(config.routes, function(r) {
-                    routeProviderReference.when(r.route, {
+                    config.fnSetRoute(r.route, {
                         index: r.index,
                         templateUrl: r.url,
                         controller: r.controller,
@@ -4836,12 +5466,13 @@ function() {
                                     $(evt.target).prop('checked', btn.checked);
                                 });
                             }
-                        }
-                        btn.action(btn,evt);
-                        if (btn.type === 'checked') {
                             evt.preventDefault();
                             evt.stopPropagation();
                         }
+                        if(btn.type === 'toggle'){
+                            btn.active = !btn.active;
+                        }
+                        btn.action(btn,evt);
                     }
                 },
                 buttonMouseDown: function(btn) {
@@ -4943,14 +5574,16 @@ function() {
             function setCurrentModeFlags(viewScope) {
                 var mode = shellState.viewSettings[shellState.mediaMode];
                 var left = shellState.viewSettings.sidebar.left || {
-                    showToggleButton: true, enabled: false,
+                    showToggleButton: true, 
+                    enabled: false,
                     toggleButtonIcon: 'fa-bars'
                 };
                 if (left.enabled === undefined) {
                     left.enabled = mode.enableLeftSidebar;
                 }
                 var right = shellState.viewSettings.sidebar.right || {
-                    showToggleButton: true, enabled: false,
+                    showToggleButton: true, 
+                    enabled: false,
                     toggleButtonIcon: 'fa-bars'
                 };
                 if (right.enabled === undefined) {
@@ -5035,14 +5668,18 @@ function() {
                     FastClick.attach(document.body);
                 }, false);
 
-                $timeout(epThemeService.initialize, 200);
+                var fnStartInit = function() {
+                    $timeout(epThemeService.initialize, 200);
 
-                var windowWidth = $(window).width();
-                shellState.mediaMode = windowWidth >= epShellConstants.MEDIA_SIZE_BREAKPOINT ?
-                    epShellConstants.MEDIA_MODE_LARGE : epShellConstants.MEDIA_MODE_SMALL;
-                // initialize the sidebar as "shown" if we're in large mode, otherwise false.
-                shellState.showSidebar = isMediaModeLarge();
-                $rootScope.initComplete = true;
+                    var windowWidth = $(window).width();
+                    shellState.mediaMode = windowWidth >= epShellConstants.MEDIA_SIZE_BREAKPOINT ?
+                        epShellConstants.MEDIA_MODE_LARGE : epShellConstants.MEDIA_MODE_SMALL;
+                    // initialize the sidebar as "shown" if we're in large mode, otherwise false.
+                    shellState.showSidebar = isMediaModeLarge();
+                    $rootScope.initComplete = true;
+                }
+
+                fnStartInit();
             }
 
             /**
@@ -5352,6 +5989,10 @@ function() {
                         }
 
                         shellState.titleScope = viewScope.$new();
+                        if (html && (html.indexOf('<') < 0) && (html.indexOf('>') < 0)) {
+                            //this will ensure compile does not error
+                            html = '<div>' + html + '</div>';
+                        }
                         var content = $compile(html)(shellState.titleScope);
                         if (content.length) {
                             el.empty();
@@ -7025,7 +7666,7 @@ angular.module('ep.shell').service('epSidebarService', [
                                     //The default is for buttons not to persist when changing views
                                     def.persist = false;
                                 }
-                                if (scope && def.type === 'button') {
+                                if (scope && (def.type === 'button' || def.type === 'toggle')) {
                                     bindButtonAttributes(scope, def);
                                 } else if (scope && def.type === 'select' && def.options && def.options.length) {
                                     // Wire up the options
@@ -7288,7 +7929,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.shell/shell.html',
-    "<div><section ng-controller=epShellCtrl class=\"ep-shell ep-browser-{{browserName}}\" ng-cloak><div ng-show=state.showProgressIndicator class=ep-progress-indicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa {{state.leftToggleButtonIcon}} fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\" tabindex=-1></a></li><li ng-repeat=\"button in leftNavButtons | orderBy:'index':true\" index={{button.index}} ng-class=\"{'hidden': button.hidden}\"><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"pull-left fa {{button.icon}} fa-2x ep-navbar-button left-button\" ng-click=state.executeButton(button,$event) ng-mousedown=state.buttonMouseDown(button) ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"><span ng-if=button.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=button.badge.value></span></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"pull-left ep-navbar-button left-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"><i class=\"fa {{button.icon}} fa-2x\"></i> <span ng-bind=button.title style=\"padding-right: 5px\"></span> <span class=caret></span> <span ng-if=button.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=button.badge.value></span></a><ep-include class=\"pull-left ep-navbar-button left-button\" ng-if=\"button.type === 'template'\" options=button.options user-data=button></ep-include><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator' && opt.type !== 'checked'\" ng-click=state.executeButton(opt,$event) ng-mousedown=state.buttonMouseDown(opt)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i> <span class=ep-navmenu-item-text>{{opt.title}}</span> <span ng-if=opt.badge class=\"ep-badge {{opt.badge.cssClass}}\" ng-bind=opt.badge.value></span></span></a> <a ng-if=\"opt.type !== 'separator' && opt.type === 'checked'\" ng-click=state.executeButton(opt,$event) ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><input type=checkbox class=ep-dropdown-btn-chk ng-model=\"opt.checked\"> <span class=ep-navmenu-item-text ng-bind=opt.title></span> <span ng-if=opt.badge class=\"ep-badge {{opt.badge.cssClass}}\" ng-bind=opt.badge.value></span></span></a></li></ul></li><li id=brandItem ng-hide=\"state.showBrand === false\" ng-class=\"{'ep-center-brand': state.centerBrand}\"><a id=apptitle ng-cloak=\"\" ng-if=state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-href=#{{(state.brandTarget)}} ng-bind-html=state.brandHTML></a> <span id=apptitle ng-cloak=\"\" ng-if=!state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-bind-html=state.brandHTML></span></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa {{state.rightToggleButtonIcon}} fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in rightNavButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.enabled === false}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button,$event) ng-mousedown=state.buttonMouseDown(button)><span ng-if=button.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=button.badge.value></span></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false><i class=\"fa {{button.icon}} fa-2x\"></i> <span ng-bind=button.title style=\"padding-right: 5px\"></span> <span class=caret></span> <span ng-if=button.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=button.badge.value></span></a><ep-include class=ep-navbar-button ng-if=\"button.type === 'template'\" options=button.options user-data=button></ep-include><ul ng-if=\"button.type === 'select'\" class=\"dropdown-menu dropdown-menu-right\" ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator' && opt.type !== 'checked'\" ng-click=state.executeButton(opt,$event) ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i> <span class=ep-navmenu-item-text ng-bind=opt.title></span> <span ng-if=opt.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=opt.badge.value></span></span></a> <a ng-if=\"opt.type !== 'separator' && opt.type === 'checked'\" ng-click=state.executeButton(opt,$event) ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><input type=checkbox class=ep-dropdown-btn-chk ng-model=\"opt.checked\"> <span class=ep-navmenu-item-text ng-bind=opt.title></span> <span ng-if=opt.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=opt.badge.value></span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><!--<div ng-transclude></div>--><div class=ep-fullscreen ng-if=\"options.enableViewAnimations !== false\"><div ng-view class=\"ep-fullscreen {{'ep-anim-speed-' + state.animationSpeed}} {{state.animationIn}} {{state.animationOut}} ep-view ep-view-transition\" ng-class=state.viewAnimation></div></div><div class=ep-fullscreen ng-if=\"options.enableViewAnimations === false\"><div ng-view class=\"ep-fullscreen ep-view\"></div></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" ng-if=state.footerTarget ng-href={{state.footerTarget}}><sup id=footerElement ng-bind-html=state.footerHTML></sup></a> <sup ng-if=!state.footerTarget id=footerElement ng-bind-html=state.footerHTML></sup></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.enableFeedback ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
+    "<div><section ng-controller=epShellCtrl class=\"ep-shell ep-browser-{{browserName}}\" ng-cloak><div ng-show=state.showProgressIndicator class=ep-progress-indicator><span class=\"fa fa-spin fa-spinner fa-pulse fa-5x\"></span></div><nav class=\"ep-main-navbar navbar-sm navbar-default navbar-fixed-top\" ng-class=\"{hidden: !state.showNavbar, 'cordova-padding': platform.app === 'Cordova'}\" ng-style=\"{border: 'none', 'padding-left': '4px' }\"><div class=\"container-fluid clearfix\"><ul class=\"navbar-nav nav\" style=\"float: none\"><!--Left hand side buttons--><li><a id=leftMenuToggle class=\"pull-left fa {{state.leftToggleButtonIcon}} fa-2x ep-navbar-button left-button\" ng-click=toggleLeftSidebar() ng-class=\"{'hidden': !state.showLeftToggleButton}\"></a></li><li><a id=homebutton href=#/home class=\"pull-left fa fa-home fa-2x ep-navbar-button left-button\" ng-class=\"{'hidden': !state.showHomeButton}\" tabindex=-1></a></li><li ng-repeat=\"button in leftNavButtons | orderBy:'index':true\" index={{button.index}} ng-class=\"{'hidden': button.hidden}\"><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"pull-left fa {{button.icon}} fa-2x ep-navbar-button left-button\" ng-click=state.executeButton(button,$event) ng-mousedown=state.buttonMouseDown(button) ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"><span ng-if=button.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=button.badge.value></span></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"pull-left ep-navbar-button left-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false ng-class=\"{'disabled': state.freezeNavButtons  || button.enabled === false}\"><i class=\"fa {{button.icon}} fa-2x\"></i> <span ng-bind=button.title style=\"padding-right: 5px\"></span> <span class=caret></span> <span ng-if=button.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=button.badge.value></span></a><ep-include class=\"pull-left ep-navbar-button left-button\" ng-if=\"button.type === 'template'\" options=button.options user-data=button></ep-include><ul ng-if=\"button.type === 'select'\" class=dropdown-menu ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator' && opt.type !== 'checked'\" ng-click=state.executeButton(opt,$event) ng-mousedown=state.buttonMouseDown(opt)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i> <span class=ep-navmenu-item-text>{{opt.title}}</span> <span ng-if=opt.badge class=\"ep-badge {{opt.badge.cssClass}}\" ng-bind=opt.badge.value></span></span></a> <a ng-if=\"opt.type !== 'separator' && opt.type === 'checked'\" ng-click=state.executeButton(opt,$event) ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><input type=checkbox class=ep-dropdown-btn-chk ng-model=\"opt.checked\"> <span class=ep-navmenu-item-text ng-bind=opt.title></span> <span ng-if=opt.badge class=\"ep-badge {{opt.badge.cssClass}}\" ng-bind=opt.badge.value></span></span></a></li></ul></li><li id=brandItem ng-hide=\"state.showBrand === false\" ng-class=\"{'ep-center-brand': state.centerBrand}\"><a id=apptitle ng-cloak=\"\" ng-if=state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-href=#{{(state.brandTarget)}} ng-bind-html=state.brandHTML></a> <span id=apptitle ng-cloak=\"\" ng-if=!state.brandTarget ng-class=\"{'ep-center-brand': state.centerBrand}\" class=navbar-brand ng-bind-html=state.brandHTML></span></li><li class=right-button ng-class=\"{'hidden': !state.showRightToggleButton }\"><a id=rightMenuToggle class=\"pull-left fa {{state.rightToggleButtonIcon}} fa-2x ep-navbar-button\" ng-click=toggleRightSidebar() ng-class=\"{'hidden': !state.showRightToggleButton }\"></a></li><!--Right hand side buttons--><li ng-repeat=\"button in rightNavButtons | orderBy:'index':true\" ng-class=\"{'hidden': button.hidden, 'disabled': state.freezeNavButtons  || button.enabled === false}\" class=right-button index={{button.index}}><a id=navbtn_{{button.id}} ng-if=\"button.type === 'button'\" title={{button.title}} class=\"fa {{button.icon}} fa-2x ep-navbar-button\" ng-click=state.executeButton(button,$event) ng-mousedown=state.buttonMouseDown(button)><span ng-if=button.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=button.badge.value></span></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'toggle'\" title={{button.title}} class=\"fa {{ (button.active ? button.activeIcon : button.inactiveIcon) || button.icon }} fa-2x ep-navbar-button\" ng-class=\"{ 'active': button.active }\" ng-click=state.executeButton(button,$event) ng-mousedown=state.buttonMouseDown(button)><span ng-if=button.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=button.badge.value></span></a> <a id=navbtn_{{button.id}} ng-if=\"button.type === 'select'\" title={{button.title}} class=\"ep-navbar-button dropdown-toggle\" data-toggle=dropdown aria-expanded=false><i class=\"fa {{button.icon}} fa-2x\"></i> <span ng-bind=button.title style=\"padding-right: 5px\"></span> <span class=caret></span> <span ng-if=button.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=button.badge.value></span></a><ep-include class=ep-navbar-button ng-if=\"button.type === 'template'\" options=button.options user-data=button></ep-include><ul ng-if=\"button.type === 'select'\" class=\"dropdown-menu dropdown-menu-right\" ng-class=\"{ 'align-right': button.right, 'disabled': state.freezeNavButtons || button.enabled === false }\" role=menu><li ng-repeat=\"opt in button.options\" ng-class=\"{ 'divider': opt.type==='separator' }\" role={{opt.type}}><a ng-if=\"opt.type !== 'separator' && opt.type !== 'checked'\" ng-click=state.executeButton(opt,$event) ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><i class=\"ep-navmenu-item-icon fa fa-fw {{opt.icon}}\"></i> <span class=ep-navmenu-item-text ng-bind=opt.title></span> <span ng-if=opt.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=opt.badge.value></span></span></a> <a ng-if=\"opt.type !== 'separator' && opt.type === 'checked'\" ng-click=state.executeButton(opt,$event) ng-mousedown=state.buttonMouseDown(button)><span class=ep-navmenu-item><input type=checkbox class=ep-dropdown-btn-chk ng-model=\"opt.checked\"> <span class=ep-navmenu-item-text ng-bind=opt.title></span> <span ng-if=opt.badge class=\"ep-badge {{button.badge.cssClass}}\" ng-bind=opt.badge.value></span></span></a></li></ul></li></ul></div></nav><!--SIDE NAVIGATION--><ep-shell-sidebar><div class=ep-fullscreen><div ng-view ng-class=state.viewAnimation class=\"ep-fullscreen ep-view {{options.enableViewAnimations ? ('ep-anim-speed-' + animationSpeed + ' ' + state.animationIn + ' ' + state.animationOut + ' ep-view-transition') : '' }}\"></div></div></ep-shell-sidebar><div class=\"navbar navbar-xsm navbar-default navbar-fixed-bottom\" ng-class=\"{hidden: !state.showFooter}\" role=navigation id=mainfooter style=\"color: white; padding-top: 4px; padding-left: 5px\"><a class=pull-left style=\"color: white\" ng-if=state.footerTarget ng-href={{state.footerTarget}}><sup id=footerElement ng-bind-html=state.footerHTML></sup></a> <sup ng-if=!state.footerTarget id=footerElement ng-bind-html=state.footerHTML></sup></div><span class=ep-shell-feedback-btn id=feedbackbutton ng-if=state.enableFeedback ng-click=sendFeedback()><i class=\"fa fa-bullhorn\"></i> Give Feedback</span></section></div>"
   );
 
 

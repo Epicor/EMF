@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.15 built: 31-08-2017
+ * version:1.0.14-dev.103 built: 31-08-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.15","built":"2017-08-31"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.14-dev.103","built":"2017-08-31"};
 
 (function() {
     'use strict';
@@ -399,12 +399,12 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
      * @example
      *
      */
-    epLoginViewCtrl.$inject = ['$q', '$scope', 'epUtilsService', 'epModalDialogService', 'epTokenService'];
+    epLoginViewCtrl.$inject = ['$q', '$scope', 'epUtilsService', 'epModalDialogService', 'epTokenService', 'epTranslationService'];
     angular.module('ep.token')
         .controller('epLoginViewCtrl', epLoginViewCtrl);
 
     /*@ngInject*/
-    function epLoginViewCtrl($q, $scope, epUtilsService, epModalDialogService, epTokenService) {
+    function epLoginViewCtrl($q, $scope, epUtilsService, epModalDialogService, epTokenService, epTranslationService) {
 
         $scope.settings = {
             username: '',
@@ -432,13 +432,18 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
 
             if ($scope.settings.username === '' || $scope.settings.password === '') {
                 $scope.hasError = true;
-                $scope.status = $scope.settings.username === '' ?
-                    'Oops.. There\'s no user name there!' : 'Oops.. You forgot to type your password!';
+                if ($scope.settings.username === '') {
+                    $scope.status =
+                        epTranslationService.getString('emf.ep.token.ep-login-view.message.missingUserName');
+                } else {
+                    $scope.status =
+                        epTranslationService.getString('emf.ep.token.ep-login-view.message.youForgotPassword');
+                }
                 epModalDialogService.hide();
                 return;
             } else if ($scope.settings.serverName === '') {
                 $scope.hasError = true;
-                $scope.status = 'Oops... Don\'t forget to type the Server.';
+                $scope.status = epTranslationService.getString('emf.ep.token.ep-login-view.message.missingServer');
                 epModalDialogService.hide();
                 return;
             }
@@ -502,14 +507,16 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                     $scope.hasError = true;
                     switch (response.status) {
                         case 401:
-                            $scope.status = 'Connection failed, please review the username and password and try again.';
+                            $scope.status =
+                                epTranslationService.getString('emf.ep.token.ep-login-view.message.connectionUserPassword');
                             break;
                         case 400:
-                            $scope.status = 'Token authentication may not be enabled on the Epicor server. ' +
-                                'Refer to the Epicor Administration Console.';
+                            $scope.status =
+                                epTranslationService.getString('emf.ep.token.ep-login-view.message.tokenAuthError');
                             break;
                         default:
-                            $scope.status = 'Connection failed, please review the username and password and try again.';
+                            $scope.status =
+                                epTranslationService.getString('emf.ep.token.ep-login-view.message.connectionUserPassword');
                     }
                 });
         };
@@ -822,12 +829,12 @@ angular.module('ep.token').
      * @example
      *
      */
-    epTokenService.$inject = ['$http', '$injector', '$q', '$timeout', 'epTokenConfig', 'epUtilsService', 'epModalDialogService', 'epLocalStorageService', 'epFeatureDetectionService'];
+    epTokenService.$inject = ['$http', '$injector', '$q', '$timeout', 'epTranslationService', 'epTokenConfig', 'epUtilsService', 'epModalDialogService', 'epLocalStorageService', 'epFeatureDetectionService'];
     angular.module('ep.token').
     service('epTokenService', epTokenService);
 
     /*@ngInject*/
-    function epTokenService($http, $injector, $q, $timeout,
+    function epTokenService($http, $injector, $q, $timeout, epTranslationService,
         epTokenConfig, epUtilsService, epModalDialogService, epLocalStorageService, epFeatureDetectionService) {
         var state = {
             tokenTimeoutPromise: undefined,
@@ -2236,7 +2243,7 @@ angular.module('ep.token').
                 };
 
                 scope.setLabel = function() {
-                    scope.state.label = scope.state.metaColumn.caption || scope.label ||
+                    scope.state.label = scope.label || scope.state.metaColumn.caption ||
                         scope.state.epBinding.column || '';
                 };
 
@@ -3524,7 +3531,7 @@ angular.module('ep.binding').
 
     epDataViewFactory.$inject = ['$rootScope'];
     angular.module('ep.binding').
-        factory('epDataViewFactory', epDataViewFactory);
+    factory('epDataViewFactory', epDataViewFactory);
 
     /*@ngInject*/
     function epDataViewFactory($rootScope) {
@@ -3534,10 +3541,13 @@ angular.module('ep.binding').
             };
 
             function init(_id, _data) {
+                if (_data === undefined) {
+                    _data = [];
+                }
                 state.id = _id;
                 state.data = _data;
                 state.row = state.data && state.data.length ? 0 : -1;
-                state.original = angular.merge([], state.data);
+                state.original = null;
                 resetState();
             }
 
@@ -3608,6 +3618,10 @@ angular.module('ep.binding').
              * @param {object} data - data row to replace the row
              */
             function replaceDataRow(row, data) {
+                //once we know we have a change, create the delta 
+                if (!state.original)
+                    state.original = angular.merge([], state.data);
+
                 if (!state.data || (state.data.length < 1)) {
                     return;
                 }
@@ -3646,8 +3660,7 @@ angular.module('ep.binding').
                 } else {
                     rowIdx = row;
                 }
-                if (rowIdx > -1 && rowIdx < state.data.length)
-                {
+                if (rowIdx > -1 && rowIdx < state.data.length) {
                     return state.modified[rowIdx];
                 }
                 return undefined;
@@ -3704,6 +3717,10 @@ angular.module('ep.binding').
             function deleteRow(row) {
                 var index = getRowIndex(row);
                 if (index !== -1) {
+                    //once we know we have a change, create the delta 
+                    if (!state.original)
+                        state.original = angular.merge([], state.data);
+
                     if (state.addedRows[index] !== undefined) {
                         //if we are deleting an added row, then it should be removed from both added and deleted
                         delete state.deletedRows[index];
@@ -3759,6 +3776,10 @@ angular.module('ep.binding').
              * @returns {int} added row index
              */
             function addRow(dataRow, setCurrentRow) {
+                //once we know we have a change, create the delta 
+                if (!state.original)
+                    state.original = angular.merge([], state.data);
+
                 if (!angular.isArray(state.data)) {
                     state.data = [];
                 }
@@ -3827,6 +3848,10 @@ angular.module('ep.binding').
                 var rowIdx = state.row;
                 var record = state.data[rowIdx];
                 if (arguments.length > 1) {
+                    //once we know we have a change, create the delta 
+                    if (!state.original)
+                        state.original = angular.merge([], state.data);
+
                     var oldValue = record[column];
                     if (record[column] !== value) {
                         record[column] = value;
@@ -3858,7 +3883,7 @@ angular.module('ep.binding').
                             row: state.row,
                             newValue: value,
                             oldValue: oldValue,
-                                Value: origValue
+                            Value: origValue
                         });
                     }
                 }
@@ -3906,7 +3931,9 @@ angular.module('ep.binding').
              * rollback current view changes
              */
             function rollback() {
-                state.data = angular.merge([], state.original);
+                if (state.original) {
+                    state.data = angular.merge([], state.original);
+                }
                 resetState();
                 $rootScope.$emit('EP_BINDING_ROLLBACK', {
                     viewId: state.id
@@ -3922,7 +3949,9 @@ angular.module('ep.binding').
              * commits all changes (the changes are rolled into original data and modified flags reset)
              */
             function commit() {
-                state.original = angular.merge([], state.data);
+                if (state.original) {
+                    state.original = angular.merge([], state.data);
+                }
                 resetState();
                 $rootScope.$emit('EP_BINDING_COMMIT', {
                     viewId: state.id
@@ -4218,7 +4247,6 @@ angular.module('ep.binding').
     }
 
 }());
-
 (function() {
     'use strict';
     /**
@@ -5092,7 +5120,7 @@ angular.module('ep.binding').
                 //    epTransactionFactory.current().add(viewId, data.value);
                 //}
             }, function(data) {
-                var msg = showException(data);
+                var msg = showException(data, options);
                 deferred.reject(msg, data);
             });
 
@@ -5107,7 +5135,7 @@ angular.module('ep.binding').
                             epBindingMetadataService.add(sSvcName, 'swagger', undefined, data);
                         }
                     }, function(data) {
-                        var msg = showException(data);
+                        var msg = showException(data, options);
                         deferred.reject(msg, data);
                     });
                 }
@@ -5194,13 +5222,17 @@ angular.module('ep.binding').
                 if (showProgress) {
                     epModalDialogService.hide();
                 }
-                showException(response);
+                showException(response, options);
             });
             return promise;
         }
 
         //private functions --->
-        function showException(response) {
+        function showException(response, options) {
+            if (!options) {
+                options = {};
+            }
+
             var msg = response.ErrorMessage || '';
             if (!msg && response['odata.error']) {
                 msg = response['odata.error'].message.value;
@@ -5213,10 +5245,21 @@ angular.module('ep.binding').
                 maskedResponse.config.headers.Authorization) {
                 maskedResponse.config.headers.Authorization = '***';
             }
-            epModalDialogService.showException({
-                title: 'Info', message: msg || '',
-                messageDetails: angular.toJson(maskedResponse, 2)
-            });
+
+            if (options.showError !== false) {
+                var showErr = true;
+                if (options.ignoreHttpErrors && response.HttpStatus) {
+                    if (options.ignoreHttpErrors.indexOf(response.HttpStatus) > -1) {
+                        showErr = false;
+                    }
+                }
+                if (showErr) {
+                    epModalDialogService.showException({
+                        title: 'Info', message: msg || '',
+                        messageDetails: angular.toJson(maskedResponse, 2)
+                    });
+                }
+            }
         }
 
         return {
@@ -5232,7 +5275,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   'use strict';
 
   $templateCache.put('src/components/ep.token/ep-login-view/ep-login-view.html',
-    "<!--This is a partial for the ep-login-view directive --><div class=\"ep-login-view container-fluid\"><div class=ep-login-background><div class=ep-background-image ng-if=!settings.customImage></div><img class=ep-background-custom-image ng-if=settings.customImage ng-src={{settings.customImage}} alt=\"\"></div><div class=ep-login-up-box><div class=\"ep-login-box center-block\"><form class=form-group><div class=form-group><p class=ep-login-text><b>Please enter your credentials to sign in.</b></p><div class=input-group><span class=input-group-addon><i class=\"fa fa-user fa-fw\"></i></span> <input clearable name=username ng-keypress=clearWarning() id=username class=form-control ng-model=settings.username placeholder=\"User Name\"></div><br><div class=input-group><span class=input-group-addon><i class=\"fa fa-lock fa-fw\"></i></span> <input type=password clearable ng-keypress=passwordKeyPress($event) name=password id=password class=form-control ng-model=settings.password placeholder=\"Password\"></div><br><div ng-show=showServerName class=input-group><span class=input-group-addon><i class=\"fa fa-server fa-fw\"></i></span> <input spellcheck autocorrect=false clearable name=servername id=serverValue class=form-control ng-model=settings.serverName placeholder=\"Server\"></div><br><div align=center ng-if=showLoader><div class=progress><div class=\"progress-bar progress-bar-striped active\" role=progressbar aria-valuenow=100 aria-valuemin=0 aria-valuemax=100 style=\"width: 100%\"></div></div></div><div ng-if=status class=\"alert alert-danger\"><label>{{status}}</label><br></div><div><button ng-if=\"options.showSettingsButton !== false\" class=\"btn btn-default pull-left\" ng-click=showServer()><i class=\"fa fa-cog fa-fw\"></i></button> <button type=submit class=\"btn btn-primary pull-right\" ng-click=loginUser() ng-disabled=showLoader>Log in</button></div></div></form></div></div></div>"
+    "<!--This is a partial for the ep-login-view directive --><div class=\"ep-login-view container-fluid\"><div class=ep-login-background><div class=ep-background-image ng-if=!settings.customImage></div><img class=ep-background-custom-image ng-if=settings.customImage ng-src={{settings.customImage}} alt=\"\"></div><div class=ep-login-up-box><div class=\"ep-login-box center-block\"><form class=form-group><div class=form-group><p class=ep-login-text><b>{{'emf.ep.token.ep-login-view.label.enterCredentials' | epTranslate}}</b></p><div class=input-group><span class=input-group-addon><i class=\"fa fa-user fa-fw\"></i></span> <input clearable name=username ng-keypress=clearWarning() id=username class=form-control ng-model=settings.username placeholder=\"{{'emf.ep.token.ep-login-view.placeholder.userName' | epTranslate}}\"></div><br><div class=input-group><span class=input-group-addon><i class=\"fa fa-lock fa-fw\"></i></span> <input type=password clearable ng-keypress=passwordKeyPress($event) name=password id=password class=form-control ng-model=settings.password placeholder=\"{{'emf.ep.token.ep-login-view.placeholder.password' | epTranslate}}\"></div><br><div ng-show=showServerName class=input-group><span class=input-group-addon><i class=\"fa fa-server fa-fw\"></i></span> <input spellcheck autocorrect=false clearable name=servername id=serverValue class=form-control ng-model=settings.serverName placeholder=\"{{'emf.ep.token.ep-login-view.placeholder.server' | epTranslate}}\"></div><br><div align=center ng-if=showLoader><div class=progress><div class=\"progress-bar progress-bar-striped active\" role=progressbar aria-valuenow=100 aria-valuemin=0 aria-valuemax=100 style=\"width: 100%\"></div></div></div><div ng-if=status class=\"alert alert-danger\"><label>{{status}}</label><br></div><div><button ng-if=\"options.showSettingsButton !== false\" class=\"btn btn-default pull-left\" ng-click=showServer()><i class=\"fa fa-cog fa-fw\"></i></button> <button type=submit class=\"btn btn-primary pull-right\" ng-click=loginUser() ng-disabled=showLoader>{{'emf.ep.token.ep-login-view.btn.login' | epTranslate}}</button></div></div></form></div></div></div>"
   );
 
 
