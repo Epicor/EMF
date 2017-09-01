@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.105 built: 31-08-2017
+ * version:1.0.14-dev.106 built: 01-09-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.14-dev.105","built":"2017-08-31"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.14-dev.106","built":"2017-09-01"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -960,16 +960,17 @@ if (!epEmfGlobal) {
                 * @description
                 * path to libs
                 */
-                libPath: './lib',
+                libPath: 'lib',
+
                 /**
                 * @ngdoc property
-                * @name assetsPath
+                * @name emfPath
                 * @propertyOf ep.application.object:epApplicationConfig
                 * @public
                 * @description
-                * path to assets
+                * path to emf lib
                 */
-                assetsPath: './lib/bower/emf/assets',
+                emfPath: 'lib/bower/emf',
 
                 /**
                 * @ngdoc property
@@ -987,7 +988,10 @@ if (!epEmfGlobal) {
             this.$get = ['epSysConfig', function(epSysConfig) {
                 epSysConfig.mergeSection('ep.application', config);
                 if (!config.libPath) {
-                    config.libPath = './lib';
+                    config.libPath = 'lib';
+                }
+                if (!config.emfPath) {
+                    config.emfPath = config.libPath + '/bower/emf';
                 }
 
                 // jshint ignore:start
@@ -999,9 +1003,9 @@ if (!epEmfGlobal) {
                 // jshint ignore:end
 
                 config.getEmfLibPath = function(libName) {
-                    var ret = './lib/bower/emf';
+                    var ret = config.emfPath;
                     if (config.emfBuildInfo[libName] && libName !== 'emf') {
-                        ret = './lib/bower/emf/emf.' + config.emfBuildInfo[libName].libName;
+                        ret = config.emfPath + '/emf.' + config.emfBuildInfo[libName].libName;
                     }
                     return ret;
                 };
@@ -4552,6 +4556,43 @@ function() {
 
         /**
          * @ngdoc method
+         * @name getInfo
+         * @methodOf ep.globalization.service:epTranslationService
+         * @public
+         * @description
+         * get info
+         */
+        function getInfo() {
+            var baseLocCount = 0;
+            if (angular.is = Object(baseResource)) {
+                baseLocCount = Object.keys(baseResource).length;
+            }
+            var baseLocEmfCount = 0;
+            if (angular.is = Object(epGlobalizationConfig.emfResources)) {
+                baseLocEmfCount = Object.keys(epGlobalizationConfig.emfResources).length;
+            }
+            var curLocCount = 0;
+            if (angular.is = Object(curResource)) {
+                curLocCount = Object.keys(curResource).length;
+            }
+            var curLocEmfCount = 0;
+            if (angular.is = Object(curResourceEmf)) {
+                curLocEmfCount = Object.keys(curResourceEmf).length;
+            }
+
+            epGlobalizationConfig.emfResources ? epGlobalizationConfig.emfResources.length : 0;
+            return {
+                baseLocaleId: baseLocaleId,
+                baseLocaleCount: baseLocCount,
+                baseLocaleEmfCount: baseLocEmfCount,
+                currentLocaleId: curLocaleId,
+                currentLocaleCount: curLocCount,
+                currentLocaleEmfCount: curLocEmfCount
+            };
+        }
+
+        /**
+         * @ngdoc method
          * @name currentLocale
          * @methodOf ep.globalization.service:epTranslationService
          * @public
@@ -4881,7 +4922,8 @@ function() {
             currentLocale: currentLocale,
             baseLocale: baseLocale,
             setLocale: setLocale,
-            setOptions: setOptions
+            setOptions: setOptions,
+            getInfo: getInfo
         };
     }
 }());

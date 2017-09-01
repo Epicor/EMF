@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.105 built: 31-08-2017
+ * version:1.0.14-dev.106 built: 01-09-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.105","built":"2017-08-31"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.106","built":"2017-09-01"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -1689,16 +1689,17 @@ angular.module('ep.signature', [
                 * @description
                 * path to libs
                 */
-                libPath: './lib',
+                libPath: 'lib',
+
                 /**
                 * @ngdoc property
-                * @name assetsPath
+                * @name emfPath
                 * @propertyOf ep.application.object:epApplicationConfig
                 * @public
                 * @description
-                * path to assets
+                * path to emf lib
                 */
-                assetsPath: './lib/bower/emf/assets',
+                emfPath: 'lib/bower/emf',
 
                 /**
                 * @ngdoc property
@@ -1716,7 +1717,10 @@ angular.module('ep.signature', [
             this.$get = ['epSysConfig', function(epSysConfig) {
                 epSysConfig.mergeSection('ep.application', config);
                 if (!config.libPath) {
-                    config.libPath = './lib';
+                    config.libPath = 'lib';
+                }
+                if (!config.emfPath) {
+                    config.emfPath = config.libPath + '/bower/emf';
                 }
 
                 // jshint ignore:start
@@ -1728,9 +1732,9 @@ angular.module('ep.signature', [
                 // jshint ignore:end
 
                 config.getEmfLibPath = function(libName) {
-                    var ret = './lib/bower/emf';
+                    var ret = config.emfPath;
                     if (config.emfBuildInfo[libName] && libName !== 'emf') {
-                        ret = './lib/bower/emf/emf.' + config.emfBuildInfo[libName].libName;
+                        ret = config.emfPath + '/emf.' + config.emfBuildInfo[libName].libName;
                     }
                     return ret;
                 };
@@ -14354,6 +14358,43 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
         /**
          * @ngdoc method
+         * @name getInfo
+         * @methodOf ep.globalization.service:epTranslationService
+         * @public
+         * @description
+         * get info
+         */
+        function getInfo() {
+            var baseLocCount = 0;
+            if (angular.is = Object(baseResource)) {
+                baseLocCount = Object.keys(baseResource).length;
+            }
+            var baseLocEmfCount = 0;
+            if (angular.is = Object(epGlobalizationConfig.emfResources)) {
+                baseLocEmfCount = Object.keys(epGlobalizationConfig.emfResources).length;
+            }
+            var curLocCount = 0;
+            if (angular.is = Object(curResource)) {
+                curLocCount = Object.keys(curResource).length;
+            }
+            var curLocEmfCount = 0;
+            if (angular.is = Object(curResourceEmf)) {
+                curLocEmfCount = Object.keys(curResourceEmf).length;
+            }
+
+            epGlobalizationConfig.emfResources ? epGlobalizationConfig.emfResources.length : 0;
+            return {
+                baseLocaleId: baseLocaleId,
+                baseLocaleCount: baseLocCount,
+                baseLocaleEmfCount: baseLocEmfCount,
+                currentLocaleId: curLocaleId,
+                currentLocaleCount: curLocCount,
+                currentLocaleEmfCount: curLocEmfCount
+            };
+        }
+
+        /**
+         * @ngdoc method
          * @name currentLocale
          * @methodOf ep.globalization.service:epTranslationService
          * @public
@@ -14683,7 +14724,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             currentLocale: currentLocale,
             baseLocale: baseLocale,
             setLocale: setLocale,
-            setOptions: setOptions
+            setOptions: setOptions,
+            getInfo: getInfo
         };
     }
 }());
@@ -29374,12 +29416,12 @@ angular.module('ep.signature').directive('epSignature',
      * @example
      *
      */
-    epLoginViewCtrl.$inject = ['$q', '$scope', 'epUtilsService', 'epModalDialogService', 'epTokenService', 'epTranslationService'];
+    epLoginViewCtrl.$inject = ['$q', '$scope', 'epUtilsService', 'epModalDialogService', 'epTokenService'];
     angular.module('ep.token')
         .controller('epLoginViewCtrl', epLoginViewCtrl);
 
     /*@ngInject*/
-    function epLoginViewCtrl($q, $scope, epUtilsService, epModalDialogService, epTokenService, epTranslationService) {
+    function epLoginViewCtrl($q, $scope, epUtilsService, epModalDialogService, epTokenService) {
 
         $scope.settings = {
             username: '',
@@ -29407,18 +29449,13 @@ angular.module('ep.signature').directive('epSignature',
 
             if ($scope.settings.username === '' || $scope.settings.password === '') {
                 $scope.hasError = true;
-                if ($scope.settings.username === '') {
-                    $scope.status =
-                        epTranslationService.getString('emf.ep.token.ep-login-view.message.missingUserName');
-                } else {
-                    $scope.status =
-                        epTranslationService.getString('emf.ep.token.ep-login-view.message.youForgotPassword');
-                }
+                $scope.status = $scope.settings.username === '' ?
+                    'Oops.. There\'s no user name there!' : 'Oops.. You forgot to type your password!';
                 epModalDialogService.hide();
                 return;
             } else if ($scope.settings.serverName === '') {
                 $scope.hasError = true;
-                $scope.status = epTranslationService.getString('emf.ep.token.ep-login-view.message.missingServer');
+                $scope.status = 'Oops... Don\'t forget to type the Server.';
                 epModalDialogService.hide();
                 return;
             }
@@ -29482,16 +29519,14 @@ angular.module('ep.signature').directive('epSignature',
                     $scope.hasError = true;
                     switch (response.status) {
                         case 401:
-                            $scope.status =
-                                epTranslationService.getString('emf.ep.token.ep-login-view.message.connectionUserPassword');
+                            $scope.status = 'Connection failed, please review the username and password and try again.';
                             break;
                         case 400:
-                            $scope.status =
-                                epTranslationService.getString('emf.ep.token.ep-login-view.message.tokenAuthError');
+                            $scope.status = 'Token authentication may not be enabled on the Epicor server. ' +
+                                'Refer to the Epicor Administration Console.';
                             break;
                         default:
-                            $scope.status =
-                                epTranslationService.getString('emf.ep.token.ep-login-view.message.connectionUserPassword');
+                            $scope.status = 'Connection failed, please review the username and password and try again.';
                     }
                 });
         };
@@ -31543,7 +31578,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.token/ep-login-view/ep-login-view.html',
-    "<!--This is a partial for the ep-login-view directive --><div class=\"ep-login-view container-fluid\"><div class=ep-login-background><div class=ep-background-image ng-if=!settings.customImage></div><img class=ep-background-custom-image ng-if=settings.customImage ng-src={{settings.customImage}} alt=\"\"></div><div class=ep-login-up-box><div class=\"ep-login-box center-block\"><form class=form-group><div class=form-group><p class=ep-login-text><b>{{'emf.ep.token.ep-login-view.label.enterCredentials' | epTranslate}}</b></p><div class=input-group><span class=input-group-addon><i class=\"fa fa-user fa-fw\"></i></span> <input clearable name=username ng-keypress=clearWarning() id=username class=form-control ng-model=settings.username placeholder=\"{{'emf.ep.token.ep-login-view.placeholder.userName' | epTranslate}}\"></div><br><div class=input-group><span class=input-group-addon><i class=\"fa fa-lock fa-fw\"></i></span> <input type=password clearable ng-keypress=passwordKeyPress($event) name=password id=password class=form-control ng-model=settings.password placeholder=\"{{'emf.ep.token.ep-login-view.placeholder.password' | epTranslate}}\"></div><br><div ng-show=showServerName class=input-group><span class=input-group-addon><i class=\"fa fa-server fa-fw\"></i></span> <input spellcheck autocorrect=false clearable name=servername id=serverValue class=form-control ng-model=settings.serverName placeholder=\"{{'emf.ep.token.ep-login-view.placeholder.server' | epTranslate}}\"></div><br><div align=center ng-if=showLoader><div class=progress><div class=\"progress-bar progress-bar-striped active\" role=progressbar aria-valuenow=100 aria-valuemin=0 aria-valuemax=100 style=\"width: 100%\"></div></div></div><div ng-if=status class=\"alert alert-danger\"><label>{{status}}</label><br></div><div><button ng-if=\"options.showSettingsButton !== false\" class=\"btn btn-default pull-left\" ng-click=showServer()><i class=\"fa fa-cog fa-fw\"></i></button> <button type=submit class=\"btn btn-primary pull-right\" ng-click=loginUser() ng-disabled=showLoader>{{'emf.ep.token.ep-login-view.btn.login' | epTranslate}}</button></div></div></form></div></div></div>"
+    "<!--This is a partial for the ep-login-view directive --><div class=\"ep-login-view container-fluid\"><div class=ep-login-background><div class=ep-background-image ng-if=!settings.customImage></div><img class=ep-background-custom-image ng-if=settings.customImage ng-src={{settings.customImage}} alt=\"\"></div><div class=ep-login-up-box><div class=\"ep-login-box center-block\"><form class=form-group><div class=form-group><p class=ep-login-text><b>Please enter your credentials to sign in.</b></p><div class=input-group><span class=input-group-addon><i class=\"fa fa-user fa-fw\"></i></span> <input clearable name=username ng-keypress=clearWarning() id=username class=form-control ng-model=settings.username placeholder=\"User Name\"></div><br><div class=input-group><span class=input-group-addon><i class=\"fa fa-lock fa-fw\"></i></span> <input type=password clearable ng-keypress=passwordKeyPress($event) name=password id=password class=form-control ng-model=settings.password placeholder=\"Password\"></div><br><div ng-show=showServerName class=input-group><span class=input-group-addon><i class=\"fa fa-server fa-fw\"></i></span> <input spellcheck autocorrect=false clearable name=servername id=serverValue class=form-control ng-model=settings.serverName placeholder=\"Server\"></div><br><div align=center ng-if=showLoader><div class=progress><div class=\"progress-bar progress-bar-striped active\" role=progressbar aria-valuenow=100 aria-valuemin=0 aria-valuemax=100 style=\"width: 100%\"></div></div></div><div ng-if=status class=\"alert alert-danger\"><label>{{status}}</label><br></div><div><button ng-if=\"options.showSettingsButton !== false\" class=\"btn btn-default pull-left\" ng-click=showServer()><i class=\"fa fa-cog fa-fw\"></i></button> <button type=submit class=\"btn btn-primary pull-right\" ng-click=loginUser() ng-disabled=showLoader>Log in</button></div></div></form></div></div></div>"
   );
 
 
