@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.122 built: 04-09-2017
+ * version:1.0.14-dev.123 built: 05-09-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.122","built":"2017-09-04"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.123","built":"2017-09-05"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -17226,6 +17226,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * - formatSubtitle: function to format subtitle fields. function(fields, record) By default comma separated.
  * - additionalTitle: additional title to display on list just below sub title. function(field, record)
  * - formatAdditionalTitle: function to format additional title
+ * - otherAdditionalTitle: other additional title to display on list just below additional title. function(field, record)
+ * - formatOtherAdditionalTitle: function to format other additional title
  * - id: value to be displayed on right side of the list.
  * - groupBy: groupBy field name by which the list has to be grouped.
  * - groupByType: 'sdate' - string date format like '1910-01-01T00:00:00' (otherwise string)
@@ -17277,6 +17279,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
                 additionalTitle: '=',
                 formatAdditionalTitle: '=',
+
+                otherAdditionalTitle: '=',
+                formatOtherAdditionalTitle: '=',
 
                 statuses: '=',
                 formatStatusPeriod: '=',
@@ -17543,6 +17548,15 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     $timeout(function() {
                         scope.$broadcast('vsRepeatTrigger');
                     });
+                };
+
+                //default function for formatting other additional title. User can overwrite
+                scope.wrapFormatOtherAdditionalTitle = function (field, record) {
+                    if (scope.formatOtherAdditionalTitle) {
+                        return scope.formatOtherAdditionalTitle(field, record);
+                    } else {
+                        return record[field];
+                    }
                 };
 
                 //default function for formatting additional title. User can overwrite
@@ -31373,6 +31387,8 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
     "\n" +
     "            <div ng-if=\"additionalTitle\" class=\"ep-list-item-additional-title ep-crm-text-ellipsis\">{{wrapFormatAdditionalTitle(additionalTitle, obj)}}</div>\r" +
     "\n" +
+    "            <div ng-if=\"otherAdditionalTitle\" class=\"ep-list-item-additional-title ep-crm-text-ellipsis\">{{wrapFormatOtherAdditionalTitle(otherAdditionalTitle, obj)}}</div>\r" +
+    "\n" +
     "        </div>\r" +
     "\n" +
     "        <div class=\"ep-list-item-details\">\r" +
@@ -31397,7 +31413,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
     "\n" +
     "            <div class=\"ep-margin-right-15 text-primary\" ng-if=\"selectMarkField && obj[selectMarkField] == selectMarkFieldValue\"\r" +
     "\n" +
-    "                ng-class=\"{'ep-margin-top-10':subTitle && !additionalTitle, 'ep-margin-top-15': additionalTitle}\"><i class=\"fa fa-check\"></i></div>\r" +
+    "                ng-class=\"{'ep-margin-top-10':subTitle && !additionalTitle && !otherAdditionalTitle, 'ep-margin-top-15': additionalTitle || otherAdditionalTitle}\"><i class=\"fa fa-check\"></i></div>\r" +
     "\n" +
     "        </div></script><script id=listItemTemplate type=text/ng-template><div ng-if=\"groupBy && directory[obj[groupBy]] && directory[obj[groupBy]].data === obj\" class=\"ep-dir-divider ep-group-heading\"><b>{{wrapFormatGroupTitle(obj)}}</b></div>\r" +
     "\n" +
