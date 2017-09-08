@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.138 built: 08-09-2017
+ * version:1.0.14-dev.139 built: 08-09-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.14-dev.138","built":"2017-09-08"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.14-dev.139","built":"2017-09-08"};
 
 (function() {
     'use strict';
@@ -360,18 +360,19 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                 },
                 get: function(path, query, callSettings) {
                     var logData = {};
+                    var request = call('GET', path, query, callSettings, logData);
+                    if(request){
+                        var ret = request.get();
 
-                    var ret = call('GET', path, query, callSettings, logData).get();
-
-                    var promise = ret.$promise;
-                    promise.then(function(data) {
-                        submitLogEntry(logData.logEntry, {
-                            numRecords: (data && data.value) ? data.value.length : 'unknown'
+                        var promise = ret.$promise;
+                        promise.then(function(data) {
+                            submitLogEntry(logData.logEntry, {
+                                numRecords: (data && data.value) ? data.value.length : 'unknown'
+                            });
+                        }, function(response) {
+                            submitLogError(logData.logEntry, null, response);
                         });
-                    }, function(response) {
-                        submitLogError(logData.logEntry, null, response);
-                    });
-
+                    }
                     return ret;
                 },
                 post: function(path, data, callSettings) {
