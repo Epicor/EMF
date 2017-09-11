@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.147 built: 10-09-2017
+ * version:1.0.14-dev.148 built: 11-09-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.147","built":"2017-09-10"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.148","built":"2017-09-11"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -29432,12 +29432,12 @@ angular.module('ep.signature').directive('epSignature',
      * @example
      *
      */
-    epLoginViewCtrl.$inject = ['$q', '$scope', 'epUtilsService', 'epModalDialogService', 'epTokenService'];
+    epLoginViewCtrl.$inject = ['$q', '$scope', 'epUtilsService', 'epModalDialogService', 'epTokenService', 'epTranslationService'];
     angular.module('ep.token')
         .controller('epLoginViewCtrl', epLoginViewCtrl);
 
     /*@ngInject*/
-    function epLoginViewCtrl($q, $scope, epUtilsService, epModalDialogService, epTokenService) {
+    function epLoginViewCtrl($q, $scope, epUtilsService, epModalDialogService, epTokenService, epTranslationService) {
 
         $scope.settings = {
             username: '',
@@ -29465,13 +29465,18 @@ angular.module('ep.signature').directive('epSignature',
 
             if ($scope.settings.username === '' || $scope.settings.password === '') {
                 $scope.hasError = true;
-                $scope.status = $scope.settings.username === '' ?
-                    'Oops.. There\'s no user name there!' : 'Oops.. You forgot to type your password!';
+                if ($scope.settings.username === '') {
+                    $scope.status =
+                        epTranslationService.getString('emf.ep.token.ep-login-view.message.missingUserName');
+                } else {
+                    $scope.status =
+                        epTranslationService.getString('emf.ep.token.ep-login-view.message.youForgotPassword');
+                }
                 epModalDialogService.hide();
                 return;
             } else if ($scope.settings.serverName === '') {
                 $scope.hasError = true;
-                $scope.status = 'Oops... Don\'t forget to type the Server.';
+                $scope.status = epTranslationService.getString('emf.ep.token.ep-login-view.message.missingServer');
                 epModalDialogService.hide();
                 return;
             }
