@@ -1,4 +1,11 @@
 {
+  "emf.ep.filter.list.label.result": "Results",
+  "emf.ep.list.label.filter": "Filter",
+  "emf.ep.list.label.sort": "Sort",
+  "emf.ep.modaldialog.button.Ok": "Vale",
+  "emf.ep.modaldialog.button.Cancel": "Cancelar",
+  "emf.ep.modaldialog.button.Yes": "Sí",
+  "emf.ep.modaldialog.button.No": "No",
   "emf.ep.token.ep-login-view.btn.login": "Inicio de sesión",
   "emf.ep.token.ep-login-view.label.enterCredentials": "Por favor introduzca sus credenciales para iniciar sesión.",
   "emf.ep.token.ep-login-view.placeholder.userName": "Nombre de usuario",

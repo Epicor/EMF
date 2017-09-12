@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.151 built: 12-09-2017
+ * version:1.0.14-dev.152 built: 12-09-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.151","built":"2017-09-12"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.152","built":"2017-09-12"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -14481,6 +14481,23 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
         /**
          * @ngdoc method
+         * @name getStringIf
+         * @methodOf ep.globalization.service:epTranslationService
+         * @public
+         * @description
+         * get resource string if the id starts with '$$.'
+         * @param {string} id - id of resource string if it starts with '$$.'
+         */
+        function getStringIf(id) {
+            if (id && id.length > 3 && id.indexOf('$$.') === 0) {
+                var strId = id.substr(3);
+                return getString(strId);
+            }
+            return id;
+        }
+
+        /**
+         * @ngdoc method
          * @name load
          * @methodOf ep.globalization.service:epTranslationService
          * @public
@@ -14719,6 +14736,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             initialize: initialize,
             changeLocale: changeLocale,
             getString: getString,
+            getStringIf: getStringIf,
             load: load,
             loadFromResource: loadFromResource,
             currentLocale: currentLocale,
@@ -18576,12 +18594,12 @@ angular.module('ep.menu.builder').
      * @example
      *
      */
-    epModalDialogService.$inject = ['$sce', '$uibModal', '$uibModalStack', '$compile', '$rootScope', '$timeout', '$interval', '$injector', 'epLocalStorageService'];
+    epModalDialogService.$inject = ['$sce', '$uibModal', '$uibModalStack', '$compile', '$rootScope', '$timeout', '$interval', '$injector', 'epLocalStorageService', 'epTranslationService'];
     angular.module('ep.modaldialog').service('epModalDialogService', epModalDialogService);
 
     /*@ngInject*/
     function epModalDialogService($sce, $uibModal, $uibModalStack, $compile, $rootScope, $timeout,
-        $interval, $injector, epLocalStorageService) {
+        $interval, $injector, epLocalStorageService, epTranslationService) {
 
         /**
          * @private
@@ -18602,7 +18620,7 @@ angular.module('ep.menu.builder').
             fnDefaultAction: null,
             fnCancelAction: null,
             fnButtonAction: null,
-            buttons: [{text: 'Ok', isDefault: true}],
+            buttons: [{ text: '$$.emf.ep.modaldialog.button.Ok', isDefault: true}],
             btnBlock: false
         };
 
@@ -18686,11 +18704,11 @@ angular.module('ep.menu.builder').
                 dialogTypeClass: 'ep-confirm-dialog',
                 icon: 'fa  fa-question-circle fa-4x',
                 buttons: [{
-                    text: 'Yes', isDefault: true,
+                    text: '$$.emf.ep.modaldialog.button.Yes', isDefault: true,
                     action: (options ? options.fnDefaultAction : null)
                 },
                     {
-                        text: 'No', isCancel: true,
+                        text: '$$.emf.ep.modaldialog.button.No', isCancel: true,
                         action: (options ? options.fnCancelAction : null)
                     }]
             };
@@ -18799,7 +18817,7 @@ angular.module('ep.menu.builder').
                 messageDetails: '',
                 btnBlock: false,
                 buttons: [{
-                    id: 'btnOk', text: 'Ok', isDefault: true, type: 'primary',
+                    id: 'btnOk', text: '$$.emf.ep.modaldialog.button.Ok', isDefault: true, type: 'primary',
                     action: (options ? options.fnDefaultAction : null)
                 }]
             };
@@ -18860,7 +18878,7 @@ angular.module('ep.menu.builder').
                 size: 'fullscreen',
                 closeButton: true,
                 buttons: [{
-                    id: 'btnOk', text: 'Ok', isDefault: true, type: 'primary'
+                    id: 'btnOk', text: '$$.emf.ep.modaldialog.button.Ok', isDefault: true, type: 'primary'
                 }]
             };
 
@@ -18902,7 +18920,7 @@ angular.module('ep.menu.builder').
                 messageDetails: '',
                 btnBlock: false,
                 buttons: [{
-                    id: 'btnOk', text: 'Ok', isDefault: true, type: 'primary',
+                    id: 'btnOk', text: '$$.emf.ep.modaldialog.button.Ok', isDefault: true, type: 'primary',
                     action: (options ? options.fnDefaultAction : null)
                 }]
             };
@@ -19301,9 +19319,16 @@ angular.module('ep.menu.builder').
                             btn.type = 'default';
                         }
                     }
+                    if (btn.text) {
+                        btn.text = epTranslationService.getStringIf(btn.text);
+                    }
                 });
             }
 
+            //apply translation if necessary
+            cfg.title = epTranslationService.getStringIf(cfg.title);
+            cfg.message = epTranslationService.getStringIf(cfg.message);
+            
             if (cfg.autoClose) {
                 cfg.messageHasTimer = (cfg.message.indexOf('{timer}') >= 0);
                 cfg.titleHasTimer = (cfg.title.indexOf('{timer}') >= 0);
@@ -29540,14 +29565,16 @@ angular.module('ep.signature').directive('epSignature',
                     $scope.hasError = true;
                     switch (response.status) {
                         case 401:
-                            $scope.status = 'Connection failed, please review the username and password and try again.';
+                            $scope.status =
+                                epTranslationService.getString('emf.ep.token.ep-login-view.message.connectionUserPassword');
                             break;
                         case 400:
-                            $scope.status = 'Token authentication may not be enabled on the Epicor server. ' +
-                                'Refer to the Epicor Administration Console.';
+                            $scope.status =
+                                epTranslationService.getString('emf.ep.token.ep-login-view.message.tokenAuthError');
                             break;
                         default:
-                            $scope.status = 'Connection failed, please review the username and password and try again.';
+                            $scope.status =
+                                epTranslationService.getString('emf.ep.token.ep-login-view.message.connectionUserPassword');
                     }
                 });
         };
@@ -31376,7 +31403,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.filter.list/filter_list.html',
-    "<div class=ep-search-list-container><div class=row><div class=\"col-xs-9 col-sm-10 col-md-10\"><span class=\"fa fa-search ep-pad-left-10\"></span> <input id=searchinput class=\"search-query form-control\" ng-focus=\"showRemove=true\" ng-model=searchBy placeholder=\"{{searchPrompt || 'Search'}}\" ng-change=\"changeHandler(searchBy)\"> <span class=\"ep-cicrm-delete text-danger\" ng-if=showRemove ng-click=clearSearch()></span></div><div class=\"col-xs-3 col-sm-2 col-md-2 result-count-container text-center\"><div>{{count}}</div><div>Results</div></div></div></div>"
+    "<div class=ep-search-list-container><div class=row><div class=\"col-xs-9 col-sm-10 col-md-10\"><span class=\"fa fa-search ep-pad-left-10\"></span> <input id=searchinput class=\"search-query form-control\" ng-focus=\"showRemove=true\" ng-model=searchBy placeholder=\"{{searchPrompt || 'Search'}}\" ng-change=\"changeHandler(searchBy)\"> <span class=\"ep-cicrm-delete text-danger\" ng-if=showRemove ng-click=clearSearch()></span></div><div class=\"col-xs-3 col-sm-2 col-md-2 result-count-container text-center\"><div>{{count}}</div><div>{{'emf.ep.filter.list.label.result' | epTranslate}}</div></div></div></div>"
   );
 
 
@@ -31424,7 +31451,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
     "\n" +
     "        </div></script><script id=listItemTemplate type=text/ng-template><div ng-if=\"groupBy && directory[obj[groupBy]] && directory[obj[groupBy]].data === obj\" class=\"ep-dir-divider ep-group-heading\"><b>{{wrapFormatGroupTitle(obj)}}</b></div>\r" +
     "\n" +
-    "        <div class=\"ep-list-item-content\" ng-include=\"itemContentTemplate\"></div></script><!--Calling filter list component for search option--><ep-filter-list search-by=listSearch count=\"filtered ? filterState.filterResult.length : items.count\" search-prompt=searchPrompt></ep-filter-list><!--Header as optional--><div class=ep-list-sub-header ng-if=\"subHeader == 'true'\"><label ng-click=filter() ng-hide=\"hideDisplayOptions == 'true'\">Filter <i class=\"fa fa-check ep-list-filter-indicator\" ng-if=showFilterOn></i></label><label ng-click=sort() ng-hide=\"hideDisplayOptions == 'true'\">Sort <i class=\"fa fa-check ep-list-filter-indicator\" ng-if=showSortOn></i></label><span class=\"pull-right ep-pad-right-20 text-primary\" ng-hide=\"hideAdd == 'true'\" ng-click=add()><i class=\"fa fa-plus fa-lg\" aria-hidden=true></i></span></div><!-- Alphabet Selector --><div class=ep-list-directory ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=\"showDirectory && groupBy\"><div class=ep-list-directory-item ng-repeat=\"(id,dir) in directory | epOrderObjectBy:'sort'\"><a ng-if=\"dir.letter === '*'\" class=ep-list-directory-item-enabled ng-click=goToDirectory(dir)><i class=\"fa fa-asterisk\"></i></a> <span ng-if=\"(dir.letter !== '*') && dir.disabled\" class=text-muted>{{dir.letter}}</span> <a ng-if=\"(dir.letter !== '*') && !dir.disabled\" class=ep-list-directory-item-enabled ng-class=\"{ 'text-danger': selectedDirectoryEntry.letter === dir.letter && filtered }\" ng-click=goToDirectory(dir)>{{dir.letter}}</a></div></div><div ng-if=useVirtualScrolling><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=!filtered id={{localId}} vs-repeat={{vsItemSize}} vs-excess={{vsRenderBufferSize}} vs-options=\"{ latch: {{vsLatch}} }\"><li ng-repeat=\"obj in listData track by $index\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=filtered id={{localId}} vs-repeat={{vsItemSize}} vs-excess={{vsRenderBufferSize}} vs-options=\"{ latch: {{vsLatch}} }\"><li ng-repeat=\"obj in (filterState.filterResult = (filteredData | filter:filterByName))\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul></div><div ng-if=!useVirtualScrolling><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=!filtered id={{localId}}><li ng-repeat=\"obj in listData track by $index\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=filtered id={{localId}}><li ng-repeat=\"obj in (filterState.filterResult = (filteredData | filter:filterByName))\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul></div></div>"
+    "        <div class=\"ep-list-item-content\" ng-include=\"itemContentTemplate\"></div></script><!--Calling filter list component for search option--><ep-filter-list search-by=listSearch count=\"filtered ? filterState.filterResult.length : items.count\" search-prompt=searchPrompt></ep-filter-list><!--Header as optional--><div class=ep-list-sub-header ng-if=\"subHeader == 'true'\"><label ng-click=filter() ng-hide=\"hideDisplayOptions == 'true'\">{{'emf.ep.list.label.filter' | epTranslate}} <i class=\"fa fa-check ep-list-filter-indicator\" ng-if=showFilterOn></i></label><label ng-click=sort() ng-hide=\"hideDisplayOptions == 'true'\">{{'emf.ep.list.label.sort' | epTranslate}} <i class=\"fa fa-check ep-list-filter-indicator\" ng-if=showSortOn></i></label><span class=\"pull-right ep-pad-right-20 text-primary\" ng-hide=\"hideAdd == 'true'\" ng-click=add()><i class=\"fa fa-plus fa-lg\" aria-hidden=true></i></span></div><!-- Alphabet Selector --><div class=ep-list-directory ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=\"showDirectory && groupBy\"><div class=ep-list-directory-item ng-repeat=\"(id,dir) in directory | epOrderObjectBy:'sort'\"><a ng-if=\"dir.letter === '*'\" class=ep-list-directory-item-enabled ng-click=goToDirectory(dir)><i class=\"fa fa-asterisk\"></i></a> <span ng-if=\"(dir.letter !== '*') && dir.disabled\" class=text-muted>{{dir.letter}}</span> <a ng-if=\"(dir.letter !== '*') && !dir.disabled\" class=ep-list-directory-item-enabled ng-class=\"{ 'text-danger': selectedDirectoryEntry.letter === dir.letter && filtered }\" ng-click=goToDirectory(dir)>{{dir.letter}}</a></div></div><div ng-if=useVirtualScrolling><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=!filtered id={{localId}} vs-repeat={{vsItemSize}} vs-excess={{vsRenderBufferSize}} vs-options=\"{ latch: {{vsLatch}} }\"><li ng-repeat=\"obj in listData track by $index\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=filtered id={{localId}} vs-repeat={{vsItemSize}} vs-excess={{vsRenderBufferSize}} vs-options=\"{ latch: {{vsLatch}} }\"><li ng-repeat=\"obj in (filterState.filterResult = (filteredData | filter:filterByName))\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul></div><div ng-if=!useVirtualScrolling><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=!filtered id={{localId}}><li ng-repeat=\"obj in listData track by $index\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=filtered id={{localId}}><li ng-repeat=\"obj in (filterState.filterResult = (filteredData | filter:filterByName))\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul></div></div>"
   );
 
 
@@ -31601,7 +31628,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.token/ep-login-view/ep-login-view.html',
-    "<!--This is a partial for the ep-login-view directive --><div class=\"ep-login-view container-fluid\"><div class=ep-login-background><div class=ep-background-image ng-if=!settings.customImage></div><img class=ep-background-custom-image ng-if=settings.customImage ng-src={{settings.customImage}} alt=\"\"></div><div class=ep-login-up-box><div class=\"ep-login-box center-block\"><form class=form-group><div class=form-group><p class=ep-login-text><b>Please enter your credentials to sign in.</b></p><div class=input-group><span class=input-group-addon><i class=\"fa fa-user fa-fw\"></i></span> <input clearable name=username ng-keypress=clearWarning() id=username class=form-control ng-model=settings.username placeholder=\"User Name\"></div><br><div class=input-group><span class=input-group-addon><i class=\"fa fa-lock fa-fw\"></i></span> <input type=password clearable ng-keypress=passwordKeyPress($event) name=password id=password class=form-control ng-model=settings.password placeholder=\"Password\"></div><br><div ng-show=showServerName class=input-group><span class=input-group-addon><i class=\"fa fa-server fa-fw\"></i></span> <input spellcheck autocorrect=false clearable name=servername id=serverValue class=form-control ng-model=settings.serverName placeholder=\"Server\"></div><br><div align=center ng-if=showLoader><div class=progress><div class=\"progress-bar progress-bar-striped active\" role=progressbar aria-valuenow=100 aria-valuemin=0 aria-valuemax=100 style=\"width: 100%\"></div></div></div><div ng-if=status class=\"alert alert-danger\"><label>{{status}}</label><br></div><div><button ng-if=\"options.showSettingsButton !== false\" class=\"btn btn-default pull-left\" ng-click=showServer()><i class=\"fa fa-cog fa-fw\"></i></button> <button type=submit class=\"btn btn-primary pull-right\" ng-click=loginUser() ng-disabled=showLoader>Log in</button></div></div></form></div></div></div>"
+    "<!--This is a partial for the ep-login-view directive --><div class=\"ep-login-view container-fluid\"><div class=ep-login-background><div class=ep-background-image ng-if=!settings.customImage></div><img class=ep-background-custom-image ng-if=settings.customImage ng-src={{settings.customImage}} alt=\"\"></div><div class=ep-login-up-box><div class=\"ep-login-box center-block\"><form class=form-group><div class=form-group><p class=ep-login-text><b>{{'emf.ep.token.ep-login-view.label.enterCredentials' | epTranslate}}</b></p><div class=input-group><span class=input-group-addon><i class=\"fa fa-user fa-fw\"></i></span> <input clearable name=username ng-keypress=clearWarning() id=username class=form-control ng-model=settings.username placeholder=\"{{'emf.ep.token.ep-login-view.placeholder.userName' | epTranslate}}\"></div><br><div class=input-group><span class=input-group-addon><i class=\"fa fa-lock fa-fw\"></i></span> <input type=password clearable ng-keypress=passwordKeyPress($event) name=password id=password class=form-control ng-model=settings.password placeholder=\"{{'emf.ep.token.ep-login-view.placeholder.password' | epTranslate}}\"></div><br><div ng-show=showServerName class=input-group><span class=input-group-addon><i class=\"fa fa-server fa-fw\"></i></span> <input spellcheck autocorrect=false clearable name=servername id=serverValue class=form-control ng-model=settings.serverName placeholder=\"{{'emf.ep.token.ep-login-view.placeholder.server' | epTranslate}}\"></div><br><div align=center ng-if=showLoader><div class=progress><div class=\"progress-bar progress-bar-striped active\" role=progressbar aria-valuenow=100 aria-valuemin=0 aria-valuemax=100 style=\"width: 100%\"></div></div></div><div ng-if=status class=\"alert alert-danger\"><label>{{status}}</label><br></div><div><button ng-if=\"options.showSettingsButton !== false\" class=\"btn btn-default pull-left\" ng-click=showServer()><i class=\"fa fa-cog fa-fw\"></i></button> <button type=submit class=\"btn btn-primary pull-right\" ng-click=loginUser() ng-disabled=showLoader>{{'emf.ep.token.ep-login-view.btn.login' | epTranslate}}</button></div></div></form></div></div></div>"
   );
 
 

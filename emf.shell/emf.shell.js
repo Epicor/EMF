@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.151 built: 12-09-2017
+ * version:1.0.14-dev.152 built: 12-09-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.14-dev.151","built":"2017-09-12"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.14-dev.152","built":"2017-09-12"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -3341,12 +3341,12 @@ function() {
      * @example
      *
      */
-    epModalDialogService.$inject = ['$sce', '$uibModal', '$uibModalStack', '$compile', '$rootScope', '$timeout', '$interval', '$injector', 'epLocalStorageService'];
+    epModalDialogService.$inject = ['$sce', '$uibModal', '$uibModalStack', '$compile', '$rootScope', '$timeout', '$interval', '$injector', 'epLocalStorageService', 'epTranslationService'];
     angular.module('ep.modaldialog').service('epModalDialogService', epModalDialogService);
 
     /*@ngInject*/
     function epModalDialogService($sce, $uibModal, $uibModalStack, $compile, $rootScope, $timeout,
-        $interval, $injector, epLocalStorageService) {
+        $interval, $injector, epLocalStorageService, epTranslationService) {
 
         /**
          * @private
@@ -3367,7 +3367,7 @@ function() {
             fnDefaultAction: null,
             fnCancelAction: null,
             fnButtonAction: null,
-            buttons: [{text: 'Ok', isDefault: true}],
+            buttons: [{ text: '$$.emf.ep.modaldialog.button.Ok', isDefault: true}],
             btnBlock: false
         };
 
@@ -3451,11 +3451,11 @@ function() {
                 dialogTypeClass: 'ep-confirm-dialog',
                 icon: 'fa  fa-question-circle fa-4x',
                 buttons: [{
-                    text: 'Yes', isDefault: true,
+                    text: '$$.emf.ep.modaldialog.button.Yes', isDefault: true,
                     action: (options ? options.fnDefaultAction : null)
                 },
                     {
-                        text: 'No', isCancel: true,
+                        text: '$$.emf.ep.modaldialog.button.No', isCancel: true,
                         action: (options ? options.fnCancelAction : null)
                     }]
             };
@@ -3564,7 +3564,7 @@ function() {
                 messageDetails: '',
                 btnBlock: false,
                 buttons: [{
-                    id: 'btnOk', text: 'Ok', isDefault: true, type: 'primary',
+                    id: 'btnOk', text: '$$.emf.ep.modaldialog.button.Ok', isDefault: true, type: 'primary',
                     action: (options ? options.fnDefaultAction : null)
                 }]
             };
@@ -3625,7 +3625,7 @@ function() {
                 size: 'fullscreen',
                 closeButton: true,
                 buttons: [{
-                    id: 'btnOk', text: 'Ok', isDefault: true, type: 'primary'
+                    id: 'btnOk', text: '$$.emf.ep.modaldialog.button.Ok', isDefault: true, type: 'primary'
                 }]
             };
 
@@ -3667,7 +3667,7 @@ function() {
                 messageDetails: '',
                 btnBlock: false,
                 buttons: [{
-                    id: 'btnOk', text: 'Ok', isDefault: true, type: 'primary',
+                    id: 'btnOk', text: '$$.emf.ep.modaldialog.button.Ok', isDefault: true, type: 'primary',
                     action: (options ? options.fnDefaultAction : null)
                 }]
             };
@@ -4066,9 +4066,16 @@ function() {
                             btn.type = 'default';
                         }
                     }
+                    if (btn.text) {
+                        btn.text = epTranslationService.getStringIf(btn.text);
+                    }
                 });
             }
 
+            //apply translation if necessary
+            cfg.title = epTranslationService.getStringIf(cfg.title);
+            cfg.message = epTranslationService.getStringIf(cfg.message);
+            
             if (cfg.autoClose) {
                 cfg.messageHasTimer = (cfg.message.indexOf('{timer}') >= 0);
                 cfg.titleHasTimer = (cfg.title.indexOf('{timer}') >= 0);
@@ -4679,6 +4686,23 @@ function() {
 
         /**
          * @ngdoc method
+         * @name getStringIf
+         * @methodOf ep.globalization.service:epTranslationService
+         * @public
+         * @description
+         * get resource string if the id starts with '$$.'
+         * @param {string} id - id of resource string if it starts with '$$.'
+         */
+        function getStringIf(id) {
+            if (id && id.length > 3 && id.indexOf('$$.') === 0) {
+                var strId = id.substr(3);
+                return getString(strId);
+            }
+            return id;
+        }
+
+        /**
+         * @ngdoc method
          * @name load
          * @methodOf ep.globalization.service:epTranslationService
          * @public
@@ -4917,6 +4941,7 @@ function() {
             initialize: initialize,
             changeLocale: changeLocale,
             getString: getString,
+            getStringIf: getStringIf,
             load: load,
             loadFromResource: loadFromResource,
             currentLocale: currentLocale,
