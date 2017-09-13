@@ -2,5 +2,8 @@
     "button.Ok": "Vale",
     "button.Cancel": "Cancelar",
     "button.Yes": "Sí",
-    "button.No": "No"
+    "button.No": "No",
+    "label.showDetails": "Mostrar detalles",
+    "label.hideDetails": "Ocultar detalles",
+    "label.doNotShowMsgAgain": "No mostrar este mensaje de nuevo"
 }
