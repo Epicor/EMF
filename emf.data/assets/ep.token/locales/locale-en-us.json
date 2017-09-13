@@ -5,9 +5,9 @@
     "ep-login-view.placeholder.password": "Password",
     "ep-login-view.placeholder.server": "Server",
 
-    "ep-login-view.message.missingServer": "Oops... Don\\'t forget to type the Server.",
-    "ep-login-view.message.missingUserName": "Oops.. There\\'s no user name there!",
-    "ep-login-view.message.youForgotPassword": "Oops.. You forgot to type your password!",
+    "ep-login-view.message.missingServer": "Please provide your server name to login.",
+    "ep-login-view.message.missingUserName": "Please provide your username to login.",
+    "ep-login-view.message.youForgotPassword": "Please provide your password to login.",
     "ep-login-view.message.connectionUserPassword": "Connection failed, please review the username and password and try again.",
-    "ep-login-view.message.tokenAuthError": "Token authentication may not be enabled on the Epicor server. Refer to the Epicor Administration Console."
+    "ep-login-view.message.tokenAuthError": "Token authentication may not be enabled on your ERP server. Please refer to the Epicor Administration Console."
 }

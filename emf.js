@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.155 built: 13-09-2017
+ * version:1.0.14-dev.156 built: 13-09-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.155","built":"2017-09-13"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.156","built":"2017-09-13"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -13114,7 +13114,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             }
 
             var url = svc;
-            var promise = epErpRestService.post(url, d, options.callSettings);
+            var promise = epErpRestService.post(url, d, options.callSettings, options);
             promise.then(function() {
                 if (showProgress) {
                     epModalDialogService.hide();
@@ -17273,10 +17273,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 (function() {
     'use strict';
 
-    epListDirective.$inject = ['$filter', '$timeout', 'epListService'];
+    epListDirective.$inject = ['$filter', '$timeout', 'epListService', 'epTranslationService'];
     angular.module('ep.list').directive('epList', epListDirective);
 
-    function epListDirective($filter, $timeout, epListService) {
+    function epListDirective($filter, $timeout, epListService, epTranslationService) {
         return {
             restrict: 'EA',
             replace: true,
@@ -17381,7 +17381,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
                     if (scope.groupBy && scope.groupBy !== '') {
                         if (isGroupByDate) {
-                            scope.searchPrompt = 'Search by year or month-year...';
+                            scope.searchPrompt = epTranslationService.getString('emf.ep.list.label.searchByDate');
                             scope.searchType = 'sdate';
                             scope.listData = _.sortBy(scope.listData, function(d) {
                                 return d[scope.groupBy] || '';
@@ -29256,7 +29256,7 @@ angular.module('ep.signature').directive('epSignature',
                 });
             }
 
-            function postCall(method, svc, data, callSettings) {
+            function postCall(method, svc, data, callSettings, options) {
                 var tkn = epTokenService.getToken();
                 if (!tkn) {
                     return;
@@ -29273,7 +29273,7 @@ angular.module('ep.signature').directive('epSignature',
 
                 var logEntry = createLogEntry('REST CALL: ' + svc, 'ep-rest-service (post)', url, d, callSettings);
 
-                var promise = $http({
+                var postObj = {
                     method: 'POST',
                     dataType: 'json',
                     data: d,
@@ -29284,7 +29284,15 @@ angular.module('ep.signature').directive('epSignature',
                         'CallSettings': sCallSettings
                     },
                     url: url,
-                });
+                };
+
+                if (options && options.headers && angular.isObject(options.headers)) {
+                    angular.forEach(options.headers, function(value, key) {
+                        postObj.headers[key] = JSON.stringify(value);
+                    });
+                }
+
+                var promise = $http(postObj);
 
                 promise.then(function(data) {
                     submitLogEntry(logEntry, {
@@ -29432,8 +29440,8 @@ angular.module('ep.signature').directive('epSignature',
                     }
                     return ret;
                 },
-                post: function(path, data, callSettings) {
-                    return postCall('POST', path, data, callSettings);
+                post: function(path, data, callSettings, options) {
+                    return postCall('POST', path, data, callSettings, options);
                 },
                 remove: function(path, callSettings) {
                     return deleteCall(path, callSettings);
@@ -31205,7 +31213,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.accordion.menu/ep-accordion-menu_template.html',
-    "<div id=MainMenu class=ep-accordion-menu><form class=ep-mlm-search ng-hide=searchDisabled><input type=search class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-keydown=onKeydown($event) ng-focus=\"isRightToLeft = false\" tabindex=-1> <span class=ep-mlm-search-cancel ng-show=state.searchTerm><i class=\"fa fa-times\" ng-click=\"state.searchTerm=''\"></i></span></form><div ng-show=state.searchTerm><div class=\"bg-primary ep-menu-header\"><span ng-bind=searchResultsHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in currentItems | orderBy:orderByMenu\" id={{item.id}} hide-description=false navigate-alternate-icon=navigateAlternateIcon item=item navigate=navigate navigate-alternate=navigateAlternate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div><div ng-show=!state.searchTerm><div class=\"bg-primary ep-menu-header\" ng-if=\"data.favorites && data.favorites.length\"><span ng-bind=favoritesHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in data.favorites | orderBy:orderByMenu\" id={{item.id}} hide-description=false navigate-alternate-icon=navigateAlternateIcon item=item navigate=navigate navigate-alternate=navigateAlternate toggle-favorite=toggleFavorite tabindex=-1></ep-accordion-menu-item></div><div class=\"bg-primary ep-menu-header\"><span ng-bind=mainHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in menu.menuitems | orderBy:orderByMenu\" id={{item.id}} hide-description=true commit-menu-state=commitMenuState item=item navigate=navigate navigate-alternate=navigateAlternate navigate-alternate-icon=navigateAlternateIcon toggle-favorite=toggleFavorite on-expand=onExpand tabindex=-1></ep-accordion-menu-item></div></div></div>"
+    "<div id=MainMenu class=ep-accordion-menu><form class=ep-mlm-search ng-hide=searchDisabled><input type=search class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-keydown=onKeydown($event) ng-focus=\"isRightToLeft = false\" tabindex=-1> <span class=ep-mlm-search-cancel ng-show=state.searchTerm><i class=\"fa fa-times\" ng-click=\"state.searchTerm=''\"></i></span></form><div ng-show=state.searchTerm><div class=\"bg-primary ep-menu-header\"><span ng-bind=searchResultsHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in currentItems | orderBy:orderByMenu\" id={{item.id}} hide-description=false navigate-alternate-icon=navigateAlternateIcon item=item navigate=navigate navigate-alternate=navigateAlternate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div><div ng-show=!state.searchTerm><div class=\"bg-primary ep-menu-header\" ng-if=\"data.favorites && data.favorites.length\"><span ng-bind=favoritesHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in data.favorites | orderBy:orderByMenu\" id={{item.id}} hide-description=false navigate-alternate-icon=navigateAlternateIcon item=item navigate=navigate navigate-alternate=navigateAlternate toggle-favorite=toggleFavorite tabindex=-1></ep-accordion-menu-item></div><div class=\"bg-primary ep-menu-header\" ng-hide=!mainHeader><span ng-bind=mainHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in menu.menuitems | orderBy:orderByMenu\" id={{item.id}} hide-description=true commit-menu-state=commitMenuState item=item navigate=navigate navigate-alternate=navigateAlternate navigate-alternate-icon=navigateAlternateIcon toggle-favorite=toggleFavorite on-expand=onExpand tabindex=-1></ep-accordion-menu-item></div></div></div>"
   );
 
 
@@ -31403,7 +31411,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.filter.list/filter_list.html',
-    "<div class=ep-search-list-container><div class=row><div class=\"col-xs-9 col-sm-10 col-md-10\"><span class=\"fa fa-search ep-pad-left-10\"></span> <input id=searchinput class=\"search-query form-control\" ng-focus=\"showRemove=true\" ng-model=searchBy placeholder=\"{{searchPrompt || 'Search'}}\" ng-change=\"changeHandler(searchBy)\"> <span class=\"ep-cicrm-delete text-danger\" ng-if=showRemove ng-click=clearSearch()></span></div><div class=\"col-xs-3 col-sm-2 col-md-2 result-count-container text-center\"><div>{{count}}</div><div>{{'emf.ep.filter.list.label.result' | epTranslate}}</div></div></div></div>"
+    "<div class=ep-search-list-container><div class=row><div class=\"col-xs-9 col-sm-10 col-md-10\"><span class=\"fa fa-search ep-pad-left-10\"></span> <input id=searchinput class=\"search-query form-control\" ng-focus=\"showRemove=true\" ng-model=searchBy placeholder=\"{{searchPrompt || ('emf.ep.filter.list.label.search' | epTranslate)}}\" ng-change=\"changeHandler(searchBy)\"> <span class=\"ep-cicrm-delete text-danger\" ng-if=showRemove ng-click=clearSearch()></span></div><div class=\"col-xs-3 col-sm-2 col-md-2 result-count-container text-center\"><div>{{count}}</div><div>{{'emf.ep.filter.list.label.result' | epTranslate}}</div></div></div></div>"
   );
 
 

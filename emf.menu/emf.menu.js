@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.155 built: 13-09-2017
+ * version:1.0.14-dev.156 built: 13-09-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.14-dev.155","built":"2017-09-13"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.14-dev.156","built":"2017-09-13"};
 
 (function() {
     'use strict';
@@ -2203,10 +2203,10 @@ angular.module('ep.menu.builder', [
 (function() {
     'use strict';
 
-    epListDirective.$inject = ['$filter', '$timeout', 'epListService'];
+    epListDirective.$inject = ['$filter', '$timeout', 'epListService', 'epTranslationService'];
     angular.module('ep.list').directive('epList', epListDirective);
 
-    function epListDirective($filter, $timeout, epListService) {
+    function epListDirective($filter, $timeout, epListService, epTranslationService) {
         return {
             restrict: 'EA',
             replace: true,
@@ -2311,7 +2311,7 @@ angular.module('ep.menu.builder', [
 
                     if (scope.groupBy && scope.groupBy !== '') {
                         if (isGroupByDate) {
-                            scope.searchPrompt = 'Search by year or month-year...';
+                            scope.searchPrompt = epTranslationService.getString('emf.ep.list.label.searchByDate');
                             scope.searchType = 'sdate';
                             scope.listData = _.sortBy(scope.listData, function(d) {
                                 return d[scope.groupBy] || '';
@@ -3183,7 +3183,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.accordion.menu/ep-accordion-menu_template.html',
-    "<div id=MainMenu class=ep-accordion-menu><form class=ep-mlm-search ng-hide=searchDisabled><input type=search class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-keydown=onKeydown($event) ng-focus=\"isRightToLeft = false\" tabindex=-1> <span class=ep-mlm-search-cancel ng-show=state.searchTerm><i class=\"fa fa-times\" ng-click=\"state.searchTerm=''\"></i></span></form><div ng-show=state.searchTerm><div class=\"bg-primary ep-menu-header\"><span ng-bind=searchResultsHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in currentItems | orderBy:orderByMenu\" id={{item.id}} hide-description=false navigate-alternate-icon=navigateAlternateIcon item=item navigate=navigate navigate-alternate=navigateAlternate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div><div ng-show=!state.searchTerm><div class=\"bg-primary ep-menu-header\" ng-if=\"data.favorites && data.favorites.length\"><span ng-bind=favoritesHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in data.favorites | orderBy:orderByMenu\" id={{item.id}} hide-description=false navigate-alternate-icon=navigateAlternateIcon item=item navigate=navigate navigate-alternate=navigateAlternate toggle-favorite=toggleFavorite tabindex=-1></ep-accordion-menu-item></div><div class=\"bg-primary ep-menu-header\"><span ng-bind=mainHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in menu.menuitems | orderBy:orderByMenu\" id={{item.id}} hide-description=true commit-menu-state=commitMenuState item=item navigate=navigate navigate-alternate=navigateAlternate navigate-alternate-icon=navigateAlternateIcon toggle-favorite=toggleFavorite on-expand=onExpand tabindex=-1></ep-accordion-menu-item></div></div></div>"
+    "<div id=MainMenu class=ep-accordion-menu><form class=ep-mlm-search ng-hide=searchDisabled><input type=search class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-keydown=onKeydown($event) ng-focus=\"isRightToLeft = false\" tabindex=-1> <span class=ep-mlm-search-cancel ng-show=state.searchTerm><i class=\"fa fa-times\" ng-click=\"state.searchTerm=''\"></i></span></form><div ng-show=state.searchTerm><div class=\"bg-primary ep-menu-header\"><span ng-bind=searchResultsHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in currentItems | orderBy:orderByMenu\" id={{item.id}} hide-description=false navigate-alternate-icon=navigateAlternateIcon item=item navigate=navigate navigate-alternate=navigateAlternate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div><div ng-show=!state.searchTerm><div class=\"bg-primary ep-menu-header\" ng-if=\"data.favorites && data.favorites.length\"><span ng-bind=favoritesHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in data.favorites | orderBy:orderByMenu\" id={{item.id}} hide-description=false navigate-alternate-icon=navigateAlternateIcon item=item navigate=navigate navigate-alternate=navigateAlternate toggle-favorite=toggleFavorite tabindex=-1></ep-accordion-menu-item></div><div class=\"bg-primary ep-menu-header\" ng-hide=!mainHeader><span ng-bind=mainHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in menu.menuitems | orderBy:orderByMenu\" id={{item.id}} hide-description=true commit-menu-state=commitMenuState item=item navigate=navigate navigate-alternate=navigateAlternate navigate-alternate-icon=navigateAlternateIcon toggle-favorite=toggleFavorite on-expand=onExpand tabindex=-1></ep-accordion-menu-item></div></div></div>"
   );
 
 

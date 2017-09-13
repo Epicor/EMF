@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.155 built: 13-09-2017
+ * version:1.0.14-dev.156 built: 13-09-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.14-dev.155","built":"2017-09-13"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.14-dev.156","built":"2017-09-13"};
 
 (function() {
     'use strict';
@@ -199,7 +199,7 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                 });
             }
 
-            function postCall(method, svc, data, callSettings) {
+            function postCall(method, svc, data, callSettings, options) {
                 var tkn = epTokenService.getToken();
                 if (!tkn) {
                     return;
@@ -216,7 +216,7 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
 
                 var logEntry = createLogEntry('REST CALL: ' + svc, 'ep-rest-service (post)', url, d, callSettings);
 
-                var promise = $http({
+                var postObj = {
                     method: 'POST',
                     dataType: 'json',
                     data: d,
@@ -227,7 +227,15 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                         'CallSettings': sCallSettings
                     },
                     url: url,
-                });
+                };
+
+                if (options && options.headers && angular.isObject(options.headers)) {
+                    angular.forEach(options.headers, function(value, key) {
+                        postObj.headers[key] = JSON.stringify(value);
+                    });
+                }
+
+                var promise = $http(postObj);
 
                 promise.then(function(data) {
                     submitLogEntry(logEntry, {
@@ -375,8 +383,8 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                     }
                     return ret;
                 },
-                post: function(path, data, callSettings) {
-                    return postCall('POST', path, data, callSettings);
+                post: function(path, data, callSettings, options) {
+                    return postCall('POST', path, data, callSettings, options);
                 },
                 remove: function(path, callSettings) {
                     return deleteCall(path, callSettings);
@@ -5213,7 +5221,7 @@ angular.module('ep.binding').
             }
 
             var url = svc;
-            var promise = epErpRestService.post(url, d, options.callSettings);
+            var promise = epErpRestService.post(url, d, options.callSettings, options);
             promise.then(function() {
                 if (showProgress) {
                     epModalDialogService.hide();

@@ -1,4 +1,5 @@
 ﻿{
     "label.filter": "Filter",
-    "label.sort": "Sort"
+    "label.sort": "Sort",
+    "label.searchByDate": "Search by year or month-year..."
 }
