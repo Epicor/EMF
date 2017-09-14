@@ -1,4 +1,8 @@
 {
+  "emf.ep.erp.message.pleaseWait": "Please Wait...",
+  "emf.ep.erp.message.retrievingData": "Retrieving data.",
+  "emf.ep.erp.message.sendingServerData": "Sending data to the server.",
+  "emf.ep.erp.message.gettingNewRecord": "Retrieving new record.",
   "emf.ep.filter.list.label.result": "Resultados",
   "emf.ep.filter.list.label.search": "Buscar",
   "emf.ep.list.label.filter": "Filtrar",
@@ -7,6 +11,7 @@
   "emf.ep.modaldialog.button.Cancel": "Cancelar",
   "emf.ep.modaldialog.button.Yes": "Sí",
   "emf.ep.modaldialog.button.No": "No",
+  "emf.ep.modaldialog.label.exception": "Exception",
   "emf.ep.modaldialog.label.showDetails": "Mostrar detalles",
   "emf.ep.modaldialog.label.hideDetails": "Ocultar detalles",
   "emf.ep.modaldialog.label.doNotShowMsgAgain": "No mostrar este mensaje de nuevo",

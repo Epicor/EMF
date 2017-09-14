@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.160 built: 14-09-2017
+ * version:1.0.14-dev.161 built: 14-09-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.160","built":"2017-09-14"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.161","built":"2017-09-14"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -12483,7 +12483,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             promise.then(function() {
             }, function(data) {
                 var msg = data['odata.error'] ? data['odata.error'].message.value : data.statusText;
-                epModalDialogService.showException({ title: 'Exception', message: msg });
+                epModalDialogService.showException({ message: msg });
             });
             return promise;
         }
@@ -12495,8 +12495,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             var showProgress = (options.showProgress !== false);
             if (showProgress) {
                 epModalDialogService.showLoading({
-                    title: options.title || 'Retrieving data...',
-                    message: options.message || 'retrieving data from server...'
+                    title: options.title || '$$.emf.ep.erp.message.pleaseWait',
+                    message: options.message || '$$.emf.ep.erp.message.retrievingData'
                 });
             }
 
@@ -12610,8 +12610,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             try {
                 if (showProgress) {
                     epModalDialogService.showLoading({
-                        title: options.title || 'Updating data',
-                        message: options.message || 'sending data to server...'
+                        title: options.title || '$$.emf.ep.erp.message.pleaseWait',
+                        message: options.message || '$$.emf.ep.erp.message.sendingServerData'
                     });
                 }
 
@@ -12725,8 +12725,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             var showProgress = (options.showProgress !== false);
             if (showProgress) {
                 epModalDialogService.showLoading({
-                    title: 'Retrieving data...',
-                    message: 'getting new record from server...'
+                    title: options.title || '$$.emf.ep.erp.message.retrievingData',
+                    message: options.message || '$$.emf.ep.erp.message.gettingNewRecord'
                 });
             }
 
@@ -12836,7 +12836,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             }
             if (showError) {
                 epModalDialogService.showException({
-                    title: 'Info', message: msg || '',
+                    message: msg || '',
                     messageDetails: angular.toJson(maskedResponse, 2)
                 });
             }
@@ -13009,8 +13009,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             var showProgress = (options.showProgress !== false);
             if (showProgress) {
                 epModalDialogService.showLoading({
-                    title: 'Retrieving data',
-                    message: 'retrieving data from server...'
+                    title: options.title || '$$.emf.ep.erp.message.pleaseWait',
+                    message: options.message || '$$.emf.ep.erp.message.retrievingData'
                 });
             }
 
@@ -13090,8 +13090,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             var showProgress = (options.showProgress !== false);
             if (showProgress) {
                 epModalDialogService.showLoading({
-                    title: options.title || 'Updating data',
-                    message: options.message || 'sending data to server...'
+                    title: options.title || '$$.emf.ep.erp.message.pleaseWait',
+                    message: options.message || '$$.emf.ep.erp.message.sendingServerData'
                 });
             }
 
@@ -13157,7 +13157,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 }
                 if (showErr) {
                     epModalDialogService.showException({
-                        title: 'Info', message: msg || '',
+                        message: msg || '',
                         messageDetails: angular.toJson(maskedResponse, 2)
                     });
                 }
@@ -18808,7 +18808,7 @@ angular.module('ep.menu.builder').
         function showException(options, ex) {
             var cfg = {
                 templateUrl: 'src/components/ep.modaldialog/modals/modaldialog-error.html',
-                title: 'Exception',
+                title: '$$.emf.ep.modaldialog.label.exception',
                 icon: '',
                 status: 'error',
                 statusClass: 'alert-danger',
