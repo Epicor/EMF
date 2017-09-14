@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.159 built: 13-09-2017
+ * version:1.0.14-dev.160 built: 14-09-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.14-dev.159","built":"2017-09-13"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.14-dev.160","built":"2017-09-14"};
 
 (function() {
     'use strict';
@@ -97,16 +97,16 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
             var serverUrl = '';
             var isLogOn = true;
 
-            function createLogEntry(message, source, url, query, callSettings) {
+            function createLogEntry(message, source, url, query, headers) {
                 var logEntry = {
-                    message: message,
+                    message: 'REST CALL: ' + message,
                     kind: 'rest',
                     details: {
                         source: source,
                         start: new Date(),
                         url: url,
                         query: query,
-                        callSettings: callSettings
+                        callSettings: headers.CallSettings || {}
                     }
                 };
                 return logEntry;
@@ -164,7 +164,22 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                 return msg;
             }
 
-            function call(method, path, query, callSettings, logData) {
+            function setHeaders(httpObj, options, tkn) {
+                if (!httpObj.headers) {
+                    httpObj.headers = {};
+                }
+                httpObj.headers['Authorization'] = 'Bearer ' + tkn.token.AccessToken;
+                if (!httpObj.headers['Content-Type']) {
+                    httpObj.headers['Content-Type'] = 'application/json';
+                }
+                if (options && options.headers && angular.isObject(options.headers)) {
+                    angular.forEach(options.headers, function(value, key) {
+                        httpObj.headers[key] = JSON.stringify(value);
+                    });
+                }
+            }
+
+            function call(method, path, query, options, logData) {
                 var tkn = epTokenService.getToken();
                 if (!tkn) {
                     return;
@@ -183,23 +198,20 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                     }
                 }
 
-                var sCallSettings = JSON.stringify(callSettings || {});
+                var httpObj = {
+                    method: 'GET',
+                    headers: {}
+                };
+                setHeaders(httpObj, options, tkn);
 
-                logData.logEntry = createLogEntry('REST CALL: ' + sPath,
-                                                  'ep-rest-service (get)', url, query, callSettings);
+                logData.logEntry = createLogEntry(sPath, 'ep-rest-service (get)', url, query, httpObj.headers);
 
                 return $resource(url, query, {
-                    get: {
-                        method: 'GET', headers: {
-                            'Authorization': 'Bearer ' + tkn.token.AccessToken,
-                            'Content-Type': 'application/json',
-                            'CallSettings': sCallSettings
-                        }
-                    }
+                    get: httpObj
                 });
             }
 
-            function postCall(method, svc, data, callSettings, options) {
+            function postCall(method, svc, data, options) {
                 var tkn = epTokenService.getToken();
                 if (!tkn) {
                     return;
@@ -212,30 +224,19 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
 
                 var url = serverUrl + svc;
 
-                var sCallSettings = JSON.stringify(callSettings || {});
-
-                var logEntry = createLogEntry('REST CALL: ' + svc, 'ep-rest-service (post)', url, d, callSettings);
-
-                var postObj = {
+                var httpObj = {
                     method: 'POST',
                     dataType: 'json',
                     data: d,
                     headers: {
-                        'Authorization': 'Bearer ' + tkn.token.AccessToken,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'CallSettings': sCallSettings
+                        'Accept': 'application/json'
                     },
                     url: url,
                 };
+                setHeaders(httpObj, options, tkn);
+                var logEntry = createLogEntry(svc, 'ep-rest-service (post)', url, d, httpObj.headers);
 
-                if (options && options.headers && angular.isObject(options.headers)) {
-                    angular.forEach(options.headers, function(value, key) {
-                        postObj.headers[key] = JSON.stringify(value);
-                    });
-                }
-
-                var promise = $http(postObj);
+                var promise = $http(httpObj);
 
                 promise.then(function(data) {
                     submitLogEntry(logEntry, {
@@ -248,31 +249,27 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                 return promise;
             }
 
-            function deleteCall(path, callSettings) {
+            function deleteCall(path, options) {
                 var tkn = epTokenService.getToken();
                 if (!tkn) {
                     return;
                 }
                 var url = serverUrl + path;
 
-                var sCallSettings = JSON.stringify(callSettings || {});
-
-                // TODO: what should "data" be?-- it's undefined here
-                var logEntry = createLogEntry('REST CALL: ' + path,
-                                              'ep-rest-service (delete)', url, {}, callSettings);
-
-                var promise = $http({
+                var httpObj = {
                     method: 'DELETE',
                     dataType: 'json',
                     headers: {
-                        'Authorization': 'Bearer ' + tkn.token.AccessToken,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'CallSettings': sCallSettings
+                        'Accept': 'application/json'
                     },
                     url: url,
-                });
+                };
 
+                setHeaders(httpObj, options, tkn);
+
+                var logEntry = createLogEntry(path, 'ep-rest-service (delete)', url, {}, httpObj.headers);
+
+                var promise = $http(httpObj);
                 promise.then(function(data) {
                     submitLogEntry(logEntry, {
                         numRecords: (data && data.value) ? data.value.length : 'unknown'
@@ -284,7 +281,7 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                 return promise;
             }
 
-            function patch(svc, data, callSettings) {
+            function patch(svc, data, options) {
                 var tkn = epTokenService.getToken();
                 if (!tkn || !serverUrl) {
                     return;
@@ -298,23 +295,20 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
 
                 var url = serverUrl + svc;
 
-                var sCallSettings = JSON.stringify(callSettings || {});
-
-                var logEntry = createLogEntry('REST CALL: ' + svc, 'ep-rest-service (patch)', url, d, callSettings);
-
-                var promise = $http({
+                var httpObj = {
                     method: 'PATCH',
                     dataType: 'json',
                     data: d,
                     headers: {
-                        'Authorization': 'Bearer ' + tkn.token.AccessToken,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'CallSettings': sCallSettings
+                        'Accept': 'application/json'
                     },
                     url: url,
-                });
+                };
 
+                setHeaders(httpObj, options, tkn);
+                var logEntry = createLogEntry(svc, 'ep-rest-service (patch)', url, d, httpObj.headers);
+
+                var promise = $http(httpObj);
                 promise.then(function(data) {
                     submitLogEntry(logEntry, {
                         numRecords: (data && data.value) ? data.value.length : 'unknown'
@@ -326,28 +320,26 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                 return promise;
             }
 
-            function getXML(svc, callSettings) {
+            function getXML(svc, options) {
                 var tkn = epTokenService.getToken();
                 if (!tkn) {
                     return;
                 }
                 var url = serverUrl + svc;
 
-                var sCallSettings = JSON.stringify(callSettings || {});
-
-                var logEntry = createLogEntry('REST CALL: ' + svc, 'ep-rest-service (get-xml)', url, {}, callSettings);
-
-                var promise = $http({
+                var httpObj = {
                     method: 'GET',
                     headers: {
-                        'Authorization': 'Bearer ' + tkn.token.AccessToken,
                         'Content-Type': 'application/xml; charset=utf-8',
-                        'Accept': 'application/xml',
-                        'CallSettings': sCallSettings
+                        'Accept': 'application/xml'
                     },
                     url: url,
-                });
+                };
+                setHeaders(httpObj, options, tkn);
 
+                var logEntry = createLogEntry(svc, 'ep-rest-service (get-xml)', url, {}, httpObj.headers);
+
+                var promise = $http(httpObj);
                 promise.then(function(data) {
                     submitLogEntry(logEntry, {
                         numRecords: (data && data.value) ? data.value.length : 'unknown'
@@ -366,9 +358,9 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                 enableLogs: function(onOff) {
                     isLogOn = onOff;
                 },
-                get: function(path, query, callSettings) {
+                get: function(path, query, options) {
                     var logData = {};
-                    var request = call('GET', path, query, callSettings, logData);
+                    var request = call('GET', path, query, options, logData);
                     if(request){
                         var ret = request.get();
 
@@ -383,11 +375,11 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                     }
                     return ret;
                 },
-                post: function(path, data, callSettings, options) {
-                    return postCall('POST', path, data, callSettings, options);
+                post: function(path, data, options) {
+                    return postCall('POST', path, data, options);
                 },
-                remove: function(path, callSettings) {
-                    return deleteCall(path, callSettings);
+                remove: function(path, options) {
+                    return deleteCall(path, options);
                 },
                 patch: patch,
                 getXML: getXML,
@@ -4630,7 +4622,7 @@ angular.module('ep.binding').
                 }
             }
             // TODO: review
-            var promise = epErpRestService.get(url, oQuery, options.callSettings).$promise;
+            var promise = epErpRestService.get(url, oQuery, options).$promise;
             promise.then(function() {
                 //if (data.value) {
                 //    epTransactionFactory.current().add(viewId, data.value);
@@ -4774,7 +4766,7 @@ angular.module('ep.binding').
                     }
                 }
 
-                var promise = epErpRestService.patch(url, dataUpdate, options.callSettings);
+                var promise = epErpRestService.patch(url, dataUpdate, options);
                 promise.then(function(response) {
                     //after we have updated baq we need to apply returned record
                     if (response && response.data && response.data.value && response.data.value.length > 0) {
@@ -4863,7 +4855,7 @@ angular.module('ep.binding').
                 deferred.resolve(options.data);
             } else {
                 var url = 'BaqSvc/' + baqId + '/GetNew';
-                var promise = epErpRestService.get(url, '', options.callSettings).$promise;
+                var promise = epErpRestService.get(url, '', options).$promise;
                 promise.then(function(result) {
                     onRetrieved(result.value);
                     deferred.resolve(result.value);
@@ -5123,7 +5115,7 @@ angular.module('ep.binding').
 
             var deferred = $q.defer();
 
-            var promise = epErpRestService.get(svc, myQuery, options.callSettings).$promise;
+            var promise = epErpRestService.get(svc, myQuery, options).$promise;
             promise.then(function() {
                 //if (data.value) {
                 //    epTransactionFactory.current().add(viewId, data.value);
@@ -5221,7 +5213,7 @@ angular.module('ep.binding').
             }
 
             var url = svc;
-            var promise = epErpRestService.post(url, d, options.callSettings, options);
+            var promise = epErpRestService.post(url, d, options);
             promise.then(function() {
                 if (showProgress) {
                     epModalDialogService.hide();
