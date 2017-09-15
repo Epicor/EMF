@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.163 built: 14-09-2017
+ * version:1.0.14-dev.164 built: 15-09-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.163","built":"2017-09-14"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.164","built":"2017-09-15"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -18969,6 +18969,7 @@ angular.module('ep.menu.builder').
          *          # template - the template html for custom dialog's help content
          *          # templateScope - the template scope for the custom dialog's help content
          *          # templateCtrl - the help template controller
+         *      fnHelpAction - (optional) if helpTemplateOptions are not used but help is controlled by user function
          *      controller- the controller to execute when showing the dialog (default null)
          *      size - 'small'/'large'/'fullscreen'/'' (default)
          *      icon - font awesome icon class (icon in the header)
@@ -19057,6 +19058,10 @@ angular.module('ep.menu.builder').
                             };
                             $scope.closeHelp = function() {
                                 $scope.showHelp = false;
+                            };
+                        } else if (cfg.fnHelpAction) {
+                            $scope.helpButtonClick = function() {
+                                cfg.fnHelpAction(cfg);
                             };
                         }
 
@@ -19232,6 +19237,14 @@ angular.module('ep.menu.builder').
                     if (angular.isArray(source[propName])) {
                         dest[propName] = source[propName];
                     } else if (angular.isObject(source[propName])) {
+                        if (dest[propName]) {
+                            //only for properties that we support
+                            if (propName === 'templateOptions' ||
+                                propName === 'helpTemplateOptions' ||
+                                propName === 'userData') {
+                                dest[propName] = {};
+                            }
+                        }
                         copyProperties(source[propName], dest[propName]);
                     } else {
                         dest[propName] = source[propName];
@@ -31466,7 +31479,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.modaldialog/modals/modaldialog-custom.html',
-    "<div id=modaldialog class=\"ep-modaldialog ep-modaldialog-custom\"><div id=dialog-header class=\"modal-header ep-modal-header ep-padding-none\"><span class=close ng-show=config.closeButton><a class=\"fa fa-times fa-lg ep-navbar-button\" data-dismiss=modal aria-label=Close ng-click=\"btnclick({isCancel: true})\"></a></span> <span class=help ng-show=config.helpTemplateOptions><a class=\"fa fa-question-circle fa-lg ep-navbar-button\" ng-click=helpButtonClick()></a></span><h4 id=dialogTitle class=\"bg-primary modal-title ep-margin-none clearfix\"><span class=\"ep-dlg-title-icon {{config.icon}}\"></span> <span class=ep-dlg-title ng-bind=config.fnGetTitle()></span></h4></div><div id=dialog-area class=\"modal-body ep-modal-area\"><form id=dialogForm name=dialogForm><uib-alert ng-show=showHelp type=info close=closeHelp()><ep-include options=config.helpTemplateOptions></ep-include></uib-alert><!--<div ng-include=\"config.templateUrl\"></div>--><ep-include options=config.templateOptions></ep-include><div class=\"ep-dlg-rememberMe col-md-10\" ng-show=config.rememberMe><div class=form-group><div class=\"row col-md-1\"><input tabindex=1 id=cbxRemember class=form-control type=checkbox ng-model=config.rememberMeValue></div><label class=\"col-md-10 control-label\">{{'emf.ep.modaldialog.label.doNotShowMsgAgain' | epTranslate}}</label></div></div></form></div><div id=dialog-footer class=\"modal-footer ep-modal-footer\" ng-show=\"config.buttons && config.buttons.length\"><div class=ep-dlg-buttons><button ng-repeat=\"btn in config.buttons\" id={{btn.id}} tabindex=\"$index + 100\" data-dismiss=modal ng-hide=btn.hidden ng-disabled=\"btn.isPrimary && !dialogForm.$valid\" class=\"btn btn-{{btn.type}} {{config.btnBlock == true ? 'btn-block':''}}\" ng-click=btnclick(btn)><i ng-if=btn.icon ng-class=btn.icon></i> &nbsp;{{btn.text}}</button></div></div><div id=dialog-status class=ep-dlg-status ng-show=config.statusBar><h4 class=\"bg-primary modal-title\"><span ng-if=!config.statusBarTextHTML ng-bind=config.statusBarText></span> <span ng-if=config.statusBarTextHTML ng-bind-html=config.statusBarTextHTML></span></h4></div></div>"
+    "<div id=modaldialog class=\"ep-modaldialog ep-modaldialog-custom\"><div id=dialog-header class=\"modal-header ep-modal-header ep-padding-none\"><span class=close ng-show=config.closeButton><a class=\"fa fa-times fa-lg ep-navbar-button\" data-dismiss=modal aria-label=Close ng-click=\"btnclick({isCancel: true})\"></a></span> <span class=help ng-show=\"config.helpTemplateOptions || config.fnHelpAction\"><a class=\"fa fa-question-circle fa-lg ep-navbar-button\" ng-click=helpButtonClick()></a></span><h4 id=dialogTitle class=\"bg-primary modal-title ep-margin-none clearfix\"><span class=\"ep-dlg-title-icon {{config.icon}}\"></span> <span class=ep-dlg-title ng-bind=config.fnGetTitle()></span></h4></div><div id=dialog-area class=\"modal-body ep-modal-area\"><form id=dialogForm name=dialogForm><uib-alert ng-if=config.helpTemplateOptions ng-show=showHelp type=info close=closeHelp()><ep-include options=config.helpTemplateOptions></ep-include></uib-alert><!--<div ng-include=\"config.templateUrl\"></div>--><ep-include options=config.templateOptions></ep-include><div class=\"ep-dlg-rememberMe col-md-10\" ng-show=config.rememberMe><div class=form-group><div class=\"row col-md-1\"><input tabindex=1 id=cbxRemember class=form-control type=checkbox ng-model=config.rememberMeValue></div><label class=\"col-md-10 control-label\">{{'emf.ep.modaldialog.label.doNotShowMsgAgain' | epTranslate}}</label></div></div></form></div><div id=dialog-footer class=\"modal-footer ep-modal-footer\" ng-show=\"config.buttons && config.buttons.length\"><div class=ep-dlg-buttons><button ng-repeat=\"btn in config.buttons\" id={{btn.id}} tabindex=\"$index + 100\" data-dismiss=modal ng-hide=btn.hidden ng-disabled=\"btn.isPrimary && !dialogForm.$valid\" class=\"btn btn-{{btn.type}} {{config.btnBlock == true ? 'btn-block':''}}\" ng-click=btnclick(btn)><i ng-if=btn.icon ng-class=btn.icon></i> &nbsp;{{btn.text}}</button></div></div><div id=dialog-status class=ep-dlg-status ng-show=config.statusBar><h4 class=\"bg-primary modal-title\"><span ng-if=!config.statusBarTextHTML ng-bind=config.statusBarText></span> <span ng-if=config.statusBarTextHTML ng-bind-html=config.statusBarTextHTML></span></h4></div></div>"
   );
 
 
