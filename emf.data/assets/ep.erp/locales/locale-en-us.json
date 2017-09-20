@@ -1,6 +1,6 @@
 ﻿{
     "message.pleaseWait": "Please Wait...",
     "message.retrievingData": "Retrieving data.",
-    "message.sendingServerData": "Sending data to the server.",
+    "message.sendingServerData": "Updating data.",
     "message.gettingNewRecord": "Retrieving new record."
 }

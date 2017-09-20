@@ -1,7 +1,7 @@
 {
   "emf.ep.erp.message.pleaseWait": "Please Wait...",
   "emf.ep.erp.message.retrievingData": "Retrieving data.",
-  "emf.ep.erp.message.sendingServerData": "Sending data to the server.",
+  "emf.ep.erp.message.sendingServerData": "Updating data.",
   "emf.ep.erp.message.gettingNewRecord": "Retrieving new record.",
   "emf.ep.filter.list.label.result": "Results",
   "emf.ep.filter.list.label.search": "Search",

@@ -1,8 +1,8 @@
 {
-  "emf.ep.erp.message.pleaseWait": "Please Wait...",
-  "emf.ep.erp.message.retrievingData": "Retrieving data.",
-  "emf.ep.erp.message.sendingServerData": "Sending data to the server.",
-  "emf.ep.erp.message.gettingNewRecord": "Retrieving new record.",
+  "emf.ep.erp.message.pleaseWait": "Espera...",
+  "emf.ep.erp.message.retrievingData": "Recuperación de datos.",
+  "emf.ep.erp.message.sendingServerData": "Actualización de datos.",
+  "emf.ep.erp.message.gettingNewRecord": "Recuperar el récord.",
   "emf.ep.filter.list.label.result": "Resultados",
   "emf.ep.filter.list.label.search": "Buscar",
   "emf.ep.list.label.filter": "Filtrar",
