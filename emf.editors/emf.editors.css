@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.193 built: 22-09-2017
+ * version:1.0.14-dev.194 built: 22-09-2017
 */
 .ep-color-selector-container .btn {
   background-color: #F5F5F5;
@@ -299,6 +299,12 @@ ep-editor-control .ep-record-editor-container.ep-is-row-editor {
     padding-top: 5px;
     padding-left: 0;
   }
+}
+/* disabled and read-only */
+.ep-editor-control .form-control[disabled],
+.ep-editor-control .form-control[readonly],
+.ep-editor-control fieldset[disabled] .form-control {
+  opacity: 0.5;
 }
 
 /* This is a workaround opera issue with the ep-switch wrapping */
