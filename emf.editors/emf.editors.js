@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.204 built: 25-09-2017
+ * version:1.0.14-dev.205 built: 25-09-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["editors"] = {"libName":"editors","version":"1.0.14-dev.204","built":"2017-09-25"};
+__ep_build_info["editors"] = {"libName":"editors","version":"1.0.14-dev.205","built":"2017-09-25"};
 
 (function() {
     'use strict';
@@ -1542,7 +1542,7 @@ angular.module('ep.record.editor', [
                                     ctx.pattern = '^NEG(\\d+)$';
                                 } else {
                                     ctx.pattern =
-                                        '^NEG(\\d+)([\'.\'](\\d) {0,DEC})?$'.replace('DEC', dec.toString());
+                                        '^NEG(\\d+)([\'.\'](\\d){0,DEC})?$'.replace('DEC', dec.toString());
                                 }
                                 if (fmt.AllowNegative || false) {
                                     ctx.pattern = ctx.pattern.replace('NEG', '([-]?)');
