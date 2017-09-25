@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.202 built: 24-09-2017
+ * version:1.0.14-dev.203 built: 25-09-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.202","built":"2017-09-24"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.203","built":"2017-09-25"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -31111,6 +31111,23 @@ angular.module('ep.token').
             return fn();
         }
 
+        /**
+         * @ngdoc method
+         * @name roundNumber
+         * @methodOf ep.utils.service:epUtilsService
+         * @public
+         * @description
+         * Round number to decimal places
+         * @param {decimal} number - decimal
+         * @param {string} precision - precision.
+         * @returns {decimal} Rounded number
+         */
+        function roundNumber(number, precision) {
+            precision = Math.abs(parseInt(precision)) || 0;
+            var multiplier = Math.pow(10, precision);
+            return (Math.round(number * multiplier) / multiplier);
+        }
+
         return {
             copyProperties: copyProperties,
             ensureEndsWith: ensureEndsWith,
@@ -31123,7 +31140,8 @@ angular.module('ep.token').
             merge: merge,
             strFormat: strFormat,
             wait: wait,
-            getService: getService
+            getService: getService,
+            roundNumber: roundNumber
         };
     }
 })();
