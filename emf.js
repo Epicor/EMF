@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.205 built: 25-09-2017
+ * version:1.0.14-dev.206 built: 25-09-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.205","built":"2017-09-25"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.206","built":"2017-09-25"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -12908,6 +12908,42 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                         column.editor = 'multiline';
                     }
                 }
+            } else if (fmt && column.editor === 'number') {
+                //set the numeric format from baq metadata
+                var oFormat = {
+                    Min: -99999999999,
+                    Max: 99999999999,
+                    AllowNegative: true
+                };
+                var dt = (column.dataType || '').toLowerCase();
+                if (dt === 'decimal' || dt === 'system.decimal') {
+                    var parts = fmt.split('.');
+                    if (parts.length !== 2) {
+                        oFormat.Decimals = 0;
+                    } else {
+                        var decLen = (parts[1].match(/9/g) || []).length;
+                        oFormat.Decimals = decLen;
+                        var wholeLen = (parts[0].match(/(9|>)/g) || []).length;
+                        if (wholeLen) {
+                            var max = Math.pow(10, wholeLen);
+                            if (decLen > 0) {
+                                max = max - (1 / (Math.pow(10, decLen)));
+                            }
+                            else {
+                                max = max - 1;
+                            }
+                            oFormat.Max = max;
+                            oFormat.AllowNegative = (fmt.indexOf('-') > -1);
+                            if (oFormat.AllowNegative) {
+                                oFormat.Min = -oFormat.Max;
+                            }
+                            else {
+                                oFormat.Min = 0;
+                            }
+                        }
+                    }
+                }
+                column.oFormat = oFormat;
             }
         }
 
