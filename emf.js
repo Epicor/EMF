@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.216 built: 28-09-2017
+ * version:1.0.14-dev.217 built: 28-09-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.216","built":"2017-09-28"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.217","built":"2017-09-28"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -29202,6 +29202,7 @@ angular.module('ep.signature').directive('epSignature',
         .service('epErpRestService', ['$log', '$http', '$resource', 'epTokenService', function($log, $http, $resource, epTokenService) {
             var serverUrl = '';
             var isLogOn = true;
+            var errorHandlers = {};
 
             function createLogEntry(message, source, url, query, headers) {
                 var logEntry = {
@@ -29241,6 +29242,11 @@ angular.module('ep.signature').directive('epSignature',
                     logEntry.details = angular.merge(logEntry.details, merge);
                 }
                 $log.error(logEntry);
+                angular.forEach(errorHandlers, function(val, key) {
+                    if (angular.isFunction(val)) {
+                        val(key, msg, response, logEntry);
+                    }
+                })
             }
 
             function getErrorMsg(response, defaultMsg) {
@@ -29460,6 +29466,9 @@ angular.module('ep.signature').directive('epSignature',
             return {
                 setUrl: function(url) {
                     serverUrl = url;
+                },
+                addErrorHandler: function(id, fnErrorHandler) {
+                    errorHandlers[id] = fnErrorHandler;
                 },
                 enableLogs: function(onOff) {
                     isLogOn = onOff;
