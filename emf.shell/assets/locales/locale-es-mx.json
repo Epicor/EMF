@@ -7,6 +7,7 @@
   "emf.ep.filter.list.label.search": "Buscar",
   "emf.ep.list.label.filter": "Filtrar",
   "emf.ep.list.label.sort": "Ordenar",
+  "emf.ep.list.label.searchByDate": "Buscar por año o mes-año...",
   "emf.ep.modaldialog.button.Ok": "Vale",
   "emf.ep.modaldialog.button.Cancel": "Cancelar",
   "emf.ep.modaldialog.button.Yes": "Sí",

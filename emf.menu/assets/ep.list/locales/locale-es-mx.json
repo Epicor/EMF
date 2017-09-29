@@ -1,4 +1,5 @@
 ﻿{
-    "label.filter": "Filtrar",
-    "label.sort": "Ordenar"
+  "label.filter": "Filtrar",
+  "label.sort": "Ordenar",
+  "label.searchByDate": "Buscar por año o mes-año..."
 }
