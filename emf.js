@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.225 built: 03-10-2017
+ * version:1.0.14-dev.226 built: 03-10-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.225","built":"2017-10-03"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.226","built":"2017-10-03"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -22585,7 +22585,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
 
                             if ($event.char) {
                                 //test for digits, decimal and minus
-                                if (!(/[0-9]|[.]|[-]/.test($event.char))) {
+                                if (/[0-9]|[.]|[-]/.test($event.char)) {
                                     if ($event.target && $event.target.value && k === 190 && ($event.target.value.indexOf('.') > -1 || ctx.numberDecimals === 0)) {
                                         return callFnKeyDown($event, value, k, false);
                                     } 
