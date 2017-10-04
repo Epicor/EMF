@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.227 built: 03-10-2017
+ * version:1.0.14-dev.228 built: 03-10-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.14-dev.227","built":"2017-10-03"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.14-dev.228","built":"2017-10-03"};
 
 (function() {
     'use strict';
