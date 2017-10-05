@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.230 built: 04-10-2017
+ * version:1.0.14-dev.231 built: 04-10-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.14-dev.230","built":"2017-10-04"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.14-dev.231","built":"2017-10-04"};
 
 (function() {
     'use strict';
@@ -426,6 +426,9 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
         };
 
         epUtilsService.copyProperties($scope.options, $scope.settings);
+        if ($scope.options.status) {
+            $scope.status = $scope.options.status;
+        }
 
         $scope.loginUser = function() {
             $scope.status = '';
@@ -493,6 +496,11 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                                     $scope.showLoader = false;
                                     $scope.hasError = true;
                                     $scope.status = message;
+                                    return;
+                                }
+                                if (message === false) {
+                                    $scope.showLoader = false;
+                                    $scope.hasError = true;
                                     return;
                                 }
                                 if ($scope.options.fnOnSuccess) {
@@ -570,6 +578,7 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
 *       fnOnLogin {function} - callback to completely override login action
 *       customImage {string} - optional url to custom image for the background image
 *       showSettingsButton {bool} - optional setting to show/hide settings button (shown by default)
+*       status {string} - set the initial error display text. Useful when log out with a status.
 *
 * @example
 */
@@ -4578,12 +4587,15 @@ angular.module('ep.binding').
     function epErpBaqService($q, epErpRestService, epModalDialogService, epTransactionFactory, odataQueryFactory,
         epBindingMetadataService) {
 
-        function getBAQList(idStartsWith) {
+        function getBAQList(idStartsWith, topN) {
             var url = 'Ice.BO.BAQDesignerSvc/BAQDesigners';
             var query = odataQueryFactory
                 .setSelect(['QueryID', 'Company', 'IsShared', 'Version', 'Updatable', 'SysRevID']);
             if (idStartsWith) {
                 query = query.setWhereCustom('startswith(QueryID,\'' + idStartsWith + '\')');
+            }
+            if (topN !== undefined) {
+                query = query.setTop(topN);
             }
             query = query.compose();
 
