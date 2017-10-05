@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.233 built: 05-10-2017
+ * version:1.0.14-dev.234 built: 05-10-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.233","built":"2017-10-05"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.234","built":"2017-10-05"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -12470,6 +12470,19 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
     function epErpBaqService($q, epErpRestService, epModalDialogService, epTransactionFactory, odataQueryFactory,
         epBindingMetadataService) {
 
+        ///The max currency decimal places override
+        var currencyMaxDecimalPlaces;
+
+        /**
+         * @ngdoc method
+         * @name getBAQList
+         * @methodOf ep.erp.service:epErpBaqService
+         * @public
+         * @description
+         * Get BAQ list using mask (starts with)
+         * @param {string} idStartsWith - BAQ ID starts with (eg. 'zCRM-')
+         * @param {int} topN - optional top N records
+         */
         function getBAQList(idStartsWith, topN) {
             var url = 'Ice.BO.BAQDesignerSvc/BAQDesigners';
             var query = odataQueryFactory
@@ -12491,6 +12504,23 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             return promise;
         }
 
+        /**
+         * @ngdoc method
+         * @name getBAQ
+         * @methodOf ep.erp.service:epErpBaqService
+         * @public
+         * @description
+         * Retrieve data using BAQ.
+         * @param {string} baqId - BAQ ID
+         * @param {object} query - oData Query
+         * @param {string} viewId - view id to which to load results and for metadata access
+         * @param {object} options OPTIONAL: update options as follows:
+         *      {
+         *          showProgress: true/false to show progress message (default is true)
+         *          title: progress message title
+         *          message: progress message text
+         *      }
+         */
         function getBAQ(baqId, query, viewId, options) {
             if (!options) {
                 options = {};
@@ -12799,6 +12829,20 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             return deferred.promise;
         }
 
+        /**
+         * @ngdoc method
+         * @name setBaqMaxCurrencyDecimals
+         * @methodOf ep.erp.service:epErpBaqService
+         * @public
+         * @description
+         * Override max currency decimal precision
+         * @param {int} maxNumDecimals - optional top N records
+         */
+        function setBaqMaxCurrencyDecimals(maxNumDecimals) {
+            currencyMaxDecimalPlaces = maxNumDecimals;
+        }
+
+
         //private functions --->
 
         //Leave this for future use!!!
@@ -12872,7 +12916,11 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 };
 
                 if (cc.FieldFormat) {
-                    setBaqFormat(cc, cols[cc.Alias]);
+                    var qFldAttrs = _.filter(metaData.QueryFieldAttributeDesigner, function(qfa) {
+                        return cc.QueryID === qfa.QueryID && cc.TableID === qfa.TableID &&
+                            cc.FieldName === qfa.FieldName;
+                    });
+                    setBaqFormat(cc, cols[cc.Alias], qFldAttrs);
                 }
             });
             return cols;
@@ -12896,7 +12944,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             return ret;
         }
 
-        function setBaqFormat(field, column) {
+        function setBaqFormat(field, column, fieldAttributes) {
             if (!field.FieldFormat) {
                 return;
             }
@@ -12942,6 +12990,15 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             }
                             else {
                                 oFormat.Min = 0;
+                            }
+                        }
+                        if (currencyMaxDecimalPlaces !== undefined && oFormat.Decimals > currencyMaxDecimalPlaces) {
+                            //if we have set currency max decimals override then apply it if currency attribute is found
+                            var attrCurrency = _.find(fieldAttributes, function(attr) {
+                                return (attr['AttributeName'].toLowerCase() === 'biztype' && attr['Value'].toLowerCase() === 'currency');
+                            });
+                            if (attrCurrency) {
+                                oFormat.Decimals = currencyMaxDecimalPlaces;
                             }
                         }
                     }
@@ -13025,7 +13082,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             getBAQ: getBAQ,
             updateBAQ: updateBAQ,
             getNewBAQ: getNewBAQ,
-            getBAQDesigner: getBAQDesigner
+            getBAQDesigner: getBAQDesigner,
+            setBaqMaxCurrencyDecimals: setBaqMaxCurrencyDecimals
         };
     }
 }());
