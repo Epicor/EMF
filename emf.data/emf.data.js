@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.235 built: 05-10-2017
+ * version:1.0.14-dev.236 built: 05-10-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.14-dev.235","built":"2017-10-05"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.14-dev.236","built":"2017-10-05"};
 
 (function() {
     'use strict';
@@ -93,7 +93,7 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
 'use strict';
 (function() {
     angular.module('ep.token')
-        .service('epErpRestService', ['$log', '$http', '$resource', 'epTokenService', function($log, $http, $resource, epTokenService) {
+        .service('epErpRestService', ['$q', '$log', '$http', '$resource', 'epTokenService', function($q, $log, $http, $resource, epTokenService) {
             var serverUrl = '';
             var isLogOn = true;
             var errorHandlers = {};
@@ -185,10 +185,16 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                 }
             }
 
+            function returnNoToken(returnPromise) {
+                var deferred = $q.defer();
+                deferred.resolve([]);
+                return (returnPromise === true) ? deferred.promise : { $promise: deferred.promise};
+            }
+
             function call(method, path, query, options, logData) {
                 var tkn = epTokenService.getToken();
                 if (!tkn) {
-                    return;
+                    return returnNoToken(false);
                 }
 
                 var sPath = (path ? path : '');
@@ -220,7 +226,7 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
             function postCall(method, svc, data, options) {
                 var tkn = epTokenService.getToken();
                 if (!tkn) {
-                    return;
+                    return returnNoToken(true);
                 }
 
                 var d = data;
@@ -258,8 +264,9 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
             function deleteCall(path, options) {
                 var tkn = epTokenService.getToken();
                 if (!tkn) {
-                    return;
+                    return returnNoToken(true);
                 }
+
                 var url = serverUrl + path;
 
                 var httpObj = {
@@ -290,8 +297,9 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
             function patch(svc, data, options) {
                 var tkn = epTokenService.getToken();
                 if (!tkn || !serverUrl) {
-                    return;
+                    return returnNoToken(true);
                 }
+
 
                 var d = data;
                 if (data && !angular.isString(data)) {
@@ -329,8 +337,9 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
             function getXML(svc, options) {
                 var tkn = epTokenService.getToken();
                 if (!tkn) {
-                    return;
+                    return returnNoToken(true);
                 }
+
                 var url = serverUrl + svc;
 
                 var httpObj = {
@@ -368,11 +377,11 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                     isLogOn = onOff;
                 },
                 get: function(path, query, options) {
+                    var ret;
                     var logData = {};
                     var request = call('GET', path, query, options, logData);
-                    if(request){
-                        var ret = request.get();
-
+                    if (request && request.get) {
+                        ret = request.get();
                         var promise = ret.$promise;
                         promise.then(function(data) {
                             submitLogEntry(logData.logEntry, {
@@ -381,6 +390,9 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                         }, function(response) {
                             submitLogError(logData.logEntry, null, response);
                         });
+                    } else {
+                        submitLogEntry(logData.logEntry, { numRecords: 0 });
+                        ret = request;
                     }
                     return ret;
                 },
