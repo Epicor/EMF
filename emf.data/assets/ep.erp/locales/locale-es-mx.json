@@ -1,0 +1,6 @@
+﻿{
+    "message.pleaseWait": "Espera...",
+    "message.retrievingData": "Recuperación de datos.",
+    "message.sendingServerData": "Actualización de datos.",
+    "message.gettingNewRecord": "Recuperar el récord."
+}

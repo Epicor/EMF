@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.16 built: 10-10-2017
+ * version:1.0.14-dev.254 built: 10-10-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.16","built":"2017-10-10"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.14-dev.254","built":"2017-10-10"};
 
 (function() {
     'use strict';
@@ -93,20 +93,21 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
 'use strict';
 (function() {
     angular.module('ep.token')
-        .service('epErpRestService', ['$log', '$http', '$resource', 'epTokenService', function($log, $http, $resource, epTokenService) {
+        .service('epErpRestService', ['$q', '$log', '$http', '$resource', 'epTokenService', function($q, $log, $http, $resource, epTokenService) {
             var serverUrl = '';
             var isLogOn = true;
+            var errorHandlers = {};
 
-            function createLogEntry(message, source, url, query, callSettings) {
+            function createLogEntry(message, source, url, query, headers) {
                 var logEntry = {
-                    message: message,
+                    message: 'REST CALL: ' + message,
                     kind: 'rest',
                     details: {
                         source: source,
                         start: new Date(),
                         url: url,
                         query: query,
-                        callSettings: callSettings
+                        callSettings: headers.CallSettings || {}
                     }
                 };
                 return logEntry;
@@ -135,6 +136,11 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                     logEntry.details = angular.merge(logEntry.details, merge);
                 }
                 $log.error(logEntry);
+                angular.forEach(errorHandlers, function(val, key) {
+                    if (angular.isFunction(val)) {
+                        val(key, msg, response, logEntry);
+                    }
+                })
             }
 
             function getErrorMsg(response, defaultMsg) {
@@ -164,10 +170,31 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                 return msg;
             }
 
-            function call(method, path, query, callSettings, logData) {
+            function setHeaders(httpObj, options, tkn) {
+                if (!httpObj.headers) {
+                    httpObj.headers = {};
+                }
+                httpObj.headers['Authorization'] = 'Bearer ' + tkn.token.AccessToken;
+                if (!httpObj.headers['Content-Type']) {
+                    httpObj.headers['Content-Type'] = 'application/json';
+                }
+                if (options && options.headers && angular.isObject(options.headers)) {
+                    angular.forEach(options.headers, function(value, key) {
+                        httpObj.headers[key] = JSON.stringify(value);
+                    });
+                }
+            }
+
+            function returnNoToken(returnPromise) {
+                var deferred = $q.defer();
+                deferred.resolve([]);
+                return (returnPromise === true) ? deferred.promise : { $promise: deferred.promise};
+            }
+
+            function call(method, path, query, options, logData) {
                 var tkn = epTokenService.getToken();
                 if (!tkn) {
-                    return;
+                    return returnNoToken(false);
                 }
 
                 var sPath = (path ? path : '');
@@ -183,26 +210,23 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                     }
                 }
 
-                var sCallSettings = JSON.stringify(callSettings || {});
+                var httpObj = {
+                    method: 'GET',
+                    headers: {}
+                };
+                setHeaders(httpObj, options, tkn);
 
-                logData.logEntry = createLogEntry('REST CALL: ' + sPath,
-                                                  'ep-rest-service (get)', url, query, callSettings);
+                logData.logEntry = createLogEntry(sPath, 'ep-rest-service (get)', url, query, httpObj.headers);
 
                 return $resource(url, query, {
-                    get: {
-                        method: 'GET', headers: {
-                            'Authorization': 'Bearer ' + tkn.token.AccessToken,
-                            'Content-Type': 'application/json',
-                            'CallSettings': sCallSettings
-                        }
-                    }
+                    get: httpObj
                 });
             }
 
-            function postCall(method, svc, data, callSettings) {
+            function postCall(method, svc, data, options) {
                 var tkn = epTokenService.getToken();
                 if (!tkn) {
-                    return;
+                    return returnNoToken(true);
                 }
 
                 var d = data;
@@ -212,22 +236,19 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
 
                 var url = serverUrl + svc;
 
-                var sCallSettings = JSON.stringify(callSettings || {});
-
-                var logEntry = createLogEntry('REST CALL: ' + svc, 'ep-rest-service (post)', url, d, callSettings);
-
-                var promise = $http({
+                var httpObj = {
                     method: 'POST',
                     dataType: 'json',
                     data: d,
                     headers: {
-                        'Authorization': 'Bearer ' + tkn.token.AccessToken,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'CallSettings': sCallSettings
+                        'Accept': 'application/json'
                     },
                     url: url,
-                });
+                };
+                setHeaders(httpObj, options, tkn);
+                var logEntry = createLogEntry(svc, 'ep-rest-service (post)', url, d, httpObj.headers);
+
+                var promise = $http(httpObj);
 
                 promise.then(function(data) {
                     submitLogEntry(logEntry, {
@@ -240,31 +261,28 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                 return promise;
             }
 
-            function deleteCall(path, callSettings) {
+            function deleteCall(path, options) {
                 var tkn = epTokenService.getToken();
                 if (!tkn) {
-                    return;
+                    return returnNoToken(true);
                 }
+
                 var url = serverUrl + path;
 
-                var sCallSettings = JSON.stringify(callSettings || {});
-
-                // TODO: what should "data" be?-- it's undefined here
-                var logEntry = createLogEntry('REST CALL: ' + path,
-                                              'ep-rest-service (delete)', url, {}, callSettings);
-
-                var promise = $http({
+                var httpObj = {
                     method: 'DELETE',
                     dataType: 'json',
                     headers: {
-                        'Authorization': 'Bearer ' + tkn.token.AccessToken,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'CallSettings': sCallSettings
+                        'Accept': 'application/json'
                     },
                     url: url,
-                });
+                };
 
+                setHeaders(httpObj, options, tkn);
+
+                var logEntry = createLogEntry(path, 'ep-rest-service (delete)', url, {}, httpObj.headers);
+
+                var promise = $http(httpObj);
                 promise.then(function(data) {
                     submitLogEntry(logEntry, {
                         numRecords: (data && data.value) ? data.value.length : 'unknown'
@@ -276,11 +294,12 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                 return promise;
             }
 
-            function patch(svc, data, callSettings) {
+            function patch(svc, data, options) {
                 var tkn = epTokenService.getToken();
                 if (!tkn || !serverUrl) {
-                    return;
+                    return returnNoToken(true);
                 }
+
 
                 var d = data;
                 if (data && !angular.isString(data)) {
@@ -290,23 +309,20 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
 
                 var url = serverUrl + svc;
 
-                var sCallSettings = JSON.stringify(callSettings || {});
-
-                var logEntry = createLogEntry('REST CALL: ' + svc, 'ep-rest-service (patch)', url, d, callSettings);
-
-                var promise = $http({
+                var httpObj = {
                     method: 'PATCH',
                     dataType: 'json',
                     data: d,
                     headers: {
-                        'Authorization': 'Bearer ' + tkn.token.AccessToken,
-                        'Content-Type': 'application/json',
-                        'Accept': 'application/json',
-                        'CallSettings': sCallSettings
+                        'Accept': 'application/json'
                     },
                     url: url,
-                });
+                };
 
+                setHeaders(httpObj, options, tkn);
+                var logEntry = createLogEntry(svc, 'ep-rest-service (patch)', url, d, httpObj.headers);
+
+                var promise = $http(httpObj);
                 promise.then(function(data) {
                     submitLogEntry(logEntry, {
                         numRecords: (data && data.value) ? data.value.length : 'unknown'
@@ -318,28 +334,27 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                 return promise;
             }
 
-            function getXML(svc, callSettings) {
+            function getXML(svc, options) {
                 var tkn = epTokenService.getToken();
                 if (!tkn) {
-                    return;
+                    return returnNoToken(true);
                 }
+
                 var url = serverUrl + svc;
 
-                var sCallSettings = JSON.stringify(callSettings || {});
-
-                var logEntry = createLogEntry('REST CALL: ' + svc, 'ep-rest-service (get-xml)', url, {}, callSettings);
-
-                var promise = $http({
+                var httpObj = {
                     method: 'GET',
                     headers: {
-                        'Authorization': 'Bearer ' + tkn.token.AccessToken,
                         'Content-Type': 'application/xml; charset=utf-8',
-                        'Accept': 'application/xml',
-                        'CallSettings': sCallSettings
+                        'Accept': 'application/xml'
                     },
                     url: url,
-                });
+                };
+                setHeaders(httpObj, options, tkn);
 
+                var logEntry = createLogEntry(svc, 'ep-rest-service (get-xml)', url, {}, httpObj.headers);
+
+                var promise = $http(httpObj);
                 promise.then(function(data) {
                     submitLogEntry(logEntry, {
                         numRecords: (data && data.value) ? data.value.length : 'unknown'
@@ -355,30 +370,37 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                 setUrl: function(url) {
                     serverUrl = url;
                 },
+                addErrorHandler: function(id, fnErrorHandler) {
+                    errorHandlers[id] = fnErrorHandler;
+                },
                 enableLogs: function(onOff) {
                     isLogOn = onOff;
                 },
-                get: function(path, query, callSettings) {
+                get: function(path, query, options) {
+                    var ret;
                     var logData = {};
-
-                    var ret = call('GET', path, query, callSettings, logData).get();
-
-                    var promise = ret.$promise;
-                    promise.then(function(data) {
-                        submitLogEntry(logData.logEntry, {
-                            numRecords: (data && data.value) ? data.value.length : 'unknown'
+                    var request = call('GET', path, query, options, logData);
+                    if (request && request.get) {
+                        ret = request.get();
+                        var promise = ret.$promise;
+                        promise.then(function(data) {
+                            submitLogEntry(logData.logEntry, {
+                                numRecords: (data && data.value) ? data.value.length : 'unknown'
+                            });
+                        }, function(response) {
+                            submitLogError(logData.logEntry, null, response);
                         });
-                    }, function(response) {
-                        submitLogError(logData.logEntry, null, response);
-                    });
-
+                    } else {
+                        submitLogEntry(logData.logEntry, { numRecords: 0 });
+                        ret = request;
+                    }
                     return ret;
                 },
-                post: function(path, data, callSettings) {
-                    return postCall('POST', path, data, callSettings);
+                post: function(path, data, options) {
+                    return postCall('POST', path, data, options);
                 },
-                remove: function(path, callSettings) {
-                    return deleteCall(path, callSettings);
+                remove: function(path, options) {
+                    return deleteCall(path, options);
                 },
                 patch: patch,
                 getXML: getXML,
@@ -399,12 +421,12 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
      * @example
      *
      */
-    epLoginViewCtrl.$inject = ['$q', '$scope', 'epUtilsService', 'epModalDialogService', 'epTokenService'];
+    epLoginViewCtrl.$inject = ['$q', '$scope', 'epUtilsService', 'epModalDialogService', 'epTokenService', 'epTranslationService'];
     angular.module('ep.token')
         .controller('epLoginViewCtrl', epLoginViewCtrl);
 
     /*@ngInject*/
-    function epLoginViewCtrl($q, $scope, epUtilsService, epModalDialogService, epTokenService) {
+    function epLoginViewCtrl($q, $scope, epUtilsService, epModalDialogService, epTokenService, epTranslationService) {
 
         $scope.settings = {
             username: '',
@@ -416,6 +438,9 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
         };
 
         epUtilsService.copyProperties($scope.options, $scope.settings);
+        if ($scope.options.status) {
+            $scope.status = $scope.options.status;
+        }
 
         $scope.loginUser = function() {
             $scope.status = '';
@@ -432,13 +457,18 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
 
             if ($scope.settings.username === '' || $scope.settings.password === '') {
                 $scope.hasError = true;
-                $scope.status = $scope.settings.username === '' ?
-                    'Oops.. There\'s no user name there!' : 'Oops.. You forgot to type your password!';
+                if ($scope.settings.username === '') {
+                    $scope.status =
+                        epTranslationService.getString('emf.ep.token.ep-login-view.message.missingUserName');
+                } else {
+                    $scope.status =
+                        epTranslationService.getString('emf.ep.token.ep-login-view.message.youForgotPassword');
+                }
                 epModalDialogService.hide();
                 return;
             } else if ($scope.settings.serverName === '') {
                 $scope.hasError = true;
-                $scope.status = 'Oops... Don\'t forget to type the Server.';
+                $scope.status = epTranslationService.getString('emf.ep.token.ep-login-view.message.missingServer');
                 epModalDialogService.hide();
                 return;
             }
@@ -480,6 +510,11 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                                     $scope.status = message;
                                     return;
                                 }
+                                if (message === false) {
+                                    $scope.showLoader = false;
+                                    $scope.hasError = true;
+                                    return;
+                                }
                                 if ($scope.options.fnOnSuccess) {
                                     $scope.options.fnOnSuccess($scope.settings);
                                 }
@@ -502,14 +537,16 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                     $scope.hasError = true;
                     switch (response.status) {
                         case 401:
-                            $scope.status = 'Connection failed, please review the username and password and try again.';
+                            $scope.status =
+                                epTranslationService.getString('emf.ep.token.ep-login-view.message.connectionUserPassword');
                             break;
                         case 400:
-                            $scope.status = 'Token authentication may not be enabled on the Epicor server. ' +
-                                'Refer to the Epicor Administration Console.';
+                            $scope.status =
+                                epTranslationService.getString('emf.ep.token.ep-login-view.message.tokenAuthError');
                             break;
                         default:
-                            $scope.status = 'Connection failed, please review the username and password and try again.';
+                            $scope.status =
+                                epTranslationService.getString('emf.ep.token.ep-login-view.message.connectionUserPassword');
                     }
                 });
         };
@@ -553,6 +590,7 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
 *       fnOnLogin {function} - callback to completely override login action
 *       customImage {string} - optional url to custom image for the background image
 *       showSettingsButton {bool} - optional setting to show/hide settings button (shown by default)
+*       status {string} - set the initial error display text. Useful when log out with a status.
 *
 * @example
 */
@@ -822,12 +860,12 @@ angular.module('ep.token').
      * @example
      *
      */
-    epTokenService.$inject = ['$http', '$injector', '$q', '$timeout', 'epTokenConfig', 'epUtilsService', 'epModalDialogService', 'epLocalStorageService', 'epFeatureDetectionService'];
+    epTokenService.$inject = ['$http', '$injector', '$q', '$timeout', 'epTranslationService', 'epTokenConfig', 'epUtilsService', 'epModalDialogService', 'epLocalStorageService', 'epFeatureDetectionService'];
     angular.module('ep.token').
     service('epTokenService', epTokenService);
 
     /*@ngInject*/
-    function epTokenService($http, $injector, $q, $timeout,
+    function epTokenService($http, $injector, $q, $timeout, epTranslationService,
         epTokenConfig, epUtilsService, epModalDialogService, epLocalStorageService, epFeatureDetectionService) {
         var state = {
             tokenTimeoutPromise: undefined,
@@ -2236,7 +2274,7 @@ angular.module('ep.token').
                 };
 
                 scope.setLabel = function() {
-                    scope.state.label = scope.state.metaColumn.caption || scope.label ||
+                    scope.state.label = scope.label || scope.state.metaColumn.caption ||
                         scope.state.epBinding.column || '';
                 };
 
@@ -3524,7 +3562,7 @@ angular.module('ep.binding').
 
     epDataViewFactory.$inject = ['$rootScope'];
     angular.module('ep.binding').
-        factory('epDataViewFactory', epDataViewFactory);
+    factory('epDataViewFactory', epDataViewFactory);
 
     /*@ngInject*/
     function epDataViewFactory($rootScope) {
@@ -3534,10 +3572,13 @@ angular.module('ep.binding').
             };
 
             function init(_id, _data) {
+                if (_data === undefined) {
+                    _data = [];
+                }
                 state.id = _id;
                 state.data = _data;
                 state.row = state.data && state.data.length ? 0 : -1;
-                state.original = angular.merge([], state.data);
+                state.original = null;
                 resetState();
             }
 
@@ -3608,6 +3649,10 @@ angular.module('ep.binding').
              * @param {object} data - data row to replace the row
              */
             function replaceDataRow(row, data) {
+                //once we know we have a change, create the delta 
+                if (!state.original)
+                    state.original = angular.merge([], state.data);
+
                 if (!state.data || (state.data.length < 1)) {
                     return;
                 }
@@ -3646,8 +3691,7 @@ angular.module('ep.binding').
                 } else {
                     rowIdx = row;
                 }
-                if (rowIdx > -1 && rowIdx < state.data.length)
-                {
+                if (rowIdx > -1 && rowIdx < state.data.length) {
                     return state.modified[rowIdx];
                 }
                 return undefined;
@@ -3704,6 +3748,10 @@ angular.module('ep.binding').
             function deleteRow(row) {
                 var index = getRowIndex(row);
                 if (index !== -1) {
+                    //once we know we have a change, create the delta 
+                    if (!state.original)
+                        state.original = angular.merge([], state.data);
+
                     if (state.addedRows[index] !== undefined) {
                         //if we are deleting an added row, then it should be removed from both added and deleted
                         delete state.deletedRows[index];
@@ -3759,6 +3807,10 @@ angular.module('ep.binding').
              * @returns {int} added row index
              */
             function addRow(dataRow, setCurrentRow) {
+                //once we know we have a change, create the delta 
+                if (!state.original)
+                    state.original = angular.merge([], state.data);
+
                 if (!angular.isArray(state.data)) {
                     state.data = [];
                 }
@@ -3827,6 +3879,10 @@ angular.module('ep.binding').
                 var rowIdx = state.row;
                 var record = state.data[rowIdx];
                 if (arguments.length > 1) {
+                    //once we know we have a change, create the delta 
+                    if (!state.original)
+                        state.original = angular.merge([], state.data);
+
                     var oldValue = record[column];
                     if (record[column] !== value) {
                         record[column] = value;
@@ -3858,7 +3914,7 @@ angular.module('ep.binding').
                             row: state.row,
                             newValue: value,
                             oldValue: oldValue,
-                                Value: origValue
+                            Value: origValue
                         });
                     }
                 }
@@ -3906,7 +3962,9 @@ angular.module('ep.binding').
              * rollback current view changes
              */
             function rollback() {
-                state.data = angular.merge([], state.original);
+                if (state.original) {
+                    state.data = angular.merge([], state.original);
+                }
                 resetState();
                 $rootScope.$emit('EP_BINDING_ROLLBACK', {
                     viewId: state.id
@@ -3922,7 +3980,9 @@ angular.module('ep.binding').
              * commits all changes (the changes are rolled into original data and modified flags reset)
              */
             function commit() {
-                state.original = angular.merge([], state.data);
+                if (state.original) {
+                    state.original = angular.merge([], state.data);
+                }
                 resetState();
                 $rootScope.$emit('EP_BINDING_COMMIT', {
                     viewId: state.id
@@ -4218,7 +4278,6 @@ angular.module('ep.binding').
     }
 
 }());
-
 (function() {
     'use strict';
     /**
@@ -4540,12 +4599,28 @@ angular.module('ep.binding').
     function epErpBaqService($q, epErpRestService, epModalDialogService, epTransactionFactory, odataQueryFactory,
         epBindingMetadataService) {
 
-        function getBAQList(idStartsWith) {
+        ///The max currency decimal places override
+        var currencyMaxDecimalPlaces;
+
+        /**
+         * @ngdoc method
+         * @name getBAQList
+         * @methodOf ep.erp.service:epErpBaqService
+         * @public
+         * @description
+         * Get BAQ list using mask (starts with)
+         * @param {string} idStartsWith - BAQ ID starts with (eg. 'zCRM-')
+         * @param {int} topN - optional top N records
+         */
+        function getBAQList(idStartsWith, topN) {
             var url = 'Ice.BO.BAQDesignerSvc/BAQDesigners';
             var query = odataQueryFactory
                 .setSelect(['QueryID', 'Company', 'IsShared', 'Version', 'Updatable', 'SysRevID']);
             if (idStartsWith) {
                 query = query.setWhereCustom('startswith(QueryID,\'' + idStartsWith + '\')');
+            }
+            if (topN !== undefined) {
+                query = query.setTop(topN);
             }
             query = query.compose();
 
@@ -4553,11 +4628,28 @@ angular.module('ep.binding').
             promise.then(function() {
             }, function(data) {
                 var msg = data['odata.error'] ? data['odata.error'].message.value : data.statusText;
-                epModalDialogService.showException({ title: 'Exception', message: msg });
+                epModalDialogService.showException({ message: msg });
             });
             return promise;
         }
 
+        /**
+         * @ngdoc method
+         * @name getBAQ
+         * @methodOf ep.erp.service:epErpBaqService
+         * @public
+         * @description
+         * Retrieve data using BAQ.
+         * @param {string} baqId - BAQ ID
+         * @param {object} query - oData Query
+         * @param {string} viewId - view id to which to load results and for metadata access
+         * @param {object} options OPTIONAL: update options as follows:
+         *      {
+         *          showProgress: true/false to show progress message (default is true)
+         *          title: progress message title
+         *          message: progress message text
+         *      }
+         */
         function getBAQ(baqId, query, viewId, options) {
             if (!options) {
                 options = {};
@@ -4565,8 +4657,8 @@ angular.module('ep.binding').
             var showProgress = (options.showProgress !== false);
             if (showProgress) {
                 epModalDialogService.showLoading({
-                    title: options.title || 'Retrieving data...',
-                    message: options.message || 'retrieving data from server...'
+                    title: options.title || '$$.emf.ep.erp.message.pleaseWait',
+                    message: options.message || '$$.emf.ep.erp.message.retrievingData'
                 });
             }
 
@@ -4593,7 +4685,7 @@ angular.module('ep.binding').
                 }
             }
             // TODO: review
-            var promise = epErpRestService.get(url, oQuery, options.callSettings).$promise;
+            var promise = epErpRestService.get(url, oQuery, options).$promise;
             promise.then(function() {
                 //if (data.value) {
                 //    epTransactionFactory.current().add(viewId, data.value);
@@ -4680,8 +4772,8 @@ angular.module('ep.binding').
             try {
                 if (showProgress) {
                     epModalDialogService.showLoading({
-                        title: options.title || 'Updating data',
-                        message: options.message || 'sending data to server...'
+                        title: options.title || '$$.emf.ep.erp.message.pleaseWait',
+                        message: options.message || '$$.emf.ep.erp.message.sendingServerData'
                     });
                 }
 
@@ -4737,7 +4829,7 @@ angular.module('ep.binding').
                     }
                 }
 
-                var promise = epErpRestService.patch(url, dataUpdate, options.callSettings);
+                var promise = epErpRestService.patch(url, dataUpdate, options);
                 promise.then(function(response) {
                     //after we have updated baq we need to apply returned record
                     if (response && response.data && response.data.value && response.data.value.length > 0) {
@@ -4795,8 +4887,8 @@ angular.module('ep.binding').
             var showProgress = (options.showProgress !== false);
             if (showProgress) {
                 epModalDialogService.showLoading({
-                    title: 'Retrieving data...',
-                    message: 'getting new record from server...'
+                    title: options.title || '$$.emf.ep.erp.message.retrievingData',
+                    message: options.message || '$$.emf.ep.erp.message.gettingNewRecord'
                 });
             }
 
@@ -4826,7 +4918,7 @@ angular.module('ep.binding').
                 deferred.resolve(options.data);
             } else {
                 var url = 'BaqSvc/' + baqId + '/GetNew';
-                var promise = epErpRestService.get(url, '', options.callSettings).$promise;
+                var promise = epErpRestService.get(url, '', options).$promise;
                 promise.then(function(result) {
                     onRetrieved(result.value);
                     deferred.resolve(result.value);
@@ -4865,6 +4957,20 @@ angular.module('ep.binding').
             });
             return deferred.promise;
         }
+
+        /**
+         * @ngdoc method
+         * @name setBaqMaxCurrencyDecimals
+         * @methodOf ep.erp.service:epErpBaqService
+         * @public
+         * @description
+         * Override max currency decimal precision
+         * @param {int} maxNumDecimals - optional top N records
+         */
+        function setBaqMaxCurrencyDecimals(maxNumDecimals) {
+            currencyMaxDecimalPlaces = maxNumDecimals;
+        }
+
 
         //private functions --->
 
@@ -4906,7 +5012,7 @@ angular.module('ep.binding').
             }
             if (showError) {
                 epModalDialogService.showException({
-                    title: 'Info', message: msg || '',
+                    message: msg || '',
                     messageDetails: angular.toJson(maskedResponse, 2)
                 });
             }
@@ -4939,7 +5045,11 @@ angular.module('ep.binding').
                 };
 
                 if (cc.FieldFormat) {
-                    setBaqFormat(cc, cols[cc.Alias]);
+                    var qFldAttrs = _.filter(metaData.QueryFieldAttributeDesigner, function(qfa) {
+                        return cc.QueryID === qfa.QueryID && cc.TableID === qfa.TableID &&
+                            cc.FieldName === qfa.FieldName;
+                    });
+                    setBaqFormat(cc, cols[cc.Alias], qFldAttrs);
                 }
             });
             return cols;
@@ -4963,7 +5073,7 @@ angular.module('ep.binding').
             return ret;
         }
 
-        function setBaqFormat(field, column) {
+        function setBaqFormat(field, column, fieldAttributes) {
             if (!field.FieldFormat) {
                 return;
             }
@@ -4978,6 +5088,51 @@ angular.module('ep.binding').
                         column.editor = 'multiline';
                     }
                 }
+            } else if (fmt && column.editor === 'number') {
+                //set the numeric format from baq metadata
+                var oFormat = {
+                    Min: -99999999999,
+                    Max: 99999999999,
+                    AllowNegative: true
+                };
+                var dt = (column.dataType || '').toLowerCase();
+                if (dt === 'decimal' || dt === 'system.decimal') {
+                    var parts = fmt.split('.');
+                    if (parts.length !== 2) {
+                        oFormat.Decimals = 0;
+                    } else {
+                        var decLen = (parts[1].match(/9/g) || []).length;
+                        oFormat.Decimals = decLen;
+                        var wholeLen = (parts[0].match(/(9|>)/g) || []).length;
+                        if (wholeLen) {
+                            var max = Math.pow(10, wholeLen);
+                            if (decLen > 0) {
+                                max = max - (1 / (Math.pow(10, decLen)));
+                            }
+                            else {
+                                max = max - 1;
+                            }
+                            oFormat.Max = max;
+                            oFormat.AllowNegative = (fmt.indexOf('-') > -1);
+                            if (oFormat.AllowNegative) {
+                                oFormat.Min = -oFormat.Max;
+                            }
+                            else {
+                                oFormat.Min = 0;
+                            }
+                        }
+                        if (currencyMaxDecimalPlaces !== undefined && oFormat.Decimals > currencyMaxDecimalPlaces) {
+                            //if we have set currency max decimals override then apply it if currency attribute is found
+                            var attrCurrency = _.find(fieldAttributes, function(attr) {
+                                return (attr['AttributeName'].toLowerCase() === 'biztype' && attr['Value'].toLowerCase() === 'currency');
+                            });
+                            if (attrCurrency) {
+                                oFormat.Decimals = currencyMaxDecimalPlaces;
+                            }
+                        }
+                    }
+                }
+                column.oFormat = oFormat;
             }
         }
 
@@ -5056,7 +5211,8 @@ angular.module('ep.binding').
             getBAQ: getBAQ,
             updateBAQ: updateBAQ,
             getNewBAQ: getNewBAQ,
-            getBAQDesigner: getBAQDesigner
+            getBAQDesigner: getBAQDesigner,
+            setBaqMaxCurrencyDecimals: setBaqMaxCurrencyDecimals
         };
     }
 }());
@@ -5079,20 +5235,20 @@ angular.module('ep.binding').
             var showProgress = (options.showProgress !== false);
             if (showProgress) {
                 epModalDialogService.showLoading({
-                    title: 'Retrieving data',
-                    message: 'retrieving data from server...'
+                    title: options.title || '$$.emf.ep.erp.message.pleaseWait',
+                    message: options.message || '$$.emf.ep.erp.message.retrievingData'
                 });
             }
 
             var deferred = $q.defer();
 
-            var promise = epErpRestService.get(svc, myQuery, options.callSettings).$promise;
+            var promise = epErpRestService.get(svc, myQuery, options).$promise;
             promise.then(function() {
                 //if (data.value) {
                 //    epTransactionFactory.current().add(viewId, data.value);
                 //}
             }, function(data) {
-                var msg = showException(data);
+                var msg = showException(data, options);
                 deferred.reject(msg, data);
             });
 
@@ -5107,7 +5263,7 @@ angular.module('ep.binding').
                             epBindingMetadataService.add(sSvcName, 'swagger', undefined, data);
                         }
                     }, function(data) {
-                        var msg = showException(data);
+                        var msg = showException(data, options);
                         deferred.reject(msg, data);
                     });
                 }
@@ -5160,8 +5316,8 @@ angular.module('ep.binding').
             var showProgress = (options.showProgress !== false);
             if (showProgress) {
                 epModalDialogService.showLoading({
-                    title: options.title || 'Updating data',
-                    message: options.message || 'sending data to server...'
+                    title: options.title || '$$.emf.ep.erp.message.pleaseWait',
+                    message: options.message || '$$.emf.ep.erp.message.sendingServerData'
                 });
             }
 
@@ -5184,7 +5340,7 @@ angular.module('ep.binding').
             }
 
             var url = svc;
-            var promise = epErpRestService.post(url, d, options.callSettings);
+            var promise = epErpRestService.post(url, d, options);
             promise.then(function() {
                 if (showProgress) {
                     epModalDialogService.hide();
@@ -5194,13 +5350,17 @@ angular.module('ep.binding').
                 if (showProgress) {
                     epModalDialogService.hide();
                 }
-                showException(response);
+                showException(response, options);
             });
             return promise;
         }
 
         //private functions --->
-        function showException(response) {
+        function showException(response, options) {
+            if (!options) {
+                options = {};
+            }
+
             var msg = response.ErrorMessage || '';
             if (!msg && response['odata.error']) {
                 msg = response['odata.error'].message.value;
@@ -5213,10 +5373,21 @@ angular.module('ep.binding').
                 maskedResponse.config.headers.Authorization) {
                 maskedResponse.config.headers.Authorization = '***';
             }
-            epModalDialogService.showException({
-                title: 'Info', message: msg || '',
-                messageDetails: angular.toJson(maskedResponse, 2)
-            });
+
+            if (options.showError !== false) {
+                var showErr = true;
+                if (options.ignoreHttpErrors && response.HttpStatus) {
+                    if (options.ignoreHttpErrors.indexOf(response.HttpStatus) > -1) {
+                        showErr = false;
+                    }
+                }
+                if (showErr) {
+                    epModalDialogService.showException({
+                        message: msg || '',
+                        messageDetails: angular.toJson(maskedResponse, 2)
+                    });
+                }
+            }
         }
 
         return {
@@ -5232,7 +5403,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   'use strict';
 
   $templateCache.put('src/components/ep.token/ep-login-view/ep-login-view.html',
-    "<!--This is a partial for the ep-login-view directive --><div class=\"ep-login-view container-fluid\"><div class=ep-login-background><div class=ep-background-image ng-if=!settings.customImage></div><img class=ep-background-custom-image ng-if=settings.customImage ng-src={{settings.customImage}} alt=\"\"></div><div class=ep-login-up-box><div class=\"ep-login-box center-block\"><form class=form-group><div class=form-group><p class=ep-login-text><b>Please enter your credentials to sign in.</b></p><div class=input-group><span class=input-group-addon><i class=\"fa fa-user fa-fw\"></i></span> <input clearable name=username ng-keypress=clearWarning() id=username class=form-control ng-model=settings.username placeholder=\"User Name\"></div><br><div class=input-group><span class=input-group-addon><i class=\"fa fa-lock fa-fw\"></i></span> <input type=password clearable ng-keypress=passwordKeyPress($event) name=password id=password class=form-control ng-model=settings.password placeholder=\"Password\"></div><br><div ng-show=showServerName class=input-group><span class=input-group-addon><i class=\"fa fa-server fa-fw\"></i></span> <input spellcheck autocorrect=false clearable name=servername id=serverValue class=form-control ng-model=settings.serverName placeholder=\"Server\"></div><br><div align=center ng-if=showLoader><div class=progress><div class=\"progress-bar progress-bar-striped active\" role=progressbar aria-valuenow=100 aria-valuemin=0 aria-valuemax=100 style=\"width: 100%\"></div></div></div><div ng-if=status class=\"alert alert-danger\"><label>{{status}}</label><br></div><div><button ng-if=\"options.showSettingsButton !== false\" class=\"btn btn-default pull-left\" ng-click=showServer()><i class=\"fa fa-cog fa-fw\"></i></button> <button type=submit class=\"btn btn-primary pull-right\" ng-click=loginUser() ng-disabled=showLoader>Log in</button></div></div></form></div></div></div>"
+    "<!--This is a partial for the ep-login-view directive --><div class=\"ep-login-view container-fluid\"><div class=ep-login-background><div class=ep-background-image ng-if=!settings.customImage></div><img class=ep-background-custom-image ng-if=settings.customImage ng-src={{settings.customImage}} alt=\"\"></div><div class=ep-login-up-box><div class=\"ep-login-box center-block\"><form class=form-group><div class=form-group><p class=ep-login-text><b>{{'emf.ep.token.ep-login-view.label.enterCredentials' | epTranslate}}</b></p><div class=input-group><span class=input-group-addon><i class=\"fa fa-user fa-fw\"></i></span> <input clearable name=username ng-keypress=clearWarning() id=username class=form-control ng-model=settings.username placeholder=\"{{'emf.ep.token.ep-login-view.placeholder.userName' | epTranslate}}\"></div><br><div class=input-group><span class=input-group-addon><i class=\"fa fa-lock fa-fw\"></i></span> <input type=password clearable ng-keypress=passwordKeyPress($event) name=password id=password class=form-control ng-model=settings.password placeholder=\"{{'emf.ep.token.ep-login-view.placeholder.password' | epTranslate}}\"></div><br><div ng-show=showServerName class=input-group><span class=input-group-addon><i class=\"fa fa-server fa-fw\"></i></span> <input spellcheck autocorrect=false clearable name=servername id=serverValue class=form-control ng-model=settings.serverName placeholder=\"{{'emf.ep.token.ep-login-view.placeholder.server' | epTranslate}}\"></div><br><div align=center ng-if=showLoader><div class=progress><div class=\"progress-bar progress-bar-striped active\" role=progressbar aria-valuenow=100 aria-valuemin=0 aria-valuemax=100 style=\"width: 100%\"></div></div></div><div ng-if=status class=\"alert alert-danger\"><label>{{status}}</label><br></div><div><button ng-if=\"options.showSettingsButton !== false\" class=\"btn btn-default pull-left\" ng-click=showServer()><i class=\"fa fa-cog fa-fw\"></i></button> <button type=submit class=\"btn btn-primary pull-right\" ng-click=loginUser() ng-disabled=showLoader>{{'emf.ep.token.ep-login-view.btn.login' | epTranslate}}</button></div></div></form></div></div></div>"
   );
 
 

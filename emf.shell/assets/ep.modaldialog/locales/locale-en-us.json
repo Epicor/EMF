@@ -1,0 +1,10 @@
+﻿{
+    "button.Ok": "Ok",
+    "button.Cancel": "Cancel",
+    "button.Yes": "Yes",
+    "button.No": "No",
+    "label.exception": "Exception",
+    "label.showDetails": "Show details",
+    "label.hideDetails": "Hide details",
+    "label.doNotShowMsgAgain": "Do not show this message again"
+}
