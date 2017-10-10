@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.253 built: 10-10-2017
+ * version:1.0.16 built: 10-10-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.14-dev.253","built":"2017-10-10"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.16","built":"2017-10-10"};
 
 (function() {
     'use strict';
@@ -283,8 +283,7 @@ angular.module('ep.menu.builder', [
     angular.module('ep.multi.level.menu').constant('epMultiLevelMenuConstants', {
         MLM_INITIALIZED_EVENT: 'MLM_INITIALIZED_EVENT',
         MLM_MENU_DATA_CHANGED: 'MLM_MENU_DATA_CHANGED',
-        MLM_FAVORITES_ADDED: 'MLM_FAVORITES_ADDED',
-        MLM_FAVORITES_DELETED: 'MLM_FAVORITES_DELETED',
+        MLM_FAVORITES_CHANGED: 'MLM_FAVORITES_CHANGED',
         MLM_ITEM_CLICKED: 'MLM_ITEM_CLICKED',
         MLM_ITEM_EXPANDED: 'MLM_ITEM_EXPANDED'
     });
@@ -399,19 +398,23 @@ angular.module('ep.menu.builder', [
             function searchChildren(searchTerm, type, results) {
                 // This is some pretty hot code here, so be careful
                 // about making changes that could affect performance
-                var terms = searchTerm.split(/(\S+)/g);
                 angular.forEach($scope.state.searchIndex, function(child) {
-                    var childTerms = child.searchTerm.split(/(\S+)/g);
-                    // make sure that all terms match something
-                    if (_.all(terms, function(phrase) {
-                            var term = phrase.trim();
-                            // every term must match at the beginning of at least one child caption
-                            return !term || _.any(childTerms, function(childTerm){
-                                return childTerm.indexOf(term) === 0;
-                            });
-                        })){
-                        results.push(child);
-                    }
+                    var terms = searchTerm.split(/(\S+)/g);
+                    var added = false;
+                    child.hitCount = 10;
+                    terms.forEach(function(phrase) {
+                        var term = phrase.trim();
+                        if (term && term.length && child && child.searchTerm.indexOf(term) !== -1) {
+                           // if we are type checking, also check the system-set _type
+                            if (type === '' || child.type === type || child._type === type) {
+                                child.hitCount--;
+                                if (!added) {
+                                    results.push(child);
+                                }
+                                added = true;
+                            }
+                        }
+                    });
                 });
             }
 
@@ -531,6 +534,8 @@ angular.module('ep.menu.builder', [
                     $scope.onMenuInit({factory: $scope.multiLevelMenuHelper});
                 }
 
+                emitMenuEvent(epMultiLevelMenuConstants.MLM_INITIALIZED_EVENT);
+
                 $scope.$watch('menu', function(newValue, oldValue) {
                     if (newValue && (!angular.equals(newValue, oldValue) || !$scope.data || !$scope.data.menu)) {
                         $scope.multiLevelMenuHelper.populate($scope.menu, true);
@@ -541,11 +546,6 @@ angular.module('ep.menu.builder', [
                         }
                         setCurrentItems();
                         emitMenuEvent(epMultiLevelMenuConstants.MLM_MENU_DATA_CHANGED);
-                    }
-                    // Make sure that the old value is not defined and that the new actually contain the menu
-                    // so we can take in consideration that the menu it was initialized correctly.
-                    if (angular.isDefined(newValue) && angular.isUndefined(oldValue)){
-                        emitMenuEvent(epMultiLevelMenuConstants.MLM_INITIALIZED_EVENT);
                     }
                 });
 
@@ -885,7 +885,7 @@ angular.module('ep.menu.builder', [
              * @param {object} mi the menu item or menu id
              * @param {object} event the click event that invoked the toggleFavorite method
             */
-            function toggleFavorite(mi, event, stopPropagation) {
+            function toggleFavorite(mi, event) {
                 var item = getMenuItemFromObj(mi);
                 if (!item) {
                     return;
@@ -896,16 +896,8 @@ angular.module('ep.menu.builder', [
                 var menuKey = getStoreKey(item);
                 if (item.favorite) {
                     epLocalStorageService.update(menuKey, (mi._id || mi.id));
-                    // Adding a new favorite and fire an added event just if the stop propagation is not defined/false.
-                    if(!stopPropagation){
-                        scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_FAVORITES_ADDED, mi);
-                    }
                 } else {
                     epLocalStorageService.clear(menuKey);
-                    // Delete the favorite on the list/cache and fire the deleted event just if the stop propagation is not defined/false.
-                    if(!stopPropagation){
-                        scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_FAVORITES_DELETED, mi);
-                    }
                 }
 
                 data.favorites = getFavorites();
@@ -914,6 +906,7 @@ angular.module('ep.menu.builder', [
                     scope.onFavoriteChange({ menuItem: mi, favorites: data.favorites });
                 }
                 if (event) { event.stopPropagation(); }
+                scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_FAVORITES_CHANGED);
             }
             /**
              * @ngdoc method
@@ -1059,7 +1052,7 @@ angular.module('ep.menu.builder', [
                 data.favorites = null;
                 var userKey = getStoreKey();
                 epLocalStorageService.clear(userKey);
-                scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_FAVORITES_DELETED);
+                scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_FAVORITES_CHANGED);
             }
 
             /**
@@ -2174,14 +2167,11 @@ angular.module('ep.menu.builder', [
  * - formatSubtitle: function to format subtitle fields. function(fields, record) By default comma separated.
  * - additionalTitle: additional title to display on list just below sub title. function(field, record)
  * - formatAdditionalTitle: function to format additional title
- * - otherAdditionalTitle: other additional title to display on list just below additional title. function(field, record)
- * - formatOtherAdditionalTitle: function to format other additional title
  * - id: value to be displayed on right side of the list.
  * - groupBy: groupBy field name by which the list has to be grouped.
  * - groupByType: 'sdate' - string date format like '1910-01-01T00:00:00' (otherwise string)
  *      'sfield' - string field (whole field opposed to first letter)
  * - sortBy: sortBy field name by which the list has to be sorted.
- * - formatGroupTitle: function to format group title. function(record, groupBy, groupDisplay, groupKey)
  * - sortByDesc: true if sort is to be reversed (descending). By default sdates are descending sorts
  * - searchFields: (string array) field names by which search is executed
  * - subHeader: (true/false) shows sub header with filter/sort/add buttons just below the search component.
@@ -2191,7 +2181,7 @@ angular.module('ep.menu.builder', [
  * - sort: handler function on click of sort button in sub header section of the list.
  * - add: handler function on click of add button in sub header section of the list.
  * - useVirtualScrolling: (true/false) uses
- * - showDirectory: true to show directory by first letter of group by field
+ * - showDirectory
  * - vsRenderBufferSize
  * - vsRowLineCount
  * - vsLatch
@@ -2203,10 +2193,10 @@ angular.module('ep.menu.builder', [
 (function() {
     'use strict';
 
-    epListDirective.$inject = ['$filter', '$timeout', 'epListService', 'epTranslationService'];
+    epListDirective.$inject = ['$filter', '$timeout', 'epListService'];
     angular.module('ep.list').directive('epList', epListDirective);
 
-    function epListDirective($filter, $timeout, epListService, epTranslationService) {
+    function epListDirective($filter, $timeout, epListService) {
         return {
             restrict: 'EA',
             replace: true,
@@ -2228,19 +2218,14 @@ angular.module('ep.menu.builder', [
                 additionalTitle: '=',
                 formatAdditionalTitle: '=',
 
-                otherAdditionalTitle: '=',
-                formatOtherAdditionalTitle: '=',
-
                 statuses: '=',
                 formatStatusPeriod: '=',
                 getStatusTextClass: '=',
-                getStatusSourceClass: '=',
                 formatStatusText: '=',
                 formatStatusSource: '=',
 
                 groupBy: '@',
                 groupByType: '@',
-                formatGroupTitle: '=',
                 subHeader: '@',
                 showArrow: '=',
 
@@ -2250,8 +2235,6 @@ angular.module('ep.menu.builder', [
                 sortBy: '@',
                 sortByDesc: '=',
                 hideDisplayOptions: '@',
-                showFilterOn: '=',
-                showSortOn: '=',
 
                 useVirtualScrolling: '=',
 
@@ -2265,7 +2248,6 @@ angular.module('ep.menu.builder', [
             },
             templateUrl: 'src/components/ep.list/ep-list.html',
             link: function(scope) {
-                var origListData = [];
                 scope.localId = _.uniqueId('epList');
                 scope.items = { count: 0 };
                 scope.originalData = scope.data;
@@ -2282,28 +2264,19 @@ angular.module('ep.menu.builder', [
 
                 scope.initData = function() {
 
-                    scope.listSearch = '';
-                    scope.prevFirstLetter = '';
-
                     scope.searchType = 'text';
                     scope.searchPrompt = '';
                     var isGroupByDate = !!(scope.groupByType && scope.groupByType === 'sdate');
 
-                    scope.filteredData = [];
-                    scope.filtered = false;
-                    scope.selectedDirectoryEntry = undefined;
-
                     scope.listData = $filter('orderBy')(scope.data, scope.groupBy);
                     if (scope.sortBy && scope.sortBy !== '') {
-                        //By default sort is descending only for group by 
+                        //By default sort is descending only for group by dates
                         scope.isSortDesc = isGroupByDate;
                         //But user can override that
                         if (scope.sortByDesc === true) {
                             scope.isSortDesc = true;
                         }
-                        if (!scope.groupBy) {
-                            scope.listData = $filter('orderBy')(scope.data, scope.sortBy);
-                        }
+                        scope.listData = _.sortBy(scope.listData, scope.sortBy);
                         if (scope.isSortDesc) {
                             scope.listData = scope.listData.reverse();
                         }
@@ -2311,7 +2284,7 @@ angular.module('ep.menu.builder', [
 
                     if (scope.groupBy && scope.groupBy !== '') {
                         if (isGroupByDate) {
-                            scope.searchPrompt = epTranslationService.getString('emf.ep.list.label.searchByDate');
+                            scope.searchPrompt = 'Search by year or month-year...';
                             scope.searchType = 'sdate';
                             scope.listData = _.sortBy(scope.listData, function(d) {
                                 return d[scope.groupBy] || '';
@@ -2334,7 +2307,7 @@ angular.module('ep.menu.builder', [
                         scope.filtered = true;
                     }
 
-                    origListData = angular.extend([], scope.listData);
+                    scope.origListData = angular.extend([], scope.listData);
                     scope.items.count = scope.data.length;
                     if (scope.init) {
                         scope.init(scope);
@@ -2373,7 +2346,7 @@ angular.module('ep.menu.builder', [
                                 scope.selectedDirectoryEntry = scope.directory.__all__;
                                 scope.filteredData = [];
                             } else {
-                                scope.filteredData = origListData.slice(
+                                scope.filteredData = scope.origListData.slice(
                                     scope.selectedDirectoryEntry.index,
                                     scope.selectedDirectoryEntry.nextIndex);
                             }
@@ -2403,7 +2376,7 @@ angular.module('ep.menu.builder', [
                     var filtered = false;
                     if (searchValue) {
                         var year = NaN;
-                        if (searchValue.length === 4 && searchValue.indexOf('-') < 0) {
+                        if (searchValue.length === 4) {
                             //search by year
                             year = parseInt(searchValue);
                         }
@@ -2417,7 +2390,7 @@ angular.module('ep.menu.builder', [
                                 //we found some groups, lets get filtered data
                                 angular.forEach(groups, function(group) {
                                     filteredData =
-                                        filteredData.concat(origListData.slice(group.index, group.nextIndex));
+                                        filteredData.concat(scope.origListData.slice(group.index, group.nextIndex));
                                 });
                             }
                             filtered = true;
@@ -2433,22 +2406,17 @@ angular.module('ep.menu.builder', [
                             if (directoryEntry) {
                                 scope.selectedDirectoryEntry = directoryEntry;
                                 filtered = true;
-                                scope.filteredData = origListData.slice(directoryEntry.index,
+                                scope.filteredData = scope.origListData.slice(directoryEntry.index,
                                     directoryEntry.nextIndex);
                                 scope.filtered = true;
-                                $timeout(function() {
-                                    scope.$broadcast('vsRepeatTrigger');
-                                });
-                            } else {
-                                filtered = true;
-                                scope.filteredData = [];
                                 $timeout(function() {
                                     scope.$broadcast('vsRepeatTrigger');
                                 });
                             }
                         }
                     }
-                    if (!filtered) {
+                    if (!filtered)
+                    {
                         //if search is blank - we are not in filtering mode
                         scope.filtered = false;
                         scope.searchFilter = '';
@@ -2488,7 +2456,7 @@ angular.module('ep.menu.builder', [
                         scope.goingToDirectory = true;
                         scope.listSearch = '';
                     }
-                    scope.filteredData = origListData.slice(directoryEntry.index, directoryEntry.nextIndex);
+                    scope.filteredData = scope.origListData.slice(directoryEntry.index, directoryEntry.nextIndex);
                     scope.selectedDirectoryEntry = directoryEntry;
                     scope.filtered = true;
                     scope.searchFilter = '';
@@ -2497,15 +2465,6 @@ angular.module('ep.menu.builder', [
                     $timeout(function() {
                         scope.$broadcast('vsRepeatTrigger');
                     });
-                };
-
-                //default function for formatting other additional title. User can overwrite
-                scope.wrapFormatOtherAdditionalTitle = function (field, record) {
-                    if (scope.formatOtherAdditionalTitle) {
-                        return scope.formatOtherAdditionalTitle(field, record);
-                    } else {
-                        return record[field];
-                    }
                 };
 
                 //default function for formatting additional title. User can overwrite
@@ -2523,17 +2482,6 @@ angular.module('ep.menu.builder', [
                         return scope.formatSubtitle(fields, record);
                     } else {
                         return fields.reduce(function(p, c) { return (p ? (p + ', ') : '') + record[c]; }, '');
-                    }
-                };
-
-                //default function for formatting subtitle. User can overwrite
-                scope.wrapFormatGroupTitle = function(record) {
-                    var grDisplay = scope.directory[record[scope.groupBy]].groupDisplay;
-                    if (scope.formatGroupTitle) {
-                        var grKey = scope.directory[record[scope.groupBy]].dirKey;
-                        return scope.formatGroupTitle(record, scope.groupBy, grDisplay, grKey);
-                    } else {
-                        return grDisplay;
                     }
                 };
 
@@ -2564,6 +2512,7 @@ angular.module('ep.menu.builder', [
         };
     }
 })();
+
 /**
  * @ngdoc service
  * @name ep.list:epListService
@@ -2947,12 +2896,12 @@ angular.module('ep.menu.builder').
  * @example
  *
  */
-    epDynamicMenuCtrl.$inject = ['$scope', '$document', '$window'];
+    epDynamicMenuCtrl.$inject = ['$scope', '$document'];
     angular.module('ep.menu.builder')
         .controller('epDynamicMenuCtrl', epDynamicMenuCtrl);
 
     /*@ngInject*/
-    function epDynamicMenuCtrl($scope, $document, $window) {
+    function epDynamicMenuCtrl($scope, $document) {
         /*jshint validthis:true */
         var vm = this;
         vm.closeMenu = closeMenu;
@@ -2989,14 +2938,7 @@ angular.module('ep.menu.builder').
             // if position is fixed we are running on small width devices. Just skip this statement
             // if not, set css position of actionMenu
             if (vm.element.css('position') !== 'fixed') {
-                setTimeout(function () {
-                    var elementWidth = $(vm.element)[0].scrollWidth || 150;
-                    if (($(window).width() - args.event.clientX) > elementWidth) {
-                        vm.element.css({ left: args.event.clientX + 'px', top: args.event.clientY + 'px' });
-                    } else {
-                        vm.element.css({ left: (args.event.clientX - elementWidth) + 'px', top: args.event.clientY + 'px' });
-                    }
-                }, 10);
+                vm.element.css({ left: args.event.clientX + 'px', top: args.event.clientY + 'px' });
             }
             $document.on('click.actionMenu', function() {
                 closeMenu();
@@ -3183,7 +3125,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.accordion.menu/ep-accordion-menu_template.html',
-    "<div id=MainMenu class=ep-accordion-menu><form class=ep-mlm-search ng-hide=searchDisabled><input type=search class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-keydown=onKeydown($event) ng-focus=\"isRightToLeft = false\" tabindex=-1> <span class=ep-mlm-search-cancel ng-show=state.searchTerm><i class=\"fa fa-times\" ng-click=\"state.searchTerm=''\"></i></span></form><div ng-show=state.searchTerm><div class=\"bg-primary ep-menu-header\"><span ng-bind=searchResultsHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in currentItems | orderBy:orderByMenu\" id={{item.id}} hide-description=false navigate-alternate-icon=navigateAlternateIcon item=item navigate=navigate navigate-alternate=navigateAlternate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div><div ng-show=!state.searchTerm><div class=\"bg-primary ep-menu-header\" ng-if=\"data.favorites && data.favorites.length\"><span ng-bind=favoritesHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in data.favorites | orderBy:orderByMenu\" id={{item.id}} hide-description=false navigate-alternate-icon=navigateAlternateIcon item=item navigate=navigate navigate-alternate=navigateAlternate toggle-favorite=toggleFavorite tabindex=-1></ep-accordion-menu-item></div><div class=\"bg-primary ep-menu-header\" ng-hide=!mainHeader><span ng-bind=mainHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in menu.menuitems | orderBy:orderByMenu\" id={{item.id}} hide-description=true commit-menu-state=commitMenuState item=item navigate=navigate navigate-alternate=navigateAlternate navigate-alternate-icon=navigateAlternateIcon toggle-favorite=toggleFavorite on-expand=onExpand tabindex=-1></ep-accordion-menu-item></div></div></div>"
+    "<div id=MainMenu class=ep-accordion-menu><form class=ep-mlm-search ng-hide=searchDisabled><input type=search class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-keydown=onKeydown($event) ng-focus=\"isRightToLeft = false\" tabindex=-1> <span class=ep-mlm-search-cancel ng-show=state.searchTerm><i class=\"fa fa-times\" ng-click=\"state.searchTerm=''\"></i></span></form><div ng-show=state.searchTerm><div class=\"bg-primary ep-menu-header\"><span ng-bind=searchResultsHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in currentItems | orderBy:orderByMenu\" id={{item.id}} hide-description=false navigate-alternate-icon=navigateAlternateIcon item=item navigate=navigate navigate-alternate=navigateAlternate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div><div ng-show=!state.searchTerm><div class=\"bg-primary ep-menu-header\" ng-if=\"data.favorites && data.favorites.length\"><span ng-bind=favoritesHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in data.favorites | orderBy:orderByMenu\" id={{item.id}} hide-description=false navigate-alternate-icon=navigateAlternateIcon item=item navigate=navigate navigate-alternate=navigateAlternate toggle-favorite=toggleFavorite tabindex=-1></ep-accordion-menu-item></div><div class=\"bg-primary ep-menu-header\"><span ng-bind=mainHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in menu.menuitems | orderBy:orderByMenu\" id={{item.id}} hide-description=true commit-menu-state=commitMenuState item=item navigate=navigate navigate-alternate=navigateAlternate navigate-alternate-icon=navigateAlternateIcon toggle-favorite=toggleFavorite on-expand=onExpand tabindex=-1></ep-accordion-menu-item></div></div></div>"
   );
 
 
@@ -3206,8 +3148,6 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
     "\n" +
     "            <div ng-if=\"additionalTitle\" class=\"ep-list-item-additional-title ep-crm-text-ellipsis\">{{wrapFormatAdditionalTitle(additionalTitle, obj)}}</div>\r" +
     "\n" +
-    "            <div ng-if=\"otherAdditionalTitle\" class=\"ep-list-item-additional-title ep-crm-text-ellipsis\">{{wrapFormatOtherAdditionalTitle(otherAdditionalTitle, obj)}}</div>\r" +
-    "\n" +
     "        </div>\r" +
     "\n" +
     "        <div class=\"ep-list-item-details\">\r" +
@@ -3220,7 +3160,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
     "\n" +
     "                <div class=\"status status-text ep-crm-text-ellipsis {{getStatusTextClass(statuses, obj)}}\">{{formatStatusText(statuses, obj)}}</div>\r" +
     "\n" +
-    "                <div class=\"status-source ep-crm-text-ellipsis {{getStatusSourceClass(statuses, obj)}}\">{{formatStatusSource(statuses, obj)}}</div>\r" +
+    "                <div class=\"status-source text-success ep-crm-text-ellipsis\">{{formatStatusSource(statuses, obj)}}</div>\r" +
     "\n" +
     "            </div>\r" +
     "\n" +
@@ -3232,11 +3172,11 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
     "\n" +
     "            <div class=\"ep-margin-right-15 text-primary\" ng-if=\"selectMarkField && obj[selectMarkField] == selectMarkFieldValue\"\r" +
     "\n" +
-    "                ng-class=\"{'ep-margin-top-10':subTitle && !additionalTitle && !otherAdditionalTitle, 'ep-margin-top-15': additionalTitle || otherAdditionalTitle}\"><i class=\"fa fa-check\"></i></div>\r" +
+    "                ng-class=\"{'ep-margin-top-10':subTitle && !additionalTitle, 'ep-margin-top-15': additionalTitle}\"><i class=\"fa fa-check\"></i></div>\r" +
     "\n" +
-    "        </div></script><script id=listItemTemplate type=text/ng-template><div ng-if=\"groupBy && directory[obj[groupBy]] && directory[obj[groupBy]].data === obj\" class=\"ep-dir-divider ep-group-heading\"><b>{{wrapFormatGroupTitle(obj)}}</b></div>\r" +
+    "        </div></script><script id=listItemTemplate type=text/ng-template><div ng-if=\"groupBy && directory[obj[groupBy]] && directory[obj[groupBy]].data === obj\" class=\"ep-dir-divider ep-group-heading\"><b>{{directory[obj[groupBy]].groupDisplay}}</b></div>\r" +
     "\n" +
-    "        <div class=\"ep-list-item-content\" ng-include=\"itemContentTemplate\"></div></script><!--Calling filter list component for search option--><ep-filter-list search-by=listSearch count=\"filtered ? filterState.filterResult.length : items.count\" search-prompt=searchPrompt></ep-filter-list><!--Header as optional--><div class=ep-list-sub-header ng-if=\"subHeader == 'true'\"><label ng-click=filter() ng-hide=\"hideDisplayOptions == 'true'\">{{'emf.ep.list.label.filter' | epTranslate}} <i class=\"fa fa-check ep-list-filter-indicator\" ng-if=showFilterOn></i></label><label ng-click=sort() ng-hide=\"hideDisplayOptions == 'true'\">{{'emf.ep.list.label.sort' | epTranslate}} <i class=\"fa fa-check ep-list-filter-indicator\" ng-if=showSortOn></i></label><span class=\"pull-right ep-pad-right-20 text-primary\" ng-hide=\"hideAdd == 'true'\" ng-click=add()><i class=\"fa fa-plus fa-lg\" aria-hidden=true></i></span></div><!-- Alphabet Selector --><div class=ep-list-directory ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=\"showDirectory && groupBy\"><div class=ep-list-directory-item ng-repeat=\"(id,dir) in directory | epOrderObjectBy:'sort'\"><a ng-if=\"dir.letter === '*'\" class=ep-list-directory-item-enabled ng-click=goToDirectory(dir)><i class=\"fa fa-asterisk\"></i></a> <span ng-if=\"(dir.letter !== '*') && dir.disabled\" class=text-muted>{{dir.letter}}</span> <a ng-if=\"(dir.letter !== '*') && !dir.disabled\" class=ep-list-directory-item-enabled ng-class=\"{ 'text-danger': selectedDirectoryEntry.letter === dir.letter && filtered }\" ng-click=goToDirectory(dir)>{{dir.letter}}</a></div></div><div ng-if=useVirtualScrolling><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=!filtered id={{localId}} vs-repeat={{vsItemSize}} vs-excess={{vsRenderBufferSize}} vs-options=\"{ latch: {{vsLatch}} }\"><li ng-repeat=\"obj in listData track by $index\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=filtered id={{localId}} vs-repeat={{vsItemSize}} vs-excess={{vsRenderBufferSize}} vs-options=\"{ latch: {{vsLatch}} }\"><li ng-repeat=\"obj in (filterState.filterResult = (filteredData | filter:filterByName))\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul></div><div ng-if=!useVirtualScrolling><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=!filtered id={{localId}}><li ng-repeat=\"obj in listData track by $index\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=filtered id={{localId}}><li ng-repeat=\"obj in (filterState.filterResult = (filteredData | filter:filterByName))\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul></div></div>"
+    "        <div class=\"ep-list-item-content\" ng-include=\"itemContentTemplate\"></div></script><!--Calling filter list component for search option--><ep-filter-list search-by=listSearch count=\"filtered ? filterState.filterResult.length : items.count\" search-prompt=searchPrompt></ep-filter-list><!--Header as optional--><div class=ep-list-sub-header ng-if=\"subHeader == 'true'\"><label ng-click=filter() ng-hide=\"hideDisplayOptions == 'true'\">Filter</label><label ng-click=sort() ng-hide=\"hideDisplayOptions == 'true'\">Sort</label><span class=\"pull-right ep-pad-right-20 text-primary\" ng-hide=\"hideAdd == 'true'\" ng-click=add()><i class=\"fa fa-plus fa-lg\" aria-hidden=true></i></span></div><!-- Alphabet Selector --><div class=ep-list-directory ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=\"showDirectory && groupBy\"><div class=ep-list-directory-item ng-repeat=\"(id,dir) in directory | epOrderObjectBy:'sort'\"><a ng-if=\"dir.letter === '*'\" class=ep-list-directory-item-enabled ng-click=goToDirectory(dir)><i class=\"fa fa-asterisk\"></i></a> <span ng-if=\"(dir.letter !== '*') && dir.disabled\" class=text-muted>{{dir.letter}}</span> <a ng-if=\"(dir.letter !== '*') && !dir.disabled\" class=ep-list-directory-item-enabled ng-class=\"{ 'text-danger': selectedDirectoryEntry.letter === dir.letter && filtered }\" ng-click=goToDirectory(dir)>{{dir.letter}}</a></div></div><div ng-if=useVirtualScrolling><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=!filtered id={{localId}} vs-repeat={{vsItemSize}} vs-excess={{vsRenderBufferSize}} vs-options=\"{ latch: {{vsLatch}} }\"><li ng-repeat=\"obj in listData track by $index\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=filtered id={{localId}} vs-repeat={{vsItemSize}} vs-excess={{vsRenderBufferSize}} vs-options=\"{ latch: {{vsLatch}} }\"><li ng-repeat=\"obj in (filterState.filterResult = (filteredData | filter:filterByName))\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul></div><div ng-if=!useVirtualScrolling><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=!filtered id={{localId}}><li ng-repeat=\"obj in listData track by $index\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul><ul class=ep-list ng-class=\"{'ep-header-visible':subHeader == 'true'}\" ng-if=filtered id={{localId}}><li ng-repeat=\"obj in (filterState.filterResult = (filteredData | filter:filterByName))\" ng-click=handler(obj) class=ep-list-item ng-include=\"'listItemTemplate'\"></li></ul></div></div>"
   );
 
 

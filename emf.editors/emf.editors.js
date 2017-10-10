@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.14-dev.253 built: 10-10-2017
+ * version:1.0.16 built: 10-10-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["editors"] = {"libName":"editors","version":"1.0.14-dev.253","built":"2017-10-10"};
+__ep_build_info["editors"] = {"libName":"editors","version":"1.0.16","built":"2017-10-10"};
 
 (function() {
     'use strict';
@@ -649,19 +649,12 @@ angular.module('ep.record.editor', [
                         var dd = null;
                         if (value !== undefined) {
                             var m = moment(value);
-                            var fmt = 'YYYY-MM-DD';
-                            if (scope.ctx.isDateTime) {
-                                if (scope.ctx.col && scope.ctx.col.time && scope.ctx.col.time.defaultNoon === true) {
-                                    fmt = 'YYYY-MM-DDT12:00:00';
-                                } else {
-                                    fmt = 'YYYY-MM-DDT00:00:00';
-                                }
-                            }
+                            var fmt = scope.ctx.isDateTime ? 'YYYY-MM-DDT00:00:00' : 'YYYY-MM-DD';
                             dd = m.isValid() ? m.format(fmt) : null;
                         }
                         var vCur = scope.ctx.fnGetCurrentValue();
                         if (vCur !== dd) {
-                            scope.ctx.fnSetCurrentValue(dd, false);
+                            scope.ctx.fnSetCurrentValue(dd);
                         }
                         return value;
                     });
@@ -743,18 +736,16 @@ angular.module('ep.record.editor', [
                             $scope.isMeridian = col.time.meridian === true;
                             $scope.hourStep = col.time.hourStep || 1;
                             $scope.minuteStep = col.time.minuteStep || 15;
-                            $scope.ctx.isDateTime = true;
-                            $scope.showInNewLine = col.time.showInNewLine === true;
 
                             $scope.$watch('ctx.dateValue', function(newValue, oldValue) {
                                 if (newValue && newValue !== oldValue && $scope.changingTime !== true) {
-                                    $scope.ctx.timeValue = newValue;
+                                    $scope.timeValue = newValue;
                                 }
                                 $scope.changingTime = false;
                             });
 
                             $scope.timeChanged = function() {
-                                var value = $scope.ctx.timeValue;
+                                var value = $scope.timeValue;
                                 var dd = null;
                                 if (value !== undefined) {
                                     var m = moment(value);
@@ -763,7 +754,7 @@ angular.module('ep.record.editor', [
                                 var vCur = $scope.ctx.fnGetCurrentValue();
                                 if (vCur !== dd) {
                                     $scope.changingTime = true;
-                                    $scope.ctx.fnSetCurrentValue(dd, false);
+                                    $scope.ctx.fnSetCurrentValue(dd);
                                 }
                             };
                         }
@@ -881,10 +872,6 @@ angular.module('ep.record.editor', [
         # checkBoxMode {string}  - applicable to checkbox only. 'checkbox'/'switch' (default is 'checkbox')
         # style {string} - sets inline styling. eg. '{ "color" : "red", "margin" : "0px" }
         # oFormat {object}
-            Decimals {int} - number of decimals
-            Min {number} - minimum
-            Max {number} - max value
-            AllowNegative {bool} - allow negative
         # maxLength {int} - set max length for string entry default is 30
         # rows {int} - set rows for multiline editor (default is 5)
         # mode {string} - set display mode ('mini' otherwise standard). In 'mini' mode the margins will
@@ -1122,7 +1109,7 @@ angular.module('ep.record.editor', [
                             angular.element(edt).addClass('ng-dirty');
                         }
                         if (ctx.updatable) {
-                            doValidation(ctx, {}, focus === true);
+                            doValidation(ctx, {}, true);
                         }
                         ctx.fnOnChange({}, ctx);
                     }
@@ -1243,8 +1230,6 @@ angular.module('ep.record.editor', [
                 }
             }
 
-            ctx.classRightBtns = '';
-            ctx.classLeftBtns = '';
             if (ctx.buttons.length) {
                 ctx.fnBtnClick = function(btn) {
                     if (btn.type === 'btn') {
@@ -1272,19 +1257,6 @@ angular.module('ep.record.editor', [
                         }
                     }
                 };
-
-                var postBtn = _.find(ctx.buttons, function(btn) {
-                    return btn.position === 'post';
-                });
-                if (postBtn) {
-                    ctx.classRightBtns = 'ep-editor-right-buttons';
-                }
-                var preBtn = _.find(ctx.buttons, function(btn) {
-                    return btn.position === 'pre';
-                });
-                if (preBtn) {
-                    ctx.classLeftBtns = 'ep-editor-left-buttons';
-                }
             }
             scope.ctx = ctx;
             if (getRecordEditorState(scope)) {
@@ -1527,7 +1499,6 @@ angular.module('ep.record.editor', [
                     pre: function($scope) {
                         var ctx = $scope.ctx;
                         var col = ctx.col;
-                        var dec = 0;
                         if (ctx.editor === 'number') {
                             var fmt = col.oFormat;
                             if (!fmt) {
@@ -1549,7 +1520,7 @@ angular.module('ep.record.editor', [
                             }
                             if (fmt.NumberFormatInfo || (fmt.Decimals !== undefined)) {
                                 //to do : negatives mask!!!
-                                dec = 0;
+                                var dec = 0;
                                 if (fmt.Decimals !== undefined) {
                                     dec = fmt.Decimals;
                                 } else {
@@ -1562,7 +1533,7 @@ angular.module('ep.record.editor', [
                                     ctx.pattern = '^NEG(\\d+)$';
                                 } else {
                                     ctx.pattern =
-                                        '^NEG(\\d+)([\'.\'](\\d){0,DEC})?$'.replace('DEC', dec.toString());
+                                        '^NEG(\\d+)([\'.\'](\\d) {0,DEC})?$'.replace('DEC', dec.toString());
                                 }
                                 if (fmt.AllowNegative || false) {
                                     ctx.pattern = ctx.pattern.replace('NEG', '([-]?)');
@@ -1571,177 +1542,12 @@ angular.module('ep.record.editor', [
                                 }
                             }
                         }
-
-                        $scope.inputType = 'text';
-                        $scope.inputNumberFmt = '';
-                        ctx.numberDecimals = dec;
-                        if (dec > 0) {
-                            $scope.inputNumberFmt = 'decimal';
-                        }
-
-                        $scope.fnBlur = function($event, value) {
-                            $scope.inputType = 'text';
-                            if (ctx.fnBlur) {
-                                ctx.fnBlur($event, value);
-                            }
-                        };
-
-                        $scope.fnFocus = function($event, value) {
-                            $scope.inputType = 'number';
-                            if (ctx.fnFocus) {
-                                ctx.fnFocus($event, value);
-                            }
-                        };
-
-                        var callFnKeyDown = function(event, value, keyCode, currentReturn) {
-                            //call user function
-                            var ret = currentReturn;
-                            if (ctx.fnDoKeyDown) {
-                                ret = ctx.fnDoKeyDown(event, value, keyCode, currentReturn);
-                            }
-                            if (ret === false) {
-                                event.preventDefault();
-                            }
-                            return ret;
-                        };
-
-                        $scope.fnKeyDown = function($event, value) {
-                            var k = $event.keyCode;
-                            //allow any special keys like Backspace, Del, Tab, etc
-                            if (k === 8 || k === 9 || k === 16 || k === 33 || k === 34 ||
-                                k === 35 || k === 36 || k === 37 || k === 38 || k === 39 || k === 40) {
-                                return callFnKeyDown($event, value, k, true);
-                            }
-                            if ($event.ctrlKey) {
-                                //for Copy/Paste etc
-                                return callFnKeyDown($event, value, k, true);
-                            }
-                            if (ctx.disabled) {
-                                //if disabled we cannot edit
-                                return callFnKeyDown($event, value, k, false);
-                            }
-                            //var patt = new RegExp(ctx.pattern);
-                            //var res = patt.test(str);
-
-                            if ($event.char) {
-                                //test for digits, decimal and minus
-                                if (/[0-9]|[.]|[-]/.test($event.char)) {
-                                    if ($event.target && $event.target.value && k === 190 && ($event.target.value.indexOf('.') > -1 || ctx.numberDecimals === 0)) {
-                                        return callFnKeyDown($event, value, k, false);
-                                    } 
-                                    return callFnKeyDown($event, value, k, true);
-                                }
-                            } else {
-                                //uncontrolled because we cannot trust key code
-                                if ((k > 47 && k < 59) || (k === 189) || (k === 190)) {
-                                    if ($event.target && $event.target.value && k === 190 && ($event.target.value.indexOf('.') > -1 || ctx.numberDecimals === 0)) {
-                                        return callFnKeyDown($event, value, k, false);
-                                    } 
-                                    return callFnKeyDown($event, value, k, true);
-                                }
-                            }
-                            return callFnKeyDown($event, value, k, false);
-                        };
                     }
                 };
             }
         };
     }
 })();
-
-/**
-* @ngdoc directive
-* @name ep.record.editor.directive:epNumberEditorFormat
-* @restrict E
-*
-* @description
-* This directive is used to valid format of number editor. switches the type="number" to type="text"
-* when we move out of focus, for formatting.
-*/
-(function() {
-    'use strict';
-
-    angular.module('ep.record.editor').
-        directive('epNumberEditorFormat', epNumberEditorFormatDirective);
-
-    /*@ngInject*/
-    function epNumberEditorFormatDirective() {
-        return {
-            restrict: 'A',
-            require: 'ngModel',
-            link: function(scope, element, attrs, ngModel) {
-                if (!ngModel) { return; }
-
-                var mode = attrs.epNumberEditorFormat;
-                if (true) {
-                    scope.inputType = 'text';
-                    scope.decimals = scope.ctx.numberDecimals !== undefined ? scope.ctx.numberDecimals : 0;
-
-                    ngModel.$formatters.push(function(value) {
-                        if (attrs['type'] === 'number') {
-                            return value;
-                        } else {
-                            var v = value;
-                            if (!angular.isNumber(v) || v === NaN) {
-                                v = scope.validNgModel || 0;
-                            }
-                            return v.toFixed(scope.decimals);
-                        }
-                    });
-
-                    var regX = new RegExp(scope.ctx.pattern);
-
-                    ngModel.$parsers.push(function(value) {
-                        if (value) {
-                            var v = scope.validNgModel || 0;
-                            if (regX.test(value)) {
-                                v = parseFloat(value);
-                            } else {
-                                ngModel.$setViewValue(v.toFixed(scope.decimals));
-                                ngModel.$render();
-                            }
-                            return v;
-                        }
-                        return 0;
-                    });
-
-                    //ngModel.$validators.validCharacters = function(modelValue, viewValue) {
-                    //    var value = modelValue || viewValue;
-                    //    return true;
-                    //};
-
-                    scope.$watch('inputType', function(newValue, oldValue) {
-                        if (newValue !== oldValue && newValue === 'text') {
-                            var v = ngModel.$modelValue;
-                            if (!angular.isNumber(v) || v === NaN) {
-                                v = scope.validNgModel || 0;
-                                ngModel.$modelValue = v;
-                                ngModel.$setViewValue(v.toFixed(scope.decimals));
-                                ngModel.$render();
-                            } else {
-                                ngModel.$setViewValue(v.toFixed(scope.decimals));
-                                ngModel.$render();
-                            }
-                        }
-                    });
-
-                    scope.$watch('value', function(newValue, oldValue) {
-                        if (ngModel.$valid) {
-                            //keep track of a last valid value
-                            scope.validNgModel = newValue;
-                        } else {
-                            scope.validNgModel = oldValue;
-                        }
-                    });
-
-                } else {
-                    scope.inputType = 'number';
-                }
-             }
-        };
-    }
-})();
-
 
 /**
 * @ngdoc directive
@@ -2786,12 +2592,12 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-date-editor.html',
-    "<section class=ep-date-editor><input id=dd_{{ctx.name}} ng-model=value ep-date-convert=toDate ng-hide=\"true\"><div class=\"input-group date datepicker\" id=dp_{{ctx.name}} ng-if=!ctx.useDateInput><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input size=16 ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor {{isMeridian ? 'ep-time-meridian' : ''}}\" ng-hide=ctx.fnDoValidations() ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) pattern={{ctx.pattern}} ng-keydown=ctx.fnDateKeyDown($event) uib-datepicker-popup={{ctx.format}} data-container=body datepicker-options111={{ctx.dateOptions}} placeholder={{ctx.format}} ng-pattern={{ctx.pattern}} is-open=\"ctx.dateOpened\"> <span ng-if=\"showTime === true\" class=\"input-group-addon ep-time-picker {{isMeridian ? 'ep-time-meridian' : ''}} {{showInNewLine ? 'ep-time-new-line' : ''}}\" uib-timepicker show-spinners=false ng-model=ctx.timeValue ng-change=timeChanged() hour-step=hourStep minute-step=minuteStep show-meridian=isMeridian></span> <span class=input-group-addon ng-click=ctx.fnDateOpen($event) ng-style=\"{ 'cursor': ctx.disabled ? 'not-allowed' : 'pointer' }\"><a ng-if=!ctx.disabled><i class=\"fa fa-calendar\"></i></a> <i ng-if=ctx.disabled class=\"fa fa-calendar\"></i></span> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div><div class=\"input-group date\" id=dp_{{ctx.name}} ng-if=\"ctx.useDateInput === true\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input size=16 type=date ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor {{isMeridian ? 'ep-time-meridian' : ''}}\" ng-hide=ctx.fnDoValidations(this) ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=\"ctx.fnBlur($event)\"> <span ng-if=\"showTime === true\" class=\"input-group-addon ep-time-picker {{isMeridian ? 'ep-time-meridian' : ''}} {{showInNewLine ? 'ep-time-new-line' : ''}}\" uib-timepicker show-spinners=false ng-model=ctx.timeValue ng-change=timeChanged() hour-step=hourStep minute-step=minuteStep show-meridian=isMeridian></span> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
+    "<section class=ep-date-editor><input id=dd_{{ctx.name}} ng-model=value ep-date-convert=toDate ng-hide=\"true\"><div class=\"input-group date datepicker\" id=dp_{{ctx.name}} ng-if=!ctx.useDateInput><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input size=16 ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor {{isMeridian ? 'ep-time-meridian' : ''}}\" ng-hide=ctx.fnDoValidations() ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) pattern={{ctx.pattern}} ng-keydown=ctx.fnDateKeyDown($event) uib-datepicker-popup={{ctx.format}} data-container=body datepicker-options111={{ctx.dateOptions}} placeholder={{ctx.format}} ng-pattern={{ctx.pattern}} is-open=\"ctx.dateOpened\"> <span ng-if=\"showTime === true\" class=\"input-group-addon ep-time-picker {{isMeridian ? 'ep-time-meridian' : ''}}\" uib-timepicker show-spinners=false ng-model=timeValue ng-change=timeChanged() hour-step=hourStep minute-step=minuteStep show-meridian=isMeridian></span> <span class=input-group-addon ng-click=ctx.fnDateOpen($event) ng-style=\"{ 'cursor': ctx.disabled ? 'not-allowed' : 'pointer' }\"><a ng-if=!ctx.disabled><i class=\"fa fa-calendar\"></i></a> <i ng-if=ctx.disabled class=\"fa fa-calendar\"></i></span> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div><div class=\"input-group date\" id=dp_{{ctx.name}} ng-if=\"ctx.useDateInput === true\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input size=16 type=date ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor {{isMeridian ? 'ep-time-meridian' : ''}}\" ng-hide=ctx.fnDoValidations(this) ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=\"ctx.fnBlur($event)\"> <span ng-if=\"showTime === true\" class=\"input-group-addon ep-time-picker {{isMeridian ? 'ep-time-meridian' : ''}}\" uib-timepicker show-spinners=false ng-model=timeValue ng-change=timeChanged() hour-step=hourStep minute-step=minuteStep show-meridian=isMeridian></span> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
   );
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-editor-control.html',
-    "<div class=\"ep-editor-control {{ctx.sizeClass}} ep-editor-mode-{{ctx.mode}} {{ctx.classRightBtns}} {{ctx.classLeftBtns}}\" ng-hide=ctx.hidden ep-drop-area drop-enabled=\"isDropEnabled === true\" drop-handler=handleDrop drop-item-types=typeEditorCtrl ng-style=ctx.style><!--display caption above editor or just editor (mini mode)--><fieldset ng-if=\"isRow !== true\" class=\"form-group ep-record-editor-container\" ng-class=\"{'has-error': ctx.invalidFlag}\" ep-draggable drag-enabled=\"isDragEnabled === true\" drag-item=ctx drag-item-type=\"'typeEditorCtrl'\"><div class=\"ep-div-editor-label {{ctx.col.classLabel}}\"><label class=ep-editor-label for={{ctx.name}} ng-if=\"ctx.mode !== 'mini'\">{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label></div><div class={{ctx.col.classEditor}}><section id=xtemplate></section></div></fieldset><!--display caption and editor in a bootstrap grid system in horizontal row--><div ng-if=\"isRow === true\" class=\"ep-record-editor-container ep-is-row-editor row\"><div class=\"ep-div-editor-label {{ctx.col.classLabel || 'col-xs-4'}}\"><label class=ep-editor-label for={{ctx.name}}>{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label></div><div class=\"{{ctx.col.classEditor || 'col-xs-8'}}\"><section id=xtemplate></section></div></div></div>"
+    "<div class=\"ep-editor-control {{ctx.sizeClass}} ep-editor-mode-{{ctx.mode}}\" ng-hide=ctx.hidden ep-drop-area drop-enabled=\"isDropEnabled === true\" drop-handler=handleDrop drop-item-types=typeEditorCtrl ng-style=ctx.style><!--display caption above editor or just editor (mini mode)--><fieldset ng-if=\"isRow !== true\" class=\"form-group ep-record-editor-container\" ng-class=\"{'has-error': ctx.invalidFlag}\" ep-draggable drag-enabled=\"isDragEnabled === true\" drag-item=ctx drag-item-type=\"'typeEditorCtrl'\"><div class=\"ep-div-editor-label {{ctx.col.classLabel}}\"><label class=ep-editor-label for={{ctx.name}} ng-if=\"ctx.mode !== 'mini'\">{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label></div><div class={{ctx.col.classEditor}}><section id=xtemplate></section></div></fieldset><!--display caption and editor in a bootstrap grid system in horizontal row--><div ng-if=\"isRow === true\" class=\"ep-record-editor-container ep-is-row-editor row\"><div class=\"ep-div-editor-label {{ctx.col.classLabel || 'col-xs-4'}}\"><label class=ep-editor-label for={{ctx.name}}>{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label></div><div class=\"{{ctx.col.classEditor || 'col-xs-8'}}\"><section id=xtemplate></section></div></div></div>"
   );
 
 
@@ -2806,7 +2612,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-number-editor.html',
-    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input id={{ctx.name}} ng-cloak ep-number-editor-format={{inputNumberFmt}} name={{ctx.name}} type=\"{{inputType || 'number'}}\" ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=value ng-change=ctx.fnOnChange($event) ng-keydown=\"fnKeyDown($event, value)\" ng-blur=\"fnBlur($event, value)\" ng-focus=\"fnFocus($event, value)\" class=\"form-control editor\" ng-style=\"{ 'text-align': ctx.justification }\" maxlength={{ctx.maxlength}} min={{ctx.min}} max={{ctx.max}} ng-hide=ctx.fnDoValidations() pattern=\"{{ctx.pattern}}\"> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
+    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input id={{ctx.name}} ng-cloak name={{ctx.name}} type=number ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=value ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-style=\"{ 'text-align': ctx.justification }\" maxlength={{ctx.maxlength}} min={{ctx.min}} max={{ctx.max}} ng-hide=ctx.fnDoValidations() pattern=\"{{ctx.pattern}}\"> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
   );
 
 
