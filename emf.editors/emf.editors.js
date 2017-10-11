@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.17 built: 11-10-2017
+ * version:1.0.14-dev.258 built: 11-10-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["editors"] = {"libName":"editors","version":"1.0.17","built":"2017-10-11"};
+__ep_build_info["editors"] = {"libName":"editors","version":"1.0.14-dev.258","built":"2017-10-11"};
 
 (function() {
     'use strict';
@@ -1626,17 +1626,19 @@ angular.module('ep.record.editor', [
                             if ($event.char) {
                                 //test for digits, decimal and minus
                                 if (/[0-9]|[.]|[-]/.test($event.char)) {
-                                    if ($event.target && $event.target.value && k === 190 && ($event.target.value.indexOf('.') > -1 || ctx.numberDecimals === 0)) {
+                                    if ($event.target && $event.target.value && k === 190 &&
+                                        ($event.target.value.indexOf('.') > -1 || ctx.numberDecimals === 0)) {
                                         return callFnKeyDown($event, value, k, false);
-                                    } 
+                                    }
                                     return callFnKeyDown($event, value, k, true);
                                 }
                             } else {
                                 //uncontrolled because we cannot trust key code
                                 if ((k > 47 && k < 59) || (k === 189) || (k === 190)) {
-                                    if ($event.target && $event.target.value && k === 190 && ($event.target.value.indexOf('.') > -1 || ctx.numberDecimals === 0)) {
+                                    if ($event.target && $event.target.value && k === 190 &&
+                                        ($event.target.value.indexOf('.') > -1 || ctx.numberDecimals === 0)) {
                                         return callFnKeyDown($event, value, k, false);
-                                    } 
+                                    }
                                     return callFnKeyDown($event, value, k, true);
                                 }
                             }
@@ -1670,73 +1672,69 @@ angular.module('ep.record.editor', [
             restrict: 'A',
             require: 'ngModel',
             link: function(scope, element, attrs, ngModel) {
-                if (!ngModel) { return; }
-
-                var mode = attrs.epNumberEditorFormat;
-                if (true) {
-                    scope.inputType = 'text';
-                    scope.decimals = scope.ctx.numberDecimals !== undefined ? scope.ctx.numberDecimals : 0;
-
-                    ngModel.$formatters.push(function(value) {
-                        if (attrs['type'] === 'number') {
-                            return value;
-                        } else {
-                            var v = value;
-                            if (!angular.isNumber(v) || v === NaN) {
-                                v = scope.validNgModel || 0;
-                            }
-                            return v.toFixed(scope.decimals);
-                        }
-                    });
-
-                    var regX = new RegExp(scope.ctx.pattern);
-
-                    ngModel.$parsers.push(function(value) {
-                        if (value) {
-                            var v = scope.validNgModel || 0;
-                            if (regX.test(value)) {
-                                v = parseFloat(value);
-                            } else {
-                                ngModel.$setViewValue(v.toFixed(scope.decimals));
-                                ngModel.$render();
-                            }
-                            return v;
-                        }
-                        return 0;
-                    });
-
-                    //ngModel.$validators.validCharacters = function(modelValue, viewValue) {
-                    //    var value = modelValue || viewValue;
-                    //    return true;
-                    //};
-
-                    scope.$watch('inputType', function(newValue, oldValue) {
-                        if (newValue !== oldValue && newValue === 'text') {
-                            var v = ngModel.$modelValue;
-                            if (!angular.isNumber(v) || v === NaN) {
-                                v = scope.validNgModel || 0;
-                                ngModel.$modelValue = v;
-                                ngModel.$setViewValue(v.toFixed(scope.decimals));
-                                ngModel.$render();
-                            } else {
-                                ngModel.$setViewValue(v.toFixed(scope.decimals));
-                                ngModel.$render();
-                            }
-                        }
-                    });
-
-                    scope.$watch('value', function(newValue, oldValue) {
-                        if (ngModel.$valid) {
-                            //keep track of a last valid value
-                            scope.validNgModel = newValue;
-                        } else {
-                            scope.validNgModel = oldValue;
-                        }
-                    });
-
-                } else {
-                    scope.inputType = 'number';
+                if (!ngModel) {
+                    return;
                 }
+
+                scope.inputType = 'text';
+                scope.decimals = scope.ctx.numberDecimals !== undefined ? scope.ctx.numberDecimals : 0;
+
+                ngModel.$formatters.push(function(value) {
+                    if (attrs.type === 'number') {
+                        return value;
+                    } else {
+                        var v = value;
+                        if (!angular.isNumber(v) || isNaN(v)) {
+                            v = scope.validNgModel || 0;
+                        }
+                        return v.toFixed(scope.decimals);
+                    }
+                });
+
+                var regX = new RegExp(scope.ctx.pattern);
+
+                ngModel.$parsers.push(function(value) {
+                    if (value) {
+                        var v = scope.validNgModel || 0;
+                        if (regX.test(value)) {
+                            v = parseFloat(value);
+                        } else {
+                            ngModel.$setViewValue(v.toFixed(scope.decimals));
+                            ngModel.$render();
+                        }
+                        return v;
+                    }
+                    return 0;
+                });
+
+                //ngModel.$validators.validCharacters = function(modelValue, viewValue) {
+                //    var value = modelValue || viewValue;
+                //    return true;
+                //};
+
+                scope.$watch('inputType', function(newValue, oldValue) {
+                    if (newValue !== oldValue && newValue === 'text') {
+                        var v = ngModel.$modelValue;
+                        if (!angular.isNumber(v) || isNaN(v)) {
+                            v = scope.validNgModel || 0;
+                            ngModel.$modelValue = v;
+                            ngModel.$setViewValue(v.toFixed(scope.decimals));
+                            ngModel.$render();
+                        } else {
+                            ngModel.$setViewValue(v.toFixed(scope.decimals));
+                            ngModel.$render();
+                        }
+                    }
+                });
+
+                scope.$watch('value', function(newValue, oldValue) {
+                    if (ngModel.$valid) {
+                        //keep track of a last valid value
+                        scope.validNgModel = newValue;
+                    } else {
+                        scope.validNgModel = oldValue;
+                    }
+                });
              }
         };
     }

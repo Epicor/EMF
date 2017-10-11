@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.17 built: 11-10-2017
+ * version:1.0.14-dev.258 built: 11-10-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.17","built":"2017-10-11"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.14-dev.258","built":"2017-10-11"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -3392,9 +3392,10 @@ angular.module('ep.binding').
              * @param {object} data - data row to replace the row
              */
             function replaceDataRow(row, data) {
-                //once we know we have a change, create the delta 
-                if (!state.original)
+                //once we know we have a change, create the delta
+                if (!state.original) {
                     state.original = angular.merge([], state.data);
+                }
 
                 if (!state.data || (state.data.length < 1)) {
                     return;
@@ -3491,9 +3492,10 @@ angular.module('ep.binding').
             function deleteRow(row) {
                 var index = getRowIndex(row);
                 if (index !== -1) {
-                    //once we know we have a change, create the delta 
-                    if (!state.original)
+                    //once we know we have a change, create the delta
+                    if (!state.original) {
                         state.original = angular.merge([], state.data);
+                    }
 
                     if (state.addedRows[index] !== undefined) {
                         //if we are deleting an added row, then it should be removed from both added and deleted
@@ -3550,9 +3552,10 @@ angular.module('ep.binding').
              * @returns {int} added row index
              */
             function addRow(dataRow, setCurrentRow) {
-                //once we know we have a change, create the delta 
-                if (!state.original)
+                //once we know we have a change, create the delta
+                if (!state.original) {
                     state.original = angular.merge([], state.data);
+                }
 
                 if (!angular.isArray(state.data)) {
                     state.data = [];
@@ -3622,9 +3625,10 @@ angular.module('ep.binding').
                 var rowIdx = state.row;
                 var record = state.data[rowIdx];
                 if (arguments.length > 1) {
-                    //once we know we have a change, create the delta 
-                    if (!state.original)
+                    //once we know we have a change, create the delta
+                    if (!state.original) {
                         state.original = angular.merge([], state.data);
+                    }
 
                     var oldValue = record[column];
                     if (record[column] !== value) {
@@ -4021,6 +4025,7 @@ angular.module('ep.binding').
     }
 
 }());
+
 (function() {
     'use strict';
     /**
@@ -12842,7 +12847,6 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             currencyMaxDecimalPlaces = maxNumDecimals;
         }
 
-
         //private functions --->
 
         //Leave this for future use!!!
@@ -12979,26 +12983,32 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             var max = Math.pow(10, wholeLen);
                             if (decLen > 0) {
                                 max = max - (1 / (Math.pow(10, decLen)));
-                            }
-                            else {
+                            } else {
                                 max = max - 1;
                             }
                             oFormat.Max = max;
                             oFormat.AllowNegative = (fmt.indexOf('-') > -1);
                             if (oFormat.AllowNegative) {
                                 oFormat.Min = -oFormat.Max;
-                            }
-                            else {
+                            } else {
                                 oFormat.Min = 0;
                             }
                         }
                         if (currencyMaxDecimalPlaces !== undefined && oFormat.Decimals > currencyMaxDecimalPlaces) {
-                            //if we have set currency max decimals override then apply it if currency attribute is found
-                            var attrCurrency = _.find(fieldAttributes, function(attr) {
-                                return (attr['AttributeName'].toLowerCase() === 'biztype' && attr['Value'].toLowerCase() === 'currency');
-                            });
-                            if (attrCurrency) {
-                                oFormat.Decimals = currencyMaxDecimalPlaces;
+                            //if we have set currency max decimals override
+                            //then apply it if currency attribute is found
+                            if (fieldAttributes) {
+                                var attrCurrency;
+                                // jshint ignore:start
+                                attrCurrency = _.find(fieldAttributes, function(attr) {
+                                    var attrName = attr['AttributeName'].toLowerCase();
+                                    var attrValue = attr['Value'].toLowerCase();
+                                    return (attr && attrName === 'biztype' && attrValue === 'currency');
+                                });
+                                // jshint ignore:end
+                                if (attrCurrency) {
+                                    oFormat.Decimals = currencyMaxDecimalPlaces;
+                                }
                             }
                         }
                     }
@@ -14290,7 +14300,8 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
             //we use the epSysConfig provider to perform the $http read against sysconfig.json
             //epSysConfig.mergeSection() function merges the defaults with sysconfig.json settings
-            this.$get = ['$log', 'epSysConfig', 'epApplicationConfig', function($log, epSysConfig, epApplicationConfig) {
+            this.$get = ['$log', 'epSysConfig', 'epApplicationConfig',
+                function($log, epSysConfig, epApplicationConfig) {
                 epSysConfig.mergeSection('ep.globalization', config);
 
                 ///This loads the global emf resources
@@ -14377,7 +14388,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 })();
 
 
-(function () {
+(function() {
     'use strict';
     /**
      * @ngdoc service
@@ -14389,13 +14400,13 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
      * @example
      *
      */
-    epTranslationService.$inject = ['$q', '$http', '$rootScope', 'epUtilsService', 'epGlobalizationConfig', 'epGlobalizationConstants', 'epApplicationConfig'];
+    epTranslationService.$inject = ['$q', '$http', '$rootScope', 'epUtilsService', 'epGlobalizationConfig', 'epGlobalizationConstants'];
     angular.module('ep.globalization').
         service('epTranslationService', epTranslationService);
 
     /*@ngInject*/
-    function epTranslationService($q, $http, $rootScope, epUtilsService, epGlobalizationConfig,
-        epGlobalizationConstants, epApplicationConfig) {
+    function epTranslationService($q, $http, $rootScope, epUtilsService,
+        epGlobalizationConfig, epGlobalizationConstants) {
 
         var resources = {}; //all locale resources are held here
         var baseLocaleId = 'en-us'; //base locale
@@ -14463,23 +14474,21 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          */
         function getInfo() {
             var baseLocCount = 0;
-            if (angular.is = Object(baseResource)) {
+            if (angular.isObject(baseResource)) {
                 baseLocCount = Object.keys(baseResource).length;
             }
             var baseLocEmfCount = 0;
-            if (angular.is = Object(epGlobalizationConfig.emfResources)) {
+            if (angular.isObject(epGlobalizationConfig.emfResources)) {
                 baseLocEmfCount = Object.keys(epGlobalizationConfig.emfResources).length;
             }
             var curLocCount = 0;
-            if (angular.is = Object(curResource)) {
+            if (angular.isObject(curResource)) {
                 curLocCount = Object.keys(curResource).length;
             }
             var curLocEmfCount = 0;
-            if (angular.is = Object(curResourceEmf)) {
+            if (angular.isObject(curResourceEmf)) {
                 curLocEmfCount = Object.keys(curResourceEmf).length;
             }
-
-            epGlobalizationConfig.emfResources ? epGlobalizationConfig.emfResources.length : 0;
             return {
                 baseLocaleId: baseLocaleId,
                 baseLocaleCount: baseLocCount,
@@ -14568,7 +14577,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 var newLen = (origLen + percLen < test.minChars) ? test.minChars : (origLen + percLen);
                 var expansionLen = newLen - origLen;
                 if (expansionLen > 0) {
-                    if (expansionLen > 1) newLen--;
+                    if (expansionLen > 1) {
+                        newLen--;
+                    }
                     expandedStr = expandedStr.padEnd(newLen, test.fillChar) + test.endingChar;
                 }
                 ret = expandedStr;
@@ -14630,7 +14641,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         function loadFromResource(localeId, setCurrent) {
             var deferred = $q.defer();
             var loc = vlocale(localeId);
-            loadResource(loc).then(function () {
+            loadResource(loc).then(function() {
                 if (setCurrent === true) {
                     setLocale(loc);
                 }
@@ -14671,7 +14682,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
          * @public
          * @description
          * set translation options
-         * @param { object } options - various translation options
+         * @param {object} options - various translation options
          */
         function setOptions(options) {
             angular.merge(transOptions, options || {});
@@ -14700,12 +14711,12 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
             var deferred = $q.defer();
 
-            var fnAfterAppLoad = function(result){
+            var fnAfterAppLoad = function(result) {
                 loadEmfResource(loc, ret).then(function() {
                     ret.loaded = (ret.status > 0 || ret.statusEmf > 0);
                     deferred.resolve(result);
                     resources[loc] = ret;
-                });            
+                });
             };
 
             var path = epGlobalizationConfig.resourcePath + '/' + loc + '/locale-' + loc + '.json';
@@ -14713,7 +14724,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 ret.resource = result.data;
                 ret.status = 1;
                 fnAfterAppLoad(ret);
-            }, function(error, status) {
+            }, function() {
                 fnAfterAppLoad(null);
             });
 
@@ -14722,7 +14733,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
         //make sure locale is forced into lower case
         function vlocale(id) {
-            return (id || '').toLowerCase(); 
+            return (id || '').toLowerCase();
         }
 
         /**
@@ -14747,7 +14758,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 }
                 initializeCompleted = true;
             });
-        };
+        }
 
         /**
          * @ngdoc method
@@ -14790,7 +14801,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             if (updatedLocaleId === curLocaleId) {
                 curResource = resources[updatedLocaleId].resource;
                 curResourceEmf = (updatedLocaleId === 'en-us') ? {} : resources[updatedLocaleId].resourceEmf;
-            }         
+            }
         }
 
         /**
@@ -14814,7 +14825,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     entry.statusEmf = 1;
 
                     deferred.resolve(true);
-                }, function(error, status) {
+                }, function() {
                     entry.resourceEmf = {};
                     entry.statusEmf = 0;
 
@@ -17462,7 +17473,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
                     scope.listData = $filter('orderBy')(scope.data, scope.groupBy);
                     if (scope.sortBy && scope.sortBy !== '') {
-                        //By default sort is descending only for group by 
+                        //By default sort is descending only for group by
                         scope.isSortDesc = isGroupByDate;
                         //But user can override that
                         if (scope.sortByDesc === true) {
@@ -17667,7 +17678,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 };
 
                 //default function for formatting other additional title. User can overwrite
-                scope.wrapFormatOtherAdditionalTitle = function (field, record) {
+                scope.wrapFormatOtherAdditionalTitle = function(field, record) {
                     if (scope.formatOtherAdditionalTitle) {
                         return scope.formatOtherAdditionalTitle(field, record);
                     } else {
@@ -17731,6 +17742,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         };
     }
 })();
+
 /**
  * @ngdoc service
  * @name ep.list:epListService
@@ -18169,8 +18181,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
             if (settingsSrc) {
                 /*jshint validthis: true */
                 settings = JSON.parse(settingsSrc);
-            }
-            else {
+            } else {
                 settings = angular.merge({}, epLocalStorageConfig.settings);
             }
         }
@@ -18380,12 +18391,12 @@ angular.module('ep.menu.builder').
  * @example
  *
  */
-    epDynamicMenuCtrl.$inject = ['$scope', '$document', '$window'];
+    epDynamicMenuCtrl.$inject = ['$scope', '$document'];
     angular.module('ep.menu.builder')
         .controller('epDynamicMenuCtrl', epDynamicMenuCtrl);
 
     /*@ngInject*/
-    function epDynamicMenuCtrl($scope, $document, $window) {
+    function epDynamicMenuCtrl($scope, $document) {
         /*jshint validthis:true */
         var vm = this;
         vm.closeMenu = closeMenu;
@@ -18422,12 +18433,15 @@ angular.module('ep.menu.builder').
             // if position is fixed we are running on small width devices. Just skip this statement
             // if not, set css position of actionMenu
             if (vm.element.css('position') !== 'fixed') {
-                setTimeout(function () {
+                setTimeout(function() {
                     var elementWidth = $(vm.element)[0].scrollWidth || 150;
                     if (($(window).width() - args.event.clientX) > elementWidth) {
                         vm.element.css({ left: args.event.clientX + 'px', top: args.event.clientY + 'px' });
                     } else {
-                        vm.element.css({ left: (args.event.clientX - elementWidth) + 'px', top: args.event.clientY + 'px' });
+                        vm.element.css({
+                            left: (args.event.clientX - elementWidth) + 'px',
+                            top: args.event.clientY + 'px'
+                        });
                     }
                 }, 10);
             }
@@ -19438,7 +19452,7 @@ angular.module('ep.menu.builder').
             //apply translation if necessary
             cfg.title = epTranslationService.getStringIf(cfg.title);
             cfg.message = epTranslationService.getStringIf(cfg.message);
-            
+
             if (cfg.autoClose) {
                 cfg.messageHasTimer = (cfg.message.indexOf('{timer}') >= 0);
                 cfg.titleHasTimer = (cfg.title.indexOf('{timer}') >= 0);
@@ -20007,10 +20021,11 @@ angular.module('ep.menu.builder').
                     if (_.all(terms, function(phrase) {
                             var term = phrase.trim();
                             // every term must match at the beginning of at least one child caption
-                            return !term || _.any(childTerms, function(childTerm){
+                            return !term || _.any(childTerms, function(childTerm) {
                                 return childTerm.indexOf(term) === 0;
                             });
-                        })){
+                    }))
+                    {
                         results.push(child);
                     }
                 });
@@ -20145,7 +20160,7 @@ angular.module('ep.menu.builder').
                     }
                     // Make sure that the old value is not defined and that the new actually contain the menu
                     // so we can take in consideration that the menu it was initialized correctly.
-                    if (angular.isDefined(newValue) && angular.isUndefined(oldValue)){
+                    if (angular.isDefined(newValue) && angular.isUndefined(oldValue)) {
                         emitMenuEvent(epMultiLevelMenuConstants.MLM_INITIALIZED_EVENT);
                     }
                 });
@@ -20498,13 +20513,13 @@ angular.module('ep.menu.builder').
                 if (item.favorite) {
                     epLocalStorageService.update(menuKey, (mi._id || mi.id));
                     // Adding a new favorite and fire an added event just if the stop propagation is not defined/false.
-                    if(!stopPropagation){
+                    if (!stopPropagation) {
                         scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_FAVORITES_ADDED, mi);
                     }
                 } else {
                     epLocalStorageService.clear(menuKey);
                     // Delete the favorite on the list/cache and fire the deleted event just if the stop propagation is not defined/false.
-                    if(!stopPropagation){
+                    if (!stopPropagation) {
                         scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_FAVORITES_DELETED, mi);
                     }
                 }
@@ -22647,17 +22662,19 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                             if ($event.char) {
                                 //test for digits, decimal and minus
                                 if (/[0-9]|[.]|[-]/.test($event.char)) {
-                                    if ($event.target && $event.target.value && k === 190 && ($event.target.value.indexOf('.') > -1 || ctx.numberDecimals === 0)) {
+                                    if ($event.target && $event.target.value && k === 190 &&
+                                        ($event.target.value.indexOf('.') > -1 || ctx.numberDecimals === 0)) {
                                         return callFnKeyDown($event, value, k, false);
-                                    } 
+                                    }
                                     return callFnKeyDown($event, value, k, true);
                                 }
                             } else {
                                 //uncontrolled because we cannot trust key code
                                 if ((k > 47 && k < 59) || (k === 189) || (k === 190)) {
-                                    if ($event.target && $event.target.value && k === 190 && ($event.target.value.indexOf('.') > -1 || ctx.numberDecimals === 0)) {
+                                    if ($event.target && $event.target.value && k === 190 &&
+                                        ($event.target.value.indexOf('.') > -1 || ctx.numberDecimals === 0)) {
                                         return callFnKeyDown($event, value, k, false);
-                                    } 
+                                    }
                                     return callFnKeyDown($event, value, k, true);
                                 }
                             }
@@ -22691,73 +22708,69 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
             restrict: 'A',
             require: 'ngModel',
             link: function(scope, element, attrs, ngModel) {
-                if (!ngModel) { return; }
-
-                var mode = attrs.epNumberEditorFormat;
-                if (true) {
-                    scope.inputType = 'text';
-                    scope.decimals = scope.ctx.numberDecimals !== undefined ? scope.ctx.numberDecimals : 0;
-
-                    ngModel.$formatters.push(function(value) {
-                        if (attrs['type'] === 'number') {
-                            return value;
-                        } else {
-                            var v = value;
-                            if (!angular.isNumber(v) || v === NaN) {
-                                v = scope.validNgModel || 0;
-                            }
-                            return v.toFixed(scope.decimals);
-                        }
-                    });
-
-                    var regX = new RegExp(scope.ctx.pattern);
-
-                    ngModel.$parsers.push(function(value) {
-                        if (value) {
-                            var v = scope.validNgModel || 0;
-                            if (regX.test(value)) {
-                                v = parseFloat(value);
-                            } else {
-                                ngModel.$setViewValue(v.toFixed(scope.decimals));
-                                ngModel.$render();
-                            }
-                            return v;
-                        }
-                        return 0;
-                    });
-
-                    //ngModel.$validators.validCharacters = function(modelValue, viewValue) {
-                    //    var value = modelValue || viewValue;
-                    //    return true;
-                    //};
-
-                    scope.$watch('inputType', function(newValue, oldValue) {
-                        if (newValue !== oldValue && newValue === 'text') {
-                            var v = ngModel.$modelValue;
-                            if (!angular.isNumber(v) || v === NaN) {
-                                v = scope.validNgModel || 0;
-                                ngModel.$modelValue = v;
-                                ngModel.$setViewValue(v.toFixed(scope.decimals));
-                                ngModel.$render();
-                            } else {
-                                ngModel.$setViewValue(v.toFixed(scope.decimals));
-                                ngModel.$render();
-                            }
-                        }
-                    });
-
-                    scope.$watch('value', function(newValue, oldValue) {
-                        if (ngModel.$valid) {
-                            //keep track of a last valid value
-                            scope.validNgModel = newValue;
-                        } else {
-                            scope.validNgModel = oldValue;
-                        }
-                    });
-
-                } else {
-                    scope.inputType = 'number';
+                if (!ngModel) {
+                    return;
                 }
+
+                scope.inputType = 'text';
+                scope.decimals = scope.ctx.numberDecimals !== undefined ? scope.ctx.numberDecimals : 0;
+
+                ngModel.$formatters.push(function(value) {
+                    if (attrs.type === 'number') {
+                        return value;
+                    } else {
+                        var v = value;
+                        if (!angular.isNumber(v) || isNaN(v)) {
+                            v = scope.validNgModel || 0;
+                        }
+                        return v.toFixed(scope.decimals);
+                    }
+                });
+
+                var regX = new RegExp(scope.ctx.pattern);
+
+                ngModel.$parsers.push(function(value) {
+                    if (value) {
+                        var v = scope.validNgModel || 0;
+                        if (regX.test(value)) {
+                            v = parseFloat(value);
+                        } else {
+                            ngModel.$setViewValue(v.toFixed(scope.decimals));
+                            ngModel.$render();
+                        }
+                        return v;
+                    }
+                    return 0;
+                });
+
+                //ngModel.$validators.validCharacters = function(modelValue, viewValue) {
+                //    var value = modelValue || viewValue;
+                //    return true;
+                //};
+
+                scope.$watch('inputType', function(newValue, oldValue) {
+                    if (newValue !== oldValue && newValue === 'text') {
+                        var v = ngModel.$modelValue;
+                        if (!angular.isNumber(v) || isNaN(v)) {
+                            v = scope.validNgModel || 0;
+                            ngModel.$modelValue = v;
+                            ngModel.$setViewValue(v.toFixed(scope.decimals));
+                            ngModel.$render();
+                        } else {
+                            ngModel.$setViewValue(v.toFixed(scope.decimals));
+                            ngModel.$render();
+                        }
+                    }
+                });
+
+                scope.$watch('value', function(newValue, oldValue) {
+                    if (ngModel.$valid) {
+                        //keep track of a last valid value
+                        scope.validNgModel = newValue;
+                    } else {
+                        scope.validNgModel = oldValue;
+                    }
+                });
              }
         };
     }
@@ -24210,15 +24223,17 @@ angular.module('ep.record.editor').
 
                     }
                 });
-                $scope.buildCssClass = function(animate){
+
+                $scope.buildCssClass = function(animate) {
                     var cssClass = 'ep-fullscreen ep-view ';
-                    if(animate){
+                    if (animate) {
                         cssClass += ' ep-anim-speed-' + $scope.state.animationSpeed;
                         cssClass += ' ' + $scope.state.animationIn + ' ' + $scope.state.animationOut;
                         cssClass += ' ep-view-transistion ' + $scope.state.viewAnimation;
-                    } 
+                    }
                     return cssClass;
-                }
+                };
+
                 //launch help event function
                 $scope.launchHelp = function() {
                     $location.url('/help');
@@ -24256,7 +24271,7 @@ angular.module('ep.record.editor').
      *   <epshell><div ng-view></div></epshell>
      * </body>
      */
-(function () {
+(function() {
     'use strict';
 
     angular.module('ep.shell').
@@ -24550,7 +24565,7 @@ angular.module('ep.record.editor').
                             evt.preventDefault();
                             evt.stopPropagation();
                         }
-                        if(btn.type === 'toggle'){
+                        if (btn.type === 'toggle') {
                             btn.active = !btn.active;
                         }
                         btn.action(btn,evt);
@@ -24655,7 +24670,7 @@ angular.module('ep.record.editor').
             function setCurrentModeFlags(viewScope) {
                 var mode = shellState.viewSettings[shellState.mediaMode];
                 var left = shellState.viewSettings.sidebar.left || {
-                    showToggleButton: true, 
+                    showToggleButton: true,
                     enabled: false,
                     toggleButtonIcon: 'fa-bars'
                 };
@@ -24663,7 +24678,7 @@ angular.module('ep.record.editor').
                     left.enabled = mode.enableLeftSidebar;
                 }
                 var right = shellState.viewSettings.sidebar.right || {
-                    showToggleButton: true, 
+                    showToggleButton: true,
                     enabled: false,
                     toggleButtonIcon: 'fa-bars'
                 };
@@ -24758,7 +24773,7 @@ angular.module('ep.record.editor').
                     // initialize the sidebar as "shown" if we're in large mode, otherwise false.
                     shellState.showSidebar = isMediaModeLarge();
                     $rootScope.initComplete = true;
-                }
+                };
 
                 fnStartInit();
             }
@@ -29492,7 +29507,7 @@ angular.module('ep.signature').directive('epSignature',
                     if (angular.isFunction(val)) {
                         val(key, msg, response, logEntry);
                     }
-                })
+                });
             }
 
             function getErrorMsg(response, defaultMsg) {
@@ -29526,10 +29541,18 @@ angular.module('ep.signature').directive('epSignature',
                 if (!httpObj.headers) {
                     httpObj.headers = {};
                 }
-                httpObj.headers['Authorization'] = 'Bearer ' + tkn.token.AccessToken;
+                var auth;
+                if (!auth) {
+                    //The "auth" is include in if statement only for jshint to pass!
+                    auth = 'Bearer ' + tkn.token.AccessToken;
+                }
+                // jshint ignore:start
+                httpObj.headers['Authorization'] = auth;
                 if (!httpObj.headers['Content-Type']) {
                     httpObj.headers['Content-Type'] = 'application/json';
                 }
+                // jshint ignore:end
+
                 if (options && options.headers && angular.isObject(options.headers)) {
                     angular.forEach(options.headers, function(value, key) {
                         httpObj.headers[key] = JSON.stringify(value);
@@ -29651,8 +29674,6 @@ angular.module('ep.signature').directive('epSignature',
                 if (!tkn || !serverUrl) {
                     return returnNoToken(true);
                 }
-
-
                 var d = data;
                 if (data && !angular.isString(data)) {
                     d = JSON.stringify(d);
@@ -29889,16 +29910,16 @@ angular.module('ep.signature').directive('epSignature',
                     $scope.hasError = true;
                     switch (response.status) {
                         case 401:
-                            $scope.status =
-                                epTranslationService.getString('emf.ep.token.ep-login-view.message.connectionUserPassword');
+                            $scope.status = epTranslationService.getString(
+                                    'emf.ep.token.ep-login-view.message.connectionUserPassword');
                             break;
                         case 400:
-                            $scope.status =
-                                epTranslationService.getString('emf.ep.token.ep-login-view.message.tokenAuthError');
+                            $scope.status = epTranslationService.getString(
+                                    'emf.ep.token.ep-login-view.message.tokenAuthError');
                             break;
                         default:
-                            $scope.status =
-                                epTranslationService.getString('emf.ep.token.ep-login-view.message.connectionUserPassword');
+                            $scope.status = epTranslationService.getString(
+                                    'emf.ep.token.ep-login-view.message.connectionUserPassword');
                     }
                 });
         };

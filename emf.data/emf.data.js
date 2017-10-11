@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.17 built: 11-10-2017
+ * version:1.0.14-dev.258 built: 11-10-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.17","built":"2017-10-11"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.14-dev.258","built":"2017-10-11"};
 
 (function() {
     'use strict';
@@ -140,7 +140,7 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                     if (angular.isFunction(val)) {
                         val(key, msg, response, logEntry);
                     }
-                })
+                });
             }
 
             function getErrorMsg(response, defaultMsg) {
@@ -174,10 +174,18 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                 if (!httpObj.headers) {
                     httpObj.headers = {};
                 }
-                httpObj.headers['Authorization'] = 'Bearer ' + tkn.token.AccessToken;
+                var auth;
+                if (!auth) {
+                    //The "auth" is include in if statement only for jshint to pass!
+                    auth = 'Bearer ' + tkn.token.AccessToken;
+                }
+                // jshint ignore:start
+                httpObj.headers['Authorization'] = auth;
                 if (!httpObj.headers['Content-Type']) {
                     httpObj.headers['Content-Type'] = 'application/json';
                 }
+                // jshint ignore:end
+
                 if (options && options.headers && angular.isObject(options.headers)) {
                     angular.forEach(options.headers, function(value, key) {
                         httpObj.headers[key] = JSON.stringify(value);
@@ -299,8 +307,6 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                 if (!tkn || !serverUrl) {
                     return returnNoToken(true);
                 }
-
-
                 var d = data;
                 if (data && !angular.isString(data)) {
                     d = JSON.stringify(d);
@@ -537,16 +543,16 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                     $scope.hasError = true;
                     switch (response.status) {
                         case 401:
-                            $scope.status =
-                                epTranslationService.getString('emf.ep.token.ep-login-view.message.connectionUserPassword');
+                            $scope.status = epTranslationService.getString(
+                                    'emf.ep.token.ep-login-view.message.connectionUserPassword');
                             break;
                         case 400:
-                            $scope.status =
-                                epTranslationService.getString('emf.ep.token.ep-login-view.message.tokenAuthError');
+                            $scope.status = epTranslationService.getString(
+                                    'emf.ep.token.ep-login-view.message.tokenAuthError');
                             break;
                         default:
-                            $scope.status =
-                                epTranslationService.getString('emf.ep.token.ep-login-view.message.connectionUserPassword');
+                            $scope.status = epTranslationService.getString(
+                                    'emf.ep.token.ep-login-view.message.connectionUserPassword');
                     }
                 });
         };
@@ -3649,9 +3655,10 @@ angular.module('ep.binding').
              * @param {object} data - data row to replace the row
              */
             function replaceDataRow(row, data) {
-                //once we know we have a change, create the delta 
-                if (!state.original)
+                //once we know we have a change, create the delta
+                if (!state.original) {
                     state.original = angular.merge([], state.data);
+                }
 
                 if (!state.data || (state.data.length < 1)) {
                     return;
@@ -3748,9 +3755,10 @@ angular.module('ep.binding').
             function deleteRow(row) {
                 var index = getRowIndex(row);
                 if (index !== -1) {
-                    //once we know we have a change, create the delta 
-                    if (!state.original)
+                    //once we know we have a change, create the delta
+                    if (!state.original) {
                         state.original = angular.merge([], state.data);
+                    }
 
                     if (state.addedRows[index] !== undefined) {
                         //if we are deleting an added row, then it should be removed from both added and deleted
@@ -3807,9 +3815,10 @@ angular.module('ep.binding').
              * @returns {int} added row index
              */
             function addRow(dataRow, setCurrentRow) {
-                //once we know we have a change, create the delta 
-                if (!state.original)
+                //once we know we have a change, create the delta
+                if (!state.original) {
                     state.original = angular.merge([], state.data);
+                }
 
                 if (!angular.isArray(state.data)) {
                     state.data = [];
@@ -3879,9 +3888,10 @@ angular.module('ep.binding').
                 var rowIdx = state.row;
                 var record = state.data[rowIdx];
                 if (arguments.length > 1) {
-                    //once we know we have a change, create the delta 
-                    if (!state.original)
+                    //once we know we have a change, create the delta
+                    if (!state.original) {
                         state.original = angular.merge([], state.data);
+                    }
 
                     var oldValue = record[column];
                     if (record[column] !== value) {
@@ -4278,6 +4288,7 @@ angular.module('ep.binding').
     }
 
 }());
+
 (function() {
     'use strict';
     /**
@@ -4971,7 +4982,6 @@ angular.module('ep.binding').
             currencyMaxDecimalPlaces = maxNumDecimals;
         }
 
-
         //private functions --->
 
         //Leave this for future use!!!
@@ -5108,26 +5118,32 @@ angular.module('ep.binding').
                             var max = Math.pow(10, wholeLen);
                             if (decLen > 0) {
                                 max = max - (1 / (Math.pow(10, decLen)));
-                            }
-                            else {
+                            } else {
                                 max = max - 1;
                             }
                             oFormat.Max = max;
                             oFormat.AllowNegative = (fmt.indexOf('-') > -1);
                             if (oFormat.AllowNegative) {
                                 oFormat.Min = -oFormat.Max;
-                            }
-                            else {
+                            } else {
                                 oFormat.Min = 0;
                             }
                         }
                         if (currencyMaxDecimalPlaces !== undefined && oFormat.Decimals > currencyMaxDecimalPlaces) {
-                            //if we have set currency max decimals override then apply it if currency attribute is found
-                            var attrCurrency = _.find(fieldAttributes, function(attr) {
-                                return (attr['AttributeName'].toLowerCase() === 'biztype' && attr['Value'].toLowerCase() === 'currency');
-                            });
-                            if (attrCurrency) {
-                                oFormat.Decimals = currencyMaxDecimalPlaces;
+                            //if we have set currency max decimals override
+                            //then apply it if currency attribute is found
+                            if (fieldAttributes) {
+                                var attrCurrency;
+                                // jshint ignore:start
+                                attrCurrency = _.find(fieldAttributes, function(attr) {
+                                    var attrName = attr['AttributeName'].toLowerCase();
+                                    var attrValue = attr['Value'].toLowerCase();
+                                    return (attr && attrName === 'biztype' && attrValue === 'currency');
+                                });
+                                // jshint ignore:end
+                                if (attrCurrency) {
+                                    oFormat.Decimals = currencyMaxDecimalPlaces;
+                                }
                             }
                         }
                     }

@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.17 built: 11-10-2017
+ * version:1.0.14-dev.258 built: 11-10-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.17","built":"2017-10-11"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.14-dev.258","built":"2017-10-11"};
 
 (function() {
     'use strict';
@@ -406,10 +406,11 @@ angular.module('ep.menu.builder', [
                     if (_.all(terms, function(phrase) {
                             var term = phrase.trim();
                             // every term must match at the beginning of at least one child caption
-                            return !term || _.any(childTerms, function(childTerm){
+                            return !term || _.any(childTerms, function(childTerm) {
                                 return childTerm.indexOf(term) === 0;
                             });
-                        })){
+                    }))
+                    {
                         results.push(child);
                     }
                 });
@@ -544,7 +545,7 @@ angular.module('ep.menu.builder', [
                     }
                     // Make sure that the old value is not defined and that the new actually contain the menu
                     // so we can take in consideration that the menu it was initialized correctly.
-                    if (angular.isDefined(newValue) && angular.isUndefined(oldValue)){
+                    if (angular.isDefined(newValue) && angular.isUndefined(oldValue)) {
                         emitMenuEvent(epMultiLevelMenuConstants.MLM_INITIALIZED_EVENT);
                     }
                 });
@@ -897,13 +898,13 @@ angular.module('ep.menu.builder', [
                 if (item.favorite) {
                     epLocalStorageService.update(menuKey, (mi._id || mi.id));
                     // Adding a new favorite and fire an added event just if the stop propagation is not defined/false.
-                    if(!stopPropagation){
+                    if (!stopPropagation) {
                         scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_FAVORITES_ADDED, mi);
                     }
                 } else {
                     epLocalStorageService.clear(menuKey);
                     // Delete the favorite on the list/cache and fire the deleted event just if the stop propagation is not defined/false.
-                    if(!stopPropagation){
+                    if (!stopPropagation) {
                         scope.emitMenuEvent(epMultiLevelMenuConstants.MLM_FAVORITES_DELETED, mi);
                     }
                 }
@@ -2295,7 +2296,7 @@ angular.module('ep.menu.builder', [
 
                     scope.listData = $filter('orderBy')(scope.data, scope.groupBy);
                     if (scope.sortBy && scope.sortBy !== '') {
-                        //By default sort is descending only for group by 
+                        //By default sort is descending only for group by
                         scope.isSortDesc = isGroupByDate;
                         //But user can override that
                         if (scope.sortByDesc === true) {
@@ -2500,7 +2501,7 @@ angular.module('ep.menu.builder', [
                 };
 
                 //default function for formatting other additional title. User can overwrite
-                scope.wrapFormatOtherAdditionalTitle = function (field, record) {
+                scope.wrapFormatOtherAdditionalTitle = function(field, record) {
                     if (scope.formatOtherAdditionalTitle) {
                         return scope.formatOtherAdditionalTitle(field, record);
                     } else {
@@ -2564,6 +2565,7 @@ angular.module('ep.menu.builder', [
         };
     }
 })();
+
 /**
  * @ngdoc service
  * @name ep.list:epListService
@@ -2947,12 +2949,12 @@ angular.module('ep.menu.builder').
  * @example
  *
  */
-    epDynamicMenuCtrl.$inject = ['$scope', '$document', '$window'];
+    epDynamicMenuCtrl.$inject = ['$scope', '$document'];
     angular.module('ep.menu.builder')
         .controller('epDynamicMenuCtrl', epDynamicMenuCtrl);
 
     /*@ngInject*/
-    function epDynamicMenuCtrl($scope, $document, $window) {
+    function epDynamicMenuCtrl($scope, $document) {
         /*jshint validthis:true */
         var vm = this;
         vm.closeMenu = closeMenu;
@@ -2989,12 +2991,15 @@ angular.module('ep.menu.builder').
             // if position is fixed we are running on small width devices. Just skip this statement
             // if not, set css position of actionMenu
             if (vm.element.css('position') !== 'fixed') {
-                setTimeout(function () {
+                setTimeout(function() {
                     var elementWidth = $(vm.element)[0].scrollWidth || 150;
                     if (($(window).width() - args.event.clientX) > elementWidth) {
                         vm.element.css({ left: args.event.clientX + 'px', top: args.event.clientY + 'px' });
                     } else {
-                        vm.element.css({ left: (args.event.clientX - elementWidth) + 'px', top: args.event.clientY + 'px' });
+                        vm.element.css({
+                            left: (args.event.clientX - elementWidth) + 'px',
+                            top: args.event.clientY + 'px'
+                        });
                     }
                 }, 10);
             }

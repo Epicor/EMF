@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.17 built: 11-10-2017
+ * version:1.0.14-dev.258 built: 11-10-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.17","built":"2017-10-11"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.14-dev.258","built":"2017-10-11"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -1763,8 +1763,7 @@ if (!epEmfGlobal) {
             if (settingsSrc) {
                 /*jshint validthis: true */
                 settings = JSON.parse(settingsSrc);
-            }
-            else {
+            } else {
                 settings = angular.merge({}, epLocalStorageConfig.settings);
             }
         }
@@ -4106,7 +4105,7 @@ function() {
             //apply translation if necessary
             cfg.title = epTranslationService.getStringIf(cfg.title);
             cfg.message = epTranslationService.getStringIf(cfg.message);
-            
+
             if (cfg.autoClose) {
                 cfg.messageHasTimer = (cfg.message.indexOf('{timer}') >= 0);
                 cfg.titleHasTimer = (cfg.title.indexOf('{timer}') >= 0);
@@ -4429,7 +4428,8 @@ function() {
 
             //we use the epSysConfig provider to perform the $http read against sysconfig.json
             //epSysConfig.mergeSection() function merges the defaults with sysconfig.json settings
-            this.$get = ['$log', 'epSysConfig', 'epApplicationConfig', function($log, epSysConfig, epApplicationConfig) {
+            this.$get = ['$log', 'epSysConfig', 'epApplicationConfig',
+                function($log, epSysConfig, epApplicationConfig) {
                 epSysConfig.mergeSection('ep.globalization', config);
 
                 ///This loads the global emf resources
@@ -4516,7 +4516,7 @@ function() {
 })();
 
 
-(function () {
+(function() {
     'use strict';
     /**
      * @ngdoc service
@@ -4528,13 +4528,13 @@ function() {
      * @example
      *
      */
-    epTranslationService.$inject = ['$q', '$http', '$rootScope', 'epUtilsService', 'epGlobalizationConfig', 'epGlobalizationConstants', 'epApplicationConfig'];
+    epTranslationService.$inject = ['$q', '$http', '$rootScope', 'epUtilsService', 'epGlobalizationConfig', 'epGlobalizationConstants'];
     angular.module('ep.globalization').
         service('epTranslationService', epTranslationService);
 
     /*@ngInject*/
-    function epTranslationService($q, $http, $rootScope, epUtilsService, epGlobalizationConfig,
-        epGlobalizationConstants, epApplicationConfig) {
+    function epTranslationService($q, $http, $rootScope, epUtilsService,
+        epGlobalizationConfig, epGlobalizationConstants) {
 
         var resources = {}; //all locale resources are held here
         var baseLocaleId = 'en-us'; //base locale
@@ -4602,23 +4602,21 @@ function() {
          */
         function getInfo() {
             var baseLocCount = 0;
-            if (angular.is = Object(baseResource)) {
+            if (angular.isObject(baseResource)) {
                 baseLocCount = Object.keys(baseResource).length;
             }
             var baseLocEmfCount = 0;
-            if (angular.is = Object(epGlobalizationConfig.emfResources)) {
+            if (angular.isObject(epGlobalizationConfig.emfResources)) {
                 baseLocEmfCount = Object.keys(epGlobalizationConfig.emfResources).length;
             }
             var curLocCount = 0;
-            if (angular.is = Object(curResource)) {
+            if (angular.isObject(curResource)) {
                 curLocCount = Object.keys(curResource).length;
             }
             var curLocEmfCount = 0;
-            if (angular.is = Object(curResourceEmf)) {
+            if (angular.isObject(curResourceEmf)) {
                 curLocEmfCount = Object.keys(curResourceEmf).length;
             }
-
-            epGlobalizationConfig.emfResources ? epGlobalizationConfig.emfResources.length : 0;
             return {
                 baseLocaleId: baseLocaleId,
                 baseLocaleCount: baseLocCount,
@@ -4707,7 +4705,9 @@ function() {
                 var newLen = (origLen + percLen < test.minChars) ? test.minChars : (origLen + percLen);
                 var expansionLen = newLen - origLen;
                 if (expansionLen > 0) {
-                    if (expansionLen > 1) newLen--;
+                    if (expansionLen > 1) {
+                        newLen--;
+                    }
                     expandedStr = expandedStr.padEnd(newLen, test.fillChar) + test.endingChar;
                 }
                 ret = expandedStr;
@@ -4769,7 +4769,7 @@ function() {
         function loadFromResource(localeId, setCurrent) {
             var deferred = $q.defer();
             var loc = vlocale(localeId);
-            loadResource(loc).then(function () {
+            loadResource(loc).then(function() {
                 if (setCurrent === true) {
                     setLocale(loc);
                 }
@@ -4810,7 +4810,7 @@ function() {
          * @public
          * @description
          * set translation options
-         * @param { object } options - various translation options
+         * @param {object} options - various translation options
          */
         function setOptions(options) {
             angular.merge(transOptions, options || {});
@@ -4839,12 +4839,12 @@ function() {
 
             var deferred = $q.defer();
 
-            var fnAfterAppLoad = function(result){
+            var fnAfterAppLoad = function(result) {
                 loadEmfResource(loc, ret).then(function() {
                     ret.loaded = (ret.status > 0 || ret.statusEmf > 0);
                     deferred.resolve(result);
                     resources[loc] = ret;
-                });            
+                });
             };
 
             var path = epGlobalizationConfig.resourcePath + '/' + loc + '/locale-' + loc + '.json';
@@ -4852,7 +4852,7 @@ function() {
                 ret.resource = result.data;
                 ret.status = 1;
                 fnAfterAppLoad(ret);
-            }, function(error, status) {
+            }, function() {
                 fnAfterAppLoad(null);
             });
 
@@ -4861,7 +4861,7 @@ function() {
 
         //make sure locale is forced into lower case
         function vlocale(id) {
-            return (id || '').toLowerCase(); 
+            return (id || '').toLowerCase();
         }
 
         /**
@@ -4886,7 +4886,7 @@ function() {
                 }
                 initializeCompleted = true;
             });
-        };
+        }
 
         /**
          * @ngdoc method
@@ -4929,7 +4929,7 @@ function() {
             if (updatedLocaleId === curLocaleId) {
                 curResource = resources[updatedLocaleId].resource;
                 curResourceEmf = (updatedLocaleId === 'en-us') ? {} : resources[updatedLocaleId].resourceEmf;
-            }         
+            }
         }
 
         /**
@@ -4953,7 +4953,7 @@ function() {
                     entry.statusEmf = 1;
 
                     deferred.resolve(true);
-                }, function(error, status) {
+                }, function() {
                     entry.resourceEmf = {};
                     entry.statusEmf = 0;
 
@@ -5227,15 +5227,17 @@ function() {
 
                     }
                 });
-                $scope.buildCssClass = function(animate){
+
+                $scope.buildCssClass = function(animate) {
                     var cssClass = 'ep-fullscreen ep-view ';
-                    if(animate){
+                    if (animate) {
                         cssClass += ' ep-anim-speed-' + $scope.state.animationSpeed;
                         cssClass += ' ' + $scope.state.animationIn + ' ' + $scope.state.animationOut;
                         cssClass += ' ep-view-transistion ' + $scope.state.viewAnimation;
-                    } 
+                    }
                     return cssClass;
-                }
+                };
+
                 //launch help event function
                 $scope.launchHelp = function() {
                     $location.url('/help');
@@ -5273,7 +5275,7 @@ function() {
      *   <epshell><div ng-view></div></epshell>
      * </body>
      */
-(function () {
+(function() {
     'use strict';
 
     angular.module('ep.shell').
@@ -5567,7 +5569,7 @@ function() {
                             evt.preventDefault();
                             evt.stopPropagation();
                         }
-                        if(btn.type === 'toggle'){
+                        if (btn.type === 'toggle') {
                             btn.active = !btn.active;
                         }
                         btn.action(btn,evt);
@@ -5672,7 +5674,7 @@ function() {
             function setCurrentModeFlags(viewScope) {
                 var mode = shellState.viewSettings[shellState.mediaMode];
                 var left = shellState.viewSettings.sidebar.left || {
-                    showToggleButton: true, 
+                    showToggleButton: true,
                     enabled: false,
                     toggleButtonIcon: 'fa-bars'
                 };
@@ -5680,7 +5682,7 @@ function() {
                     left.enabled = mode.enableLeftSidebar;
                 }
                 var right = shellState.viewSettings.sidebar.right || {
-                    showToggleButton: true, 
+                    showToggleButton: true,
                     enabled: false,
                     toggleButtonIcon: 'fa-bars'
                 };
@@ -5775,7 +5777,7 @@ function() {
                     // initialize the sidebar as "shown" if we're in large mode, otherwise false.
                     shellState.showSidebar = isMediaModeLarge();
                     $rootScope.initComplete = true;
-                }
+                };
 
                 fnStartInit();
             }
