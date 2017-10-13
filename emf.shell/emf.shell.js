@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.20-dev.4 built: 12-10-2017
+ * version:1.0.20-dev.5 built: 12-10-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.20-dev.4","built":"2017-10-12"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.20-dev.5","built":"2017-10-12"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -4742,14 +4742,22 @@ function() {
          * @param {string} localeId - id of locale to be loaded
          * @param {object} resource - json resource (contains string id and string pairs)
          * @param {bool} setCurrent - optional parameter to set this locale as current (active)
+         * @param {bool} merge - optional parameter to merge resources instead of replacement
          */
-        function load(localeId, resource, setCurrent) {
+        function load(localeId, resource, setCurrent, merge) {
             var loc = vlocale(localeId);
-            resources[loc] = {
-                locale: loc,
-                resource: resource,
-                status: 1
+
+            var res = resources[loc] || {
+                localeId: loc,
+                resource: {},
+                status: 1,
+                resourceEmf: {},
+                statusEmf: 0,
+                loaded: true
             };
+            res.resource = (merge === true) ? angular.merge(res.resource, resource) : resource;
+            resources[loc] = res;
+
             if (setCurrent === true) {
                 setLocale(loc);
             }
@@ -4898,7 +4906,7 @@ function() {
          */
         function hasLocale(localeId) {
             var loc = vlocale(localeId);
-            return (resources[loc]);
+            return !!resources[loc];
         }
 
         /**
