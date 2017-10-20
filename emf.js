@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.20-dev.35 built: 20-10-2017
+ * version:1.0.20-dev.36 built: 20-10-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.20-dev.35","built":"2017-10-20"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.20-dev.36","built":"2017-10-20"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -461,7 +461,7 @@ angular.module('ep.menu.builder', [
 (function() {
     'use strict';
 
-    angular.module('ep.modaldialog', ['ep.templates']);
+    angular.module('ep.modaldialog', ['ep.templates', 'ep.local.storage', 'ep.globalization']);
 })();
 
 /**
@@ -557,7 +557,8 @@ angular.module('ep.record.editor', [
         'ep.sysconfig',
         'ep.application',
         'ep.modaldialog',
-        'ep.console'
+        'ep.console',
+        'ep.globalization'
     ]);
 })();
 

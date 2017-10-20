@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.20-dev.35 built: 20-10-2017
+ * version:1.0.20-dev.36 built: 20-10-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.20-dev.35","built":"2017-10-20"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.20-dev.36","built":"2017-10-20"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -197,7 +197,7 @@ if (!epEmfGlobal) {
 (function() {
     'use strict';
 
-    angular.module('ep.modaldialog', ['ep.templates']);
+    angular.module('ep.modaldialog', ['ep.templates', 'ep.local.storage', 'ep.globalization']);
 })();
 
 /**
@@ -237,7 +237,8 @@ if (!epEmfGlobal) {
         'ep.sysconfig',
         'ep.application',
         'ep.modaldialog',
-        'ep.console'
+        'ep.console',
+        'ep.globalization'
     ]);
 })();
 
