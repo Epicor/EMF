@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.20-dev.36 built: 20-10-2017
+ * version:1.0.20-dev.37 built: 20-10-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.20-dev.36","built":"2017-10-20"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.20-dev.37","built":"2017-10-20"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -21943,7 +21943,12 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
             type {string} - 'btn' - if button, otherwise a link
         # imageHeight {int} - image height for image editor
         # imageWidth {int} - image width for image editor
-        # fnOnFldValidate(ctx, event, inputValue, originalValue) - callback function on validation
+        # fnOnFldValidate(ctx, event, inputValue, originalValue, settings) - callback function on validation
+            Note: originalValue is only passed when ep-record-editor is used.
+            use $rootScope.$broadcast(epRecordEditorConstants.REC_EDITOR_VALIDATE_CONTROLS_TRIGGER, options) to manually trigger validation
+            options {userValidation,fnOnFldValidate}
+                userValidation: true, if fnOnFldValidate is to be called
+                fnOnFldValidate: if you want to override fnOnFldValidate function
         # fnOnChange(ctx, event) - callback function on change
         # fnOnBlur(ctx, event) - callback function on change
         # classLabel {string} - label class (used in is-row mode to set boostrap column width, eg. 'col-xs-4')
@@ -21975,13 +21980,13 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
     *   };
     *   $scope.valueText = 'My Text';
     */
-    epEditorControlDirective.$inject = ['$log', '$timeout', '$window', '$compile', '$q', 'epUtilsService', 'epFeatureDetectionService'];
+    epEditorControlDirective.$inject = ['$log', '$timeout', '$window', '$compile', '$q', 'epUtilsService', 'epFeatureDetectionService', 'epRecordEditorConstants'];
     angular.module('ep.record.editor').
         directive('epEditorControl', epEditorControlDirective);
 
     /*@ngInject*/
     function epEditorControlDirective($log, $timeout, $window, $compile, $q,
-                                      epUtilsService, epFeatureDetectionService) {
+        epUtilsService, epFeatureDetectionService, epRecordEditorConstants) {
 
         var defaultSizeClass = 'col-xs-12 col-sm-8 col-md-6 col-lg-3';
 
@@ -21990,31 +21995,33 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
             MaxLength: 30
         };
 
-        function doValidation(ctx, ev, focus) {
-            if (!ctx.col.fnOnFldValidate) {
-                return;
-            }
-            if (getRecordEditor(ctx.control.scope)) {
-                var re = getRecordEditor(ctx.control.scope);
-                re.doValidation(ctx.control.scope.options.recordEditor.state, ctx, ev, focus);
-            } else {
-                ctx.isInvalid = false;
-                var newValue = ctx.control.scope.value;
-                $q.when(ctx.col.fnOnFldValidate(ctx, ev, newValue)).then(function(result) {
-                    if (result === false) {
-                        ctx.isInvalid = true;
-                    }
-                    if (focus) {
-                        ctx.fnSetFocus();
-                    }
-                    $timeout(function() {
-                        ctx.fnDoValidations();
+        function doValidation(ctx, ev, focus, settings) {
+            var fnSettings = settings || { trigger: 'unknown' };
+            var fnOnFldValidate = ctx.col.fnOnFldValidate || settings.fnOnFldValidate;
+            if (fnOnFldValidate) {
+                if (getRecordEditor(ctx.control.scope)) {
+                    var re = getRecordEditor(ctx.control.scope);
+                    re.doValidation(ctx.control.scope.options.recordEditor.state, ctx, ev, focus);
+                } else {
+                    ctx.isInvalid = false;
+                    var newValue = ctx.control.scope.value;
+                    $q.when(fnOnFldValidate(ctx, ev, newValue, undefined, fnSettings)).then(function(result) {
+                        if (result === false) {
+                            ctx.isInvalid = true;
+                        }
+                        if (focus) {
+                            ctx.fnSetFocus();
+                        }
+                        $timeout(function() {
+                            ctx.fnDoValidations();
+                        });
                     });
+                }
+            } else {
+                $timeout(function() {
+                    ctx.fnDoValidations();
                 });
             }
-            $timeout(function() {
-                ctx.fnDoValidations();
-            });
         }
 
         function getEditorByValue(v) {
@@ -22167,7 +22174,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                             angular.element(edt).addClass('ng-dirty');
                         }
                         if (ctx.updatable) {
-                            doValidation(ctx, {}, focus === true);
+                            doValidation(ctx, {}, focus === true, {trigger:'setValue'});
                         }
                         ctx.fnOnChange({}, ctx);
                     }
@@ -22200,7 +22207,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                 }
                 if (ctx.updatable) {
                     if (angular.element(ev.currentTarget).hasClass('ng-dirty')) {
-                        doValidation(ctx, ev, false);
+                        doValidation(ctx, ev, false, {trigger:'blur'});
                     }
                 }
                 if (ctx.col.fnOnBlur) {
@@ -22443,12 +22450,18 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                 //scope.overHandler = function(drop) {
                 //};
 
-                scope.$on('EP-VALIDATE-EDITOR-CONTROLS', function() {
+                scope.$on(epRecordEditorConstants.REC_EDITOR_VALIDATE_CONTROLS_TRIGGER, function(event, options) {
                     scope.ctx.displayInvalid = true;
                     scope.ctx.showInvalidFields = true;
-                    scope.ctx.fnDoValidations();
 
-                    if (scope.state.formCtrl.$error.required) {
+                    if (options && options.userValidation === true) {
+                        doValidation(scope.ctx, {}, (options.focus === true),
+                            { trigger: 'event', fnOnFldValidate: options.fnOnFldValidate, options: options || {} });
+                    } else {
+                        scope.ctx.fnDoValidations();
+                    }
+
+                    if (scope.state.formCtrl && scope.state.formCtrl.$error.required) {
                         var rq = _.find(scope.state.formCtrl.$error.required, function(req) {
                             return scope.ctx.name === req.$name;
                         });
@@ -22457,7 +22470,6 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                         }
                     }
                 });
-
             },
             scope: {
                 column: '=',
@@ -22911,6 +22923,25 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
         });
 })();
 
+/**
+ * @ngdoc object
+ * @name ep.record.editor.object:epRecordEditorConstants
+ * @description
+ * Constants for epRecordEditorConstants.
+ * Events:
+    * <pre>
+    *   REC_EDITOR_VALIDATE_CONTROLS_TRIGGER - trigger event to validate all ep-editor controls
+    * </pre>
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.record.editor').constant('epRecordEditorConstants', {
+        //EVENT NAMES:
+        REC_EDITOR_VALIDATE_CONTROLS_TRIGGER: 'EP-VALIDATE-EDITOR-CONTROLS'
+    });
+})();
+
 (function() {
     'use strict';
     /**
@@ -23033,7 +23064,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                 state.lastInputs[dc] = inputValue;
                 if (compareValues(originalValue, inputValue)) {
                     ctx.isInvalid = false;
-                    $q.when(ctx.col.fnOnFldValidate(ctx, ev, inputValue, originalValue)).then(function(result) {
+                    $q.when(ctx.col.fnOnFldValidate(ctx, ev, inputValue, originalValue, {trigger:'recordEditorValidation'})).then(function(result) {
                         if (result === false) {
                             ctx.isInvalid = true;
                         }
