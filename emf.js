@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.20-dev.51 built: 24-10-2017
+ * version:1.0.20-dev.52 built: 24-10-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.20-dev.51","built":"2017-10-24"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.20-dev.52","built":"2017-10-24"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -14586,6 +14586,25 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                 ret = expandedStr;
             }
             return ret;
+        }
+
+        function padEnd(str, targetLength, padString) {
+            //floor if number or convert non-number to 0;
+            targetLength = targetLength >> 0;
+            padString = padString || ' ';
+            if (str.length > targetLength) {
+                return str;
+            } else {
+                targetLength = targetLength - str.length;
+                if (targetLength > padString.length) {
+                    //append to original to ensure we are longer than needed
+                    var n = targetLength / padString.length;
+                    for (var i = 0; i < n; i++) {
+                        padString += padString;
+                    }
+                }
+                return str + padString.slice(0, targetLength);
+            }
         }
 
         /**
