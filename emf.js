@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.20-dev.54 built: 25-10-2017
+ * version:1.0.20-dev.55 built: 25-10-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.20-dev.54","built":"2017-10-25"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.20-dev.55","built":"2017-10-25"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -17496,7 +17496,6 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
 
                     scope.searchType = 'text';
                     scope.searchPrompt = '';
-                    scope.groupByLabel = '';
                     var isGroupByDate = !!(scope.groupByType && scope.groupByType === 'sdate');
 
                     scope.filteredData = [];
@@ -17530,7 +17529,9 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             scope.directory = epListService.getDirectoryByDate(scope.listData, scope.groupBy);
                         } else {
                             if (scope.groupByType === 'sfield') {
-                                scope.searchPrompt = epTranslationService.getString('emf.ep.list.label.searchBy') + ' ' + scope.groupByLabel;
+                                if (scope.groupByLabel) {
+                                    scope.searchPrompt = epTranslationService.getString('emf.ep.list.label.searchBy') + ' ' + '[' + scope.groupByLabel + ']';
+                                }
                                 scope.directory = epListService.getDirectoryByField(scope.listData, scope.groupBy);
                                 scope.searchType = 'sfield';
                                 scope.filteredData = scope.listData;
