@@ -21967,6 +21967,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
             use $rootScope.$broadcast(epRecordEditorConstants.REC_EDITOR_VALIDATE_CONTROLS_TRIGGER, options) to manually trigger validation
             options {userValidation,fnOnFldValidate}
                 userValidation: true, if fnOnFldValidate is to be called
+                focus: true, to set focus
                 fnOnFldValidate: if you want to override fnOnFldValidate function
         # fnOnChange(ctx, event) - callback function on change
         # fnOnBlur(ctx, event) - callback function on change
@@ -22015,32 +22016,39 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
         };
 
         function doValidation(ctx, ev, focus, settings) {
+            var deferred = $q.defer();
+
             var fnSettings = settings || { trigger: 'unknown' };
-            var fnOnFldValidate = ctx.col.fnOnFldValidate || settings.fnOnFldValidate;
-            if (fnOnFldValidate) {
-                if (getRecordEditor(ctx.control.scope)) {
-                    var re = getRecordEditor(ctx.control.scope);
-                    re.doValidation(ctx.control.scope.options.recordEditor.state, ctx, ev, focus);
-                } else {
+
+            if (getRecordEditor(ctx.control.scope)) {
+                var re = getRecordEditor(ctx.control.scope);
+                re.doValidation(ctx.control.scope.options.recordEditor.state, ctx, ev, focus);
+                deferred.resolve();
+            } else {
+                var fnOnFldValidate = ctx.col.fnOnFldValidate || settings.fnOnFldValidate;
+                if (fnOnFldValidate && fnSettings.userValidation !== false) {
                     ctx.isInvalid = false;
                     var newValue = ctx.control.scope.value;
                     $q.when(fnOnFldValidate(ctx, ev, newValue, undefined, fnSettings)).then(function(result) {
                         if (result === false) {
                             ctx.isInvalid = true;
+                            if (focus) {
+                                ctx.fnSetFocus();
+                            }
+                            $timeout(function() {
+                                ctx.fnDoValidations();
+                            });
                         }
-                        if (focus) {
-                            ctx.fnSetFocus();
-                        }
-                        $timeout(function() {
-                            ctx.fnDoValidations();
-                        });
+                        deferred.resolve();
+                    });
+                } else {
+                    $timeout(function() {
+                        ctx.fnDoValidations();
+                        deferred.resolve();
                     });
                 }
-            } else {
-                $timeout(function() {
-                    ctx.fnDoValidations();
-                });
             }
+            return deferred.promise;
         }
 
         function getEditorByValue(v) {
@@ -22366,9 +22374,11 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                 ctx.seq = ctrl.seq;
             }
 
-            var idTemplate = '#xtemplate';
-            var target = angular.element(scope.state.iElement).find(idTemplate);
-            target.empty().append($compile(scope.editorDirective)(scope));
+            if (ctx.editor === 'custom') {
+                var idTemplate = '#xtemplate';
+                var target = angular.element(scope.state.iElement).find(idTemplate);
+                target.empty().append($compile(scope.editorDirective)(scope));
+            }
         }
 
         function getRecordEditorState(scope) {
@@ -22473,21 +22483,18 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                     scope.ctx.displayInvalid = true;
                     scope.ctx.showInvalidFields = true;
 
-                    if (options && options.userValidation === true) {
-                        doValidation(scope.ctx, {}, (options.focus === true),
-                            { trigger: 'event', fnOnFldValidate: options.fnOnFldValidate, options: options || {} });
-                    } else {
-                        scope.ctx.fnDoValidations();
-                    }
-
-                    if (scope.state.formCtrl && scope.state.formCtrl.$error.required) {
-                        var rq = _.find(scope.state.formCtrl.$error.required, function(req) {
-                            return scope.ctx.name === req.$name;
-                        });
-                        if (rq) {
-                            rq.epEditorCtx = scope.ctx;
+                    var opts = options || { userValidation: false, focus: false };
+                    opts = angular.extend(opts, { trigger: 'event'});
+                    doValidation(scope.ctx, {}, (opts.focus === true), opts).then(function() {
+                        if (scope.state.formCtrl && scope.state.formCtrl.$error.required) {
+                            var rq = _.find(scope.state.formCtrl.$error.required, function(req) {
+                                return scope.ctx.name === req.$name;
+                            });
+                            if (rq) {
+                                rq.epEditorCtx = scope.ctx;
+                            }
                         }
-                    }
+                    });
                 });
             },
             scope: {
@@ -31924,12 +31931,12 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-date-editor.html',
-    "<section class=ep-date-editor><input id=dd_{{ctx.name}} ng-model=value ep-date-convert=toDate ng-hide=\"true\"><div class=\"input-group date datepicker\" id=dp_{{ctx.name}} ng-if=!ctx.useDateInput><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input size=16 ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor {{isMeridian ? 'ep-time-meridian' : ''}}\" ng-hide=ctx.fnDoValidations() ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) pattern={{ctx.pattern}} ng-keydown=ctx.fnDateKeyDown($event) uib-datepicker-popup={{ctx.format}} data-container=body datepicker-options111={{ctx.dateOptions}} placeholder={{ctx.format}} ng-pattern={{ctx.pattern}} is-open=\"ctx.dateOpened\"> <span ng-if=\"showTime === true\" class=\"input-group-addon ep-time-picker {{isMeridian ? 'ep-time-meridian' : ''}} {{showInNewLine ? 'ep-time-new-line' : ''}}\" uib-timepicker show-spinners=false ng-model=ctx.timeValue ng-change=timeChanged() hour-step=hourStep minute-step=minuteStep show-meridian=isMeridian></span> <span class=input-group-addon ng-click=ctx.fnDateOpen($event) ng-style=\"{ 'cursor': ctx.disabled ? 'not-allowed' : 'pointer' }\"><a ng-if=!ctx.disabled><i class=\"fa fa-calendar\"></i></a> <i ng-if=ctx.disabled class=\"fa fa-calendar\"></i></span> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div><div class=\"input-group date\" id=dp_{{ctx.name}} ng-if=\"ctx.useDateInput === true\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input size=16 type=date ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor {{isMeridian ? 'ep-time-meridian' : ''}}\" ng-hide=ctx.fnDoValidations(this) ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=\"ctx.fnBlur($event)\"> <span ng-if=\"showTime === true\" class=\"input-group-addon ep-time-picker {{isMeridian ? 'ep-time-meridian' : ''}} {{showInNewLine ? 'ep-time-new-line' : ''}}\" uib-timepicker show-spinners=false ng-model=ctx.timeValue ng-change=timeChanged() hour-step=hourStep minute-step=minuteStep show-meridian=isMeridian></span> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
+    "<section class=ep-date-editor><input id=dd_{{ctx.name}} ng-model=value ep-date-convert=toDate ng-hide=\"true\"><div class=\"input-group date datepicker\" id=dp_{{ctx.name}} ng-if=!ctx.useDateInput><span ng-if=ctx.classLeftBtns class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input size=16 ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor {{isMeridian ? 'ep-time-meridian' : ''}}\" ng-hide=ctx.fnDoValidations() ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) pattern={{ctx.pattern}} ng-keydown=ctx.fnDateKeyDown($event) uib-datepicker-popup={{ctx.format}} data-container=body datepicker-options111={{ctx.dateOptions}} placeholder={{ctx.format}} ng-pattern={{ctx.pattern}} is-open=\"ctx.dateOpened\"> <span ng-if=\"showTime === true\" class=\"input-group-addon ep-time-picker {{isMeridian ? 'ep-time-meridian' : ''}} {{showInNewLine ? 'ep-time-new-line' : ''}}\" uib-timepicker show-spinners=false ng-model=ctx.timeValue ng-change=timeChanged() hour-step=hourStep minute-step=minuteStep show-meridian=isMeridian></span> <span class=input-group-addon ng-click=ctx.fnDateOpen($event) ng-style=\"{ 'cursor': ctx.disabled ? 'not-allowed' : 'pointer' }\"><a ng-if=!ctx.disabled><i class=\"fa fa-calendar\"></i></a> <i ng-if=ctx.disabled class=\"fa fa-calendar\"></i></span> <span ng-if=ctx.classRightBtns class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div><div class=\"input-group date\" id=dp_{{ctx.name}} ng-if=\"ctx.useDateInput === true\"><span ng-if=ctx.classLeftBtns class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input size=16 type=date ep-date-convert=toString id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly class=\"form-control editor {{isMeridian ? 'ep-time-meridian' : ''}}\" ng-hide=ctx.fnDoValidations(this) ng-model=ctx.dateValue ng-change=ctx.fnOnChange($event) ng-blur=\"ctx.fnBlur($event)\"> <span ng-if=\"showTime === true\" class=\"input-group-addon ep-time-picker {{isMeridian ? 'ep-time-meridian' : ''}} {{showInNewLine ? 'ep-time-new-line' : ''}}\" uib-timepicker show-spinners=false ng-model=ctx.timeValue ng-change=timeChanged() hour-step=hourStep minute-step=minuteStep show-meridian=isMeridian></span> <span ng-if=ctx.classRightBtns class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
   );
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-editor-control.html',
-    "<div class=\"ep-editor-control {{ctx.sizeClass}} ep-editor-mode-{{ctx.mode}} {{ctx.classRightBtns}} {{ctx.classLeftBtns}}\" ng-hide=ctx.hidden ep-drop-area drop-enabled=\"isDropEnabled === true\" drop-handler=handleDrop drop-item-types=typeEditorCtrl ng-style=ctx.style><!--display caption above editor or just editor (mini mode)--><fieldset ng-if=\"isRow !== true\" class=\"form-group ep-record-editor-container\" ng-class=\"{'has-error': ctx.invalidFlag}\" ep-draggable drag-enabled=\"isDragEnabled === true\" drag-item=ctx drag-item-type=\"'typeEditorCtrl'\"><div class=\"ep-div-editor-label {{ctx.col.classLabel}}\"><label class=ep-editor-label for={{ctx.name}} ng-if=\"ctx.mode !== 'mini'\">{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label></div><div class={{ctx.col.classEditor}}><section id=xtemplate></section></div></fieldset><!--display caption and editor in a bootstrap grid system in horizontal row--><div ng-if=\"isRow === true\" class=\"ep-record-editor-container ep-is-row-editor row\"><div class=\"ep-div-editor-label {{ctx.col.classLabel || 'col-xs-4'}}\"><label class=ep-editor-label for={{ctx.name}}>{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label></div><div class=\"{{ctx.col.classEditor || 'col-xs-8'}}\"><section id=xtemplate></section></div></div></div>"
+    "<div class=\"ep-editor-control {{ctx.sizeClass}} ep-editor-mode-{{ctx.mode}} {{ctx.classRightBtns}} {{ctx.classLeftBtns}}\" ng-hide=ctx.hidden ep-drop-area drop-enabled=\"isDropEnabled === true\" drop-handler=handleDrop drop-item-types=typeEditorCtrl ng-style=ctx.style><fieldset ng-if=\"isRow !== true\" class=\"form-group ep-record-editor-container\" ng-class=\"{'has-error': ctx.invalidFlag}\" ep-draggable drag-enabled=\"isDragEnabled === true\" drag-item=ctx drag-item-type=\"'typeEditorCtrl'\"><!--display caption above editor or just editor (mini mode)--><div class=\"ep-div-editor-label {{ctx.col.classLabel}}\"><label class=ep-editor-label for={{ctx.name}} ng-if=\"ctx.mode !== 'mini'\">{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label></div><div class={{ctx.col.classEditor}} ng-switch=ctx.editor><section id=xtemplate></section><section ng-switch-when=template><ep-include options=ctx.templateOptions user-data=ctx></ep-include></section><section ng-switch-when=text><ep-text-editor ctx=ctx value=value></ep-text-editor></section><section ng-switch-when=number><ep-number-editor ctx=ctx value=value></ep-number-editor></section><section ng-switch-when=checkbox><ep-checkbox-editor ctx=ctx value=value></ep-checkbox-editor></section><section ng-switch-when=date><ep-date-editor ctx=ctx value=value></ep-date-editor></section><section ng-switch-when=image><ep-image-editor ctx=ctx value=value></ep-image-editor></section><section ng-switch-when=multiline><ep-multiline-editor ctx=ctx value=value></ep-multiline-editor></section><section ng-switch-when=select><ep-select-editor ctx=ctx value=value></ep-select-editor></section></div></fieldset><div ng-if=\"isRow === true\" class=\"ep-record-editor-container ep-is-row-editor row\"><!--display caption and editor in a bootstrap grid system in horizontal row--><div class=\"ep-div-editor-label {{ctx.col.classLabel || 'col-xs-4'}}\"><label class=ep-editor-label for={{ctx.name}}>{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label></div><div class={{ctx.col.classEditor}} ng-switch=ctx.editor><section id=xtemplate></section><section ng-switch-when=template><ep-include options=ctx.templateOptions user-data=ctx></ep-include></section><section ng-switch-when=text><ep-text-editor ctx=ctx value=value></ep-text-editor></section><section ng-switch-when=number><ep-number-editor ctx=ctx value=value></ep-number-editor></section><section ng-switch-when=checkbox><ep-checkbox-editor ctx=ctx value=value></ep-checkbox-editor></section><section ng-switch-when=date><ep-date-editor ctx=ctx value=value></ep-date-editor></section><section ng-switch-when=image><ep-image-editor ctx=ctx value=value></ep-image-editor></section><section ng-switch-when=multiline><ep-multiline-editor ctx=ctx value=value></ep-multiline-editor></section><section ng-switch-when=select><ep-select-editor ctx=ctx value=value></ep-select-editor></section></div></div></div>"
   );
 
 
@@ -31939,22 +31946,22 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-multiline-editor.html',
-    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span><textarea id={{ctx.name}} name={{ctx.name}} placeholder={{ctx.placeholder}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=value ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) rows={{ctx.rows}} class=\"form-control editor\" ng-hide=ctx.fnDoValidations() maxlength={{ctx.maxlength}} ng-style=\"{'text-align': ctx.justification }\"></textarea><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
+    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span ng-if=ctx.classLeftBtns class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span><textarea id={{ctx.name}} name={{ctx.name}} placeholder={{ctx.placeholder}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=value ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) rows={{ctx.rows}} class=\"form-control editor\" ng-hide=ctx.fnDoValidations() maxlength={{ctx.maxlength}} ng-style=\"{'text-align': ctx.justification }\"></textarea><span ng-if=ctx.classRightBtns class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
   );
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-number-editor.html',
-    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input id={{ctx.name}} ng-cloak ep-number-editor-format={{inputNumberFmt}} name={{ctx.name}} type=\"{{inputType || 'number'}}\" ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=value ng-change=ctx.fnOnChange($event) ng-keydown=\"fnKeyDown($event, value)\" ng-blur=\"fnBlur($event, value)\" ng-focus=\"fnFocus($event, value)\" class=\"form-control editor\" ng-style=\"{ 'text-align': ctx.justification }\" maxlength={{ctx.maxlength}} min={{ctx.min}} max={{ctx.max}} ng-hide=ctx.fnDoValidations() pattern=\"{{ctx.pattern}}\"> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
+    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span ng-if=ctx.classLeftBtns class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input id={{ctx.name}} ng-cloak ep-number-editor-format={{inputNumberFmt}} name={{ctx.name}} type=\"{{inputType || 'number'}}\" ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=value ng-change=ctx.fnOnChange($event) ng-keydown=\"fnKeyDown($event, value)\" ng-blur=\"fnBlur($event, value)\" ng-focus=\"fnFocus($event, value)\" class=\"form-control editor\" ng-style=\"{ 'text-align': ctx.justification }\" maxlength={{ctx.maxlength}} min={{ctx.min}} max={{ctx.max}} ng-hide=ctx.fnDoValidations() pattern=\"{{ctx.pattern}}\"> <span ng-if=ctx.classRightBtns class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
   );
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-select-editor.html',
-    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span><select class=\"form-control editor\" id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) ng-hide=ctx.fnDoValidations() ng-model=value><option ng-repeat=\"opt in ctx.options\" label={{opt.label}} value={{opt.value}} ng-selected=opt.getIsSelected()>{{opt.label}}</option></select><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
+    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span ng-if=ctx.classLeftBtns class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span><select class=\"form-control editor\" id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) ng-hide=ctx.fnDoValidations() ng-model=value><option ng-repeat=\"opt in ctx.options\" label={{opt.label}} value={{opt.value}} ng-selected=opt.getIsSelected()>{{opt.label}}</option></select><span ng-if=ctx.classRightBtns class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
   );
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-text-editor.html',
-    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input id={{ctx.name}} ng-cloak name={{ctx.name}} type={{ctx.type}} placeholder={{ctx.placeholder}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=value ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-hide=ctx.fnDoValidations() maxlength={{ctx.maxlength}} ng-style=\"{ 'text-align': ctx.justification }\"> <span class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
+    "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span ng-if=ctx.classLeftBtns class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input id={{ctx.name}} ng-cloak name={{ctx.name}} type={{ctx.type}} placeholder={{ctx.placeholder}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=value ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-hide=ctx.fnDoValidations() maxlength={{ctx.maxlength}} ng-style=\"{ 'text-align': ctx.justification }\"> <span ng-if=ctx.classRightBtns class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
   );
 
 
