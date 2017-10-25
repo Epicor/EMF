@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.20-dev.53 built: 24-10-2017
+ * version:1.0.20-dev.54 built: 25-10-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.20-dev.53","built":"2017-10-24"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.20-dev.54","built":"2017-10-25"};
 
 (function() {
     'use strict';
@@ -2179,6 +2179,7 @@ angular.module('ep.menu.builder', [
  * - formatOtherAdditionalTitle: function to format other additional title
  * - id: value to be displayed on right side of the list.
  * - groupBy: groupBy field name by which the list has to be grouped.
+ * - groupByLabel: to show groupBy label name on search.
  * - groupByType: 'sdate' - string date format like '1910-01-01T00:00:00' (otherwise string)
  *      'sfield' - string field (whole field opposed to first letter)
  * - sortBy: sortBy field name by which the list has to be sorted.
@@ -2222,6 +2223,7 @@ angular.module('ep.menu.builder', [
                 init: '=',
                 selectMarkField: '@',
                 selectMarkFieldValue: '=',
+                multiSelect: '=',
 
                 subTitle: '=',
                 formatSubtitle: '=',
@@ -2241,6 +2243,7 @@ angular.module('ep.menu.builder', [
 
                 groupBy: '@',
                 groupByType: '@',
+                groupByLabel: '@',
                 formatGroupTitle: '=',
                 subHeader: '@',
                 showArrow: '=',
@@ -2288,6 +2291,7 @@ angular.module('ep.menu.builder', [
 
                     scope.searchType = 'text';
                     scope.searchPrompt = '';
+                    scope.groupByLabel = '';
                     var isGroupByDate = !!(scope.groupByType && scope.groupByType === 'sdate');
 
                     scope.filteredData = [];
@@ -2321,6 +2325,7 @@ angular.module('ep.menu.builder', [
                             scope.directory = epListService.getDirectoryByDate(scope.listData, scope.groupBy);
                         } else {
                             if (scope.groupByType === 'sfield') {
+                                scope.searchPrompt = epTranslationService.getString('emf.ep.list.label.searchBy') + ' ' + scope.groupByLabel;
                                 scope.directory = epListService.getDirectoryByField(scope.listData, scope.groupBy);
                                 scope.searchType = 'sfield';
                                 scope.filteredData = scope.listData;
@@ -3235,7 +3240,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
     "\n" +
     "            <div class=\"ep-list-arrow\" ng-if=\"arrow\"><i class=\"ep-cicrm-right-chevron\"></i></div>\r" +
     "\n" +
-    "            <div class=\"ep-margin-right-15 text-primary\" ng-if=\"selectMarkField && obj[selectMarkField] == selectMarkFieldValue\"\r" +
+    "            <div class=\"ep-margin-right-15 text-primary\" ng-if=\"(!multiSelect && selectMarkField && obj[selectMarkField] == selectMarkFieldValue) || (multiSelect && selectMarkField && selectMarkFieldValue.indexOf(obj[selectMarkField]) > -1)\"\r" +
     "\n" +
     "                ng-class=\"{'ep-margin-top-10':subTitle && !additionalTitle && !otherAdditionalTitle, 'ep-margin-top-15': additionalTitle || otherAdditionalTitle}\"><i class=\"fa fa-check\"></i></div>\r" +
     "\n" +
