@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.20-dev.57 built: 25-10-2017
+ * version:1.0.20-dev.58 built: 26-10-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.20-dev.57","built":"2017-10-25"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.20-dev.58","built":"2017-10-26"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -17529,9 +17529,6 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             scope.directory = epListService.getDirectoryByDate(scope.listData, scope.groupBy);
                         } else {
                             if (scope.groupByType === 'sfield') {
-                                if (scope.groupByLabel) {
-                                    scope.searchPrompt = epTranslationService.getString('emf.ep.list.label.searchBy') + ' ' + '[' + scope.groupByLabel + ']';
-                                }
                                 scope.directory = epListService.getDirectoryByField(scope.listData, scope.groupBy);
                                 scope.searchType = 'sfield';
                                 scope.filteredData = scope.listData;
@@ -17539,9 +17536,15 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                             } else {
                                 scope.directory = epListService.getDirectory(scope.listData, scope.groupBy);
                             }
+                            if (scope.groupByLabel) {
+                                scope.searchPrompt = epTranslationService.getString('emf.ep.list.label.searchBy') + ' ' + '[' + scope.groupByLabel + ']';
+                            }
                         }
                     } else {
                         //If no grouping the control is in straight filtering mode
+                        if (scope.groupByLabel) {
+                            scope.searchPrompt = epTranslationService.getString('emf.ep.list.label.searchBy') + ' ' + '[' + scope.groupByLabel + ']';
+                        }
                         scope.filteredData = scope.listData;
                         scope.filtered = true;
                     }
