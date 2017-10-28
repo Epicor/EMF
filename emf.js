@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.20-dev.66 built: 28-10-2017
+ * version:1.0.20-dev.67 built: 28-10-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.20-dev.66","built":"2017-10-28"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.20-dev.67","built":"2017-10-28"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -637,6 +637,21 @@ angular.module('ep.signature', [
 
     angular.module('ep.table', [
         'ep.templates'
+    ]);
+})();
+
+/**
+ * @ngdoc overview
+ * @name ep.telemetry
+ * @description
+ * This module provides integration with Microsoft Application Insights for gathering application telemetry.
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.telemetry', [
+        'ep.templates',
+        'ep.sysconfig'
     ]);
 })();
 
@@ -28130,6 +28145,295 @@ angular.module('ep.signature').directive('epSignature',
     });
 })();
 
+/**
+ * @ngdoc object
+ * @name ep.telemetry.object:epTelemetryConfig
+ * @description
+ * Provider for epTelemetryConfig.
+ * Gets configuration options from sysconfig.json or default
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.telemetry').provider('epTelemetryConfig',
+        function() {
+            var config = {
+                /**
+                 * @ngdoc property
+                 * @name instrumentationKey
+                 * @propertyOf ep.telemetry.object:epTelemetryConfig
+                 * @public
+                 * @description
+                 * The key of your Application Insights resource in Azure
+                 */
+                instrumentationKey: '',
+
+                /**
+                 * @ngdoc property
+                 * @name disableTelemetry
+                 * @propertyOf ep.telemetry.object:epTelemetryConfig
+                 * @public
+                 * @description
+                 * If true, telemetry data is not collected or sent. Default false.
+                 */
+                disableTelemetry: true,
+
+                /**
+                 * @ngdoc property
+                 * @name trackPageViews
+                 * @propertyOf ep.telemetry.object:epTelemetryConfig
+                 * @public
+                 * @description
+                 * Turns on page view tracking across the entire application.  Defaults to true.  
+                 * If this is turned off, you can still track targeted page views by using the trackView method.
+                 */
+                trackPageViews: true,
+
+                /**
+                 * @ngdoc property
+                 * @name enableDebug
+                 * @propertyOf ep.telemetry.object:epTelemetryConfig
+                 * @public
+                 * @description
+                 * If true, debugging data is thrown as an exception by the logger. Default false.
+                 */
+                enableDebug: false,
+
+                /**
+                 * @ngdoc property
+                 * @name verboseLogging
+                 * @propertyOf ep.telemetry.object:epTelemetryConfig
+                 * @public
+                 * @description
+                 * If true, the SDK will log all internal errors (any severity) to the console. Default false
+                 */
+                verboseLogging: false,
+
+                /**
+                 * @ngdoc property
+                 * @name censorUrls
+                 * @propertyOf ep.telemetry.object:epTelemetryConfig
+                 * @public
+                 * @description
+                 * This will censor the URLs for the page views. Default is false.
+                 */
+                censorUrls: false,
+
+                /**
+                 * @ngdoc property
+                 * @name samplingPercentage
+                 * @propertyOf ep.telemetry.object:epTelemetryConfig
+                 * @public
+                 * @description
+                 * Controls what percentage of events will be sent. Default 100. 
+                 */
+                samplingPercentage: false,
+
+                /**
+                 * @ngdoc property
+                 * @name diagnosticLogInterval
+                 * @propertyOf ep.telemetry.object:epTelemetryConfig
+                 * @public
+                 * @description
+                 * Default 10s
+                 */
+                diagnosticLogInterval: 10,
+
+                /**
+                 * @ngdoc property
+                 * @name disableExceptionTracking
+                 * @propertyOf ep.telemetry.object:epTelemetryConfig
+                 * @public
+                 * @description
+                 * If true, exceptions are not monitored. 
+                 */
+                disableExceptionTracking: false,
+
+                /**
+                 * @ngdoc property
+                 * @name disableAjaxTracking
+                 * @propertyOf ep.telemetry.object:epTelemetryConfig
+                 * @public
+                 * @description
+                 * If true, ajax calls are not monitored.
+                 */
+                disableAjaxTracking: false,
+
+                /**
+                 * @ngdoc property
+                 * @name maxAjaxCallsPerView
+                 * @propertyOf ep.telemetry.object:epTelemetryConfig
+                 * @public
+                 * @description
+                 * Default 500 - controls how many ajax calls will be monitored per page view.
+                 * Set to -1 to monitor all ajax calls on the page.
+                 */
+                maxAjaxCallsPerView: -1,
+
+                /**
+                 * @ngdoc property
+                 * @name customProperties
+                 * @propertyOf ep.telemetry.object:epTelemetryConfig
+                 * @public
+                 * @description
+                 * Custom properties that will be added during the initialization and appended as Custom Data for each telemetry call.
+                 */
+                customProperties: {}
+            };
+
+            //we use the epSysConfig provider to perform the $http read against sysconfig.json
+            //epSysConfig.mergeSection() function merges the defaults with sysconfig.json settings
+            this.$get = ['epSysConfig', function(epSysConfig) {
+                epSysConfig.mergeSection('ep.telemetry', config);
+                return config;
+            }];
+        });
+})();
+(function() {
+    'use strict';
+    /**
+     * @ngdoc service
+     * @name ep.telemetry.service:epTelemetryService
+     * @description
+     * This service provides integration with Microsoft Application Insights for gathering application telemetry.  In order to use this
+     * service, you will need a instrumentation key from Azure Microsoft Application Insights that uniquely represents your application. The 
+     * telemetry key, along with other configuration options, are stored inside of the sysconfig provider for this module.
+     * 
+     * See Microsoft SDK - https://github.com/Microsoft/ApplicationInsights-JS
+     */
+    epTelemetryService.$inject = ['$q', 'epTelemetryConfig'];
+    angular.module('ep.telemetry').
+    service('epTelemetryService', epTelemetryService);
+
+    /*@ngInject*/
+    function epTelemetryService($q, epTelemetryConfig) {
+        /**
+         * @ngdoc method
+         * @name initialize
+         * @methodOf ep.telemetry.service:epTelemetryService
+         * @public
+         * @description
+         * Initializes the telemetry service with the instrumentation key and config options
+         */
+        function initialize(instrumentionKey) {
+            //this code was directly taken from the Application Insights SDK site to dynamically pull from CDN
+            var appInsights = window.appInsights || function(a) {
+                function b(a) {
+                    c[a] = function() {
+                        var b = arguments;
+                        c.queue.push(function() { c[a].apply(c, b) })
+                    }
+                }
+                var c = { config: a },
+                    d = document,
+                    e = window;
+                setTimeout(function() {
+                    var b = d.createElement("script");
+                    b.src = a.url || "https://az416426.vo.msecnd.net/scripts/a/ai.0.js", d.getElementsByTagName("script")[0].parentNode.appendChild(b)
+                });
+                try {
+                    c.cookie = d.cookie
+                } catch (a) {
+
+                }
+                c.queue = [];
+                for (var f = ["Event", "Exception", "Metric", "PageView", "Trace", "Dependency"]; f.length;) b("track" + f.pop());
+                if (b("setAuthenticatedUserContext"), b("clearAuthenticatedUserContext"), b("startTrackEvent"), b("stopTrackEvent"), b("startTrackPage"), b("stopTrackPage"), b("flush"), !a.disableExceptionTracking) {
+                    f = "onerror", b("_" + f);
+                    var g = e[f];
+                    e[f] = function(a, b, d, e, h) { var i = g && g(a, b, d, e, h); return !0 !== i && c["_" + f](a, b, d, e, h), i }
+                }
+                return c
+            }({
+                instrumentationKey: epTelemetryConfig.instrumentationKey,
+                disableTelemetry: epTelemetryConfig.disableTelemetry,
+                enableDebug: epTelemetryConfig.enableDebug,
+                verboseLogging: epTelemetryConfig.verboseLogging,
+                samplingPercentage: epTelemetryConfig.samplingPercentage,
+                diagnosticLogInterval: epTelemetryConfig.diagnosticLogInterval,
+                disableExceptionTracking: epTelemetryConfig.disableExceptionTracking,
+                disableAjaxTracking: epTelemetryConfig.disableAjaxTracking,
+                maxAjaxCallsPerView: epTelemetryConfig.maxAjaxCallsPerView
+            });
+
+            // Add telemetry initializer
+            appInsights.queue.push(function() {
+                appInsights.context.addTelemetryInitializer(function(envelope) {
+                    var telemetryItem = envelope.data.baseData;
+
+                    // To check the telemetry item’s type:
+                    if (envelope.name === Microsoft.ApplicationInsights.Telemetry.PageView.envelopeType) {
+                        if (epTelemetryConfig.censorUrls) {
+                            // this statement removes url from all page view documents
+                            telemetryItem.url = "URL CENSORED";
+                        }
+                    }
+
+                    // This will setup any custom properties defined in the sysconfig.telemetry.custom
+                    telemetryItem.properties = telemetryItem.properties || epTelemetryConfig.customProperties;
+                });
+            });
+
+            window.appInsights = appInsights;
+
+            //if (epTelemetryConfig.trackPageViews) {
+            appInsights.trackPageView();
+            //}
+        }
+
+
+        /**
+         * @ngdoc method
+         * @name setContext
+         * @methodOf ep.telemetry.service:epTelemetryService
+         * @public
+         * @description
+         * Sets up the context for the telemetry calls with the accountId, userId, and version of the application running.
+         */
+        function setContext(accountId, userId, version) {
+            if (window.appInsights) {
+                window.appInsights.context.application.ver = version;
+                window.appInsights.accountId = accountId;
+
+                //set the user context for the app insights session
+                window.appInsights.setAuthenticatedUserContext(userId, accountId, true);
+            }
+        }
+
+        /**
+         * @ngdoc method
+         * @name trackMetric
+         * @methodOf ep.telemetry.service:epTelemetryService
+         * @public
+         * @description
+         * Initializes the telemetry service with the instrumentation key and config options
+         */
+        function trackEvent(name, properties, metrics) {
+            if (window.appInsights) {
+                window.appInsights.trackEvent(name, properties, metrics);
+            }
+        }
+
+        /**
+         * @ngdoc method
+         * @name trackMetric
+         * @methodOf ep.telemetry.service:epTelemetryService
+         * @public
+         * @description
+         * Initializes the telemetry service with the instrumentation key and config options
+         */
+        function trackMetric(name, value, properties) {
+            if (window.appInsights) {
+                window.appInsights.trackEvent(name, value, 1, 1, 1, properties);
+            }
+        }
+
+        return {
+            initialize: initialize,
+            setContext: setContext
+        };
+    }
+}());
 /**
  * @ngdoc object
  * @name ep.theme.object:epThemeConfig
