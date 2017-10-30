@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.20-dev.71 built: 29-10-2017
+ * version:1.0.20-dev.72 built: 29-10-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.20-dev.71","built":"2017-10-29"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.20-dev.72","built":"2017-10-29"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -28392,21 +28392,36 @@ angular.module('ep.signature').directive('epSignature',
          */
         function setContext(accountId, userId, version) {
             if (window.appInsights) {
-                window.appInsights.context.application.ver = version;
                 window.appInsights.accountId = accountId;
-
                 //set the user context for the app insights session
                 window.appInsights.setAuthenticatedUserContext(userId, accountId, true);
+                //window.appInsights.context.application.ver = version;
             }
         }
 
         /**
          * @ngdoc method
-         * @name trackMetric
+         * @name trackPageView
          * @methodOf ep.telemetry.service:epTelemetryService
          * @public
          * @description
-         * Initializes the telemetry service with the instrumentation key and config options
+         * Forces a track of a page view regardless of the trackPageViews config property.
+         * This is useful for tracking only certain views.
+         */
+        function trackPageView(name, properties) {
+            if (window.appInsights) {
+                window.appInsights.trackPageView(name, '', properties);
+            }
+        }
+
+
+        /**
+         * @ngdoc method
+         * @name trackEvent
+         * @methodOf ep.telemetry.service:epTelemetryService
+         * @public
+         * @description
+         * Tracks a specific event within in the context of your running application.
          */
         function trackEvent(name, properties, metrics) {
             if (window.appInsights) {
@@ -28420,7 +28435,7 @@ angular.module('ep.signature').directive('epSignature',
          * @methodOf ep.telemetry.service:epTelemetryService
          * @public
          * @description
-         * Initializes the telemetry service with the instrumentation key and config options
+         * Tracks a specific metric within the context of your running application.
          */
         function trackMetric(name, value, properties) {
             if (window.appInsights) {
@@ -28430,7 +28445,10 @@ angular.module('ep.signature').directive('epSignature',
 
         return {
             initialize: initialize,
-            setContext: setContext
+            setContext: setContext,
+            trackPageView: trackPageView,
+            trackEvent: trackEvent,
+            trackMetric: trackMetric
         };
     }
 }());
