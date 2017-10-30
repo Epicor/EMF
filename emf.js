@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.20-dev.74 built: 30-10-2017
+ * version:1.0.20-dev.75 built: 30-10-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.20-dev.74","built":"2017-10-30"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.20-dev.75","built":"2017-10-30"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -28376,9 +28376,10 @@ angular.module('ep.signature').directive('epSignature',
 
             window.appInsights = appInsights;
 
-            //if (epTelemetryConfig.trackPageViews) {
-            appInsights.trackPageView();
-            //}
+            //this will turn on automatic page tracking
+            if (epTelemetryConfig.trackPageViews) {
+                appInsights.trackPageView();
+            }
         }
 
 
@@ -28389,13 +28390,18 @@ angular.module('ep.signature').directive('epSignature',
          * @public
          * @description
          * Sets up the context for the telemetry calls with the accountId, userId, and version of the application running.
+         * @param {string} accountId - Account associated with the calls. Optional
+         * @param {string} userId - UserId logged in and associated with the application.
+         * @param {string} version - Version of the application being used.
          */
         function setContext(accountId, userId, version) {
             if (window.appInsights) {
                 window.appInsights.accountId = accountId;
                 //set the user context for the app insights session
                 window.appInsights.setAuthenticatedUserContext(userId, accountId, true);
-                //window.appInsights.context.application.ver = version;
+
+                //IMPORTANT - This must come after setting the AuthenticatedUserContext or it fails
+                window.appInsights.context.application.ver = version;
             }
         }
 
@@ -28407,6 +28413,8 @@ angular.module('ep.signature').directive('epSignature',
          * @description
          * Forces a track of a page view regardless of the trackPageViews config property.
          * This is useful for tracking only certain views.
+         * @param {string} name - Name of the page to track.
+         * @param {object} properties - Map of string to string: Additional data used to filter pages in the portal. Defaults to empty.
          */
         function trackPageView(name, properties) {
             if (window.appInsights) {
@@ -28422,6 +28430,9 @@ angular.module('ep.signature').directive('epSignature',
          * @public
          * @description
          * Tracks a specific event within in the context of your running application.
+         * @param {string} name - Name of the event to track
+         * @param {object} properties - Map of string to string: Additional data used to filter events in the portal. Defaults to empty.
+         * @param {object} metrics - Map of string to number: Metrics associated with this page, displayed in Metrics Explorer on the portal. Defaults to empty.
          */
         function trackEvent(name, properties, metrics) {
             if (window.appInsights) {
@@ -28436,6 +28447,9 @@ angular.module('ep.signature').directive('epSignature',
          * @public
          * @description
          * Tracks a specific metric within the context of your running application.
+         * @param {string} name - Name of the metric to track
+         * @param {object} value - Either a single measurement, or the average of several measurements. Should be >=0 to be correctly displayed.
+         * @param {object} properties - Map of string to string: Additional data used to filter events in the portal.
          */
         function trackMetric(name, value, properties) {
             if (window.appInsights) {
