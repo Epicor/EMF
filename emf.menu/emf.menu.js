@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.20-dev.75 built: 30-10-2017
+ * version:1.0.20-dev.76 built: 30-10-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.20-dev.75","built":"2017-10-30"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.20-dev.76","built":"2017-10-30"};
 
 (function() {
     'use strict';
@@ -2179,7 +2179,7 @@ angular.module('ep.menu.builder', [
  * - formatOtherAdditionalTitle: function to format other additional title
  * - id: value to be displayed on right side of the list.
  * - groupBy: groupBy field name by which the list has to be grouped.
- * - groupByLabel: to show groupBy label name on search.
+ * - groupByLabel: to show groupBy label name on search. Pass the label of the grouping.
  * - groupByType: 'sdate' - string date format like '1910-01-01T00:00:00' (otherwise string)
  *      'sfield' - string field (whole field opposed to first letter)
  * - sortBy: sortBy field name by which the list has to be sorted.
@@ -2332,13 +2332,15 @@ angular.module('ep.menu.builder', [
                                 scope.directory = epListService.getDirectory(scope.listData, scope.groupBy);
                             }
                             if (scope.groupByLabel) {
-                                scope.searchPrompt = epTranslationService.getString('emf.ep.list.label.searchBy') + ' ' + '[' + scope.groupByLabel + ']';
+                                scope.searchPrompt =
+                                    epTranslationService.getString('emf.ep.list.label.searchBy', scope.groupByLabel);
                             }
                         }
                     } else {
                         //If no grouping the control is in straight filtering mode
                         if (scope.groupByLabel) {
-                            scope.searchPrompt = epTranslationService.getString('emf.ep.list.label.searchBy') + ' ' + '[' + scope.groupByLabel + ']';
+                            scope.searchPrompt =
+                                epTranslationService.getString('emf.ep.list.label.searchBy', scope.groupByLabel);
                         }
                         scope.filteredData = scope.listData;
                         scope.filtered = true;

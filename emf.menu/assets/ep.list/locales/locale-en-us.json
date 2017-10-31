@@ -1,6 +1,6 @@
-﻿{
-  "label.filter": "Filter",
-  "label.sort": "Sort",
-  "label.searchByDate": "Search by year or month-year...",
-  "label.searchBy": "Search by"
+{
+    "label.filter": "Filter",
+    "label.sort": "Sort",
+    "label.searchByDate": "Search by year or month-year...",
+    "label.searchBy": "Search by [{0}]"
 }

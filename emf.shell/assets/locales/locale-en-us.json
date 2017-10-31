@@ -8,7 +8,7 @@
   "emf.ep.list.label.filter": "Filter",
   "emf.ep.list.label.sort": "Sort",
   "emf.ep.list.label.searchByDate": "Search by year or month-year...",
-  "emf.ep.list.label.searchBy": "Search by",
+  "emf.ep.list.label.searchBy": "Search by [{0}]",
   "emf.ep.modaldialog.button.Ok": "Ok",
   "emf.ep.modaldialog.button.Cancel": "Cancel",
   "emf.ep.modaldialog.button.Yes": "Yes",

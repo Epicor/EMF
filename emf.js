@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.20-dev.75 built: 30-10-2017
+ * version:1.0.20-dev.76 built: 30-10-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.20-dev.75","built":"2017-10-30"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.20-dev.76","built":"2017-10-30"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -17399,7 +17399,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
  * - formatOtherAdditionalTitle: function to format other additional title
  * - id: value to be displayed on right side of the list.
  * - groupBy: groupBy field name by which the list has to be grouped.
- * - groupByLabel: to show groupBy label name on search.
+ * - groupByLabel: to show groupBy label name on search. Pass the label of the grouping.
  * - groupByType: 'sdate' - string date format like '1910-01-01T00:00:00' (otherwise string)
  *      'sfield' - string field (whole field opposed to first letter)
  * - sortBy: sortBy field name by which the list has to be sorted.
@@ -17552,13 +17552,15 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                                 scope.directory = epListService.getDirectory(scope.listData, scope.groupBy);
                             }
                             if (scope.groupByLabel) {
-                                scope.searchPrompt = epTranslationService.getString('emf.ep.list.label.searchBy') + ' ' + '[' + scope.groupByLabel + ']';
+                                scope.searchPrompt =
+                                    epTranslationService.getString('emf.ep.list.label.searchBy', scope.groupByLabel);
                             }
                         }
                     } else {
                         //If no grouping the control is in straight filtering mode
                         if (scope.groupByLabel) {
-                            scope.searchPrompt = epTranslationService.getString('emf.ep.list.label.searchBy') + ' ' + '[' + scope.groupByLabel + ']';
+                            scope.searchPrompt =
+                                epTranslationService.getString('emf.ep.list.label.searchBy', scope.groupByLabel);
                         }
                         scope.filteredData = scope.listData;
                         scope.filtered = true;
@@ -28184,8 +28186,7 @@ angular.module('ep.signature').directive('epSignature',
                  * @propertyOf ep.telemetry.object:epTelemetryConfig
                  * @public
                  * @description
-                 * Turns on page view tracking across the entire application.  Defaults to true.  
-                 * If this is turned off, you can still track targeted page views by using the trackView method.
+                 * Turns on page view tracking across the entire application.  Defaults to true. If this is turned off, you can still track targeted page views by using the trackView method.
                  */
                 trackPageViews: true,
 
@@ -28225,7 +28226,7 @@ angular.module('ep.signature').directive('epSignature',
                  * @propertyOf ep.telemetry.object:epTelemetryConfig
                  * @public
                  * @description
-                 * Controls what percentage of events will be sent. Default 100. 
+                 * Controls what percentage of events will be sent. Default 100.
                  */
                 samplingPercentage: false,
 
@@ -28245,7 +28246,7 @@ angular.module('ep.signature').directive('epSignature',
                  * @propertyOf ep.telemetry.object:epTelemetryConfig
                  * @public
                  * @description
-                 * If true, exceptions are not monitored. 
+                 * If true, exceptions are not monitored.
                  */
                 disableExceptionTracking: false,
 
@@ -28296,9 +28297,8 @@ angular.module('ep.signature').directive('epSignature',
      * @name ep.telemetry.service:epTelemetryService
      * @description
      * This service provides integration with Microsoft Application Insights for gathering application telemetry.  In order to use this
-     * service, you will need a instrumentation key from Azure Microsoft Application Insights that uniquely represents your application. The 
+     * service, you will need a instrumentation key from Azure Microsoft Application Insights that uniquely represents your application. The
      * telemetry key, along with other configuration options, are stored inside of the sysconfig provider for this module.
-     * 
      * See Microsoft SDK - https://github.com/Microsoft/ApplicationInsights-JS
      */
     epTelemetryService.$inject = ['$q', 'epTelemetryConfig'];
@@ -28315,8 +28315,9 @@ angular.module('ep.signature').directive('epSignature',
          * @description
          * Initializes the telemetry service with the instrumentation key and config options
          */
-        function initialize(instrumentionKey) {
+        function initialize() {
             //this code was directly taken from the Application Insights SDK site to dynamically pull from CDN
+            //we have to download it dynamically from CDN because they don't support bower installation.
             var appInsights = window.appInsights || function(a) {
                 function b(a) {
                     c[a] = function() {
@@ -28324,12 +28325,13 @@ angular.module('ep.signature').directive('epSignature',
                         c.queue.push(function() { c[a].apply(c, b) })
                     }
                 }
-                var c = { config: a },
-                    d = document,
-                    e = window;
+                var c = { config: a };
+                var d = document;
+                var e = window;
                 setTimeout(function() {
-                    var b = d.createElement("script");
-                    b.src = a.url || "https://az416426.vo.msecnd.net/scripts/a/ai.0.js", d.getElementsByTagName("script")[0].parentNode.appendChild(b)
+                    var b = d.createElement('script');
+                    b.src = a.url || 'https://az416426.vo.msecnd.net/scripts/a/ai.0.js',
+                        d.getElementsByTagName('script')[0].parentNode.appendChild(b)
                 });
                 try {
                     c.cookie = d.cookie
@@ -28337,11 +28339,18 @@ angular.module('ep.signature').directive('epSignature',
 
                 }
                 c.queue = [];
-                for (var f = ["Event", "Exception", "Metric", "PageView", "Trace", "Dependency"]; f.length;) b("track" + f.pop());
-                if (b("setAuthenticatedUserContext"), b("clearAuthenticatedUserContext"), b("startTrackEvent"), b("stopTrackEvent"), b("startTrackPage"), b("stopTrackPage"), b("flush"), !a.disableExceptionTracking) {
-                    f = "onerror", b("_" + f);
+                for (var f = ['Event', 'Exception', 'Metric', 'PageView', 'Trace', 'Dependency']; f.length;) {
+                    b('track' + f.pop());
+                }
+                if (b('setAuthenticatedUserContext'), b('clearAuthenticatedUserContext'),
+                    b('startTrackEvent'), b('stopTrackEvent'),
+                    b('startTrackPage'), b('stopTrackPage'), b('flush'), !a.disableExceptionTracking) {
+                    f = 'onerror', b('_' + f);
                     var g = e[f];
-                    e[f] = function(a, b, d, e, h) { var i = g && g(a, b, d, e, h); return !0 !== i && c["_" + f](a, b, d, e, h), i }
+                    e[f] = function(a, b, d, e, h) {
+                        var i = g && g(a, b, d, e, h);
+                        return !0 !== i && c['_' + f](a, b, d, e, h), i
+                    }
                 }
                 return c
             }({
@@ -28365,7 +28374,7 @@ angular.module('ep.signature').directive('epSignature',
                     if (envelope.name === Microsoft.ApplicationInsights.Telemetry.PageView.envelopeType) {
                         if (epTelemetryConfig.censorUrls) {
                             // this statement removes url from all page view documents
-                            telemetryItem.url = "URL CENSORED";
+                            telemetryItem.url = 'URL CENSORED';
                         }
                     }
 
@@ -28381,7 +28390,6 @@ angular.module('ep.signature').directive('epSignature',
                 appInsights.trackPageView();
             }
         }
-
 
         /**
          * @ngdoc method
@@ -28421,7 +28429,6 @@ angular.module('ep.signature').directive('epSignature',
                 window.appInsights.trackPageView(name, '', properties);
             }
         }
-
 
         /**
          * @ngdoc method
