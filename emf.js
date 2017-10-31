@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.20-dev.79 built: 31-10-2017
+ * version:1.0.21 built: 31-10-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.20-dev.79","built":"2017-10-31"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.21","built":"2017-10-31"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -14596,7 +14596,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
                     if (expansionLen > 1) {
                         newLen--;
                     }
-                    expandedStr = expandedStr.padEnd(newLen, test.fillChar) + test.endingChar;
+                    expandedStr = padEnd(expandedStr, newLen, test.fillChar) + test.endingChar;
                 }
                 ret = expandedStr;
             }
@@ -14604,8 +14604,10 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         }
 
         function padEnd(str, targetLength, padString) {
-            //floor if number or convert non-number to 0;
+            //floor if number or convert non-number to 0;        
+            // jshint ignore:start
             targetLength = targetLength >> 0;
+            // jshint ignore:end
             padString = padString || ' ';
             if (str.length > targetLength) {
                 return str;
@@ -23116,7 +23118,8 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                 state.lastInputs[dc] = inputValue;
                 if (compareValues(originalValue, inputValue)) {
                     ctx.isInvalid = false;
-                    $q.when(ctx.col.fnOnFldValidate(ctx, ev, inputValue, originalValue, {trigger:'recordEditorValidation'})).then(function(result) {
+                    $q.when(ctx.col.fnOnFldValidate(ctx, ev, inputValue, originalValue,
+                        { trigger: 'recordEditorValidation' })).then(function(result) {
                         if (result === false) {
                             ctx.isInvalid = true;
                         }
@@ -28147,6 +28150,9 @@ angular.module('ep.signature').directive('epSignature',
     });
 })();
 
+//IMPORTANT EMF: disable jscs and jshint rules for this file (since it is external)
+// jscs:disable
+// jshint ignore:start
 "use strict";
 var __extends = (this && this.__extends) || (function () {
     var extendStatics = Object.setPrototypeOf ||
@@ -33143,6 +33149,8 @@ var Microsoft;
     })(ApplicationInsights = Microsoft.ApplicationInsights || (Microsoft.ApplicationInsights = {}));
 })(Microsoft || (Microsoft = {}));
 //
+// jshint ignore:end
+
 /**
  * @ngdoc object
  * @name ep.telemetry.object:epTelemetryConfig
@@ -33165,6 +33173,16 @@ var Microsoft;
                  * The key of your Application Insights resource in Azure
                  */
                 instrumentationKey: '',
+
+                /**
+                 * @ngdoc property
+                 * @name autoStartTelemetry
+                 * @propertyOf ep.telemetry.object:epTelemetryConfig
+                 * @public
+                 * @description
+                 * If true, telemetry will be started with EMF automatically. Default false.
+                 */
+                autoStartTelemetry: false,
 
                 /**
                  * @ngdoc property
@@ -33280,12 +33298,77 @@ var Microsoft;
 
             //we use the epSysConfig provider to perform the $http read against sysconfig.json
             //epSysConfig.mergeSection() function merges the defaults with sysconfig.json settings
-            this.$get = ['epSysConfig', function(epSysConfig) {
+            this.$get = ['$log', 'epSysConfig', function($log, epSysConfig) {
                 epSysConfig.mergeSection('ep.telemetry', config);
+
+                config.api = {};
+
+                /**
+                 * @ngdoc method
+                 * @name initialize
+                 * @methodOf ep.telemetry.service:epTelemetryService
+                 * @public
+                 * @description
+                 * Initializes the telemetry service with the instrumentation key and config options
+                 */
+                config.api.initialize = function() {
+
+                    //config snippet for the application insights initialization
+                    //it reads from the config.
+                    var snippet = {
+                        config: {
+                            instrumentationKey: config.instrumentationKey,
+                            disableTelemetry: config.disableTelemetry,
+                            enableDebug: config.enableDebug,
+                            verboseLogging: config.verboseLogging,
+                            samplingPercentage: config.samplingPercentage,
+                            diagnosticLogInterval: config.diagnosticLogInterval,
+                            disableExceptionTracking: config.disableExceptionTracking,
+                            disableAjaxTracking: config.disableAjaxTracking,
+                            maxAjaxCallsPerView: config.maxAjaxCallsPerView
+                        }
+                    };
+
+                    try {
+                        var init = new Microsoft.ApplicationInsights.Initialization(snippet);
+                        var appInsights = init.loadAppInsights();
+
+                        window.appInsights = appInsights;
+
+                        appInsights.context.addTelemetryInitializer(function(envelope) {
+                            var telemetryItem = envelope.data.baseData;
+
+                            // To check the telemetry item’s type:
+                            if (envelope.name === Microsoft.ApplicationInsights.Telemetry.PageView.envelopeType) {
+                                if (config.censorUrls) {
+                                    // this statement removes url from all page view documents
+                                    telemetryItem.url = 'URL CENSORED';
+                                }
+                            }
+
+                            // This will setup any custom properties defined in the sysconfig.telemetry.custom
+                            telemetryItem.properties = telemetryItem.properties || config.customProperties;
+                        });
+
+                        //this will turn on automatic page tracking
+                        if (config.trackPageViews) {
+                            appInsights.trackPageView();
+                        }
+
+                    } catch (error) {
+                        $log.error(error);
+                    }
+                };
+
+                if (config.autoStartTelemetry === true) {
+                    config.api.initialize();
+                }
+
                 return config;
             }];
         });
 })();
+
 (function() {
     'use strict';
     /**
@@ -33297,12 +33380,12 @@ var Microsoft;
      * telemetry key, along with other configuration options, are stored inside of the sysconfig provider for this module.
      * See Microsoft SDK - https://github.com/Microsoft/ApplicationInsights-JS
      */
-    epTelemetryService.$inject = ['$log', '$q', 'epTelemetryConfig'];
+    epTelemetryService.$inject = ['$log', 'epTelemetryConfig'];
     angular.module('ep.telemetry').
     service('epTelemetryService', epTelemetryService);
 
     /*@ngInject*/
-    function epTelemetryService($log, $q, epTelemetryConfig) {
+    function epTelemetryService($log, epTelemetryConfig) {
         /**
          * @ngdoc method
          * @name initialize
@@ -33312,52 +33395,7 @@ var Microsoft;
          * Initializes the telemetry service with the instrumentation key and config options
          */
         function initialize() {
-
-            //config snippet for the application insights initialization
-            //it reads from the config.
-            var snippet = {
-                config: {
-                    instrumentationKey: epTelemetryConfig.instrumentationKey,
-                    disableTelemetry: epTelemetryConfig.disableTelemetry,
-                    enableDebug: epTelemetryConfig.enableDebug,
-                    verboseLogging: epTelemetryConfig.verboseLogging,
-                    samplingPercentage: epTelemetryConfig.samplingPercentage,
-                    diagnosticLogInterval: epTelemetryConfig.diagnosticLogInterval,
-                    disableExceptionTracking: epTelemetryConfig.disableExceptionTracking,
-                    disableAjaxTracking: epTelemetryConfig.disableAjaxTracking,
-                    maxAjaxCallsPerView: epTelemetryConfig.maxAjaxCallsPerView
-                }
-            };
-
-            try {
-                var init = new Microsoft.ApplicationInsights.Initialization(snippet);
-                var appInsights = init.loadAppInsights();
-
-                window.appInsights = appInsights;
-
-                appInsights.context.addTelemetryInitializer(function(envelope) {
-                    var telemetryItem = envelope.data.baseData;
-
-                    // To check the telemetry item’s type:
-                    if (envelope.name === Microsoft.ApplicationInsights.Telemetry.PageView.envelopeType) {
-                        if (epTelemetryConfig.censorUrls) {
-                            // this statement removes url from all page view documents
-                            telemetryItem.url = 'URL CENSORED';
-                        }
-                    }
-
-                    // This will setup any custom properties defined in the sysconfig.telemetry.custom
-                    telemetryItem.properties = telemetryItem.properties || epTelemetryConfig.customProperties;
-                });
-
-                //this will turn on automatic page tracking
-                if (epTelemetryConfig.trackPageViews) {
-                    appInsights.trackPageView();
-                }
-
-            } catch (error) {
-                $log.error(error);
-            }
+            epTelemetryConfig.api.initialize();
         }
 
         /**
@@ -33459,6 +33497,7 @@ var Microsoft;
         };
     }
 }());
+
 /**
  * @ngdoc object
  * @name ep.theme.object:epThemeConfig

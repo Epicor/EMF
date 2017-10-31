@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.20-dev.79 built: 31-10-2017
+ * version:1.0.21 built: 31-10-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.20-dev.79","built":"2017-10-31"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.21","built":"2017-10-31"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -4709,7 +4709,7 @@ function() {
                     if (expansionLen > 1) {
                         newLen--;
                     }
-                    expandedStr = expandedStr.padEnd(newLen, test.fillChar) + test.endingChar;
+                    expandedStr = padEnd(expandedStr, newLen, test.fillChar) + test.endingChar;
                 }
                 ret = expandedStr;
             }
@@ -4717,8 +4717,10 @@ function() {
         }
 
         function padEnd(str, targetLength, padString) {
-            //floor if number or convert non-number to 0;
+            //floor if number or convert non-number to 0;        
+            // jshint ignore:start
             targetLength = targetLength >> 0;
+            // jshint ignore:end
             padString = padString || ' ';
             if (str.length > targetLength) {
                 return str;
