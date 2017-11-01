@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.21-dev.5 built: 01-11-2017
+ * version:1.0.22 built: 01-11-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.21-dev.5","built":"2017-11-01"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.22","built":"2017-11-01"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -35681,6 +35681,7 @@ angular.module('ep.token').
     service('epTokenService', epTokenService);
 
     /*@ngInject*/
+    /*@ngInject*/
     function epTokenService($http, $injector, $q, $timeout, epTranslationService,
         epTokenConfig, epUtilsService, epModalDialogService, epLocalStorageService, epFeatureDetectionService) {
         var state = {
@@ -35701,13 +35702,15 @@ angular.module('ep.token').
          * <pre>
          *      restUri {string} - Represents the URI for the REST service that provides the token auth login
          *      timeout {int} - token timeout (in seconds). Note you can only decrease token lifetime set by server
+         *      neverExpire {bool} - (default false) - never expire token. This doesnt mean it is not expired on the server,
+         *               but not expired on the client and does not call renewal.
          *      warnExpire {bool} - (default true) - show dialog when token is about to expire
          *      warnExpireDuration {int} - (default 60) seconds prior to expiration to show warning dialog
          *      warnExpireDialogOptions {object} - override options for the warning dialog such as title, message
          *      storePassword {bool} - (default true) keep credentials for token renewal
          *      autoRenew {bool} - (default false) - auto renew token (if warnExpire = false)
-         *      fnFetchToken {function} - custom fetch token function that should return promise with token object
-         *      fnRenewToken {function} - custom renew token function
+         *      fnUserFetchToken {function} - custom fetch token function that should return promise with token object
+         *      fnRenewToken {function} - custom renew token function. Must return token object
          * </pre>
          * @returns {Promise} A promise that returns the token if resolved,
          *      or an appropriate login exception if rejected
@@ -35773,7 +35776,7 @@ angular.module('ep.token').
         function getToken() {
             //return $cookies.getObject(epTokenConfig.tokenId);
             var tkn = epLocalStorageService.get(epTokenConfig.tokenId);
-            if (tkn && tkn.expiresInSecs) {
+            if (tkn && tkn.expiresInSecs && (state.options.neverExpire !== true)) {
                 var secs = getExpiresIn(tkn);
                 if (!secs) {
                     logout();
@@ -35832,12 +35835,8 @@ angular.module('ep.token').
          * Renew token requests new token. storePassword option must be enabled.
          */
         function renewToken() {
-            var tkn = getToken();
-            if (state.options.fnRenewToken) {
-                state.options.fnRenewToken(tkn);
-            } else if (tkn && tkn.user) {
-                doLogin(tkn.user, tkn.uri);
-            }
+            var tkn = epLocalStorageService.get(epTokenConfig.tokenId);
+            doRenewToken(tkn);
         }
 
         /**
@@ -35970,12 +35969,14 @@ angular.module('ep.token').
             if (state.tokenTimeoutPromise) {
                 $timeout.cancel(state.tokenTimeoutPromise);
             }
-            var exp = getExpiresIn();
-            if (exp) {
-                doSetTimeout(exp);
-            } else {
-                //remove token if it has expired
-                logout();
+            if (state.options.neverExpire !== true) {
+                var exp = getExpiresIn();
+                if (exp) {
+                    doSetTimeout(exp);
+                } else {
+                    //remove token if it has expired
+                    logout();
+                }
             }
         }
 
@@ -35997,10 +35998,14 @@ angular.module('ep.token').
 
         // private function to renew token
         function doRenewToken(tkn) {
-            if (state.options.fnRenewToken) {
-                state.options.fnRenewToken(tkn);
-            } else if (tkn && tkn.user) {
-                doLogin(tkn.user, tkn.uri);
+            if (tkn) {
+                if (state.options.fnRenewToken) {
+                    $q.when(state.options.fnRenewToken(tkn), function(tokenData) {
+                        writeCookie(tokenData.data, tkn.user || '', tkn.uri);
+                    });
+                } else if (tkn && tkn.user) {
+                    doLogin(tkn.user, tkn.uri);
+                }
             }
         }
 
@@ -36016,7 +36021,9 @@ angular.module('ep.token').
             if (state.tokenTimeoutPromise) {
                 $timeout.cancel(state.tokenTimeoutPromise);
             }
-
+            if (state.options.neverExpire === true) {
+                return;
+            }
             if (!state.options.warnExpire && !state.options.autoRenew) {
                 return;
             }
@@ -36035,17 +36042,17 @@ angular.module('ep.token').
                             autoClose: expiresIn,
                             icon: 'fa fa-warning fa-4x',
                             buttons: [{
-                                    text: 'Continue',
-                                    action: function() {
-                                        doRenewToken(tkn);
-                                    }
-                                },
-                                {
-                                    text: 'Log Out',
-                                    action: function() {
-                                        logout();
-                                    }
+                                text: 'Continue',
+                                action: function() {
+                                    doRenewToken(tkn);
                                 }
+                            },
+                            {
+                                text: 'Log Out',
+                                action: function() {
+                                    logout();
+                                }
+                            }
                             ],
                             fnDefaultAction: function() {
                                 logout();
