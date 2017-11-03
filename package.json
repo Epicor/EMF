@@ -2,8 +2,8 @@
     "name": "emf",
     "description": "Epicor Mobile Framework",
     "author": "Epicor Software Corporation",
-    "version": "1.0.22-dev.4",
-    "ep-build":"1734",
+    "version": "1.0.22-dev.5",
+    "ep-build":"1735",
     "ep-build-date":"2017-11-02",
     "publishConfig": {
         "registry": "http://epichub.americas.epicor.net:4873"
