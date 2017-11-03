@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.23 built: 03-11-2017
+ * version:1.0.23-dev.1 built: 03-11-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.23","built":"2017-11-03"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.23-dev.1","built":"2017-11-03"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -33298,7 +33298,7 @@ var Microsoft;
 
             //we use the epSysConfig provider to perform the $http read against sysconfig.json
             //epSysConfig.mergeSection() function merges the defaults with sysconfig.json settings
-            this.$get = ['$log', 'epSysConfig', function($log, epSysConfig) {
+            this.$get = ['$log', '$q', 'epSysConfig', function($log, $q, epSysConfig) {
                 epSysConfig.mergeSection('ep.telemetry', config);
 
                 config.api = {};
@@ -33312,6 +33312,7 @@ var Microsoft;
                  * Initializes the telemetry service with the instrumentation key and config options
                  */
                 config.api.initialize = function() {
+                    var deferred = $q.defer();
 
                     //config snippet for the application insights initialization
                     //it reads from the config.
@@ -33355,9 +33356,14 @@ var Microsoft;
                             appInsights.trackPageView();
                         }
 
+                        deferred.resolve();
+
                     } catch (error) {
                         $log.error(error);
+                        deferred.reject();
                     }
+
+                    return deferred.promise;
                 };
 
                 if (config.autoStartTelemetry === true) {
@@ -33368,7 +33374,6 @@ var Microsoft;
             }];
         });
 })();
-
 (function() {
     'use strict';
     /**
@@ -33395,7 +33400,7 @@ var Microsoft;
          * Initializes the telemetry service with the instrumentation key and config options
          */
         function initialize() {
-            epTelemetryConfig.api.initialize();
+            return epTelemetryConfig.api.initialize();
         }
 
         /**
@@ -33497,7 +33502,6 @@ var Microsoft;
         };
     }
 }());
-
 /**
  * @ngdoc object
  * @name ep.theme.object:epThemeConfig
