@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.23-dev.1 built: 03-11-2017
+ * version:1.0.23-dev.2 built: 03-11-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.23-dev.1","built":"2017-11-03"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.23-dev.2","built":"2017-11-03"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -22164,25 +22164,6 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                 }
             }
 
-            //TO DO - validate buttons pre/post seq etc
-            if (ctx.editor === 'template') {
-                var newScope = scope.$new(false, scope);
-                ctx.templateOptions = col.templateOptions || {
-                    template: col.template,
-                    templateScope: newScope
-                };
-                scope.editorDirective = '<ep-include options="ctx.templateOptions" user-data="ctx"></ep-include>';
-
-                newScope.$watch('value', function(newValue) {
-                    if (newValue !== undefined && ctx.updatable && ctx.readonly !== true) {
-                        scope.value = newValue;
-                    }
-                });
-            } else {
-                var directive = ctx.editor === 'custom' ? col.editorDirective : ('ep-' + ctx.editor + '-editor');
-                scope.editorDirective = '<' + directive + ' ctx=ctx value=value />';
-            }
-
             ctx.fnSetSizeClass = function(sizeClass) {
                 var sClass = col.sizeClass || sizeClass || defaultSizeClass;
                 var isSet = true;
@@ -22350,6 +22331,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                 }
             }
 
+            ctx.editorMode = 'simple';
             ctx.classRightBtns = '';
             ctx.classLeftBtns = '';
             if (ctx.buttons.length) {
@@ -22380,17 +22362,21 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                     }
                 };
 
-                var postBtn = _.find(ctx.buttons, function(btn) {
+                var postBtns = _.filter(ctx.buttons, function(btn) {
                     return btn.position === 'post';
                 });
-                if (postBtn) {
+                if (postBtns.length) {
                     ctx.classRightBtns = 'ep-editor-right-buttons';
                 }
-                var preBtn = _.find(ctx.buttons, function(btn) {
+                var preBtns = _.filter(ctx.buttons, function(btn) {
                     return btn.position === 'pre';
                 });
-                if (preBtn) {
+                if (preBtns.length) {
                     ctx.classLeftBtns = 'ep-editor-left-buttons';
+                }
+                ctx.editorMode = '';
+                if (postBtns.length === 1 && preBtns.length === 0) {
+                    ctx.editorMode = 'rbutton';
                 }
             }
             scope.ctx = ctx;
@@ -22402,11 +22388,27 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                 ctx.seq = ctrl.seq;
             }
 
-            if (ctx.editor === 'custom') {
-                var idTemplate = '#xtemplate';
-                var target = angular.element(scope.state.iElement).find(idTemplate);
-                target.empty().append($compile(scope.editorDirective)(scope));
+            //Create the dynamic control
+            if (ctx.editor === 'template') {
+                var newScope = scope.$new(false, scope);
+                ctx.templateOptions = col.templateOptions || {
+                    template: col.template,
+                    templateScope: newScope
+                };
+                scope.editorDirective = '<ep-include options="ctx.templateOptions" user-data="ctx"></ep-include>';
+                newScope.$watch('value', function(newValue) {
+                    if (newValue !== undefined && ctx.updatable && ctx.readonly !== true) {
+                        scope.value = newValue;
+                    }
+                });
+            } else {
+                var directive = ctx.editor === 'custom' ? col.editorDirective : ('ep-' + ctx.editor + '-editor');
+                scope.editorDirective = '<' + directive + ' ctx=ctx value=value editor-mode="' +    ctx.editorMode + '"/>';
             }
+
+            var idTemplate = '#xtemplate';
+            var target = angular.element(scope.state.iElement).find(idTemplate);
+            target.empty().append($compile(scope.editorDirective)(scope));
         }
 
         function getRecordEditorState(scope) {
@@ -22627,7 +22629,13 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
         return {
             restrict: 'E',
             replace: true,
-            templateUrl: 'src/components/ep.record.editor/editors/ep-number-editor.html',
+            templateUrl: function(ctrl, attrs) {
+                var subType = '';
+                if (attrs.editorMode) {
+                    subType = '-' + attrs.editorMode;
+                }
+                return 'src/components/ep.record.editor/editors/ep-number-editor' + subType + '.html';
+            },
             scope: {
                 'ctx': '=',
                 'value': '=',
@@ -22934,8 +22942,14 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
         return {
             restrict: 'E',
             replace: true,
-            templateUrl: 'src/components/ep.record.editor/editors/ep-text-editor.html',
-            scope: {
+            templateUrl: function(ctrl, attrs) {
+                var subType = '';
+                if (attrs.editorMode) {
+                    subType = '-' + attrs.editorMode;
+                }
+                return 'src/components/ep.record.editor/editors/ep-text-editor' + subType + '.html';
+            },
+            scope: { 
                 'ctx': '=',
                 'value': '=',
                 'options': '='
@@ -37324,7 +37338,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-editor-control.html',
-    "<div class=\"ep-editor-control {{ctx.sizeClass}} ep-editor-mode-{{ctx.mode}} {{ctx.classRightBtns}} {{ctx.classLeftBtns}}\" ng-hide=ctx.hidden ep-drop-area drop-enabled=\"isDropEnabled === true\" drop-handler=handleDrop drop-item-types=typeEditorCtrl ng-style=ctx.style><fieldset ng-if=\"isRow !== true\" class=\"form-group ep-record-editor-container\" ng-class=\"{'has-error': ctx.invalidFlag}\" ep-draggable drag-enabled=\"isDragEnabled === true\" drag-item=ctx drag-item-type=\"'typeEditorCtrl'\"><!--display caption above editor or just editor (mini mode)--><div class=\"ep-div-editor-label {{ctx.col.classLabel}}\"><label class=ep-editor-label for={{ctx.name}} ng-if=\"ctx.mode !== 'mini'\">{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label></div><div class={{ctx.col.classEditor}} ng-switch=ctx.editor><section id=xtemplate></section><section ng-switch-when=template><ep-include options=ctx.templateOptions user-data=ctx></ep-include></section><section ng-switch-when=text><ep-text-editor ctx=ctx value=value></ep-text-editor></section><section ng-switch-when=number><ep-number-editor ctx=ctx value=value></ep-number-editor></section><section ng-switch-when=checkbox><ep-checkbox-editor ctx=ctx value=value></ep-checkbox-editor></section><section ng-switch-when=date><ep-date-editor ctx=ctx value=value></ep-date-editor></section><section ng-switch-when=image><ep-image-editor ctx=ctx value=value></ep-image-editor></section><section ng-switch-when=multiline><ep-multiline-editor ctx=ctx value=value></ep-multiline-editor></section><section ng-switch-when=select><ep-select-editor ctx=ctx value=value></ep-select-editor></section></div></fieldset><div ng-if=\"isRow === true\" class=\"ep-record-editor-container ep-is-row-editor row\"><!--display caption and editor in a bootstrap grid system in horizontal row--><div class=\"ep-div-editor-label {{ctx.col.classLabel || 'col-xs-4'}}\"><label class=ep-editor-label for={{ctx.name}}>{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label></div><div class={{ctx.col.classEditor}} ng-switch=ctx.editor><section id=xtemplate></section><section ng-switch-when=template><ep-include options=ctx.templateOptions user-data=ctx></ep-include></section><section ng-switch-when=text><ep-text-editor ctx=ctx value=value></ep-text-editor></section><section ng-switch-when=number><ep-number-editor ctx=ctx value=value></ep-number-editor></section><section ng-switch-when=checkbox><ep-checkbox-editor ctx=ctx value=value></ep-checkbox-editor></section><section ng-switch-when=date><ep-date-editor ctx=ctx value=value></ep-date-editor></section><section ng-switch-when=image><ep-image-editor ctx=ctx value=value></ep-image-editor></section><section ng-switch-when=multiline><ep-multiline-editor ctx=ctx value=value></ep-multiline-editor></section><section ng-switch-when=select><ep-select-editor ctx=ctx value=value></ep-select-editor></section></div></div></div>"
+    "<div class=\"ep-editor-control {{ctx.sizeClass}} ep-editor-mode-{{ctx.mode}} {{ctx.classRightBtns}} {{ctx.classLeftBtns}}\" ng-hide=ctx.hidden ep-drop-area drop-enabled=\"isDropEnabled === true\" drop-handler=handleDrop drop-item-types=typeEditorCtrl ng-style=ctx.style><fieldset ng-if=\"isRow !== true\" class=\"form-group ep-record-editor-container\" ng-class=\"{'has-error': ctx.invalidFlag}\" ep-draggable drag-enabled=\"isDragEnabled === true\" drag-item=ctx drag-item-type=\"'typeEditorCtrl'\"><!--display caption above editor or just editor (mini mode)--><div class=\"ep-div-editor-label {{ctx.col.classLabel}}\"><label class=ep-editor-label for={{ctx.name}} ng-if=\"ctx.mode !== 'mini'\">{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label></div><div class={{ctx.col.classEditor}}><section id=xtemplate></section></div></fieldset><div ng-if=\"isRow === true\" class=\"ep-record-editor-container ep-is-row-editor row\"><!--display caption and editor in a bootstrap grid system in horizontal row--><div class=\"ep-div-editor-label {{ctx.col.classLabel || 'col-xs-4'}}\"><label class=ep-editor-label for={{ctx.name}}>{{ctx.label}}<span ng-if=ctx.requiredFlag class=\"required-indicator text-danger fa fa-asterisk\"></span></label></div><div class={{ctx.col.classEditor}}><section id=xtemplate></section></div></div></div>"
   );
 
 
@@ -37338,6 +37352,16 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   );
 
 
+  $templateCache.put('src/components/ep.record.editor/editors/ep-number-editor-rbutton.html',
+    "<section><div ng-class=input-group><input id={{ctx.name}} ng-cloak ep-number-editor-format={{inputNumberFmt}} name={{ctx.name}} type=\"{{inputType || 'number'}}\" ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=value ng-change=ctx.fnOnChange($event) ng-keydown=\"fnKeyDown($event, value)\" ng-blur=\"fnBlur($event, value)\" ng-focus=\"fnFocus($event, value)\" class=\"form-control editor\" ng-style=\"{ 'text-align': ctx.justification }\" maxlength={{ctx.maxlength}} min={{ctx.min}} max={{ctx.max}} ng-hide=ctx.fnDoValidations() pattern=\"{{ctx.pattern}}\"> <span class=input-group-addon ng-click=\"ctx.fnBtnClick(ctx.buttons[0], this, $event)\" style=\"cursor: pointer\"><i class={{ctx.buttons[0].style}}>{{ctx.buttons[0].text}}</i></span></div></section>"
+  );
+
+
+  $templateCache.put('src/components/ep.record.editor/editors/ep-number-editor-simple.html',
+    "<section><div><input id={{ctx.name}} ng-cloak ep-number-editor-format={{inputNumberFmt}} name={{ctx.name}} type=\"{{inputType || 'number'}}\" ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=value ng-change=ctx.fnOnChange($event) ng-keydown=\"fnKeyDown($event, value)\" ng-blur=\"fnBlur($event, value)\" ng-focus=\"fnFocus($event, value)\" class=\"form-control editor\" ng-style=\"{ 'text-align': ctx.justification }\" maxlength={{ctx.maxlength}} min={{ctx.min}} max={{ctx.max}} ng-hide=ctx.fnDoValidations() pattern=\"{{ctx.pattern}}\"></div></section>"
+  );
+
+
   $templateCache.put('src/components/ep.record.editor/editors/ep-number-editor.html',
     "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span ng-if=ctx.classLeftBtns class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span> <input id={{ctx.name}} ng-cloak ep-number-editor-format={{inputNumberFmt}} name={{ctx.name}} type=\"{{inputType || 'number'}}\" ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=value ng-change=ctx.fnOnChange($event) ng-keydown=\"fnKeyDown($event, value)\" ng-blur=\"fnBlur($event, value)\" ng-focus=\"fnFocus($event, value)\" class=\"form-control editor\" ng-style=\"{ 'text-align': ctx.justification }\" maxlength={{ctx.maxlength}} min={{ctx.min}} max={{ctx.max}} ng-hide=ctx.fnDoValidations() pattern=\"{{ctx.pattern}}\"> <span ng-if=ctx.classRightBtns class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
   );
@@ -37345,6 +37369,16 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
   $templateCache.put('src/components/ep.record.editor/editors/ep-select-editor.html',
     "<section><div ng-class=\"{'input-group': ctx.buttons && ctx.buttons.length > 0 }\"><span ng-if=ctx.classLeftBtns class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'pre' }\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span><select class=\"form-control editor\" id={{ctx.name}} name={{ctx.name}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) ng-hide=ctx.fnDoValidations() ng-model=value><option ng-repeat=\"opt in ctx.options\" label={{opt.label}} value={{opt.value}} ng-selected=opt.getIsSelected()>{{opt.label}}</option></select><span ng-if=ctx.classRightBtns class=input-group-addon ng-repeat=\"btn in ctx.buttons | orderBy:['seq'] | filter:{ position : 'post'}\" ng-click=\"ctx.fnBtnClick(btn, this, $event)\" style=\"cursor: pointer\"><i ng-if=\"btn.type == 'btn'\" class={{btn.style}}>{{btn.text}}</i> <a ng-if=\"btn.type != 'btn'\" class={{btn.style}}>{{btn.text}}</a></span></div></section>"
+  );
+
+
+  $templateCache.put('src/components/ep.record.editor/editors/ep-text-editor-rbutton.html',
+    "<section><div class=input-group><input id={{ctx.name}} ng-cloak name={{ctx.name}} type={{ctx.type}} placeholder={{ctx.placeholder}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=value ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-hide=ctx.fnDoValidations() maxlength={{ctx.maxlength}} ng-style=\"{ 'text-align': ctx.justification }\"> <span class=input-group-addon ng-click=\"ctx.fnBtnClick(ctx.buttons[0], this, $event)\" style=\"cursor: pointer\"><i class={{ctx.buttons[0].style}}>{{ctx.buttons[0].text}}</i></span></div></section>"
+  );
+
+
+  $templateCache.put('src/components/ep.record.editor/editors/ep-text-editor-simple.html',
+    "<section><div><input id={{ctx.name}} ng-cloak name={{ctx.name}} type={{ctx.type}} placeholder={{ctx.placeholder}} ng-required=ctx.required ng-disabled=ctx.disabled ng-readonly=ctx.readonly ng-model=value ng-change=ctx.fnOnChange($event) ng-blur=ctx.fnBlur($event) class=\"form-control editor\" ng-hide=ctx.fnDoValidations() maxlength={{ctx.maxlength}} ng-style=\"{ 'text-align': ctx.justification }\"></div></section>"
   );
 
 
