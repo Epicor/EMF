@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.23-dev.10 built: 05-11-2017
+ * version:1.0.24 built: 05-11-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.23-dev.10","built":"2017-11-05"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.24","built":"2017-11-05"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -4717,7 +4717,7 @@ function() {
         }
 
         function padEnd(str, targetLength, padString) {
-            //floor if number or convert non-number to 0;        
+            //floor if number or convert non-number to 0;
             // jshint ignore:start
             targetLength = targetLength >> 0;
             // jshint ignore:end

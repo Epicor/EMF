@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.23-dev.10 built: 05-11-2017
+ * version:1.0.24 built: 05-11-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.23-dev.10","built":"2017-11-05"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.24","built":"2017-11-05"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -14604,7 +14604,7 @@ angular.module('ep.embedded.apps').service('epEmbeddedAppsService', [
         }
 
         function padEnd(str, targetLength, padString) {
-            //floor if number or convert non-number to 0;        
+            //floor if number or convert non-number to 0;
             // jshint ignore:start
             targetLength = targetLength >> 0;
             // jshint ignore:end
@@ -22403,7 +22403,8 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                 });
             } else {
                 var directive = ctx.editor === 'custom' ? col.editorDirective : ('ep-' + ctx.editor + '-editor');
-                scope.editorDirective = '<' + directive + ' ctx=ctx value=value editor-mode="' +    ctx.editorMode + '"/>';
+                scope.editorDirective = '<' + directive + ' ctx=ctx value=value editor-mode="' +
+                    ctx.editorMode + '"/>';
             }
 
             var idTemplate = '#xtemplate';
@@ -22949,7 +22950,7 @@ angular.module('ep.photo.browser').service('epPhotoBrowserService', ['$q',
                 }
                 return 'src/components/ep.record.editor/editors/ep-text-editor' + subType + '.html';
             },
-            scope: { 
+            scope: {
                 'ctx': '=',
                 'value': '=',
                 'options': '='
@@ -33388,6 +33389,7 @@ var Microsoft;
             }];
         });
 })();
+
 (function() {
     'use strict';
     /**
@@ -33516,6 +33518,7 @@ var Microsoft;
         };
     }
 }());
+
 /**
  * @ngdoc object
  * @name ep.theme.object:epThemeConfig
