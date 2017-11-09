@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.24-dev.12 built: 09-11-2017
+ * version:1.0.24-dev.13 built: 09-11-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.24-dev.12","built":"2017-11-09"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.24-dev.13","built":"2017-11-09"};
 
 (function() {
     'use strict';
@@ -437,6 +437,7 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
         $scope.settings = {
             username: '',
             password: '',
+            demoPwd: '',
             serverName: '',
             serverUrl: '',
             tokenUrl: '',
@@ -444,6 +445,7 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
         };
 
         epUtilsService.copyProperties($scope.options, $scope.settings);
+        $scope.settings.demoPwd = '' ? 'demo' : $scope.settings.demoPwd;
         if ($scope.options.status) {
             $scope.status = $scope.options.status;
         }
@@ -491,7 +493,7 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
             var tokenOptions = { restUri: $scope.settings.tokenUrl };
             //if demo user skip token access
             if ($scope.settings.username.toLowerCase() === 'demo' &&
-                $scope.settings.password.toLowerCase() === 'demo' &&
+                $scope.settings.password === $scope.settings.demoPwd &&
                 $scope.settings.serverName && $scope.settings.serverName.toLowerCase() === 'demo') { //demo user
                 tokenOptions.debug = true;
                 tokenOptions.timeout = '10000';
@@ -544,15 +546,15 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                     switch (response.status) {
                         case 401:
                             $scope.status = epTranslationService.getString(
-                                    'emf.ep.token.ep-login-view.message.connectionUserPassword');
+                                'emf.ep.token.ep-login-view.message.connectionUserPassword');
                             break;
                         case 400:
                             $scope.status = epTranslationService.getString(
-                                    'emf.ep.token.ep-login-view.message.tokenAuthError');
+                                'emf.ep.token.ep-login-view.message.tokenAuthError');
                             break;
                         default:
                             $scope.status = epTranslationService.getString(
-                                    'emf.ep.token.ep-login-view.message.connectionUserPassword');
+                                'emf.ep.token.ep-login-view.message.connectionUserPassword');
                     }
                 });
         };
@@ -574,7 +576,6 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
         };
     }
 }());
-
 (function() {
 'use strict';
 /**

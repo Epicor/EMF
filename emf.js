@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.24-dev.12 built: 09-11-2017
+ * version:1.0.24-dev.13 built: 09-11-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.24-dev.12","built":"2017-11-09"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.24-dev.13","built":"2017-11-09"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -35268,6 +35268,7 @@ var Microsoft;
         $scope.settings = {
             username: '',
             password: '',
+            demoPwd: '',
             serverName: '',
             serverUrl: '',
             tokenUrl: '',
@@ -35275,6 +35276,7 @@ var Microsoft;
         };
 
         epUtilsService.copyProperties($scope.options, $scope.settings);
+        $scope.settings.demoPwd = '' ? 'demo' : $scope.settings.demoPwd;
         if ($scope.options.status) {
             $scope.status = $scope.options.status;
         }
@@ -35322,7 +35324,7 @@ var Microsoft;
             var tokenOptions = { restUri: $scope.settings.tokenUrl };
             //if demo user skip token access
             if ($scope.settings.username.toLowerCase() === 'demo' &&
-                $scope.settings.password.toLowerCase() === 'demo' &&
+                $scope.settings.password === $scope.settings.demoPwd &&
                 $scope.settings.serverName && $scope.settings.serverName.toLowerCase() === 'demo') { //demo user
                 tokenOptions.debug = true;
                 tokenOptions.timeout = '10000';
@@ -35375,15 +35377,15 @@ var Microsoft;
                     switch (response.status) {
                         case 401:
                             $scope.status = epTranslationService.getString(
-                                    'emf.ep.token.ep-login-view.message.connectionUserPassword');
+                                'emf.ep.token.ep-login-view.message.connectionUserPassword');
                             break;
                         case 400:
                             $scope.status = epTranslationService.getString(
-                                    'emf.ep.token.ep-login-view.message.tokenAuthError');
+                                'emf.ep.token.ep-login-view.message.tokenAuthError');
                             break;
                         default:
                             $scope.status = epTranslationService.getString(
-                                    'emf.ep.token.ep-login-view.message.connectionUserPassword');
+                                'emf.ep.token.ep-login-view.message.connectionUserPassword');
                     }
                 });
         };
@@ -35405,7 +35407,6 @@ var Microsoft;
         };
     }
 }());
-
 (function() {
 'use strict';
 /**
