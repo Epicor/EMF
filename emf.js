@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.24-dev.19 built: 10-11-2017
+ * version:1.0.25 built: 10-11-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.24-dev.19","built":"2017-11-10"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.25","built":"2017-11-10"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -27680,7 +27680,7 @@ angular.module('ep.signature').directive('epSignature',
                     panelId = 'epSlidingPanel';
                 }
                 var state = getState(panelId);
-                state.prevButtonEnabled = value;
+                state.prevButtonHidden = value;
             }
 
             /**
@@ -33475,7 +33475,8 @@ var Microsoft;
 
         if (epTelemetryConfig.trackRouteChanges) {
             $rootScope.$on('$routeChangeStart', function($event, next, current) {
-                trackPageView(next.$$route.originalPath);
+                var accountId = window.appInsights.accountId ? window.appInsights.accountId : '';
+                trackPageView(next.$$route.originalPath, { 'Account Id': accountId });
             });
         }
 
@@ -33494,6 +33495,7 @@ var Microsoft;
             if (window.appInsights) {
                 try {
                     window.appInsights.accountId = accountId;
+
                     //set the user context for the app insights session
                     window.appInsights.setAuthenticatedUserContext(userId, accountId, true);
 
@@ -35466,6 +35468,7 @@ var Microsoft;
         };
     }
 }());
+
 (function() {
 'use strict';
 /**
@@ -35740,6 +35743,25 @@ angular.module('ep.token').
     });
 })();
 
+/**
+ * @ngdoc object
+ * @name ep.token.object:epTokenConstants
+ * @description
+ * Constants for epTokenConstants.
+ * Events:
+    * <pre>
+    *   EP_TOKEN_LOGOUT_EVENT - an event fired upon token logout
+    * </pre>
+ */
+(function() {
+    'use strict';
+
+    angular.module('ep.token').constant('epTokenConstants', {
+        //EVENT NAMES:
+        EP_TOKEN_LOGOUT_EVENT: 'EP_TOKEN_LOGOUT_EVENT'
+    });
+})();
+
 (function() {
     'use strict';
     /**
@@ -35757,14 +35779,15 @@ angular.module('ep.token').
      * @example
      *
      */
-    epTokenService.$inject = ['$http', '$injector', '$q', '$timeout', 'epTranslationService', 'epTokenConfig', 'epUtilsService', 'epModalDialogService', 'epLocalStorageService', 'epFeatureDetectionService'];
+    epTokenService.$inject = ['$http', '$injector', '$q', '$timeout', '$rootScope', 'epTranslationService', 'epTokenConfig', 'epUtilsService', 'epModalDialogService', 'epLocalStorageService', 'epFeatureDetectionService', 'epTokenConstants'];
     angular.module('ep.token').
     service('epTokenService', epTokenService);
 
     /*@ngInject*/
     /*@ngInject*/
-    function epTokenService($http, $injector, $q, $timeout, epTranslationService,
-        epTokenConfig, epUtilsService, epModalDialogService, epLocalStorageService, epFeatureDetectionService) {
+    function epTokenService($http, $injector, $q, $timeout, $rootScope, epTranslationService,
+        epTokenConfig, epUtilsService, epModalDialogService, epLocalStorageService,
+        epFeatureDetectionService, epTokenConstants) {
         var state = {
             tokenTimeoutPromise: undefined,
             options: {}
@@ -35792,6 +35815,7 @@ angular.module('ep.token').
          *      autoRenew {bool} - (default false) - auto renew token (if warnExpire = false)
          *      fnUserFetchToken {function} - custom fetch token function that should return promise with token object
          *      fnRenewToken {function} - custom renew token function. Must return token object
+         *      fnOnLogout {function} - custom function called upon logout (token expiration)
          * </pre>
          * @returns {Promise} A promise that returns the token if resolved,
          *      or an appropriate login exception if rejected
@@ -35818,6 +35842,7 @@ angular.module('ep.token').
                 $timeout.cancel(state.tokenTimeoutPromise);
             }
         }
+
         /**
          * @ngdoc method
          * @name showLoginDialog
@@ -35860,7 +35885,7 @@ angular.module('ep.token').
             if (tkn && tkn.expiresInSecs && (state.options.neverExpire !== true)) {
                 var secs = getExpiresIn(tkn);
                 if (!secs) {
-                    logout();
+                    doLogout();
                     tkn = null;
                 }
             }
@@ -36056,14 +36081,14 @@ angular.module('ep.token').
                     doSetTimeout(exp);
                 } else {
                     //remove token if it has expired
-                    logout();
+                    doLogout();
                 }
             }
         }
 
         // private function to login
         function doLogin(user, restUri) {
-            logout();
+            doLogout(true);
             var uri = restUri || state.options.restUri;
             if (state.options.debug) {
                 return backdoorLogin(user, uri);
@@ -36086,6 +36111,24 @@ angular.module('ep.token').
                     });
                 } else if (tkn && tkn.user) {
                     doLogin(tkn.user, tkn.uri);
+                }
+            }
+        }
+
+        /**
+         * @ngdoc method
+         * @name doLogout
+         * @methodOf ep.token.factory:epTokenService
+         * @private
+         * @description
+         * internal logout method
+         */
+        function doLogout(isPreventive) {
+            logout();
+            if (isPreventive !== true) {
+                $rootScope.$emit(epTokenConstants.EP_TOKEN_LOGOUT_EVENT);
+                if (state.options.fnRenewToken) {
+                    state.options.fnRenewToken();
                 }
             }
         }
@@ -36131,12 +36174,12 @@ angular.module('ep.token').
                             {
                                 text: 'Log Out',
                                 action: function() {
-                                    logout();
+                                    doLogout();
                                 }
                             }
                             ],
                             fnDefaultAction: function() {
-                                logout();
+                                doLogout();
                             }
                         };
                         epUtilsService.copyProperties(state.options.warnExpireDialogOptions, dlg);
@@ -37508,7 +37551,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.sliding.panel/ep-sliding-panel.html',
-    "<div class=ep-sliding-panel ng-swipe-left=\"state.displayPaneIndex !== state.panes.length -1 && state.nextButtonEnabled && next()\" ng-swipe-right=\"state.displayPaneIndex !== 0 && state.prevButtonEnabled && prev()\"><div ng-transclude></div><div class=\"navbar navbar-fixed-bottom ep-pad-all-10\" ng-if=\"hideNavBar !== true\"><span class=pull-right><button type=button class=\"btn btn-info btn-med btn-round\" ng-click=prev() ng-hide=state.prevButtonHidden ng-disabled=!state.prevButtonEnabled ng-hide=\"state.displayPaneIndex === 0\"><i class=\"fa-fw fa fa-lg fa-arrow-left ep-padding-right\"></i></button> <button type=button class=\"btn btn-info btn-med btn-round\" ng-click=next() ng-hide=state.nextButtonHidden ng-disabled=!state.nextButtonEnabled ng-hide=\"state.displayPaneIndex === state.panes.length -1\"><i class=\"fa-fw fa fa-lg fa-arrow-right ep-padding-right\"></i></button> <button type=button class=\"btn btn-success btn-med btn-round\" ng-click=finish() ng-disabled=!state.finishButtonEnabled ng-hide=\"state.displayPaneIndex !== state.panes.length -1\"><i class=\"fa-fw fa fa-lg fa-check ep-padding-right\"></i></button></span></div></div>"
+    "<div class=ep-sliding-panel ng-swipe-left=\"state.displayPaneIndex !== state.panes.length -1 && state.nextButtonEnabled && next()\" ng-swipe-right=\"state.displayPaneIndex !== 0 && state.prevButtonEnabled && prev()\"><div ng-transclude></div><div class=\"navbar navbar-fixed-bottom ep-pad-all-10\" ng-if=\"hideNavBar !== true\"><span class=pull-right><button type=button class=\"btn btn-info btn-med btn-round\" ng-click=prev() ng-disabled=!state.prevButtonEnabled ng-hide=\"state.prevButtonHidden || (state.displayPaneIndex === 0)\"><i class=\"fa-fw fa fa-lg fa-arrow-left ep-padding-right\"></i></button> <button type=button class=\"btn btn-info btn-med btn-round\" ng-click=next() ng-disabled=!state.nextButtonEnabled ng-hide=\"state.nextButtonHidden || (state.displayPaneIndex === state.panes.length -1)\"><i class=\"fa-fw fa fa-lg fa-arrow-right ep-padding-right\"></i></button> <button type=button class=\"btn btn-success btn-med btn-round\" ng-click=finish() ng-disabled=!state.finishButtonEnabled ng-hide=\"state.displayPaneIndex !== state.panes.length -1\"><i class=\"fa-fw fa fa-lg fa-check ep-padding-right\"></i></button></span></div></div>"
   );
 
 
