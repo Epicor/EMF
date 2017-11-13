@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.25-dev.12 built: 13-11-2017
+ * version:1.0.26 built: 13-11-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.25-dev.12","built":"2017-11-13"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.26","built":"2017-11-13"};
 
 (function() {
     'use strict';
@@ -490,7 +490,11 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                 serverUrl: $scope.settings.serverUrl,
                 serverName: svc.serverName
             };
+
+            //not sure why we couldnt just pass $scope.settings instead of token Options
             var tokenOptions = { restUri: $scope.settings.tokenUrl };
+            epUtilsService.copyProperties($scope.settings, tokenOptions);
+
             //if demo user skip token access
             if ($scope.settings.username.toLowerCase() === 'demo' &&
                 $scope.settings.password === $scope.settings.demoPwd &&
@@ -1235,8 +1239,8 @@ angular.module('ep.token').
             logout();
             if (isPreventive !== true) {
                 $rootScope.$emit(epTokenConstants.EP_TOKEN_LOGOUT_EVENT);
-                if (state.options.fnRenewToken) {
-                    state.options.fnRenewToken();
+                if (state.options.fnOnLogout) {
+                    state.options.fnOnLogout();
                 }
             }
         }
