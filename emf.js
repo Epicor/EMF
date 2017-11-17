@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.27-dev.8 built: 16-11-2017
+ * version:1.0.27-dev.9 built: 16-11-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.27-dev.8","built":"2017-11-16"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.27-dev.9","built":"2017-11-16"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -34986,6 +34986,7 @@ var Microsoft;
 (function() {
     angular.module('ep.token')
         .service('epErpRestService', ['$q', '$log', '$http', '$resource', 'epTokenService', function($q, $log, $http, $resource, epTokenService) {
+            var isTokenDisabled = false;
             var serverUrl = '';
             var isLogOn = true;
             var errorHandlers = {};
@@ -35066,13 +35067,25 @@ var Microsoft;
                 if (!httpObj.headers) {
                     httpObj.headers = {};
                 }
-                var auth;
-                if (!auth) {
-                    //The "auth" is include in if statement only for jshint to pass!
-                    auth = 'Bearer ' + tkn.token.AccessToken;
+
+                var isDisabled = isTokenDisabled;
+                if (options && options.disableToken) {
+                    isDisabled = options.disableToken;
                 }
+
+
+                if (isDisabled !== true) {
+                    var auth;
+                    if (!auth) {
+                        //The "auth" is include in if statement only for jshint to pass!
+                        auth = 'Bearer ' + tkn.token.AccessToken;
+                    }
+                    // jshint ignore:start
+                    httpObj.headers['Authorization'] = auth;
+                    // jshint ignore:end
+                }
+
                 // jshint ignore:start
-                httpObj.headers['Authorization'] = auth;
                 if (!httpObj.headers['Content-Type']) {
                     httpObj.headers['Content-Type'] = 'application/json';
                 }
@@ -35091,9 +35104,20 @@ var Microsoft;
                 return (returnPromise === true) ? deferred.promise : { $promise: deferred.promise};
             }
 
+            function validateToken(tkn, options) {
+                var isDisabled = isTokenDisabled;
+                if (options && options.disableToken) {
+                    isDisabled = options.disableToken;
+                }
+                if (!tkn && !isDisabled) {
+                    return false;
+                }
+                return true;
+            }
+
             function call(method, path, query, options, logData) {
                 var tkn = epTokenService.getToken();
-                if (!tkn) {
+                if (!validateToken(tkn, options)) {
                     return returnNoToken(false);
                 }
 
@@ -35125,7 +35149,7 @@ var Microsoft;
 
             function postCall(method, svc, data, options) {
                 var tkn = epTokenService.getToken();
-                if (!tkn) {
+                if (!validateToken(tkn, options)) {
                     return returnNoToken(true);
                 }
 
@@ -35163,7 +35187,7 @@ var Microsoft;
 
             function deleteCall(path, options) {
                 var tkn = epTokenService.getToken();
-                if (!tkn) {
+                if (!validateToken(tkn, options)) {
                     return returnNoToken(true);
                 }
 
@@ -35196,7 +35220,7 @@ var Microsoft;
 
             function patch(svc, data, options) {
                 var tkn = epTokenService.getToken();
-                if (!tkn || !serverUrl) {
+                if (!validateToken(tkn, options) || !serverUrl) {
                     return returnNoToken(true);
                 }
                 var d = data;
@@ -35234,7 +35258,7 @@ var Microsoft;
 
             function getXML(svc, options) {
                 var tkn = epTokenService.getToken();
-                if (!tkn) {
+                if (!validateToken(tkn, options)) {
                     return returnNoToken(true);
                 }
 
@@ -35267,6 +35291,12 @@ var Microsoft;
             return {
                 setUrl: function(url) {
                     serverUrl = url;
+                },
+                disableToken: function(val) {
+                    if (val !== undefined && (val === true || val === false)) {
+                        isTokenDisabled = val;
+                    }
+                    return isTokenDisabled;
                 },
                 addErrorHandler: function(id, fnErrorHandler) {
                     errorHandlers[id] = fnErrorHandler;

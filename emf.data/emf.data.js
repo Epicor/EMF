@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.27-dev.8 built: 16-11-2017
+ * version:1.0.27-dev.9 built: 16-11-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.27-dev.8","built":"2017-11-16"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.27-dev.9","built":"2017-11-16"};
 
 (function() {
     'use strict';
@@ -94,6 +94,7 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
 (function() {
     angular.module('ep.token')
         .service('epErpRestService', ['$q', '$log', '$http', '$resource', 'epTokenService', function($q, $log, $http, $resource, epTokenService) {
+            var isTokenDisabled = false;
             var serverUrl = '';
             var isLogOn = true;
             var errorHandlers = {};
@@ -174,13 +175,25 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                 if (!httpObj.headers) {
                     httpObj.headers = {};
                 }
-                var auth;
-                if (!auth) {
-                    //The "auth" is include in if statement only for jshint to pass!
-                    auth = 'Bearer ' + tkn.token.AccessToken;
+
+                var isDisabled = isTokenDisabled;
+                if (options && options.disableToken) {
+                    isDisabled = options.disableToken;
                 }
+
+
+                if (isDisabled !== true) {
+                    var auth;
+                    if (!auth) {
+                        //The "auth" is include in if statement only for jshint to pass!
+                        auth = 'Bearer ' + tkn.token.AccessToken;
+                    }
+                    // jshint ignore:start
+                    httpObj.headers['Authorization'] = auth;
+                    // jshint ignore:end
+                }
+
                 // jshint ignore:start
-                httpObj.headers['Authorization'] = auth;
                 if (!httpObj.headers['Content-Type']) {
                     httpObj.headers['Content-Type'] = 'application/json';
                 }
@@ -199,9 +212,20 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                 return (returnPromise === true) ? deferred.promise : { $promise: deferred.promise};
             }
 
+            function validateToken(tkn, options) {
+                var isDisabled = isTokenDisabled;
+                if (options && options.disableToken) {
+                    isDisabled = options.disableToken;
+                }
+                if (!tkn && !isDisabled) {
+                    return false;
+                }
+                return true;
+            }
+
             function call(method, path, query, options, logData) {
                 var tkn = epTokenService.getToken();
-                if (!tkn) {
+                if (!validateToken(tkn, options)) {
                     return returnNoToken(false);
                 }
 
@@ -233,7 +257,7 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
 
             function postCall(method, svc, data, options) {
                 var tkn = epTokenService.getToken();
-                if (!tkn) {
+                if (!validateToken(tkn, options)) {
                     return returnNoToken(true);
                 }
 
@@ -271,7 +295,7 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
 
             function deleteCall(path, options) {
                 var tkn = epTokenService.getToken();
-                if (!tkn) {
+                if (!validateToken(tkn, options)) {
                     return returnNoToken(true);
                 }
 
@@ -304,7 +328,7 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
 
             function patch(svc, data, options) {
                 var tkn = epTokenService.getToken();
-                if (!tkn || !serverUrl) {
+                if (!validateToken(tkn, options) || !serverUrl) {
                     return returnNoToken(true);
                 }
                 var d = data;
@@ -342,7 +366,7 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
 
             function getXML(svc, options) {
                 var tkn = epTokenService.getToken();
-                if (!tkn) {
+                if (!validateToken(tkn, options)) {
                     return returnNoToken(true);
                 }
 
@@ -375,6 +399,12 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
             return {
                 setUrl: function(url) {
                     serverUrl = url;
+                },
+                disableToken: function(val) {
+                    if (val !== undefined && (val === true || val === false)) {
+                        isTokenDisabled = val;
+                    }
+                    return isTokenDisabled;
                 },
                 addErrorHandler: function(id, fnErrorHandler) {
                     errorHandlers[id] = fnErrorHandler;
