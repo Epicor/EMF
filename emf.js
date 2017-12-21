@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.29 built: 20-12-2017
+ * version:1.0.28-dev.90 built: 20-12-2017
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.29","built":"2017-12-20"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.28-dev.90","built":"2017-12-20"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -20329,8 +20329,11 @@ angular.module('ep.menu.builder').
     'epMultiLevelMenuService',
     'epMultiLevelMenuConstants',
     function(epLocalStorageService, epMultiLevelMenuService, epMultiLevelMenuConstants) {
+        var vm = this;
         function getMultiLevelMenuHelper(scope, type) {
-            return new multiLevelMenuHelper(scope, type);
+            vm.factoryService = vm.factoryService ? vm.factoryService : new multiLevelMenuHelper(scope, type);
+
+            return vm.factoryService;
         }
         return {
             getMultiLevelMenuHelper: getMultiLevelMenuHelper
@@ -27426,6 +27429,7 @@ angular.module('ep.signature').directive('epSignature',
         };
     }
 })();
+
 (function() {
     'use strict';
     angular.module('ep.sliding.panel')
@@ -27737,6 +27741,7 @@ angular.module('ep.signature').directive('epSignature',
             };
         }]);
 })();
+
 (function() {
     'use strict';
     /**
@@ -33424,7 +33429,7 @@ var Microsoft;
                         //this will turn on automatic page tracking
                         if (config.trackPageViews) {
                             appInsights.trackPageView();
-                        };
+                        }
 
                         deferred.resolve();
 
@@ -33444,6 +33449,7 @@ var Microsoft;
             }];
         });
 })();
+
 (function() {
     'use strict';
     /**
@@ -33474,7 +33480,7 @@ var Microsoft;
         }
 
         if (epTelemetryConfig.trackRouteChanges) {
-            $rootScope.$on('$routeChangeStart', function($event, next, current) {
+            $rootScope.$on('$routeChangeStart', function($event, next) {
                 var accountId = window.appInsights.accountId ? window.appInsights.accountId : '';
                 trackPageView(next.$$route.originalPath, { 'Account Id': accountId });
             });
@@ -33580,6 +33586,7 @@ var Microsoft;
         };
     }
 }());
+
 /**
  * @ngdoc object
  * @name ep.theme.object:epThemeConfig
@@ -35333,7 +35340,8 @@ var Microsoft;
             serverName: '',
             serverUrl: '',
             tokenUrl: '',
-            token: {}
+            token: {},
+            allowBlankPassword: false
         };
 
         epUtilsService.copyProperties($scope.options, $scope.settings);
@@ -35355,7 +35363,8 @@ var Microsoft;
                 return;
             }
 
-            if ($scope.settings.username === '' || $scope.settings.password === '') {
+            if ($scope.settings.username === '' || ($scope.settings.password === '' &&
+                $scope.settings.allowBlankPassword !== true)) {
                 $scope.hasError = true;
                 if ($scope.settings.username === '') {
                     $scope.status =
@@ -35378,7 +35387,7 @@ var Microsoft;
             $scope.settings.tokenUrl = svc.tokenUrl;
             var tokenUser = {
                 username: $scope.settings.username,
-                password: $scope.settings.password,
+                password: $scope.settings.password || '',
                 serverUrl: $scope.settings.serverUrl,
                 serverName: svc.serverName
             };
@@ -35448,6 +35457,10 @@ var Microsoft;
                             $scope.status = epTranslationService.getString(
                                 'emf.ep.token.ep-login-view.message.tokenAuthError');
                             break;
+                        case 403:
+                            $scope.status = epTranslationService.getString(
+                                'emf.ep.token.ep-login-view.message.connectionPasswordExpired');
+                            break;
                         default:
                             $scope.status = epTranslationService.getString(
                                 'emf.ep.token.ep-login-view.message.connectionUserPassword');
@@ -35495,6 +35508,8 @@ var Microsoft;
 *       customImage {string} - optional url to custom image for the background image
 *       showSettingsButton {bool} - optional setting to show/hide settings button (shown by default)
 *       status {string} - set the initial error display text. Useful when log out with a status.
+*       allowBlankPassword {boolean}  - true to allow blank password. By default option is false.
+*       demoPassword {string} - the password for demo mode, the dafault is (demo/demo)
 *
 * @example
 */

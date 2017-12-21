@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.29 built: 20-12-2017
+ * version:1.0.28-dev.90 built: 20-12-2017
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["data"] = {"libName":"data","version":"1.0.29","built":"2017-12-20"};
+__ep_build_info["data"] = {"libName":"data","version":"1.0.28-dev.90","built":"2017-12-20"};
 
 (function() {
     'use strict';
@@ -441,7 +441,8 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
             serverName: '',
             serverUrl: '',
             tokenUrl: '',
-            token: {}
+            token: {},
+            allowBlankPassword: false
         };
 
         epUtilsService.copyProperties($scope.options, $scope.settings);
@@ -463,7 +464,8 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                 return;
             }
 
-            if ($scope.settings.username === '' || $scope.settings.password === '') {
+            if ($scope.settings.username === '' || ($scope.settings.password === '' &&
+                $scope.settings.allowBlankPassword !== true)) {
                 $scope.hasError = true;
                 if ($scope.settings.username === '') {
                     $scope.status =
@@ -486,7 +488,7 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
             $scope.settings.tokenUrl = svc.tokenUrl;
             var tokenUser = {
                 username: $scope.settings.username,
-                password: $scope.settings.password,
+                password: $scope.settings.password || '',
                 serverUrl: $scope.settings.serverUrl,
                 serverName: svc.serverName
             };
@@ -556,6 +558,10 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
                             $scope.status = epTranslationService.getString(
                                 'emf.ep.token.ep-login-view.message.tokenAuthError');
                             break;
+                        case 403:
+                            $scope.status = epTranslationService.getString(
+                                'emf.ep.token.ep-login-view.message.connectionPasswordExpired');
+                            break;
                         default:
                             $scope.status = epTranslationService.getString(
                                 'emf.ep.token.ep-login-view.message.connectionUserPassword');
@@ -603,6 +609,8 @@ angular.module('ep.erp', ['ep.templates', 'ep.modaldialog', 'ep.utils', 'ep.odat
 *       customImage {string} - optional url to custom image for the background image
 *       showSettingsButton {bool} - optional setting to show/hide settings button (shown by default)
 *       status {string} - set the initial error display text. Useful when log out with a status.
+*       allowBlankPassword {boolean}  - true to allow blank password. By default option is false.
+*       demoPassword {string} - the password for demo mode, the dafault is (demo/demo)
 *
 * @example
 */

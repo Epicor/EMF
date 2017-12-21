@@ -26,5 +26,6 @@
   "emf.ep.token.ep-login-view.message.missingUserName": "Please provide your username to login.",
   "emf.ep.token.ep-login-view.message.youForgotPassword": "Please provide your password to login.",
   "emf.ep.token.ep-login-view.message.connectionUserPassword": "Connection failed, please review the username and password and try again.",
+  "emf.ep.token.ep-login-view.message.connectionPasswordExpired": "Connection failed, the current password has expired. Please change your password",
   "emf.ep.token.ep-login-view.message.tokenAuthError": "Token authentication may not be enabled on your ERP server. Please refer to the Epicor Administration Console."
 }

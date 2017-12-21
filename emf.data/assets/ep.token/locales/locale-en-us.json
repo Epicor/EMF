@@ -1,4 +1,4 @@
-﻿{
+{
     "ep-login-view.btn.login": "Login",
     "ep-login-view.label.enterCredentials": "Please enter your credentials to sign in.",
     "ep-login-view.placeholder.userName": "User Name",
@@ -9,5 +9,6 @@
     "ep-login-view.message.missingUserName": "Please provide your username to login.",
     "ep-login-view.message.youForgotPassword": "Please provide your password to login.",
     "ep-login-view.message.connectionUserPassword": "Connection failed, please review the username and password and try again.",
+    "ep-login-view.message.connectionPasswordExpired": "Connection failed, the current password has expired. Please change your password",
     "ep-login-view.message.tokenAuthError": "Token authentication may not be enabled on your ERP server. Please refer to the Epicor Administration Console."
 }
