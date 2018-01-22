@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.30-dev.127 built: 21-01-2018
+ * version:1.0.30-dev.128 built: 22-01-2018
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.30-dev.127","built":"2018-01-21"};
+__ep_build_info["hybrid"] = {"libName":"hybrid","version":"1.0.30-dev.128","built":"2018-01-22"};
 
 (function() {
     'use strict';
