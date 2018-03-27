@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.30-dev.139 built: 31-01-2018
+ * version:1.0.30-dev.140 built: 27-03-2018
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.30-dev.139","built":"2018-01-31"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.30-dev.140","built":"2018-03-27"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -20331,7 +20331,7 @@ angular.module('ep.menu.builder').
     function(epLocalStorageService, epMultiLevelMenuService, epMultiLevelMenuConstants) {
         var vm = this;
         function getMultiLevelMenuHelper(scope, type) {
-            if((scope && type) || !vm.factoryService) {
+            if ((scope && type) || !vm.factoryService) {
                 vm.factoryService = new multiLevelMenuHelper(scope, type);
             }
             return vm.factoryService;
