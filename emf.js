@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.30-dev.140 built: 27-03-2018
+ * version:1.0.8.20 built: 30-03-2018
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.30-dev.140","built":"2018-03-27"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.8.20","built":"2018-03-30"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -100,6 +100,15 @@ if (!epEmfGlobal) {
         'ep.sysconfig'
     ]);
 })();
+
+'use strict';
+/**
+ * @ngdoc overview
+ * @name ep.azure
+ * @description
+ * Asure Authentication Module
+ */
+angular.module('ep.azure', []);
 
 'use strict';
 /**
@@ -1878,6 +1887,188 @@ angular.module('ep.signature', [
     epApplicationLoader.initialize();
 })();
 
+(function() {
+    'use strict';
+    /**
+     * @ngdoc service
+     * @name ep.azure.service:epAzureADService
+     * @description
+     * Service for epAzureADService. Service for authenticating user with microsoft azure active directory
+     * Dependency on cordova-plugin-ms-adal plugin.
+     * @example
+     *
+     */
+    epAzureADService.$inject = ['$q', '$http', '$log', 'epTokenConfig', 'epLocalStorageService', 'epErpRestService', 'epTokenService'];
+    angular.module('ep.azure').
+    service('epAzureADService', epAzureADService);
+
+    /*@ngInject*/
+    function epAzureADService($q, $http, $log, epTokenConfig, epLocalStorageService, epErpRestService,
+        epTokenService) {
+
+        var aadConfig = {
+            authority: 'https://login.microsoftonline.com/common',
+            clientId: '',
+            redirectUri: '',
+            resourceUri: '',
+            postLogoutRedirectUri: ''
+        };
+        var authContext;
+
+        /**
+         * @ngdoc method
+         * @name authenticate
+         * @public
+         * @description
+         * Authenticate against azure AD
+         * 
+         */
+        function authenticate(authCompletedCallback) {
+
+            authContext = new Microsoft.ADAL.AuthenticationContext(aadConfig.authority);
+            authContext.tokenCache.readItems().then(function(items) {
+                if (items.length > 0) {
+                    aadConfig.authority = items[0].authority;
+                    authContext = new Microsoft.ADAL.AuthenticationContext(aadConfig.authority);
+                }
+                // Attempt to authorize user silently
+                authContext.acquireTokenSilentAsync(aadConfig.resourceUri, aadConfig.clientId)
+                .then(authCompletedCallback, function () {
+                    // We require user cridentials so triggers authentication dialog
+                    authContext.acquireTokenAsync(aadConfig.resourceUri, aadConfig.clientId, aadConfig.redirectUri)
+                    .then(authCompletedCallback, function (err) {
+                        $log.debug("Failed to authenticate: " + err);
+                    });
+                });
+            });
+
+        }
+
+        /**
+         * @ngdoc method
+         * @name verifyAADConfigAndLogin
+         * @methodOf ep.azure:epAzureADService
+         * @public
+         * @param {string} server - erp server url to get the AAD config settings
+         * @param {string} redirectUri - redirect URI configured in Azure portal for Native Client app.
+         * @param {boolean} debug - to log the events while verifying and login through AD
+         * @description
+         * Verifies AAD settings are configured in ERP and authenticates through azure AD
+         * 
+         */
+        function verifyAADConfigAndLogin(server, redirectUri, debug) {
+            var deferred = $q.defer();
+            var svr = epTokenService.resolveServerUrl(server);
+            var aadConfigUrl = svr.serverUrl + '/api/.configuration?tenantID='; //URL to check AAD config
+            var request = {
+                method: 'GET',
+                url: aadConfigUrl
+            };
+            $http(request).then(function(response) {
+                //If we have Asure AD settings, just get the web app id and native client id and use it for Azure AD login.
+                console.log(response.data);
+                if (response.data && response.data.AzureADSettings) {
+                    var aadSettings = response.data.AzureADSettings;
+                    aadConfig.clientId = aadSettings.NativeClientAppID;
+                    aadConfig.resourceUri = aadSettings.WebAppID;
+                    aadConfig.redirectUri = redirectUri;
+                    aadConfig.postLogoutRedirectUri = redirectUri;
+
+                    if (debug) {
+                        // set log level with code=3 (verbose level)
+                        Microsoft.ADAL.AuthenticationSettings.setLogLevel(3).then(function() {
+                            console.log("Successfully set log level");
+                            Microsoft.ADAL.AuthenticationSettings.setLogger(function(logItem) {
+                                console.log(JSON.stringify(logItem, null, 2));
+                            });
+                        }, function(err) {
+                            console.log("Couldn't set log level");
+                        });
+                    }
+                    authenticate(function(authResult) {
+                        var expiresOn = authResult.expiresOn;
+                        var expiresInSecs = expiresOn.getTime();
+                        var dateNow = new Date();
+                        var dateExp = new Date(dateNow);
+
+                        dateExp.setTime(dateExp.getTime() + expiresInSecs * 1000);
+                        epLocalStorageService.update(epTokenConfig.tokenId, {
+                            token: { AccessToken: authResult.accessToken },
+                            createdUTC: dateNow.getTime(),
+                            expiresUTC: dateExp.getTime(),
+                            expiresInSecs: expiresInSecs
+                        });
+
+                        deferred.resolve(authResult);
+                    });
+                } else {
+                    $log.debug('No AAD Config found');
+                    deferred.reject('No AAD Config found');
+                }
+            }, function(err) {
+                $log.error(err);
+                deferred.reject(err);
+            });
+            return deferred.promise;
+        }
+
+        /**
+         * @ngdoc method
+         * @name getUserFromAADToken
+         * @methodOf ep.azure:epAzureADService
+         * @public
+         * @param {string} restUrl - erp rest url to get user details
+         * @param {string} token - Azure AD token
+         * @description
+         * Gets the user details from ERP based on the AAD token
+         * 
+         */
+        function getUserFromAADToken(restUrl, token) {
+            var deferred = $q.defer();
+            var request = {
+                method: 'POST',
+                url: restUrl,
+                headers: {
+                    'Authorization': 'Bearer ' + token,
+                    'Content-Type': 'application/json'
+                }
+            }
+            $http(request).then(function(response) {
+                deferred.resolve(response.data.returnObj.UserFile[0]);
+            }, function(err) {
+                deferred.reject(err);
+            });
+            return deferred.promise;
+        }
+
+        /**
+         * @ngdoc method
+         * @name logOut
+         * @methodOf ep.azure:epAzureADService
+         * @public
+         * @description
+         * Logout user from Azure AD
+         * 
+         */
+        function logOut() {
+            authContext = new Microsoft.ADAL.AuthenticationContext(aadConfig.authority);
+            authContext.tokenCache.clear();
+            var logOutUrl = aadConfig.authority + '/oauth2/logout?post_logout_redirect_uri=' + aadConfig.postLogoutRedirectUri;
+            var inAppBrowserRef = cordova.InAppBrowser.open(logOutUrl, '_blank', 'location=no');
+            inAppBrowserRef.addEventListener('loadstop', function() {
+                inAppBrowserRef.close();
+            });
+        }
+
+        return {
+            authenticate: authenticate,
+            verifyAADConfigAndLogin: verifyAADConfigAndLogin,
+            getUserFromAADToken: getUserFromAADToken,
+            logOut: logOut
+        };
+    }
+
+}());
 (function() {
     'use strict';
     /**
@@ -35379,6 +35570,47 @@ var Microsoft;
         if ($scope.options.status) {
             $scope.status = $scope.options.status;
         }
+        $scope.resetApplication = function() {
+            if ($scope.options.fnResetApplication) {
+                $scope.options.fnResetApplication();
+            }
+        };
+
+        $scope.loginUserAAD = function() {
+            $scope.status = '';
+            $scope.hasError = false;
+
+            if ($scope.settings.serverName === '') {
+                $scope.hasError = true;
+                $scope.status = epTranslationService.getString('emf.ep.token.ep-login-view.message.missingServer');
+                epModalDialogService.hide();
+                return;
+            }
+            $scope.showLoader = true;
+            if ($scope.options.fnOnLoginAAD) {
+                $q.when($scope.options.fnOnLoginAAD($scope.settings)).then(function(message) {
+                    if (message && angular.isString(message)) {
+                        $scope.showLoader = false;
+                        $scope.hasError = true;
+                        $scope.status = message;
+                        return;
+                    }
+                    if (message === false) {
+                        $scope.showLoader = false;
+                        $scope.hasError = true;
+                        return;
+                    }
+                    if ($scope.options.fnOnSuccess) {
+                        $scope.options.fnOnSuccess($scope.settings);
+                    }
+                }, function(message) {
+                    $scope.showLoader = false;
+                    $scope.hasError = true;
+                    $scope.status = message;
+                    return;
+                });
+            }
+        };
 
         $scope.loginUser = function() {
             $scope.status = '';
@@ -37635,7 +37867,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.token/ep-login-view/ep-login-view.html',
-    "<!--This is a partial for the ep-login-view directive --><div class=\"ep-login-view container-fluid\"><div class=ep-login-background><div class=ep-background-image ng-if=!settings.customImage></div><img class=ep-background-custom-image ng-if=settings.customImage ng-src={{settings.customImage}} alt=\"\"></div><div class=ep-login-up-box><div class=\"ep-login-box center-block\"><form class=form-group><div class=form-group><p class=ep-login-text><b>{{'emf.ep.token.ep-login-view.label.enterCredentials' | epTranslate}}</b></p><div class=input-group><span class=input-group-addon><i class=\"fa fa-user fa-fw\"></i></span> <input clearable name=username ng-keypress=clearWarning() id=username class=form-control ng-model=settings.username placeholder=\"{{'emf.ep.token.ep-login-view.placeholder.userName' | epTranslate}}\"></div><br><div class=input-group><span class=input-group-addon><i class=\"fa fa-lock fa-fw\"></i></span> <input type=password clearable ng-keypress=passwordKeyPress($event) name=password id=password class=form-control ng-model=settings.password placeholder=\"{{'emf.ep.token.ep-login-view.placeholder.password' | epTranslate}}\"></div><br><div ng-show=showServerName class=input-group><span class=input-group-addon><i class=\"fa fa-server fa-fw\"></i></span> <input spellcheck autocorrect=false clearable name=servername id=serverValue class=form-control ng-model=settings.serverName placeholder=\"{{'emf.ep.token.ep-login-view.placeholder.server' | epTranslate}}\"></div><br><div align=center ng-if=showLoader><div class=progress><div class=\"progress-bar progress-bar-striped active\" role=progressbar aria-valuenow=100 aria-valuemin=0 aria-valuemax=100 style=\"width: 100%\"></div></div></div><div ng-if=status class=\"alert alert-danger\"><label>{{status}}</label><br></div><div><button ng-if=\"options.showSettingsButton !== false\" class=\"btn btn-default pull-left\" ng-click=showServer()><i class=\"fa fa-cog fa-fw\"></i></button> <button type=submit class=\"btn btn-primary pull-right\" ng-click=loginUser() ng-disabled=showLoader>{{'emf.ep.token.ep-login-view.btn.login' | epTranslate}}</button></div></div></form></div></div></div>"
+    "<!--This is a partial for the ep-login-view directive --><div class=\"ep-login-view container-fluid\"><div class=ep-login-background><div class=ep-background-image ng-if=!settings.customImage></div><img class=ep-background-custom-image ng-if=settings.customImage ng-src={{settings.customImage}} alt=\"\"></div><div class=ep-login-up-box><div class=\"ep-login-box center-block\"><form class=form-group><div class=form-group><div ng-if=!options.hideCredentials><p class=ep-login-text><b>{{'emf.ep.token.ep-login-view.label.enterCredentials' | epTranslate}}</b></p><div class=input-group><span class=input-group-addon><i class=\"fa fa-user fa-fw\"></i></span> <input clearable name=username ng-keypress=clearWarning() id=username class=form-control ng-model=settings.username placeholder=\"{{'emf.ep.token.ep-login-view.placeholder.userName' | epTranslate}}\"></div><br><div class=input-group><span class=input-group-addon><i class=\"fa fa-lock fa-fw\"></i></span> <input type=password clearable ng-keypress=passwordKeyPress($event) name=password id=password class=form-control ng-model=settings.password placeholder=\"{{'emf.ep.token.ep-login-view.placeholder.password' | epTranslate}}\"></div><br></div><div ng-show=showServerName class=input-group><span class=input-group-addon><i class=\"fa fa-server fa-fw\"></i></span> <input spellcheck autocorrect=false ng-readonly=options.hideCredentials clearable name=servername id=serverValue class=form-control ng-model=settings.serverName placeholder=\"{{'emf.ep.token.ep-login-view.placeholder.server' | epTranslate}}\"></div><br><div align=center ng-if=options.hideCredentials><button type=button class=\"btn btn-primary\" ng-click=loginUserAAD()>{{'emf.ep.token.ep-login-view.btn.aadLogin' | epTranslate}}</button></div><div align=center ng-if=showLoader><div class=progress><div class=\"progress-bar progress-bar-striped active\" role=progressbar aria-valuenow=100 aria-valuemin=0 aria-valuemax=100 style=\"width: 100%\"></div></div></div><div ng-if=status class=\"alert alert-danger\"><label>{{status}}</label><br></div><div><button ng-if=\"options.showSettingsButton !== false\" class=\"btn btn-default pull-left\" ng-click=showServer()><i class=\"fa fa-cog fa-fw\"></i></button> <button type=submit class=\"btn btn-primary pull-right\" ng-click=loginUser() ng-if=!options.hideCredentials ng-disabled=showLoader>{{'emf.ep.token.ep-login-view.btn.login' | epTranslate}}</button> <a ng-click=resetApplication() class=\"ep-login-reset-app pull-right\" ng-if=options.hideCredentials>{{'emf.ep.token.ep-login-view.link.resetApplication' | epTranslate}}</a></div></div></form></div></div></div>"
   );
 
 

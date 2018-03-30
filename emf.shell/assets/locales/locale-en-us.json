@@ -22,6 +22,8 @@
   "emf.ep.token.ep-login-view.placeholder.userName": "User Name",
   "emf.ep.token.ep-login-view.placeholder.password": "Password",
   "emf.ep.token.ep-login-view.placeholder.server": "Server",
+  "emf.ep.token.ep-login-view.btn.aadLogin": "Login with Microsoft Account",
+  "emf.ep.token.ep-login-view.link.resetApplication": "Reset Application",
   "emf.ep.token.ep-login-view.message.missingServer": "Please provide your server name to login.",
   "emf.ep.token.ep-login-view.message.missingUserName": "Please provide your username to login.",
   "emf.ep.token.ep-login-view.message.youForgotPassword": "Please provide your password to login.",

@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.30-dev.140 built: 27-03-2018
+ * version:1.0.8.20 built: 30-03-2018
 */
 .ep-accordion-menu .list-group .panel > .list-group-item {
   color: transparent;
@@ -3652,6 +3652,11 @@ VIEW CONTAINER [ep-view-container]
 }
 .ep-login-text {
   color: #2c3e50;
+}
+.ep-login-reset-app {
+  padding-top: 10px;
+  font-weight: bold;
+  text-decoration: underline;
 }
 
 .ep-range-slider-ctr {

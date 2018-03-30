@@ -22,6 +22,8 @@
   "emf.ep.token.ep-login-view.placeholder.userName": "Nombre de usuario",
   "emf.ep.token.ep-login-view.placeholder.password": "Contraseña",
   "emf.ep.token.ep-login-view.placeholder.server": "Servidor",
+  "emf.ep.token.ep-login-view.btn.aadLogin": "Inicia sesión con la cuenta de Microsoft",
+  "emf.ep.token.ep-login-view.link.resetApplication": "Restablecer aplicación",
   "emf.ep.token.ep-login-view.message.missingServer": " Por favor proporcione el nombre del servidor de inicio de sesión.",
   "emf.ep.token.ep-login-view.message.missingUserName": "Por favor proporcione su nombre de usuario para iniciar sesión.",
   "emf.ep.token.ep-login-view.message.youForgotPassword": "Por favor proporcione su contraseña para iniciar sesión.",

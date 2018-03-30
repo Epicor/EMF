@@ -4,6 +4,8 @@
     "ep-login-view.placeholder.userName": "User Name",
     "ep-login-view.placeholder.password": "Password",
     "ep-login-view.placeholder.server": "Server",
+    "ep-login-view.btn.aadLogin": "Login with Microsoft Account",
+    "ep-login-view.link.resetApplication": "Reset Application",
 
     "ep-login-view.message.missingServer": "Please provide your server name to login.",
     "ep-login-view.message.missingUserName": "Please provide your username to login.",
