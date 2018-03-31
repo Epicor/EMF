@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.9-7 built: 31-03-2018
+ * version:1.0.9-8 built: 31-03-2018
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.9-7","built":"2018-03-31"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.9-8","built":"2018-03-31"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -1921,7 +1921,7 @@ angular.module('ep.signature', [
          * @public
          * @description
          * Authenticate against azure AD
-         * 
+         *
          */
         function authenticate(authCompletedCallback) {
 
@@ -1933,11 +1933,11 @@ angular.module('ep.signature', [
                 }
                 // Attempt to authorize user silently
                 authContext.acquireTokenSilentAsync(aadConfig.resourceUri, aadConfig.clientId)
-                .then(authCompletedCallback, function () {
+                .then(authCompletedCallback, function() {
                     // We require user cridentials so triggers authentication dialog
                     authContext.acquireTokenAsync(aadConfig.resourceUri, aadConfig.clientId, aadConfig.redirectUri)
-                    .then(authCompletedCallback, function (err) {
-                        $log.debug("Failed to authenticate: " + err);
+                    .then(authCompletedCallback, function(err) {
+                        $log.debug('Failed to authenticate: ' + err);
                     });
                 });
             });
@@ -1954,7 +1954,7 @@ angular.module('ep.signature', [
          * @param {boolean} debug - to log the events while verifying and login through AD
          * @description
          * Verifies AAD settings are configured in ERP and authenticates through azure AD
-         * 
+         *
          */
         function verifyAADConfigAndLogin(server, redirectUri, debug) {
             var deferred = $q.defer();
@@ -1966,7 +1966,6 @@ angular.module('ep.signature', [
             };
             $http(request).then(function(response) {
                 //If we have Asure AD settings, just get the web app id and native client id and use it for Azure AD login.
-                console.log(response.data);
                 if (response.data && response.data.AzureADSettings) {
                     var aadSettings = response.data.AzureADSettings;
                     aadConfig.clientId = aadSettings.NativeClientAppID;
@@ -1977,12 +1976,13 @@ angular.module('ep.signature', [
                     if (debug) {
                         // set log level with code=3 (verbose level)
                         Microsoft.ADAL.AuthenticationSettings.setLogLevel(3).then(function() {
-                            console.log("Successfully set log level");
+                            console.log('Successfully set log level');
                             Microsoft.ADAL.AuthenticationSettings.setLogger(function(logItem) {
                                 console.log(JSON.stringify(logItem, null, 2));
                             });
                         }, function(err) {
-                            console.log("Couldn't set log level");
+                            console.log('Couldn\'t set log level');
+                            $log.error(err);
                         });
                     }
                     authenticate(function(authResult) {
@@ -2021,7 +2021,7 @@ angular.module('ep.signature', [
          * @param {string} token - Azure AD token
          * @description
          * Gets the user details from ERP based on the AAD token
-         * 
+         *
          */
         function getUserFromAADToken(restUrl, token) {
             var deferred = $q.defer();
@@ -2032,7 +2032,7 @@ angular.module('ep.signature', [
                     'Authorization': 'Bearer ' + token,
                     'Content-Type': 'application/json'
                 }
-            }
+            };
             $http(request).then(function(response) {
                 deferred.resolve(response.data.returnObj.UserFile[0]);
             }, function(err) {
@@ -2048,12 +2048,13 @@ angular.module('ep.signature', [
          * @public
          * @description
          * Logout user from Azure AD
-         * 
+         *
          */
         function logOut() {
             authContext = new Microsoft.ADAL.AuthenticationContext(aadConfig.authority);
             authContext.tokenCache.clear();
-            var logOutUrl = aadConfig.authority + '/oauth2/logout?post_logout_redirect_uri=' + aadConfig.postLogoutRedirectUri;
+            var logOutUrl = aadConfig.authority + '/oauth2/logout?post_logout_redirect_uri=' +
+                            aadConfig.postLogoutRedirectUri;
             var inAppBrowserRef = cordova.InAppBrowser.open(logOutUrl, '_blank', 'location=no');
             inAppBrowserRef.addEventListener('loadstop', function() {
                 inAppBrowserRef.close();
@@ -2069,6 +2070,7 @@ angular.module('ep.signature', [
     }
 
 }());
+
 (function() {
     'use strict';
     /**
