@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.9-8 built: 31-03-2018
+ * version:1.0.9-9 built: 31-03-2018
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.9-8","built":"2018-03-31"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.9-9","built":"2018-03-31"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -1918,6 +1918,7 @@ angular.module('ep.signature', [
         /**
          * @ngdoc method
          * @name authenticate
+         * @methodOf ep.azure.service:epAzureADService
          * @public
          * @description
          * Authenticate against azure AD
@@ -1947,7 +1948,7 @@ angular.module('ep.signature', [
         /**
          * @ngdoc method
          * @name verifyAADConfigAndLogin
-         * @methodOf ep.azure:epAzureADService
+         * @methodOf ep.azure.service:epAzureADService
          * @public
          * @param {string} server - erp server url to get the AAD config settings
          * @param {string} redirectUri - redirect URI configured in Azure portal for Native Client app.
@@ -2015,7 +2016,7 @@ angular.module('ep.signature', [
         /**
          * @ngdoc method
          * @name getUserFromAADToken
-         * @methodOf ep.azure:epAzureADService
+         * @methodOf ep.azure.service:epAzureADService
          * @public
          * @param {string} restUrl - erp rest url to get user details
          * @param {string} token - Azure AD token
@@ -2044,7 +2045,7 @@ angular.module('ep.signature', [
         /**
          * @ngdoc method
          * @name logOut
-         * @methodOf ep.azure:epAzureADService
+         * @methodOf ep.azure.service:epAzureADService
          * @public
          * @description
          * Logout user from Azure AD
