@@ -4,7 +4,7 @@
     "ep-login-view.placeholder.userName": "Nombre de usuario",
     "ep-login-view.placeholder.password": "Contraseña",
     "ep-login-view.placeholder.server": "Servidor",
-    "ep-login-view.btn.aadLogin": "Inicia sesión con la cuenta de Microsoft",
+    "ep-login-view.btn.aadLogin": "Ingresar usando la cuenta de Microsoft",
     "ep-login-view.link.resetApplication": "Restablecer aplicación",
 
     "ep-login-view.message.missingServer": " Por favor proporcione el nombre del servidor de inicio de sesión.",
