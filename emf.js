@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.31-dev.9 built: 10-04-2018
+ * version:1.0.31-dev.10 built: 11-04-2018
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.31-dev.9","built":"2018-04-10"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.31-dev.10","built":"2018-04-11"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -2008,6 +2008,7 @@ angular.module('ep.signature', [
                 }
             }, function(err) {
                 $log.error(err);
+                err.aadConfigAPIError = true;
                 deferred.reject(err);
             });
             return deferred.promise;
