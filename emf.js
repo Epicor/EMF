@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.31-dev.12 built: 13-04-2018
+ * version:1.0.31-dev.13 built: 14-04-2018
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.31-dev.12","built":"2018-04-13"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.31-dev.13","built":"2018-04-14"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -1898,13 +1898,13 @@ angular.module('ep.signature', [
      * @example
      *
      */
-    epAzureADService.$inject = ['$q', '$http', '$log', 'epTokenConfig', 'epLocalStorageService', 'epErpRestService', 'epTokenService'];
+    epAzureADService.$inject = ['$q', '$http', '$log', 'epTokenConfig', 'epLocalStorageService', 'epErpRestService', 'epTokenService', 'epModalDialogService', 'epTranslationService'];
     angular.module('ep.azure').
     service('epAzureADService', epAzureADService);
 
     /*@ngInject*/
     function epAzureADService($q, $http, $log, epTokenConfig, epLocalStorageService, epErpRestService,
-        epTokenService) {
+        epTokenService, epModalDialogService, epTranslationService) {
 
         var aadConfig = {
             authority: 'https://login.microsoftonline.com/common',
@@ -1968,43 +1968,16 @@ angular.module('ep.signature', [
             $http(request).then(function(response) {
                 //If we have Asure AD settings, just get the web app id and native client id and use it for Azure AD login.
                 if (response.data && response.data.AzureADSettings) {
-                    var aadSettings = response.data.AzureADSettings;
-                    aadConfig.clientId = aadSettings.NativeClientAppID;
-                    aadConfig.resourceUri = aadSettings.WebAppID;
-                    aadConfig.redirectUri = redirectUri;
-                    aadConfig.postLogoutRedirectUri = redirectUri;
-
-                    if (debug) {
-                        // set log level with code=3 (verbose level)
-                        Microsoft.ADAL.AuthenticationSettings.setLogLevel(3).then(function() {
-                            console.log('Successfully set log level');
-                            Microsoft.ADAL.AuthenticationSettings.setLogger(function(logItem) {
-                                console.log(JSON.stringify(logItem, null, 2));
-                            });
-                        }, function(err) {
-                            console.log('Couldn\'t set log level');
-                            $log.error(err);
-                        });
-                    }
-                    authenticate(function(authResult) {
-                        var expiresOn = authResult.expiresOn;
-                        var expiresInSecs = expiresOn.getTime();
-                        var dateNow = new Date();
-                        var dateExp = new Date(dateNow);
-
-                        dateExp.setTime(dateExp.getTime() + expiresInSecs * 1000);
-                        epLocalStorageService.update(epTokenConfig.tokenId, {
-                            token: { AccessToken: authResult.accessToken },
-                            createdUTC: dateNow.getTime(),
-                            expiresUTC: dateExp.getTime(),
-                            expiresInSecs: expiresInSecs
-                        });
-
+                    callAzureAuthentication(response, redirectUri, debug).then(function(authResult) {
                         deferred.resolve(authResult);
                     });
                 } else {
-                    $log.debug('No AAD Config found');
-                    deferred.reject('No AAD Config found');
+                    // if AAD config not found, ask for entering the tenantid
+                    showTenantIdDialog(aadConfigUrl, redirectUri, debug).then(function(authResult) {
+                        deferred.resolve(authResult);
+                    }, function(err) {
+                        deferred.reject(err);
+                    });
                 }
             }, function(err) {
                 $log.error(err);
@@ -2014,6 +1987,58 @@ angular.module('ep.signature', [
             return deferred.promise;
         }
 
+        /**
+         * @ngdoc method
+         * @name callAzureAuthentication
+         * @methodOf ep.azure.service:epAzureADService
+         * @private
+         * @param {object} response - aad settings response object from server
+         * @param {string} redirectUri - redirect URI configured in Azure portal for Native Client app.
+         * @param {boolean} debug - to log the events while verifying and login through AD
+         * @description
+         * Calls azure authenticate using the response settings from the server
+         *
+         */
+        function callAzureAuthentication(response, redirectUri, debug) {
+            var deferred = $q.defer();
+            var aadSettings = response.data.AzureADSettings;
+            aadConfig.clientId = aadSettings.NativeClientAppID;
+            aadConfig.resourceUri = aadSettings.WebAppID;
+            aadConfig.redirectUri = redirectUri;
+            aadConfig.postLogoutRedirectUri = redirectUri;
+
+            if (debug) {
+                // set log level with code=3 (verbose level)
+                Microsoft.ADAL.AuthenticationSettings.setLogLevel(3).then(function() {
+                    console.log('Successfully set log level');
+                    Microsoft.ADAL.AuthenticationSettings.setLogger(function(logItem) {
+                        console.log(JSON.stringify(logItem, null, 2));
+                    });
+                }, function(err) {
+                    console.log('Couldn\'t set log level');
+                    $log.error(err);
+                });
+            }
+            authenticate(function(authResult) {
+                var expiresOn = authResult.expiresOn;
+                var dateNow = new Date();
+                var dateExp = new Date(dateNow);
+                var expiresInSecs = (expiresOn.getTime() - dateNow.getTime()) / 1000;
+
+                dateExp.setTime(dateExp.getTime() + expiresInSecs * 1000);
+                epLocalStorageService.update(epTokenConfig.tokenId, {
+                    token: { AccessToken: authResult.accessToken },
+                    createdUTC: dateNow.getTime(),
+                    expiresUTC: expiresOn.getTime(),
+                    expiresInSecs: expiresInSecs
+                });
+
+                deferred.resolve(authResult);
+            });
+
+            return deferred.promise;
+
+        }
         /**
          * @ngdoc method
          * @name getUserFromAADToken
@@ -2061,6 +2086,55 @@ angular.module('ep.signature', [
             inAppBrowserRef.addEventListener('loadstop', function() {
                 inAppBrowserRef.close();
             });
+        }
+
+        /**
+         * @ngdoc method
+         * @name showTenantIdDialog
+         * @methodOf ep.azure.service:epAzureADService
+         * @private
+         * @param {string} aadConfigUrl - rest url to get the aad settings
+         * @param {string} redirectUri - redirect URI configured in Azure portal for Native Client app.
+         * @param {boolean} debug - to log the events while verifying and login through AD
+         * @description
+         * Shows Dialog to enter tenant id
+         *
+         */
+        function showTenantIdDialog(aadConfigUrl, redirectUri, debug) {
+            var deferred = $q.defer();
+            epModalDialogService.showCustomDialog({
+                title: epTranslationService.getString('emf.ep.azure.azure-erp-tenant-view.tenantTitle'),
+                icon: '',
+                templateUrl: 'src/components/ep.azure/azure-erp-tenant-view.html',
+                buttons: [{
+                    text: 'Ok',
+                    type: 'primary',
+                    action: function(cfg) {
+                        epModalDialogService.hide();
+                        $http({ method: 'GET', url: aadConfigUrl + cfg.tenantID }).then(function(response) {
+                            //If we have Asure AD settings, just get the web app id and native client id and use it for Azure AD login.
+                            if (response.data && response.data.AzureADSettings) {
+                                callAzureAuthentication(response, redirectUri, debug).then(function(authResult) {
+                                    deferred.resolve(authResult);
+                                });
+                            } else {
+                                // if AAD config not found, reject and show error
+                                deferred.reject({notFound: true});
+                            }
+                        }, function(err) {
+                            deferred.reject(err);
+                        });
+                    }
+                },
+                    {
+                        text: 'Cancel',
+                        isCancel: true,
+                        action: function() { deferred.reject({ message: 'User Cancelled', cancel: true }); }
+                    }
+                ]
+            });
+
+            return deferred.promise;
         }
 
         return {
@@ -37434,6 +37508,11 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
   $templateCache.put('src/components/ep.action.set/action-menu/action-menu.html',
     "<div id=ep-actions-menu-ctr ng-show=actionMenuCtrl.actions><ul class=\"dropdown-menu ep-actions-menu list-unstyled noselect\" role=menu><li ng-repeat=\"action in actionMenuCtrl.actions\" ng-if=\"!action.switch || action.switch(action.switchParams) == action.switchResult\" ng-switch=action.type ng-class=\"{'hidden': action.switch != null && action.switch == false}\"><a ng-switch-when=action class=ep-actions-menu-item ng-click=\"actionMenuCtrl.invokeAction($event, action)\"><span class=\"icon {{action.icon}}\"></span><span>{{::action.title}}</span></a><div ng-switch-when=separator class=ep-actions-menu-item-separator></div></li><li class=ep-actions-menu-item-mobile><a class=\"ep-actions-menu-item edd-red separate\" ng-click=actionMenuCtrl.close()><span class=\"icon icon-clear\"></span><span>Close</span></a></li></ul></div>"
+  );
+
+
+  $templateCache.put('src/components/ep.azure/azure-erp-tenant-view.html',
+    "<div class=row><label class=col-xs-7>{{'emf.ep.azure.azure-erp-tenant-view.label' | epTranslate}}:</label><input class=\"input-mini col-xs-4\" ng-model=config.tenantID placeholder=\"{{'emf.ep.azure.azure-erp-tenant-view.placeholder' | epTranslate}}\"></div>"
   );
 
 

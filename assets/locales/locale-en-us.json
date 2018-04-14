@@ -1,4 +1,7 @@
 {
+  "emf.ep.azure.azure-erp-tenant-view.label": "Enter Epicor Tenant ID",
+  "emf.ep.azure.azure-erp-tenant-view.placeholder": "Tenant ID",
+  "emf.ep.azure.azure-erp-tenant-view.tenantTitle": "AAD Authentication",
   "emf.ep.erp.message.pleaseWait": "Please Wait...",
   "emf.ep.erp.message.retrievingData": "Retrieving data.",
   "emf.ep.erp.message.sendingServerData": "Updating data.",

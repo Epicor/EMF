@@ -1,4 +1,7 @@
 {
+  "emf.ep.azure.azure-erp-tenant-view.label": "Ingrese la Id. De inquilino de Epicor",
+  "emf.ep.azure.azure-erp-tenant-view.placeholder": "Identificación del inquilino",
+  "emf.ep.azure.azure-erp-tenant-view.tenantTitle": "Autenticación AAD",
   "emf.ep.erp.message.pleaseWait": "Espera...",
   "emf.ep.erp.message.retrievingData": "Recuperación de datos.",
   "emf.ep.erp.message.sendingServerData": "Actualización de datos.",
