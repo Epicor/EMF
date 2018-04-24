@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.31-dev.22 built: 23-04-2018
+ * version:1.0.31-dev.23 built: 24-04-2018
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.31-dev.22","built":"2018-04-23"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.31-dev.23","built":"2018-04-24"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -1952,15 +1952,19 @@ angular.module('ep.signature', [
          * @public
          * @param {string} server - erp server url to get the AAD config settings
          * @param {string} redirectUri - redirect URI configured in Azure portal for Native Client app.
+         * @param {string} tenantID - tenantID stored in local storage for previous login.
          * @param {boolean} debug - to log the events while verifying and login through AD
          * @description
          * Verifies AAD settings are configured in ERP and authenticates through azure AD
          *
          */
-        function verifyAADConfigAndLogin(server, redirectUri, debug) {
+        function verifyAADConfigAndLogin(server, redirectUri, tenantID, debug) {
             var deferred = $q.defer();
             var svr = epTokenService.resolveServerUrl(server);
             var aadConfigUrl = svr.serverUrl + '/api/.configuration?tenantID='; //URL to check AAD config
+            //if tenantID already there, then add tenantID to url and skip enter tenantID page.
+            if (tenantID)
+                aadConfigUrl = aadConfigUrl + tenantID;
             var request = {
                 method: 'GET',
                 url: aadConfigUrl
@@ -1968,16 +1972,21 @@ angular.module('ep.signature', [
             $http(request).then(function(response) {
                 //If we have Asure AD settings, just get the web app id and native client id and use it for Azure AD login.
                 if (response.data && response.data.AzureADSettings) {
-                    callAzureAuthentication(response, redirectUri, debug).then(function(authResult) {
+                    callAzureAuthentication(response, redirectUri, tenantID, debug).then(function(authResult) {
                         deferred.resolve(authResult);
                     });
                 } else {
-                    // if AAD config not found, ask for entering the tenantid
-                    showTenantIdDialog(aadConfigUrl, redirectUri, debug).then(function(authResult) {
-                        deferred.resolve(authResult);
-                    }, function(err) {
-                        deferred.reject(err);
-                    });
+                    //if hit with tenantID and no config found throw error message saying notfound, else continue with tenantID screen
+                    if (tenantID)
+                        deferred.reject({ notFound: true });
+                    else {
+                        // if AAD config not found, ask for entering the tenantID
+                        showTenantIdDialog(aadConfigUrl, redirectUri, tenantID, debug).then(function(authResult) {
+                            deferred.resolve(authResult);
+                        }, function(err) {
+                            deferred.reject(err);
+                        });
+                    }
                 }
             }, function(err) {
                 $log.error(err);
@@ -1994,12 +2003,13 @@ angular.module('ep.signature', [
          * @private
          * @param {object} response - aad settings response object from server
          * @param {string} redirectUri - redirect URI configured in Azure portal for Native Client app.
+         * @param {string} tenantID - tenantID stored in local storage for previous login.
          * @param {boolean} debug - to log the events while verifying and login through AD
          * @description
          * Calls azure authenticate using the response settings from the server
          *
          */
-        function callAzureAuthentication(response, redirectUri, debug) {
+        function callAzureAuthentication(response, redirectUri, tenantID, debug) {
             var deferred = $q.defer();
             var aadSettings = response.data.AzureADSettings;
             aadConfig.clientId = aadSettings.NativeClientAppID;
@@ -2032,7 +2042,8 @@ angular.module('ep.signature', [
                     expiresUTC: expiresOn.getTime(),
                     expiresInSecs: expiresInSecs
                 });
-
+                //add tenantID in response
+                authResult.tenantID = tenantID;
                 deferred.resolve(authResult);
             });
 
@@ -2095,12 +2106,13 @@ angular.module('ep.signature', [
          * @private
          * @param {string} aadConfigUrl - rest url to get the aad settings
          * @param {string} redirectUri - redirect URI configured in Azure portal for Native Client app.
+         * @param {string} tenantID - tenantID stored in local storage for previous login.
          * @param {boolean} debug - to log the events while verifying and login through AD
          * @description
          * Shows Dialog to enter tenant id
          *
          */
-        function showTenantIdDialog(aadConfigUrl, redirectUri, debug) {
+        function showTenantIdDialog(aadConfigUrl, redirectUri, tenantID, debug) {
             var deferred = $q.defer();
             epModalDialogService.showCustomDialog({
                 title: epTranslationService.getString('emf.ep.azure.azure-erp-tenant-view.tenantTitle'),
@@ -2114,7 +2126,7 @@ angular.module('ep.signature', [
                         $http({ method: 'GET', url: aadConfigUrl + cfg.tenantID }).then(function(response) {
                             //If we have Asure AD settings, just get the web app id and native client id and use it for Azure AD login.
                             if (response.data && response.data.AzureADSettings) {
-                                callAzureAuthentication(response, redirectUri, debug).then(function(authResult) {
+                                callAzureAuthentication(response, redirectUri, cfg.tenantID, debug).then(function(authResult) {
                                     deferred.resolve(authResult);
                                 });
                             } else {
