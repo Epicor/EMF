@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.31-dev.3 built: 27-04-2018
+ * version:1.0.31-dev.4 built: 09-05-2018
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.31-dev.3","built":"2018-04-27"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.31-dev.4","built":"2018-05-09"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -1970,23 +1970,33 @@ angular.module('ep.signature', [
                 url: aadConfigUrl
             };
             $http(request).then(function(response) {
-                //If we have Asure AD settings, just get the web app id and native client id and use it for Azure AD login.
-                if (response.data && response.data.AzureADSettings) {
-                    callAzureAuthentication(response, redirectUri, tenantID, debug).then(function(authResult) {
-                        deferred.resolve(authResult);
-                    });
-                } else {
-                    //if hit with tenantID and no config found throw error message saying notfound, else continue with tenantID screen
-                    if (tenantID)
-                        deferred.reject({ notFound: true });
-                    else {
-                        // if AAD config not found, ask for entering the tenantID
-                        showTenantIdDialog(aadConfigUrl, redirectUri, tenantID, debug).then(function(authResult) {
-                            deferred.resolve(authResult);
-                        }, function(err) {
-                            deferred.reject(err);
-                        });
+                //Check if AzureBinding enabled, if enabled continue with azure login, else return saying azure binding not enabled.
+                if (response.data && response.data.TokenAuthentication) {
+                    var serverSettings = response.data.TokenAuthentication;
+                    if (serverSettings.AzureBindingEnabled) {
+                        //If we have Asure AD settings, just get the web app id and native client id and use it for Azure AD login.
+                        if (response.data.AzureADSettings) {
+                            callAzureAuthentication(response, redirectUri, tenantID, debug).then(function(authResult) {
+                                deferred.resolve(authResult);
+                            });
+                        } else {
+                            //if hit with tenantID and no config found throw error message saying notfound, else continue with tenantID screen
+                            if (tenantID)
+                                deferred.reject({ notFound: true });
+                            else {
+                                // if AAD config not found, ask for entering the tenantID
+                                showTenantIdDialog(aadConfigUrl, redirectUri, tenantID, debug).then(function(authResult) {
+                                    deferred.resolve(authResult);
+                                }, function(err) {
+                                    deferred.reject(err);
+                                });
+                            }
+                        }
+                    } else {
+                        deferred.reject({ notEnabled: true });
                     }
+                } else {
+                    deferred.reject({ notEnabled: true });
                 }
             }, function(err) {
                 $log.error(err);
