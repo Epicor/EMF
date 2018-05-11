@@ -1,6 +1,6 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.31-dev.6 built: 11-05-2018
+ * version:1.0.31-dev.7 built: 11-05-2018
 */
 .ep-hover-none {
   text-decoration: none !important;
@@ -1317,6 +1317,9 @@ SIDEBAR
 .ep-shell .ep-sidebar-nav.well {
   border-radius: 0;
   padding: 0;
+}
+.ep-shell-menu-container {
+  height: 100%;
 }
 
 /*

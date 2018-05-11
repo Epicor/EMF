@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.31-dev.6 built: 11-05-2018
+ * version:1.0.31-dev.7 built: 11-05-2018
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.31-dev.6","built":"2018-05-11"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.31-dev.7","built":"2018-05-11"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -25070,6 +25070,26 @@ angular.module('ep.record.editor').
             /**
              * @private
              * @description
+             * Allows to pre-process the left side bar action if the scope variable 'processleftsidebarfn' is set.
+             * You can use it to override the default show/hide sidebar behaviors.
+             * @returns {boolean} false if you want to prevent further actions in the sidebar
+             */
+            function processLeftSidebarAction(action) {
+                if (shellState.viewContainerScope && shellState.viewContainerScope.processleftsidebarfn) {
+                    return shellState.viewContainerScope.processleftsidebarfn({
+                        state: shellState,
+                        action: action,
+                        service: {
+                            showLeftSidebar: showLeftSidebar,
+                            hideLeftSidebar: hideLeftSidebar
+                        }
+                    });
+                }
+                return true;
+            }
+            /**
+             * @private
+             * @description
              * Set flags depending on current mode (small or large)
              */
             function setCurrentModeFlags(viewScope) {
@@ -25845,6 +25865,11 @@ angular.module('ep.record.editor').
              * Show left side bar
              */
             function showLeftSidebar() {
+                var continueShowingLeftSideBar = processLeftSidebarAction('showLeftSideBar');
+                if (!continueShowingLeftSideBar) {
+                    return;
+                }
+
                 if (!shellState.showLeftSidebar) {
                     shellState.showLeftSidebar = true;
                     shellState.viewSettings[shellState.mediaMode].showLeftSidebar = true;
@@ -25862,6 +25887,11 @@ angular.module('ep.record.editor').
              * Hide left side bar
              */
             function hideLeftSidebar() {
+                var continueHidingLeftSideBar = processLeftSidebarAction('hideLeftSidebar');
+                if (!continueHidingLeftSideBar) {
+                    return;
+                }
+
                 if (shellState.showLeftSidebar) {
                     shellState.showLeftSidebar = false;
                     shellState.viewSettings[shellState.mediaMode].showLeftSidebar = false;
@@ -26868,7 +26898,7 @@ angular.module('ep.shell').service('epSidebarService', [
          }
 
          function setLeftTemplateUrl(val, updateIfChanged) {
-             setLeftTemplate("<div ng-include='\"" + val + "\"'></div>", updateIfChanged);
+             setLeftTemplate("<div style='height:100%;' ng-include='\"" + val + "\"'></div>", updateIfChanged);
          }
 
          function setRightTemplateUrl(val, updateIfChanged) {
@@ -27093,7 +27123,8 @@ angular.module('ep.shell').service('epSidebarService', [
                 scope: {
                     'sidebarsettings': '@',
                     'smallmodesettings': '@',
-                    'largemodesettings': '@'
+                    'largemodesettings': '@',
+                    'processleftsidebarfn': '&'
                 },
                 compile: function() {
                     var currentMode = '';
@@ -37524,7 +37555,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.accordion.menu/ep-accordion-menu_template.html',
-    "<div id=MainMenu class=ep-accordion-menu><form class=ep-mlm-search ng-hide=searchDisabled><input type=search class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-keydown=onKeydown($event) ng-focus=\"isRightToLeft = false\" tabindex=-1> <span class=ep-mlm-search-cancel ng-show=state.searchTerm><i class=\"fa fa-times\" ng-click=\"state.searchTerm=''\"></i></span></form><div ng-show=state.searchTerm><div class=\"bg-primary ep-menu-header\"><span ng-bind=searchResultsHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in currentItems | orderBy:orderByMenu\" id={{item.id}} hide-description=false navigate-alternate-icon=navigateAlternateIcon item=item navigate=navigate navigate-alternate=navigateAlternate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div><div ng-show=!state.searchTerm><div class=\"bg-primary ep-menu-header\" ng-if=\"data.favorites && data.favorites.length\"><span ng-bind=favoritesHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in data.favorites | orderBy:orderByMenu\" id={{item.id}} hide-description=false navigate-alternate-icon=navigateAlternateIcon item=item navigate=navigate navigate-alternate=navigateAlternate toggle-favorite=toggleFavorite tabindex=-1></ep-accordion-menu-item></div><div class=\"bg-primary ep-menu-header\" ng-hide=!mainHeader><span ng-bind=mainHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in menu.menuitems | orderBy:orderByMenu\" id={{item.id}} hide-description=true commit-menu-state=commitMenuState item=item navigate=navigate navigate-alternate=navigateAlternate navigate-alternate-icon=navigateAlternateIcon toggle-favorite=toggleFavorite on-expand=onExpand tabindex=-1></ep-accordion-menu-item></div></div></div>"
+    "<div id=MainMenu class=ep-accordion-menu><form class=ep-mlm-search ng-hide=searchDisabled><input type=search class=\"form-control ep-mlm-search-input\" placeholder=Search ng-model=state.searchTerm ng-change=search() ng-keydown=onKeydown($event) ng-focus=\"isRightToLeft = false\" tabindex=-1> <span class=ep-mlm-search-cancel ng-show=state.searchTerm><i class=\"fa fa-times\" ng-click=\"state.searchTerm=''\"></i></span></form><div class=ep-accordion-menu-content><div ng-show=state.searchTerm><div class=\"bg-primary ep-menu-header\"><span ng-bind=searchResultsHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in currentItems | orderBy:orderByMenu\" id={{item.id}} hide-description=false navigate-alternate-icon=navigateAlternateIcon item=item navigate=navigate navigate-alternate=navigateAlternate toggle-favorite=toggleFavorite></ep-accordion-menu-item></div></div><div ng-show=!state.searchTerm><div class=\"bg-primary ep-menu-header\" ng-if=\"data.favorites && data.favorites.length\"><span ng-bind=favoritesHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in data.favorites | orderBy:orderByMenu\" id={{item.id}} hide-description=false navigate-alternate-icon=navigateAlternateIcon item=item navigate=navigate navigate-alternate=navigateAlternate toggle-favorite=toggleFavorite tabindex=-1></ep-accordion-menu-item></div><div class=\"bg-primary ep-menu-header\" ng-hide=!mainHeader><span ng-bind=mainHeader></span></div><div class=\"list-group panel\"><ep-accordion-menu-item ng-repeat=\"item in menu.menuitems | orderBy:orderByMenu\" id={{item.id}} hide-description=true commit-menu-state=commitMenuState item=item navigate=navigate navigate-alternate=navigateAlternate navigate-alternate-icon=navigateAlternateIcon toggle-favorite=toggleFavorite on-expand=onExpand tabindex=-1></ep-accordion-menu-item></div></div></div></div>"
   );
 
 
@@ -37805,7 +37836,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('src/components/ep.multi.level.menu/ep-shell-menu/ep-shell-menu.html',
-    "<div ng-controller=epShellMenuCtrl><ep-multi-level-menu ng-if=\"menuOptions.menuType !== 'accordion'\" menu=menuOptions.menu menu-id=menuId search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu><ep-accordion-menu ng-if=\"menuOptions.menuType === 'accordion'\" menu=menuOptions.menu menu-id=menuId main-header=\"menuOptions.title || 'Menu'\" favorites-header=\"menuOptions.favoritesHeader || 'Favorites'\" search-results-header=\"menuOptions.searchResultsHeader || 'Search Results'\" search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites navigate-alternate-icon=menuOptions.navigateAlternateIcon on-top-menu-click=onTopMenuClick on-expand=menuOptions.onExpand commit-menu-state=commitMenuState on-menu-init=menuOptions.onMenuInit(factory)></ep-accordion-menu></div>"
+    "<div ng-controller=epShellMenuCtrl class=ep-shell-menu-container><ep-multi-level-menu ng-if=\"menuOptions.menuType !== 'accordion'\" menu=menuOptions.menu menu-id=menuId search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu><ep-accordion-menu ng-if=\"menuOptions.menuType === 'accordion'\" menu=menuOptions.menu menu-id=menuId main-header=\"menuOptions.title || 'Menu'\" favorites-header=\"menuOptions.favoritesHeader || 'Favorites'\" search-results-header=\"menuOptions.searchResultsHeader || 'Search Results'\" search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites navigate-alternate-icon=menuOptions.navigateAlternateIcon on-top-menu-click=onTopMenuClick on-expand=menuOptions.onExpand commit-menu-state=commitMenuState on-menu-init=menuOptions.onMenuInit(factory)></ep-accordion-menu></div>"
   );
 
 

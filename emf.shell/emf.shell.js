@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.31-dev.6 built: 11-05-2018
+ * version:1.0.31-dev.7 built: 11-05-2018
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["shell"] = {"libName":"shell","version":"1.0.31-dev.6","built":"2018-05-11"};
+__ep_build_info["shell"] = {"libName":"shell","version":"1.0.31-dev.7","built":"2018-05-11"};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -5699,6 +5699,26 @@ function() {
             /**
              * @private
              * @description
+             * Allows to pre-process the left side bar action if the scope variable 'processleftsidebarfn' is set.
+             * You can use it to override the default show/hide sidebar behaviors.
+             * @returns {boolean} false if you want to prevent further actions in the sidebar
+             */
+            function processLeftSidebarAction(action) {
+                if (shellState.viewContainerScope && shellState.viewContainerScope.processleftsidebarfn) {
+                    return shellState.viewContainerScope.processleftsidebarfn({
+                        state: shellState,
+                        action: action,
+                        service: {
+                            showLeftSidebar: showLeftSidebar,
+                            hideLeftSidebar: hideLeftSidebar
+                        }
+                    });
+                }
+                return true;
+            }
+            /**
+             * @private
+             * @description
              * Set flags depending on current mode (small or large)
              */
             function setCurrentModeFlags(viewScope) {
@@ -6474,6 +6494,11 @@ function() {
              * Show left side bar
              */
             function showLeftSidebar() {
+                var continueShowingLeftSideBar = processLeftSidebarAction('showLeftSideBar');
+                if (!continueShowingLeftSideBar) {
+                    return;
+                }
+
                 if (!shellState.showLeftSidebar) {
                     shellState.showLeftSidebar = true;
                     shellState.viewSettings[shellState.mediaMode].showLeftSidebar = true;
@@ -6491,6 +6516,11 @@ function() {
              * Hide left side bar
              */
             function hideLeftSidebar() {
+                var continueHidingLeftSideBar = processLeftSidebarAction('hideLeftSidebar');
+                if (!continueHidingLeftSideBar) {
+                    return;
+                }
+
                 if (shellState.showLeftSidebar) {
                     shellState.showLeftSidebar = false;
                     shellState.viewSettings[shellState.mediaMode].showLeftSidebar = false;
@@ -7497,7 +7527,7 @@ angular.module('ep.shell').service('epSidebarService', [
          }
 
          function setLeftTemplateUrl(val, updateIfChanged) {
-             setLeftTemplate("<div ng-include='\"" + val + "\"'></div>", updateIfChanged);
+             setLeftTemplate("<div style='height:100%;' ng-include='\"" + val + "\"'></div>", updateIfChanged);
          }
 
          function setRightTemplateUrl(val, updateIfChanged) {
@@ -7722,7 +7752,8 @@ angular.module('ep.shell').service('epSidebarService', [
                 scope: {
                     'sidebarsettings': '@',
                     'smallmodesettings': '@',
-                    'largemodesettings': '@'
+                    'largemodesettings': '@',
+                    'processleftsidebarfn': '&'
                 },
                 compile: function() {
                     var currentMode = '';
