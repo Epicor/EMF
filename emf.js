@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.32-dev.14 built: 29-05-2018
+ * version:1.0.32-dev.15 built: 30-05-2018
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.0.32-dev.14","built":"2018-05-29"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.0.32-dev.15","built":"2018-05-30"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -25076,7 +25076,8 @@ angular.module('ep.record.editor').
              */
             function processLeftSidebarAction(action) {
                 if (shellState.viewContainerScope && shellState.viewContainerScope.processleftsidebarfn) {
-                    return shellState.viewContainerScope.processleftsidebarfn({
+
+                    var leftSidebarState = shellState.viewContainerScope.processleftsidebarfn({
                         state: shellState,
                         action: action,
                         service: {
@@ -25084,6 +25085,8 @@ angular.module('ep.record.editor').
                             hideLeftSidebar: hideLeftSidebar
                         }
                     });
+
+                    return angular.isUndefined(leftSidebarState) ? true : leftSidebarState;
                 }
                 return true;
             }
