@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.0.32-dev.15 built: 30-05-2018
+ * version:1.0.32-dev.16 built: 31-05-2018
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["menu"] = {"libName":"menu","version":"1.0.32-dev.15","built":"2018-05-30"};
+__ep_build_info["menu"] = {"libName":"menu","version":"1.0.32-dev.16","built":"2018-05-31"};
 
 (function() {
     'use strict';
@@ -386,9 +386,11 @@ angular.module('ep.menu.builder', [
                 var term = $scope.state.searchTerm.toLowerCase();
                 var type = $scope.state.searchType ? $scope.state.searchType.toLowerCase() : '';
 
-                searchTimeout = $timeout(function() {
+                searchTimeout = $timeout(function () {
                     var results = [];
-                    searchChildren(term, type, results);
+                    var searchFn = $scope.alternateSearchEnabled === true ? $scope.alternateSearch : searchChildren;
+                    var searchParams = { source: $scope.state.searchIndex, searchTerm: term, results: results };
+                    searchFn(searchParams);
                     $scope.searchResults = results;
                     setCurrentItems();
                     $scope.state.lastSearchTerm = term;
@@ -396,10 +398,10 @@ angular.module('ep.menu.builder', [
             }
 
             // private enum to search kids for local searchTerm
-            function searchChildren(searchTerm, type, results) {
+            function searchChildren(searchParams) {
                 // This is some pretty hot code here, so be careful
                 // about making changes that could affect performance
-                var terms = searchTerm.split(/(\S+)/g);
+                var terms = searchParams.searchTerm.split(/(\S+)/g);
                 angular.forEach($scope.state.searchIndex, function(child) {
                     var childTerms = child.searchTerm.split(/(\S+)/g);
                     // make sure that all terms match something
@@ -411,7 +413,7 @@ angular.module('ep.menu.builder', [
                             });
                     }))
                     {
-                        results.push(child);
+                        searchParams.results.push(child);
                     }
                 });
             }
@@ -1362,7 +1364,9 @@ angular.module('ep.menu.builder', [
                     favoritesHeader: '=',
                     mainHeader: '=',
                     commitMenuState: '=',
-                    navigateAlternateIcon: '='
+                    navigateAlternateIcon: '=',
+                    alternateSearch: '&',
+                    alternateSearchEnabled: '='
                 },
                 link: {
                     pre: function() {
@@ -3188,7 +3192,7 @@ angular.module('ep.templates').run(['$templateCache', function($templateCache) {
   'use strict';
 
   $templateCache.put('src/components/ep.multi.level.menu/ep-shell-menu/ep-shell-menu.html',
-    "<div ng-controller=epShellMenuCtrl class=ep-shell-menu-container><ep-multi-level-menu ng-if=\"menuOptions.menuType !== 'accordion'\" menu=menuOptions.menu menu-id=menuId search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu><ep-accordion-menu ng-if=\"menuOptions.menuType === 'accordion'\" menu=menuOptions.menu menu-id=menuId main-header=\"menuOptions.title || 'Menu'\" favorites-header=\"menuOptions.favoritesHeader || 'Favorites'\" search-results-header=\"menuOptions.searchResultsHeader || 'Search Results'\" search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites navigate-alternate-icon=menuOptions.navigateAlternateIcon on-top-menu-click=onTopMenuClick on-expand=menuOptions.onExpand commit-menu-state=commitMenuState on-menu-init=menuOptions.onMenuInit(factory)></ep-accordion-menu></div>"
+    "<div ng-controller=epShellMenuCtrl class=ep-shell-menu-container><ep-multi-level-menu ng-if=\"menuOptions.menuType !== 'accordion'\" menu=menuOptions.menu menu-id=menuId search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites on-top-menu-click=onTopMenuClick on-menu-init=menuOptions.onMenuInit(factory)></ep-multi-level-menu><ep-accordion-menu ng-if=\"menuOptions.menuType === 'accordion'\" menu=menuOptions.menu menu-id=menuId main-header=\"menuOptions.title || 'Menu'\" favorites-header=\"menuOptions.favoritesHeader || 'Favorites'\" search-results-header=\"menuOptions.searchResultsHeader || 'Search Results'\" search-disabled=menuOptions.searchDisabled sort-disabled=menuOptions.sortDisabled icon-disabled=menuOptions.iconDisabled init-favorites=menuOptions.initFavorites navigate-alternate-icon=menuOptions.navigateAlternateIcon on-top-menu-click=onTopMenuClick on-expand=menuOptions.onExpand commit-menu-state=commitMenuState alternate-search-enabled=!!menuOptions.alternateSearch alternate-search=\"menuOptions.alternateSearch(source, searchTerm, results)\" on-menu-init=menuOptions.onMenuInit(factory)></ep-accordion-menu></div>"
   );
 
 
