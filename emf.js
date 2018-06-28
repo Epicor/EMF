@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.1.0-dev.20 built: 27-06-2018
+ * version:1.1.0-dev.21 built: 28-06-2018
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.1.0-dev.20","built":"2018-06-27"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.1.0-dev.21","built":"2018-06-28"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
@@ -1900,13 +1900,13 @@ angular.module('ep.signature', [
      * @example
      *
      */
-    epAzureADService.$inject = ['$q', '$http', '$log', 'epTokenConfig', 'epLocalStorageService', 'epErpRestService', 'epTokenService', 'epModalDialogService', 'epTranslationService'];
+    epAzureADService.$inject = ['$q', '$http', '$log', 'epTokenConfig', 'epLocalStorageService', 'epErpRestService', 'epTokenService', 'epModalDialogService', 'epTranslationService', '$injector', 'epFeatureDetectionService'];
     angular.module('ep.azure').
     service('epAzureADService', epAzureADService);
 
     /*@ngInject*/
     function epAzureADService($q, $http, $log, epTokenConfig, epLocalStorageService, epErpRestService,
-        epTokenService, epModalDialogService, epTranslationService) {
+        epTokenService, epModalDialogService, epTranslationService, $injector, epFeatureDetectionService) {
 
         var aadConfig = {
             authority: 'https://login.microsoftonline.com/common',
@@ -1970,8 +1970,20 @@ angular.module('ep.signature', [
             var request = {
                 method: 'GET',
                 url: aadConfigUrl
-            };
-            $http(request).then(function(response) {
+            };            
+            var features = epFeatureDetectionService.getFeatures();
+            if (features.platform && features.platform.app === 'Cordova' && features.platform.os === 'iOS') {
+                var iOS = true;
+                var cordovaHTTP = $injector.get('cordovaHTTP');
+                var call = function () { return cordovaHTTP.get(aadConfigUrl, {}, {})};
+            } else
+            {
+                var call = function() {return $http(request)};
+            }
+            call().then(function(response) {
+                //Cordova HTTP plugin isn't returning a json in response.data, it needs to be parsed
+                if (iOS && response.data)
+                         response.data = JSON.parse(response.data);
                 //Check if AzureBinding enabled, if enabled continue with azure login, else return saying azure binding not enabled.
                 if (response.data && response.data.TokenAuthentication) {
                     var serverSettings = response.data.TokenAuthentication;
