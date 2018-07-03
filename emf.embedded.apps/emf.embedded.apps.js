@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.1.0-dev.25 built: 02-07-2018
+ * version:1.1.0-dev.26 built: 03-07-2018
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["embedded.apps"] = {"libName":"embedded.apps","version":"1.1.0-dev.25","built":"2018-07-02"};
+__ep_build_info["embedded.apps"] = {"libName":"embedded.apps","version":"1.1.0-dev.26","built":"2018-07-03"};
 
 'use strict';
 /**
