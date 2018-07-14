@@ -1,9 +1,9 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.1.0-dev.36 built: 13-07-2018
+ * version:1.1.0-dev.37 built: 14-07-2018
 */
 
-var __ep_build_info = { emf : {"libName":"emf","version":"1.1.0-dev.36","built":"2018-07-13"}};
+var __ep_build_info = { emf : {"libName":"emf","version":"1.1.0-dev.37","built":"2018-07-14"}};
 
 if (!epEmfGlobal) {
     var epEmfGlobal = {
