@@ -1,10 +1,10 @@
 /*
  * emf (Epicor Mobile Framework) 
- * version:1.1.0-dev.140 built: 21-10-2018
+ * version:1.1.0-dev.141 built: 22-10-2018
 */
 
 if (typeof __ep_build_info === "undefined") {var __ep_build_info = {};}
-__ep_build_info["datagrid"] = {"libName":"datagrid","version":"1.1.0-dev.140","built":"2018-10-21"};
+__ep_build_info["datagrid"] = {"libName":"datagrid","version":"1.1.0-dev.141","built":"2018-10-22"};
 
 'use strict';
 /**
