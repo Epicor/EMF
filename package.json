@@ -3,7 +3,7 @@
     "description": "Epicor Mobile Framework",
     "author": "Epicor Software Corporation",
     "version": "1.1.0-dev.151",
-    "ep-build":"2328",
+    "ep-build":"2330",
     "ep-build-date":"2019-01-29",
     "publishConfig": {
         "registry": "https://epicor-corp.pkgs.visualstudio.com/_packaging/Epicor/npm/registry/"
